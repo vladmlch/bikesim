@@ -294,6 +294,13 @@ cfg::SimulationPhysicsConfig welded_profile() {
                       .start_pedal_angle_rad = 0.0,
                       .start_lean_grades = {0.0},
                       .start_lean_rad = {0.0}};
+    c.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05,
+                             .pitch_rate_up_rad_s = .5, .pitch_rad = .17,
+                             .decision_s = .1, .ease_enabled = false,
+                             .lean_enabled = false, .rear_brake_tap_enabled = false,
+                             .ease_fraction = .7, .ease_rate_per_s = 5.,
+                             .lean_add_rad = .1, .lean_rate_rad_s = .5,
+                             .clear_s = .3};
     c.monitors.grounded_hold_s = 0.005;
     c.monitors.contact_dropout_s = 0.0125;
     c.research.control_period_s = 0.01;
@@ -706,7 +713,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 23> kTopOrder{
+    static constexpr std::array<std::string_view, 24> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -719,6 +726,7 @@ void test_schema() {
         "articulated",
         "seated_climb",
         "rider_launch",
+        "front_lift_reaction",
         "monitors",
         "research",
         "initial_speed_mps",
@@ -731,7 +739,7 @@ void test_schema() {
         "equilibrium_state_file",
         "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 23, "top-level field count");
+    bt::require(fields.size() == 24, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==
@@ -774,9 +782,11 @@ void test_schema() {
                 "seated_climb field count");
     bt::require(fields_named(fields[11], "rider_launch").size() == 5,
                 "rider_launch field count");
-    bt::require(fields_named(fields[12], "monitors").size() == 2,
+    bt::require(fields_named(fields[12], "front_lift_reaction").size() == 13,
+                "front_lift_reaction field count");
+    bt::require(fields_named(fields[13], "monitors").size() == 2,
                 "monitors field count");
-    bt::require(fields_named(fields[13], "research").size() == 6,
+    bt::require(fields_named(fields[14], "research").size() == 6,
                 "research field count");
 
     // Optional leaves serialize explicit null defaults; required leaves

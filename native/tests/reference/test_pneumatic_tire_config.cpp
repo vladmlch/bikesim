@@ -47,6 +47,22 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"start_lean_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
                 {"start_lean_rad", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}}}});
         }
+        if (!io::find_member(*obj, "front_lift_reaction")) {
+            obj->emplace_back("front_lift_reaction", io::Value{io::Value::Object{
+                {"hand_unload_n", io::Value{io::Number{"20.0"}}},
+                {"unload_dwell_s", io::Value{io::Number{"0.05"}}},
+                {"pitch_rate_up_rad_s", io::Value{io::Number{"0.5"}}},
+                {"pitch_rad", io::Value{io::Number{"0.17"}}},
+                {"decision_s", io::Value{io::Number{"0.1"}}},
+                {"ease_enabled", io::Value{false}},
+                {"lean_enabled", io::Value{false}},
+                {"rear_brake_tap_enabled", io::Value{false}},
+                {"ease_fraction", io::Value{io::Number{"0.7"}}},
+                {"ease_rate_per_s", io::Value{io::Number{"5.0"}}},
+                {"lean_add_rad", io::Value{io::Number{"0.1"}}},
+                {"lean_rate_rad_s", io::Value{io::Number{"0.5"}}},
+                {"clear_s", io::Value{io::Number{"0.3"}}}}});
+        }
         // These documents exercise the tire section only — fill the
         // required timing keys the oracle's defaults used to supply, with
         // the 10-step dropout expressed at the document's own tick.

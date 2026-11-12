@@ -18,6 +18,7 @@
 #include "fields.hpp"
 #include "physical_config.hpp"
 #include "../io/value.hpp"
+#include "../rider/front_lift_reaction.hpp"
 #include "../rider/intent.hpp"
 #include "../rider/launch_config.hpp"
 #include <array>
@@ -44,6 +45,11 @@ using SeatedClimbConfig = ::rider::IntentConfig;
 // Launch part 2 — the rider's launch experience table ([rider_launch]):
 // the record is the rider-layer LaunchConfig, like SeatedClimbConfig.
 using RiderLaunchConfig = ::rider::LaunchConfig;
+
+// Launch part 3a — the front-lift reaction table ([front_lift_reaction]):
+// the record is the rider-layer FrontLiftReactionConfig, like
+// SeatedClimbConfig.
+using FrontLiftReactionConfig = ::rider::FrontLiftReactionConfig;
 
 // model_config.py MonitorsConfig — contact-monitor holds declared by the
 // profile in seconds; both count whole physics steps, so post_init requires
@@ -84,6 +90,7 @@ struct SimulationPhysicsConfig {
     ArticulatedConfig articulated;
     SeatedClimbConfig seated_climb;
     RiderLaunchConfig rider_launch;
+    FrontLiftReactionConfig front_lift_reaction;
     MonitorsConfig monitors;
     ResearchConfig research;
     double initial_speed_mps = 0.;
@@ -146,6 +153,7 @@ namespace detail {
 void post_init(const EndStopConfig&);
 void post_init(const SeatedClimbConfig&);
 void post_init(const RiderLaunchConfig&);
+void post_init(const FrontLiftReactionConfig&);
 void post_init(const MonitorsConfig&);
 void post_init(const ResearchConfig&);
 } // namespace detail
@@ -283,6 +291,27 @@ inline const RecordSchema kRiderLaunchConfigSchema{
     .path="bike_sim.physics.rider_launch.RiderLaunchConfig",
     .fields=kRiderLaunchConfigFields, .declared_default=nullptr};
 
+// Launch part 3a — [front_lift_reaction]: every key is required and the
+// record has no declared-default instance.
+#define FLR_REAL(f) \
+    {.name=#f, .type="<class 'float'>", .kind=FieldKind::Real, \
+     .offset=offsetof(FrontLiftReactionConfig, f), .required=true, .factory="", .nested=nullptr, .nested2=nullptr}
+#define FLR_BOOL(f) \
+    {.name=#f, .type="<class 'bool'>", .kind=FieldKind::Boolean, \
+     .offset=offsetof(FrontLiftReactionConfig, f), .required=true, .factory="", .nested=nullptr, .nested2=nullptr}
+inline constexpr auto kFrontLiftReactionConfigFields = std::to_array<FieldDecl>({
+    FLR_REAL(hand_unload_n), FLR_REAL(unload_dwell_s), FLR_REAL(pitch_rate_up_rad_s), FLR_REAL(pitch_rad),
+    FLR_REAL(decision_s), FLR_BOOL(ease_enabled), FLR_BOOL(lean_enabled), FLR_BOOL(rear_brake_tap_enabled),
+    FLR_REAL(ease_fraction), FLR_REAL(ease_rate_per_s), FLR_REAL(lean_add_rad), FLR_REAL(lean_rate_rad_s),
+    FLR_REAL(clear_s),
+});
+#undef FLR_REAL
+#undef FLR_BOOL
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
+inline const RecordSchema kFrontLiftReactionConfigSchema{
+    .path="bike_sim.physics.front_lift_reaction.FrontLiftReactionConfig",
+    .fields=kFrontLiftReactionConfigFields, .declared_default=nullptr};
+
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 inline const SimulationPhysicsConfig kDeclaredSimulationPhysicsConfig{};
 inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>({
@@ -328,6 +357,10 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .type="<class 'bike_sim.physics.rider_launch.RiderLaunchConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, rider_launch),
      .required=true, .factory="", .nested=&kRiderLaunchConfigSchema, .nested2=nullptr},
+    {.name="front_lift_reaction",
+     .type="<class 'bike_sim.physics.front_lift_reaction.FrontLiftReactionConfig'>",
+     .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, front_lift_reaction),
+     .required=true, .factory="", .nested=&kFrontLiftReactionConfigSchema, .nested2=nullptr},
     {.name="monitors",
      .type="<class 'bike_sim.physics.model_config.MonitorsConfig'>",
      .kind=FieldKind::Dataclass, .offset=offsetof(SimulationPhysicsConfig, monitors),

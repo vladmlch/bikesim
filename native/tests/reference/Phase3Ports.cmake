@@ -318,6 +318,11 @@ bike_add_reference_test(launch_preparation ENGINE
 bike_add_reference_test(pedaling_cut_order ENGINE
   SOURCES test_pedaling_cut_order.cpp LIBRARIES bike_app
   LABELS launch drive)
+# Launch part 3a, tasks 2-3 — the front-lift reaction node and its place
+# in the rider intent.
+bike_add_reference_test(front_lift_reaction ENGINE
+  SOURCES test_front_lift_reaction.cpp LIBRARIES bike_app
+  LABELS launch rider)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

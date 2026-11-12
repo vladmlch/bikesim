@@ -406,4 +406,79 @@ bio::Value encode_perception_state(const Perception::State &state) {
     return bio::Value{std::move(out)};
 }
 
+// ---- front-lift reaction (launch part 3a, task 2) -------------------------
+bio::Value encode_reaction_state(const FrontLiftReaction::State &s) {
+    bio::Value::Object out;
+    out.emplace_back("phase", bio::Value{std::string(reaction_phase_name(s.phase))});
+    out.emplace_back("predicate", bio::Value{s.predicate});
+    out.emplace_back("unload_ticks", integer_value(s.unload_ticks));
+    out.emplace_back("decision_ticks", integer_value(s.decision_ticks));
+    out.emplace_back("clear_ticks", integer_value(s.clear_ticks));
+    out.emplace_back("effort_factor", real_value(s.effort_factor));
+    out.emplace_back("lean_add_rad", real_value(s.lean_add_rad));
+    out.emplace_back("percepts_seen", integer_value(s.percepts_seen));
+    return bio::Value{std::move(out)};
+}
+
+FrontLiftReaction::State decode_reaction_state(const bio::Value &value, std::string_view path) {
+    const Dict d = mapping(VNode{&value}, path);
+    ncd::exact(d, keys("phase", "predicate", "unload_ticks", "decision_ticks", "clear_ticks",
+                       "effort_factor", "lean_add_rad", "percepts_seen"));
+    FrontLiftReaction::State s;
+    try {
+        s.phase = reaction_phase(d["phase"].string(std::string(path) + ".phase"));
+    } catch (const std::invalid_argument &) {
+        invalid(std::string(path) + ".phase", "unknown reaction phase");
+    }
+    s.predicate = d["predicate"].boolean(path);
+    s.unload_ticks = d["unload_ticks"].integer(path);
+    s.decision_ticks = d["decision_ticks"].integer(path);
+    s.clear_ticks = d["clear_ticks"].integer(path);
+    s.effort_factor = d["effort_factor"].finite_real(path);
+    s.lean_add_rad = d["lean_add_rad"].finite_real(path);
+    s.percepts_seen = d["percepts_seen"].integer(path);
+    return s;
+}
+
+bio::Value encode_reaction_config(const FrontLiftReactionConfig &c) {
+    bio::Value::Object out;
+    out.emplace_back("hand_unload_n", real_value(c.hand_unload_n));
+    out.emplace_back("unload_dwell_s", real_value(c.unload_dwell_s));
+    out.emplace_back("pitch_rate_up_rad_s", real_value(c.pitch_rate_up_rad_s));
+    out.emplace_back("pitch_rad", real_value(c.pitch_rad));
+    out.emplace_back("decision_s", real_value(c.decision_s));
+    out.emplace_back("ease_enabled", bio::Value{c.ease_enabled});
+    out.emplace_back("lean_enabled", bio::Value{c.lean_enabled});
+    out.emplace_back("rear_brake_tap_enabled", bio::Value{c.rear_brake_tap_enabled});
+    out.emplace_back("ease_fraction", real_value(c.ease_fraction));
+    out.emplace_back("ease_rate_per_s", real_value(c.ease_rate_per_s));
+    out.emplace_back("lean_add_rad", real_value(c.lean_add_rad));
+    out.emplace_back("lean_rate_rad_s", real_value(c.lean_rate_rad_s));
+    out.emplace_back("clear_s", real_value(c.clear_s));
+    return bio::Value{std::move(out)};
+}
+
+FrontLiftReactionConfig decode_reaction_config(const bio::Value &value, std::string_view path) {
+    const Dict d = mapping(VNode{&value}, path);
+    ncd::exact(d, keys("hand_unload_n", "unload_dwell_s", "pitch_rate_up_rad_s", "pitch_rad", "decision_s",
+                       "ease_enabled", "lean_enabled", "rear_brake_tap_enabled", "ease_fraction",
+                       "ease_rate_per_s", "lean_add_rad", "lean_rate_rad_s", "clear_s"));
+    FrontLiftReactionConfig c;
+    c.hand_unload_n = d["hand_unload_n"].finite_real(path);
+    c.unload_dwell_s = d["unload_dwell_s"].finite_real(path);
+    c.pitch_rate_up_rad_s = d["pitch_rate_up_rad_s"].finite_real(path);
+    c.pitch_rad = d["pitch_rad"].finite_real(path);
+    c.decision_s = d["decision_s"].finite_real(path);
+    c.ease_enabled = d["ease_enabled"].boolean(path);
+    c.lean_enabled = d["lean_enabled"].boolean(path);
+    c.rear_brake_tap_enabled = d["rear_brake_tap_enabled"].boolean(path);
+    c.ease_fraction = d["ease_fraction"].finite_real(path);
+    c.ease_rate_per_s = d["ease_rate_per_s"].finite_real(path);
+    c.lean_add_rad = d["lean_add_rad"].finite_real(path);
+    c.lean_rate_rad_s = d["lean_rate_rad_s"].finite_real(path);
+    c.clear_s = d["clear_s"].finite_real(path);
+    validate_reaction_table(c);
+    return c;
+}
+
 } // namespace rider

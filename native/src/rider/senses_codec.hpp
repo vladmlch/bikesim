@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../io/value.hpp"
+#include "front_lift_reaction.hpp"
 #include "perception.hpp"
 #include "senses.hpp"
 
@@ -34,5 +35,17 @@ decode_surface_labels(const bike::io::Value &v, std::string_view path);
 encode_perception_state(const Perception::State &state);
 [[nodiscard]] Perception::State
 decode_perception_state(const bike::io::Value &v, std::string_view path);
+
+// The reaction's restorable document: {"phase", "predicate",
+// "unload_ticks", "decision_ticks", "clear_ticks", "effort_factor",
+// "lean_add_rad", "percepts_seen"} — exact keys, phase one of idle/deciding/acting/releasing,
+// int64 counters, finite reals. Reachability belongs to
+// FrontLiftReaction::restore.
+[[nodiscard]] bike::io::Value encode_reaction_state(const FrontLiftReaction::State &state);
+[[nodiscard]] FrontLiftReaction::State decode_reaction_state(const bike::io::Value &v, std::string_view path);
+// The runtime document of [front_lift_reaction]: the 13 keys, exact, then
+// validate_reaction_table.
+[[nodiscard]] bike::io::Value encode_reaction_config(const FrontLiftReactionConfig &config);
+[[nodiscard]] FrontLiftReactionConfig decode_reaction_config(const bike::io::Value &v, std::string_view path);
 
 } // namespace rider

@@ -42,6 +42,11 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {24},
                            .start_pedal_angle_rad = 0., .start_lean_grades = {0.},
                            .start_lean_rad = {0.}};
+    config.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5,
+                                  .pitch_rad = .17, .decision_s = .1, .ease_enabled = false,
+                                  .lean_enabled = false, .rear_brake_tap_enabled = false,
+                                  .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1,
+                                  .lean_rate_rad_s = .5, .clear_s = .3};
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;
     config.drive.pedaling.reposition_on_stall = false;

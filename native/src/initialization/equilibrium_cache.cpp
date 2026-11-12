@@ -165,7 +165,9 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
         throw std::invalid_argument("historical NPZ validation requires explicit legacy source provenance");
     const auto& identity=io::as_object(context.identity,"equilibrium identity");
     io::Value physics=plain(configuration::to_value(context.physics));auto& fields=std::get<io::Value::Object>(physics.data);
-    std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file";});
+    // The front-lift reaction steers the ride, never the rest pose, so it
+    // leaves the key like the cache knobs beside it.
+    std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file"||field.first=="front_lift_reaction";});
     // Historical NPZ payloads predate the relaxation selector; the legacy
     // branch keeps them byte-for-byte. The canonical key binds it, like the
     // refine timing: the schedule shapes which rest the solve reaches.

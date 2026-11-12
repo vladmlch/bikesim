@@ -430,6 +430,60 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
     cfg::validate(config);   // control: the bound itself is a valid lean
 }
 
+// The welded profile carries the switched-off reaction with the
+// preliminary numbers of the inventory.
+[[gnu::noinline]] void test_reaction_table_is_switched_off() {
+    const auto &r = profile().front_lift_reaction;
+    bt::require(!r.ease_enabled && !r.lean_enabled && !r.rear_brake_tap_enabled, "both actions off");
+    bt::require(r.hand_unload_n == 20. && r.unload_dwell_s == .05 && r.pitch_rate_up_rad_s == .5 &&
+                    r.pitch_rad == .17 && r.decision_s == .1 && r.ease_fraction == .7 &&
+                    r.ease_rate_per_s == 5. && r.lean_add_rad == .1 && r.lean_rate_rad_s == .5 && r.clear_s == .3,
+                "the preliminary numbers");
+}
+
+// Every [front_lift_reaction] key and the section are required; the period
+// grid and the forward bound are checked against [seated_climb].
+[[gnu::noinline]] void test_reaction_keys_and_context_rules() {
+    for (const char *line : {"hand_unload_n = 20.0\n", "unload_dwell_s = 0.05\n", "pitch_rate_up_rad_s = 0.5\n",
+                             "pitch_rad = 0.17\n", "decision_s = 0.1\n", "ease_enabled = false\n",
+                             "lean_enabled = false\n", "rear_brake_tap_enabled = false\n",
+                             "ease_fraction = 0.7\n", "ease_rate_per_s = 5.0\n", "lean_add_rad = 0.1\n",
+                             "lean_rate_rad_s = 0.5\n", "clear_s = 0.3\n"}) {
+        const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
+        // Remove the key inside [front_lift_reaction] only: lean_rate_rad_s
+        // also exists in [seated_climb], so replace_once would refuse the
+        // profile (review-2 I2). The leading newline keeps a longer key
+        // ending in the same text from matching.
+        rejects([&] {
+            (void)load_edited_profile([&](std::string &t) {
+                const auto from = t.find("[front_lift_reaction]\n");
+                bt::require(from != std::string::npos, "the profile has the reaction block");
+                const std::string needle = "\n" + std::string(line);
+                const auto at = t.find(needle, from);
+                bt::require(at != std::string::npos && t.find(needle, at + 1) == std::string::npos,
+                            "one " + key + " line inside the reaction block");
+                t.erase(at + 1, needle.size() - 1);
+            });
+        }, key, "a profile without " + key);
+    }
+    rejects([] {
+        (void)load_edited_profile([](std::string &t) {
+            const auto from = t.find("[front_lift_reaction]\n");
+            const std::string_view last = "clear_s = 0.3\n";
+            const auto to = t.find(last, from);
+            bt::require(from != std::string::npos && to != std::string::npos, "the profile has the reaction block");
+            t.erase(from, to + last.size() - from);
+        });
+    }, "front_lift_reaction", "a profile without [front_lift_reaction]");
+    const auto config = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+    config->front_lift_reaction.decision_s = .1 + .0005;
+    rejects([&] { cfg::validate(*config); }, "decision_s", "a decision time off the period grid");
+    *config = profile();
+    config->front_lift_reaction.lean_add_rad = config->seated_climb.max_forward_lean_rad + .01;
+    rejects([&] { cfg::validate(*config); }, "lean_add_rad", "a lean add beyond the forward bound");
+    cfg::validate(profile());   // control
+}
+
 // Rejects one profile-text edit; noinline keeps the loaded config's return
 // slot in this frame so the caller can hold further checks.
 template <typename Edit>
@@ -537,6 +591,8 @@ int main() {
         test_launch_table_reproduces_todays_start();
         test_launch_table_keys_are_required();
         test_launch_table_cross_record_rules();
+        test_reaction_table_is_switched_off();
+        test_reaction_keys_and_context_rules();
         test_computed_drive_members_are_not_authored();
         test_load_resolves_a_flat_start();
         test_written_profile_authors_only_the_table();

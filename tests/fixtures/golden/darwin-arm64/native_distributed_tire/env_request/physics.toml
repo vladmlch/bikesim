@@ -171,6 +171,25 @@ start_pedal_angle_rad = 0.0
 start_lean_grades = [0.0]
 start_lean_rad = [0.0]
 
+# Front-lift reaction (launch plan, part 3a): the rider eases the effort
+# and/or leans forward when the hands unload and the bike pitches up.
+# Both actions are off until the launch plan is switched on (part 4);
+# preliminary numbers, calibrated with the launch plan.
+[front_lift_reaction]
+hand_unload_n = 20.0
+unload_dwell_s = 0.05
+pitch_rate_up_rad_s = 0.5
+pitch_rad = 0.17
+decision_s = 0.1
+ease_enabled = false
+lean_enabled = false
+rear_brake_tap_enabled = false
+ease_fraction = 0.7
+ease_rate_per_s = 5.0
+lean_add_rad = 0.1
+lean_rate_rad_s = 0.5
+clear_s = 0.3
+
 [monitors]
 grounded_hold_s = 0.005
 contact_dropout_s = 0.0125

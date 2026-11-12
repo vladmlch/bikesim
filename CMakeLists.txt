@@ -430,6 +430,7 @@ add_library(bike_configuration STATIC
   "${_bike_native_dir}/src/configuration/paths.cpp"
   "${_bike_native_dir}/src/configuration/profile_writer.cpp"
   "${_bike_native_dir}/src/rider/launch_config.cpp"
+  "${_bike_native_dir}/src/rider/front_lift_reaction.cpp"
   "${_bike_native_dir}/src/configuration/fields.hpp"
   "${_bike_native_dir}/src/configuration/load.hpp"
   "${_bike_native_dir}/src/configuration/model_config.hpp"

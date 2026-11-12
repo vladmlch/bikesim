@@ -889,6 +889,13 @@ void post_init(const RiderLaunchConfig &config) {
     ::rider::validate_launch_table(config);
 }
 
+void post_init(const FrontLiftReactionConfig &config) {
+    // Launch part 3a — the table's own rules; the period grid and the
+    // forward lean bound need the seated-climb record and run in the root
+    // post_init, like the RiderIntent constructor's context check.
+    ::rider::validate_reaction_table(config);
+}
+
 void post_init(const MonitorsConfig &config) {
     // model_config.py MonitorsConfig.__post_init__ — holds are durations,
     // not counts; the whole-step rule lives on the owning
@@ -1111,6 +1118,12 @@ void post_init(SimulationPhysicsConfig &config) {
         if (lean > config.seated_climb.max_forward_lean_rad ||
             lean < -config.seated_climb.max_backward_lean_rad)
             fail("rider_launch.start_lean_rad: lean outside the seated posture bounds");
+    detail::post_init(config.front_lift_reaction);
+    // Launch part 3a: the reaction counts intention ticks and leans inside
+    // the seated forward bound — the same context check RiderIntent runs on
+    // runtime documents.
+    ::rider::validate_reaction_context(config.front_lift_reaction, config.seated_climb.period_s,
+                                       config.seated_climb.max_forward_lean_rad);
     if (!std::isfinite(config.timestep_s) || config.timestep_s <= 0.)
         fail("timestep_s must be finite and positive");
     scalar(config.control_period_s, "control period", std::nullopt, true);
@@ -1354,6 +1367,13 @@ SimulationPhysicsConfig default_physics() {
                            .start_pedal_angle_rad = 0.,
                            .start_lean_grades = {0.},
                            .start_lean_rad = {0.}};
+    // Launch part 3a — the switched-off reaction with the inventory's
+    // preliminary numbers; nothing reads it during a ride yet.
+    config.front_lift_reaction = {.hand_unload_n = 20., .unload_dwell_s = .05, .pitch_rate_up_rad_s = .5,
+                                  .pitch_rad = .17, .decision_s = .1, .ease_enabled = false,
+                                  .lean_enabled = false, .rear_brake_tap_enabled = false,
+                                  .ease_fraction = .7, .ease_rate_per_s = 5., .lean_add_rad = .1,
+                                  .lean_rate_rad_s = .5, .clear_s = .3};
     config.drive.motor_clutch = false;
     config.drive.assist.release_hold_s = .3;
     config.drive.pedaling.stop_time_s = .35;

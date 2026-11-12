@@ -76,8 +76,9 @@ std::string contract(const SetupContext& context,std::optional<int> station_coun
     // never fingerprints. [rider_launch] (launch part 2) shapes the start
     // only through the computed drive members, bound above, and the prepared
     // lean, bound explicitly when nonzero — so the table itself is dropped
-    // and every transfer recorded before it keeps validating.
-    std::erase_if(config,[](const auto& p){return p.first=="research"||p.first=="monitors"||p.first=="rider_launch";});
+    // and every transfer recorded before it keeps validating, and the
+    // front-lift reaction, which steers the ride, never the rest pose.
+    std::erase_if(config,[](const auto& p){return p.first=="research"||p.first=="monitors"||p.first=="rider_launch"||p.first=="front_lift_reaction";});
     // The prepared start lean shapes the rest pose (launch part 2). It is
     // bound only when nonzero: an absent member is the upright start every
     // transfer before the launch table was captured with, so those stay

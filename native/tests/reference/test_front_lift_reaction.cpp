@@ -277,7 +277,7 @@ rider::FrontLiftReactionConfig switched_off() {
 
 // Launch part 3b: the switched-off launch table (plan_enabled = false);
 // its times sit on every test grid.
-const rider::LaunchConfig kSwitchedOffLaunch = [] {
+rider::LaunchConfig switched_off_launch() {
     rider::LaunchConfig t;
     t.start_cog_teeth = {51};
     t.start_pedal_angle_rad = 0.;
@@ -300,7 +300,7 @@ const rider::LaunchConfig kSwitchedOffLaunch = [] {
     t.max_launch_s = 6.;
     t.handover_s = .9;
     return t;
-}();
+}
 
 bool same_bits(double a, double b) { return std::bit_cast<std::uint64_t>(a) == std::bit_cast<std::uint64_t>(b); }
 
@@ -356,7 +356,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 // change no resolver state and preview the advancing output exactly.
 [[gnu::noinline]] void test_switched_off_resolver_equals_the_bare_policy() {
     const auto config = enabled_intent();
-    rider::RiderIntent intent(config, switched_off(), kSwitchedOffLaunch, kPeriod);
+    rider::RiderIntent intent(config, switched_off(), switched_off_launch(), kPeriod);
     rider::SeatedClimbPolicy policy(config);
     for (const auto &[steps, seed] : {std::pair{600, 0.}, std::pair{300, .05}}) {
         intent.reset();
@@ -389,7 +389,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 // reaction state and reports the neutral command.
 [[gnu::noinline]] void test_caller_overrides_and_disabled_paths() {
     const auto config = enabled_intent();
-    rider::RiderIntent intent(config, table(), kSwitchedOffLaunch, kPeriod);
+    rider::RiderIntent intent(config, table(), switched_off_launch(), kPeriod);
     rider::IntentControl given;
     given.human_torque_nm = 12.5;
     given.motor_limit_nm = 30.;
@@ -416,7 +416,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     bt::require(encoded(intent) == before, "an inactive call advances nothing");
     auto disabled_config = config;
     disabled_config.enabled = false;
-    const rider::RiderIntent disabled(disabled_config, table(), kSwitchedOffLaunch, kPeriod);
+    const rider::RiderIntent disabled(disabled_config, table(), switched_off_launch(), kPeriod);
     bt::require(!disabled.state().perception && !disabled.state().reaction, "a disabled intent has no new state");
     const auto neutral = disabled.reaction();
     bt::require(neutral.phase == rider::ReactionPhase::idle && !neutral.predicate && neutral.effort_factor == 1. &&
@@ -435,8 +435,8 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 [[gnu::noinline]] void test_reacting_resolver_timing_slew_probe_and_restore() {
     const auto config = enabled_intent();
     // -Wframe-larger-than: the three resolvers live on the heap.
-    auto reacting = std::make_unique<rider::RiderIntent>(config, table(), kSwitchedOffLaunch, kPeriod);
-    auto inert = std::make_unique<rider::RiderIntent>(config, switched_off(), kSwitchedOffLaunch, kPeriod);
+    auto reacting = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
+    auto inert = std::make_unique<rider::RiderIntent>(config, switched_off(), switched_off_launch(), kPeriod);
     const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);
     const std::int64_t onset = 161 + delay + 4 + 8;
     double previous_lean = 0.;
@@ -466,7 +466,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
             const auto phase = reacting->reaction().phase;
             bt::require(step != onset - 3 || phase == rider::ReactionPhase::deciding, "snapshot while deciding");
             bt::require(step != 560 || phase == rider::ReactionPhase::releasing, "snapshot while releasing");
-            restored = std::make_unique<rider::RiderIntent>(config, table(), kSwitchedOffLaunch, kPeriod);
+            restored = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
             restored->restore(rider::decode_intent_state(rider::encode_intent_state(reacting->state()), "intent"));
         } else if (restored) {
             const auto r = tick(*restored, step);
@@ -485,7 +485,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
 // after the policy has computed (lean_limit_rad = min_lean_rad = 1).
 [[gnu::noinline]] void test_rejected_ticks_change_nothing() {
     const auto config = enabled_intent();
-    rider::RiderIntent intent(config, table(), kSwitchedOffLaunch, kPeriod);
+    rider::RiderIntent intent(config, table(), switched_off_launch(), kPeriod);
     for (std::int64_t step = 0; step < 300; ++step) (void)tick(intent, step);   // acting from 293
     const std::string before = encoded(intent);
     rider::RiderIntent reference(intent);
@@ -522,7 +522,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     const auto [signals, senses] = inputs(0);
     std::size_t needed = 0;
     {
-        rider::RiderIntent measured(config, table(), kSwitchedOffLaunch, kPeriod);
+        rider::RiderIntent measured(config, table(), switched_off_launch(), kPeriod);
         const allocation_faults::Guard guard;
         allocation_faults::arm(SIZE_MAX);
         (void)measured.resolve_full(rider::IntentControl{}, signals, senses, 0, .06, .06, .35);
@@ -531,7 +531,7 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     }
     bt::require(needed > 0, "a cold tick allocates, so the sweep exercises failures");
     for (std::size_t k = 0; k < needed; ++k) {
-        rider::RiderIntent intent(config, table(), kSwitchedOffLaunch, kPeriod);
+        rider::RiderIntent intent(config, table(), switched_off_launch(), kPeriod);
         rider::RiderIntent reference(intent);
         const std::string before = encoded(intent);
         bool threw = false;
@@ -586,11 +586,11 @@ rider::IntentResolution tick(rider::RiderIntent &intent, std::int64_t step, bool
     const auto config = enabled_intent();
     const std::int64_t delay = std::llround(config.reaction_delay_s / config.period_s);   // 120
     // -Wframe-larger-than: the intents and the staged states live on the heap.
-    auto donor = std::make_unique<rider::RiderIntent>(config, table(), kSwitchedOffLaunch, kPeriod);
+    auto donor = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
     for (std::int64_t step = 0; step < 300; ++step) (void)tick(*donor, step);
-    auto first = std::make_unique<rider::RiderIntent>(config, table(), kSwitchedOffLaunch, kPeriod);
+    auto first = std::make_unique<rider::RiderIntent>(config, table(), switched_off_launch(), kPeriod);
     for (std::int64_t step = 0; step <= delay; ++step) (void)tick(*first, step);   // exactly one percept delivered
-    rider::RiderIntent fresh(config, table(), kSwitchedOffLaunch, kPeriod);
+    rider::RiderIntent fresh(config, table(), switched_off_launch(), kPeriod);
     const std::string before = encoded(fresh);
     auto early = std::make_unique<rider::RiderIntent::State>(fresh.state());
     early->reaction = donor->state().reaction;   // acting, from another episode

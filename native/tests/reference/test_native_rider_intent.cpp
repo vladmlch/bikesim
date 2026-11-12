@@ -46,7 +46,7 @@ const rider::FrontLiftReactionConfig kSwitchedOffReaction{
 
 // Launch part 3b: the switched-off launch table (plan_enabled = false);
 // its times sit on every test grid.
-const rider::LaunchConfig kSwitchedOffLaunch = [] {
+rider::LaunchConfig switched_off_launch() {
     rider::LaunchConfig t;
     t.start_cog_teeth = {51};
     t.start_pedal_angle_rad = 0.;
@@ -69,7 +69,7 @@ const rider::LaunchConfig kSwitchedOffLaunch = [] {
     t.max_launch_s = 6.;
     t.handover_s = .9;
     return t;
-}();
+}
 
 // Per-tag counters mirror the source file's _SEQ — a label mismatch is
 // itself a contract failure.
@@ -204,7 +204,7 @@ void op_adapter(Plant &plant, bt::oracle::Node &golden, Seq &seq) {
         plant.intent.emplace(
             rider::decode_intent_config(member(doc, "config"),
                                         "adapter.rider_intent.config"),
-            kSwitchedOffReaction, kSwitchedOffLaunch, real_arg(doc, "dt_s"));
+            kSwitchedOffReaction, switched_off_launch(), real_arg(doc, "dt_s"));
     } catch (const std::exception &) {
         consumed_error(golden, seq, "adapter");
     }

@@ -79,7 +79,7 @@ rider::LaunchConfig launch_table(bool enabled) {
     return t;
 }
 
-rider::IntentControl automatic() { return rider::IntentControl{.rider_enabled = true}; }
+rider::IntentControl automatic() { return {}; }
 
 struct Tick {
     rider::IntentResolution resolution;
@@ -87,7 +87,9 @@ struct Tick {
 };
 
 // One physics step: the bike stands, the legs press `torque` against the brake.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (k, torque) ordered by usage
 Tick step(rider::RiderIntent &intent, std::int64_t k, double torque, const rider::LaunchContext &ctx,
+          // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (speed, crank_rate) ordered by usage
           rider::IntentControl control = automatic(), double speed = 0., double crank_rate = 0.) {
     rider::IntentSignals signals{};
     signals.human_crank_torque_nm = torque;
@@ -99,8 +101,9 @@ Tick step(rider::RiderIntent &intent, std::int64_t k, double torque, const rider
     senses.surface_front = rider::SurfaceLabel::hardpack;
     senses.surface_ahead = rider::SurfaceLabel::hardpack;
     senses.grade_ahead = .15;
-    auto r = intent.resolve_full(control, signals, senses, k, .15, .15, std::nullopt, true, true, std::nullopt, ctx);
-    return {r, intent.commands()};
+    const auto r =
+        intent.resolve_full(control, signals, senses, k, .15, .15, std::nullopt, true, true, std::nullopt, ctx);
+    return Tick{.resolution = r, .commands = intent.commands()};
 }
 
 const rider::LaunchContext kEffort{.shift = {}, .effort_mode = true, .external_brake = false};
@@ -122,8 +125,10 @@ std::string encoded(const rider::RiderIntent &intent) {
                         !a.commands.shift_request,
                     "a switched-off plan commands nothing");
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
-        bt::require(std::bit_cast<std::uint64_t>(*a.resolution.control.human_torque_nm) ==
-                            std::bit_cast<std::uint64_t>(*b.resolution.control.human_torque_nm) &&
+        const double ea = *a.resolution.control.human_torque_nm;
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
+        const double eb = *b.resolution.control.human_torque_nm;
+        bt::require(std::bit_cast<std::uint64_t>(ea) == std::bit_cast<std::uint64_t>(eb) &&
                         a.resolution.effort_limited == b.resolution.effort_limited,
                     "the effort is the part-3a one");
         bt::require(off->launch().phase == rider::LaunchPhase::idle, "the plan stays idle");
@@ -175,6 +180,7 @@ std::string encoded(const rider::RiderIntent &intent) {
         const auto t = step(*intent, k, 40., kEffort, automatic(), moving ? 4. : 0., moving ? 7.33 : 0.);
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
         const double now = *t.resolution.control.human_torque_nm;
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the posture
         const double now_lean = t.resolution.control.posture->torso_lean_rad;
         if (k > 0) {
             bt::require(std::abs(now_lean - lean) <= intent_config().lean_rate_rad_s * kDt + 1e-12,
@@ -242,8 +248,10 @@ std::string encoded(const rider::RiderIntent &intent) {
         const auto x = step(*a, k, 15., kEffort);
         const auto y = step(*b, k, 15., kEffort);
         // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
-        bt::require(std::bit_cast<std::uint64_t>(*x.resolution.control.human_torque_nm) ==
-                            std::bit_cast<std::uint64_t>(*y.resolution.control.human_torque_nm) &&
+        const double ex = *x.resolution.control.human_torque_nm;
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) the enabled intent always fills the effort
+        const double ey = *y.resolution.control.human_torque_nm;
+        bt::require(std::bit_cast<std::uint64_t>(ex) == std::bit_cast<std::uint64_t>(ey) &&
                         x.commands.front_brake == y.commands.front_brake,
                     "the restored intent continues bitwise");
     }

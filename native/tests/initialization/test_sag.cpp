@@ -195,7 +195,9 @@ void evaluate_selected_once(PhysicalCase& reference,const MaterialSnapshot& inco
     reference.stepper->forward();
 }
 
-void repeated_insufficient_physical_refinement() {
+// -Wframe-larger-than: the StepConfig copy inside each rig build stays in
+// the test's own frame rather than folding into main's lambda.
+[[gnu::noinline]] void repeated_insufficient_physical_refinement() {
     auto tested=physical_case(),reference=physical_case();
     same_material(snapshot(*tested),snapshot(*reference));
     const auto root_x=static_cast<std::size_t>(init::joint_address(*tested->context,"root_x").qpos);
@@ -262,7 +264,7 @@ void invalid_and_budget() {
     bt::require(original,"residual failures propagate with their physical diagnostic");
 }
 
-void sag_acceptance() {
+[[gnu::noinline]] void sag_acceptance() {
     const auto answer=bike::initialization::fit_sag(
         [](double pressure,double rate){return std::array{18000./pressure,50000./rate};},
         std::array{120.,50.},std::array{100.,800.},std::array{40.,100.},std::array{300.,3000.});
@@ -364,7 +366,7 @@ double norm2(std::span<const double> values) {
 // F2+F3: physical ideal_speed_control on the native_reference contact
 // route — the exact capability combination the review flagged. A lumped
 // rider keeps the fixture minimal; the force tail under test is identical.
-void native_reference_resistance_and_cruise() {
+[[gnu::noinline]] void native_reference_resistance_and_cruise() {
     auto rig=review_rig("lumped",[](bike::configuration::SimulationPhysicsConfig& p){
         p.tires.backend="native_reference";
         // surface_mode 'track' resolves material names through a tire
@@ -526,7 +528,7 @@ std::string pedal_stage(const ReviewRig& rig,std::string_view side) {
     bt::require(false,"pedal_recovery entries name the front/rear sides");
     return {};
 }
-void seated_climb_recovery_switch() {
+[[gnu::noinline]] void seated_climb_recovery_switch() {
     const auto flat=[](bool enabled){
         return review_rig("articulated_planar",[enabled](
             bike::configuration::SimulationPhysicsConfig& p){

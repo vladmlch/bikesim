@@ -108,7 +108,7 @@ const rider::FrontLiftReactionConfig kSwitchedOffReaction{
 
 // Launch part 3b: the switched-off launch table (plan_enabled = false);
 // its times sit on every test grid.
-const rider::LaunchConfig kSwitchedOffLaunch = [] {
+rider::LaunchConfig switched_off_launch() {
     rider::LaunchConfig t;
     t.start_cog_teeth = {51};
     t.start_pedal_angle_rad = 0.;
@@ -131,15 +131,15 @@ const rider::LaunchConfig kSwitchedOffLaunch = [] {
     t.max_launch_s = 6.;
     t.handover_s = .9;
     return t;
-}();
+}
 
 // test_posture_program_reads_no_inertial_signal — the AST sweep's
 // behavioral contract: the posture intent resolves identically under
 // arbitrary IMU perturbation, because no inertial channel reaches it.
 void test_posture_program_reads_no_inertial_signal() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005),
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, switched_off_launch(), .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, switched_off_launch(), .0005)};
     const rider::IntentSignals calm;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;
@@ -187,8 +187,8 @@ void test_road_grade_uses_underwheel_and_preview_samples_uniformly() {
 // test_resolver_road_grade_survives_probe_and_ignores_imu
 void test_resolver_road_grade_survives_probe_and_ignores_imu() {
     std::array<rider::RiderIntent, 2> resolvers{
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005),
-        rider::RiderIntent(enabled(), kSwitchedOffReaction, kSwitchedOffLaunch, .0005)};
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, switched_off_launch(), .0005),
+        rider::RiderIntent(enabled(), kSwitchedOffReaction, switched_off_launch(), .0005)};
     const rider::IntentSignals base;
     rider::IntentSignals perturbed;
     perturbed.pitch_rate_up_rad_s = 4.;

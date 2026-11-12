@@ -428,7 +428,7 @@ RiderCommands commands_of(const LaunchCommand &c) {
 } // namespace
 
 RiderIntent::RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction,
-                         LaunchConfig launch, double dt_s)
+                         const LaunchConfig &launch, double dt_s)
     : config_(config),
       dt_s_(validation::positive(dt_s, "rider physics timestep")),
       period_steps_(python_round_steps(config_.period_s / dt_s_)),

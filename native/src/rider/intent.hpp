@@ -245,7 +245,7 @@ public:
     // Replaces RiderIntent(IntentConfig, double): the reaction and launch
     // tables have no in-code default.
     RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction,
-                LaunchConfig launch, double dt_s);
+                const LaunchConfig &launch, double dt_s);
     RiderIntent(const RiderIntent &);
     RiderIntent &operator=(const RiderIntent &);
     RiderIntent(RiderIntent &&) noexcept;

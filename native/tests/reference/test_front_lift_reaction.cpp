@@ -41,6 +41,7 @@ rider::FrontLiftReactionConfig table() {
             .lean_add_rad = .1, .lean_rate_rad_s = .5, .clear_s = 16 * kPeriod};
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) mirrors the Percepts field order
 rider::Percepts percept(double hand_press_n, double pitch_rate, double pitch) {
     rider::Percepts p;
     p.senses.hand_press_n = hand_press_n;
@@ -60,6 +61,7 @@ void test_predicate_dwell_and_decision_timing() {
     rider::FrontLiftReaction reaction(table(), kPeriod);
     const auto lifting = percept(5., 1., 0.);
     std::vector<rider::ReactionCommand> out;
+    out.reserve(20);
     for (int tick = 0; tick < 20; ++tick) out.push_back(reaction.update(lifting));
     for (std::size_t tick = 0; tick < 4; ++tick)
         bt::require(!out[tick].predicate, "no predicate within the dwell");

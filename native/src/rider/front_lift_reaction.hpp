@@ -39,6 +39,7 @@ void validate_reaction_table(const FrontLiftReactionConfig &table);
 // The rules that need the seated-climb record: the three times on the
 // intention period grid (at most 2^31 ticks) and the lean add inside the
 // forward lean bound. Both the profile post_init and RiderIntent call it.
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (period_s, bound) is the seated-climb context order
 void validate_reaction_context(const FrontLiftReactionConfig &table, double period_s,
                                double max_forward_lean_rad);
 

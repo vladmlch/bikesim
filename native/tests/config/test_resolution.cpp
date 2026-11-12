@@ -1136,7 +1136,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "assist_resolved_tau.toml",
                 "timestep_s = 0.03\ncontrol_period_s = 0.03\n"
                 "closure_time_constant_s = 0.06\n"
-                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[front_lift_reaction]\nhand_unload_n = 20.0\nunload_dwell_s = 0.05\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.03\n"
+                "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\n[front_lift_reaction]\nhand_unload_n = 20.0\nunload_dwell_s = 0.06\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.12\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.03\n"
                 "contact_dropout_s = 0.03\n"
                 "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"

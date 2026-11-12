@@ -52,6 +52,7 @@ void validate_reaction_table(const FrontLiftReactionConfig &t) {
     finite_at_least(t.clear_s, 0., "clear_s");
 }
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (period_s, bound) is the seated-climb context order
 void validate_reaction_context(const FrontLiftReactionConfig &t, double period_s, double max_forward_lean_rad) {
     validate_reaction_table(t);
     if (!std::isfinite(period_s) || period_s <= 0.)

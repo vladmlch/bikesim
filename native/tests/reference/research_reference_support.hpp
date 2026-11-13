@@ -136,6 +136,8 @@ struct Knobs {
     physics.drive.shifting.shift_cut_duration_s = .2;
     physics.articulated.balance_dwell_s = .5;
     physics.articulated.balance_grace_s = 3.;
+    physics.articulated.joint_kp_nm_rad = 600.;
+    physics.articulated.joint_kd_nms_rad = 15.;
     physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
     physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
     physics.research.sample_period_s = .005; physics.research.record_decimation = 80;

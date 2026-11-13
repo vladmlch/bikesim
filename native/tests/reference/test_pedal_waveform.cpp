@@ -62,7 +62,7 @@ void test_horizontal_power_stroke_requests_the_finite_crank_torque() {
 }
 void test_articulated_config_exposes_the_ripple() {
     auto config = std::make_unique<cfg::ArticulatedConfig>();
-    config->balance_dwell_s = .5; config->balance_grace_s = 3.;
+    config->balance_dwell_s = .5; config->balance_grace_s = 3.; config->joint_kp_nm_rad = 600.; config->joint_kd_nms_rad = 15.;
     bt::require(config->pedal_torque_ripple == .35, "declared articulated ripple");
     config->pedal_torque_ripple = .5; cfg::detail::post_init(*config);
     bt::require(config->pedal_torque_ripple == .5, "valid configured ripple");
@@ -70,7 +70,7 @@ void test_articulated_config_exposes_the_ripple() {
 }
 void test_return_foot_preload_is_a_nonnegative_force() {
     auto config = std::make_unique<cfg::ArticulatedConfig>();
-    config->balance_dwell_s = .5; config->balance_grace_s = 3.;
+    config->balance_dwell_s = .5; config->balance_grace_s = 3.; config->joint_kp_nm_rad = 600.; config->joint_kd_nms_rad = 15.;
     bt::require(config->return_foot_preload_n == 0., "declared preload is zero");
     config->return_foot_preload_n = 40.; cfg::detail::post_init(*config);
     bt::require(config->return_foot_preload_n == 40., "positive preload is accepted");

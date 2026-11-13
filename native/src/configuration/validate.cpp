@@ -757,7 +757,10 @@ void post_init(ArticulatedConfig &config) {
            &ArticulatedConfig::grip_pull_per_hand_n},
           {"link_max_gap_m", &ArticulatedConfig::link_max_gap_m},
           {"balance_floor_kmh", &ArticulatedConfig::balance_floor_kmh},
-          {"balance_dwell_s", &ArticulatedConfig::balance_dwell_s}})
+          {"balance_dwell_s", &ArticulatedConfig::balance_dwell_s},
+          {"joint_kp_nm_rad", &ArticulatedConfig::joint_kp_nm_rad},
+          {"joint_kd_nms_rad",
+           &ArticulatedConfig::joint_kd_nms_rad}})
         scalar(config.*member, name, std::nullopt, true);
     if (config.saddle_reserve_weight_fraction > 1.)
         fail("saddle reserve fraction must not exceed one");
@@ -1410,6 +1413,8 @@ SimulationPhysicsConfig default_physics() {
     config.drive.shifting.shift_cut_duration_s = .2;
     config.articulated.balance_dwell_s = .5;
     config.articulated.balance_grace_s = 3.;
+    config.articulated.joint_kp_nm_rad = 600.;
+    config.articulated.joint_kd_nms_rad = 15.;
     config.drive.pedaling.reposition_on_stall = false;
     config.drive.pedaling.reposition_min_effort_nm = 20.;
     config.drive.pedaling.reposition_stall_window_s = 1.;

@@ -396,8 +396,11 @@ struct ArticulatedConfig {
     double grip_capture_distance_m = .02;
     double grip_capture_speed_mps = .2;
     double arm_reach_fraction = .92;
-    double joint_kp_nm_rad = 600.;
-    double joint_kd_nms_rad = 15.;
+    // Posture PD gains of the rider controller (spindle_controller.cpp
+    // :1405-1420). Required from the profile, no in-code value (launch part
+    // 4b, user ruling 2026-11-13); the profiles keep 600 / 15.
+    double joint_kp_nm_rad = -1.;
+    double joint_kd_nms_rad = -1.;
     double joint_limit_nm = 100.;
     double joint_speed_limit_rad_s = 20.;
     double joint_power_limit_w = 250.;
@@ -865,8 +868,8 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, grip_capture_distance_m),
     REAL(ArticulatedConfig, grip_capture_speed_mps),
     REAL(ArticulatedConfig, arm_reach_fraction),
-    REAL(ArticulatedConfig, joint_kp_nm_rad),
-    REAL(ArticulatedConfig, joint_kd_nms_rad),
+    REQ_REAL(ArticulatedConfig, joint_kp_nm_rad),
+    REQ_REAL(ArticulatedConfig, joint_kd_nms_rad),
     REAL(ArticulatedConfig, joint_limit_nm),
     REAL(ArticulatedConfig, joint_speed_limit_rad_s),
     REAL(ArticulatedConfig, joint_power_limit_w),

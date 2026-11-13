@@ -73,7 +73,7 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.drive.pedaling.reposition_noop_rad = .12;
     config.drive.motor_clutch = false;
     config.drive.shifting.shift_cooldown_s = .4; config.drive.shifting.shift_cut_duration_s = .2;
-    config.articulated.balance_dwell_s = .5; config.articulated.balance_grace_s = 3.;
+    config.articulated.balance_dwell_s = .5; config.articulated.balance_grace_s = 3.; config.articulated.joint_kp_nm_rad = 600.; config.articulated.joint_kd_nms_rad = 15.;
     config.research.control_period_s = .01; config.research.actuator_delay_s = .005;
     config.research.sensor_latency_s = .01; config.research.sensor_maximum_age_s = .1;
     config.research.sample_period_s = .005; config.research.record_decimation = 80;

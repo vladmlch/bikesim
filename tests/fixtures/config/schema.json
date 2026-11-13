@@ -1203,13 +1203,13 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 600.0,
+          "default": null,
           "default_factory": null,
           "name": "joint_kp_nm_rad",
           "type": "<class 'float'>"
         },
         {
-          "default": 15.0,
+          "default": null,
           "default_factory": null,
           "name": "joint_kd_nms_rad",
           "type": "<class 'float'>"

@@ -245,6 +245,8 @@ cfg::SimulationPhysicsConfig welded_profile() {
     articulated.balance_floor_kmh = 4.0;
     articulated.balance_dwell_s = 0.5;
     articulated.balance_grace_s = 3.0;
+    articulated.joint_kp_nm_rad = 600.0;
+    articulated.joint_kd_nms_rad = 15.0;
     articulated.road_lookahead_m = 2.0;
     articulated.pedal_attachment = "spindle";
     articulated.saddle_attachment = "pin";

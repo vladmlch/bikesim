@@ -158,7 +158,8 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"balance_dwell_s", io::Value{io::Number{tick(.5)}}},
                 {"balance_grace_s", io::Value{io::Number{tick(3.)}}},
                 {"joint_kp_nm_rad", io::Value{io::Number{"600"}}},
-                {"joint_kd_nms_rad", io::Value{io::Number{"15"}}}}});
+                {"joint_kd_nms_rad", io::Value{io::Number{"15"}}},
+                {"leg_active_damping_nms_rad", io::Value{io::Number{"35"}}}}});
         // The required [research] timings likewise express their former
         // defaults at the document's own tick; latency and maximum age are
         // timestamp cutoffs, so they keep their literal values.

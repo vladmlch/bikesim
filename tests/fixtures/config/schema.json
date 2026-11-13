@@ -1215,6 +1215,12 @@
           "type": "<class 'float'>"
         },
         {
+          "default": null,
+          "default_factory": null,
+          "name": "leg_active_damping_nms_rad",
+          "type": "<class 'float'>"
+        },
+        {
           "default": 100.0,
           "default_factory": null,
           "name": "joint_limit_nm",

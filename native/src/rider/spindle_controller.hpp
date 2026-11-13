@@ -69,6 +69,7 @@ struct DirectionalStrength {
 struct SpindleConfig {
     double joint_kp_nm_rad = 0.;
     double joint_kd_nms_rad = 0.;
+    double leg_active_damping_nms_rad = 0.;
     double joint_limit_nm = 0.;
     double joint_speed_limit_rad_s = 0.;
     double joint_power_limit_w = 0.;

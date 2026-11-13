@@ -312,7 +312,7 @@ void checks_drive_invalid() {
 }
 
 void checks_spindle() {
-    // The 70-key controller config plus resolved strength/envelope tables.
+    // The 68-key controller config plus resolved strength/envelope tables.
     const bio::Value config_doc =
         parse_fixture("config/rider_controller.json");
     const rider::SpindleConfig config =
@@ -321,6 +321,23 @@ void checks_spindle() {
                     config.active_positive_power_limit_w.has_value() &&
                     *config.active_positive_power_limit_w == 450.,
                 "spindle config decodes modeled scalars");
+    // Launch part 4b: the active leg damping is a required wire key and
+    // never negative.
+    bt::require(config.leg_active_damping_nms_rad == 35., "the active leg damping decodes");
+    for (const bool drop : {true, false}) {
+        bt::invalid([drop] {
+            bio::Value doc = parse_fixture("config/rider_controller.json");
+            auto &members = std::get<bio::Value::Object>(doc.data);
+            const auto it = std::ranges::find_if(
+                members, [](const auto &member) { return member.first == "leg_active_damping_nms_rad"; });
+            bt::require(it != members.end(), "the fixture carries the leg damping");
+            if (drop)
+                members.erase(it);
+            else
+                it->second = bio::Value{bio::Number{"-1.0"}};
+            (void)rider::decode_spindle_config(doc);
+        });
+    }
     bt::require(config.has_strength && !config.strength.empty() &&
                     !config.envelopes.empty(),
                 "strength table and joint envelopes decode");

@@ -124,12 +124,12 @@ constexpr std::string_view kShiftingSection =
     "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n";
 constexpr std::string_view kArticulatedSection =
     "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
-    "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n";
+    "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n";
 constexpr std::string_view kAuxTimings =
     "[drive.assist]\nrelease_hold_s = 0.3\n"
     "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"
     "[articulated]\nbalance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
-    "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n";
+    "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n";
 
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (manifest name, fixture path) call sites stay ordered by usage
 Value fixture_json(std::string_view manifest_name [[maybe_unused]],
@@ -792,7 +792,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view engaged_tail =
         "[articulated]\npedal_attachment = \"spindle\"\n"
         "balance_dwell_s = 0.5\nbalance_grace_s = 3.0\n"
-        "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n";
+        "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n";
     for (const auto& [name, value] : {
              std::pair{"reposition_stall_window_s", "1.0005"},
              {"reposition_cooldown_s", "1.0005"},
@@ -1066,13 +1066,13 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                            std::string(kShiftingSection) +
                            "[articulated]\nbalance_dwell_s = 0.5005\n"
                            "balance_grace_s = 3.0\n"
-                           "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n",
+                           "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n",
                        "articulated.balance_dwell_s"},
              std::pair{std::string("stop_time_s = 0.35\n") + std::string(kAssistSection) +
                            std::string(kShiftingSection) +
                            "[articulated]\nbalance_dwell_s = 0.5\n"
                            "balance_grace_s = 3.0005\n"
-                           "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n",
+                           "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n",
                        "articulated.balance_grace_s"}}) {
         invalid_with(
             std::string(field) +
@@ -1164,7 +1164,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "cadence_smoothing_tau_s = 0.35\n"
                 "[articulated]\nbalance_dwell_s = 0.6\n"
                 "balance_grace_s = 3.0\n"
-                "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n"
+                "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n"
                 "[research]\ncontrol_period_s = 0.03\n"
                 "actuator_delay_s = 0.0\nsensor_latency_s = 0.01\n"
                 "sensor_maximum_age_s = 0.1\nsample_period_s = 0.03\n"
@@ -1249,7 +1249,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "cadence_smoothing_tau_s = 0.0025\n"
                 "[articulated]\nbalance_dwell_s = 0.5\n"
                 "balance_grace_s = 3.0\n"
-                "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\n"
+                "joint_kp_nm_rad = 600.0\njoint_kd_nms_rad = 15.0\nleg_active_damping_nms_rad = 35.0\n"
                 "[tires]\nbackend = \"pneumatic\"\n"
                 "surface_mode = \"track\"\n"
                 "[tires.pneumatic.front]\nrate_relaxation_s = 0.2\n"
@@ -1299,7 +1299,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
              {"ArticulatedConfig", "balance_dwell_s"},
              {"ArticulatedConfig", "balance_grace_s"},
              {"ArticulatedConfig", "joint_kp_nm_rad"},
-             {"ArticulatedConfig", "joint_kd_nms_rad"}}) {
+             {"ArticulatedConfig", "joint_kd_nms_rad"},
+             {"ArticulatedConfig", "leg_active_damping_nms_rad"}}) {
         std::string body(full);
         const std::string needle = std::string(missing) + " =";
         const auto at = body.find(needle);
@@ -1474,6 +1475,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.articulated.balance_grace_s = 3.;
         unresolved_base.articulated.joint_kp_nm_rad = 600.;
         unresolved_base.articulated.joint_kd_nms_rad = 15.;
+        unresolved_base.articulated.leg_active_damping_nms_rad = 35.;
         // [rider_launch]
         unresolved_base.rider_launch = {.start_cog_grade_breaks = {},
                                         .start_cog_teeth = {24},

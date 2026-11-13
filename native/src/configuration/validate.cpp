@@ -762,6 +762,7 @@ void post_init(ArticulatedConfig &config) {
           {"joint_kd_nms_rad",
            &ArticulatedConfig::joint_kd_nms_rad}})
         scalar(config.*member, name, std::nullopt, true);
+    scalar(config.leg_active_damping_nms_rad, "leg_active_damping_nms_rad", 0.);
     if (config.saddle_reserve_weight_fraction > 1.)
         fail("saddle reserve fraction must not exceed one");
     // Weld normal bounds may be negative (tension retention), matching the
@@ -1415,6 +1416,7 @@ SimulationPhysicsConfig default_physics() {
     config.articulated.balance_grace_s = 3.;
     config.articulated.joint_kp_nm_rad = 600.;
     config.articulated.joint_kd_nms_rad = 15.;
+    config.articulated.leg_active_damping_nms_rad = 35.;
     config.drive.pedaling.reposition_on_stall = false;
     config.drive.pedaling.reposition_min_effort_nm = 20.;
     config.drive.pedaling.reposition_stall_window_s = 1.;

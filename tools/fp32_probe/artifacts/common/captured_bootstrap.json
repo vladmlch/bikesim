@@ -328,6 +328,7 @@
    "arm_reach_fraction": 0.92,
    "joint_kp_nm_rad": 600.0,
    "joint_kd_nms_rad": 15.0,
+   "leg_active_damping_nms_rad": 35.0,
    "joint_limit_nm": 100.0,
    "joint_speed_limit_rad_s": 20.0,
    "joint_power_limit_w": 250.0,

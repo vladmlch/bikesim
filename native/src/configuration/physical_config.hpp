@@ -401,6 +401,11 @@ struct ArticulatedConfig {
     // 4b, user ruling 2026-11-13); the profiles keep 600 / 15.
     double joint_kp_nm_rad = -1.;
     double joint_kd_nms_rad = -1.;
+    // Active damping of the 18-24 Hz leg-chain mode (launch part 4b, user
+    // ruling 2026-11-13): a controller torque -c*(qdot - qdot_kinematic) on
+    // every leg joint, added to the requested torque and limited like every
+    // muscle torque — not joint damping. Required from the profile.
+    double leg_active_damping_nms_rad = -1.;
     double joint_limit_nm = 100.;
     double joint_speed_limit_rad_s = 20.;
     double joint_power_limit_w = 250.;
@@ -870,6 +875,7 @@ inline constexpr auto kArticulatedConfigFields = std::to_array<FieldDecl>({
     REAL(ArticulatedConfig, arm_reach_fraction),
     REQ_REAL(ArticulatedConfig, joint_kp_nm_rad),
     REQ_REAL(ArticulatedConfig, joint_kd_nms_rad),
+    REQ_REAL(ArticulatedConfig, leg_active_damping_nms_rad),
     REAL(ArticulatedConfig, joint_limit_nm),
     REAL(ArticulatedConfig, joint_speed_limit_rad_s),
     REAL(ArticulatedConfig, joint_power_limit_w),

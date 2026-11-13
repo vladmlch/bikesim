@@ -160,6 +160,7 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     physics.articulated.balance_grace_s = 3.;
     physics.articulated.joint_kp_nm_rad = 600.;
     physics.articulated.joint_kd_nms_rad = 15.;
+    physics.articulated.leg_active_damping_nms_rad = 35.;
     physics.research.control_period_s = .01; physics.research.actuator_delay_s = .005;
     physics.research.sensor_latency_s = .01; physics.research.sensor_maximum_age_s = .1;
     physics.research.sample_period_s = .005; physics.research.record_decimation = 80;

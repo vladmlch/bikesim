@@ -127,6 +127,7 @@ balance_dwell_s = 0.5
 balance_grace_s = 3.0
 joint_kp_nm_rad = 600.0
 joint_kd_nms_rad = 15.0
+leg_active_damping_nms_rad = 35.0
 road_lookahead_m = 2.0
 pedal_attachment = "spindle"
 saddle_attachment = "pin"

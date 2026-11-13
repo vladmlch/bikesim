@@ -1596,6 +1596,49 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             return out;
         };
         const double incoming_coast_hold_nm = coast_hold_nm_;
+        // Launch part 4b: the velocity-level kinematic reference of the leg
+        // joints — the velocity analog of compute_press_state's weld closure
+        // (qdot = J*rate - gamma*hip_vel - pelvis_rel_pitch_rate). The
+        // damping torque -c*(qvel_leg - qdot_leg_kin) is a muscle torque
+        // added to requested (non-priority) below, so it passes the
+        // strength, power and priority budget like every other leg torque.
+        // It damps the leg relative to the motion the crank and pelvis
+        // impose, never the crank rotation itself.
+        std::array<Vec2, 2> qdot_leg_kin{};
+        {
+            const auto rd = [&](int dof) {
+                return dof >= 0 ? qvel[static_cast<std::size_t>(dof)] : 0.;
+            };
+            const std::array<double, 3> f_vel{rd(frame_root_x_dof_),
+                                              rd(frame_root_z_dof_),
+                                              rd(frame_pitch_dof_)};
+            const std::array<double, 3> p_vel{rd(rider_root_x_dof_),
+                                              rd(rider_root_z_dof_),
+                                              rd(rider_pitch_dof_)};
+            const double v_crank_x =
+                f_vel[0] + (crank_world[2] - frame_pitch_anchor[2]) * f_vel[2];
+            const double v_crank_z =
+                f_vel[1] - (crank_world[0] - frame_pitch_anchor[0]) * f_vel[2];
+            const double pelvis_rel_pitch_rate = p_vel[2] - f_vel[2];
+            for (const std::size_t si : {0U, 1U}) {
+                const double v_hip_x =
+                    p_vel[0] +
+                    (hip_world[si][2] - rider_pitch_anchor[2]) * p_vel[2];
+                const double v_hip_z =
+                    p_vel[1] -
+                    (hip_world[si][0] - rider_pitch_anchor[0]) * p_vel[2];
+                const Vec3 v_rel_world{
+                    v_hip_x - v_crank_x - delta_hip[si][2] * f_vel[2], 0.,
+                    v_hip_z - v_crank_z + delta_hip[si][0] * f_vel[2]};
+                const Vec2 hip_vel_xz = mat_t_vec_xz(frame_r, v_rel_world);
+                qdot_leg_kin[si][0] =
+                    jacobians[si][0] * rate - gammas_x[si][0] * hip_vel_xz[0] -
+                    gammas[si][0] * hip_vel_xz[1] - pelvis_rel_pitch_rate;
+                qdot_leg_kin[si][1] =
+                    jacobians[si][1] * rate - gammas_x[si][1] * hip_vel_xz[0] -
+                    gammas[si][1] * hip_vel_xz[1];
+            }
+        }
         const auto populate_leg_torques =
             [&](const PressState &ps, bool commit_hold) {
             std::array<double, 2> f_base{};
@@ -1715,7 +1758,11 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 }
                 for (std::size_t i = 0; i < 2; ++i) {
                     priority_requested[slots[i]] = press_torques[i];
-                    requested[slots[i]] = task_torques[i] + press_torques[i];
+                    const double damp_nm =
+                        -config_.leg_active_damping_nms_rad *
+                        (qvel[leg_dofs[s][i]] - qdot_leg_kin[s][i]);
+                    requested[slots[i]] =
+                        task_torques[i] + press_torques[i] + damp_nm;
                     requested_filled[slots[i]] = 1;
                 }
             }

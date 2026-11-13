@@ -738,7 +738,7 @@ namespace {
         "joint_kd_nms_rad", "joint_kp_nm_rad", "joint_limit_nm",
         "joint_power_limit_w",
         "joint_speed_limit_rad_s", "joint_strength_path",
-        "link_max_gap_m",
+        "leg_active_damping_nms_rad", "link_max_gap_m",
         "pedal_ankle_amplitude_rad", "pedal_attachment", "pedal_c_ns_m",
         "pedal_min_normal_n", "pedal_patch_half_length_m",
         "pedal_scrape_fraction", "pedal_support_fraction",
@@ -817,6 +817,9 @@ namespace {
                                   SpindleConfig &config) {
         config.joint_kp_nm_rad = d["joint_kp_nm_rad"].finite_real(path);
         config.joint_kd_nms_rad = d["joint_kd_nms_rad"].finite_real(path);
+        config.leg_active_damping_nms_rad = d["leg_active_damping_nms_rad"].finite_real(path);
+        if (config.leg_active_damping_nms_rad < 0.)
+            invalid(std::string(path) + ".leg_active_damping_nms_rad", "must be nonnegative");
         config.joint_limit_nm = d["joint_limit_nm"].finite_real(path);
         config.joint_speed_limit_rad_s =
             d["joint_speed_limit_rad_s"].finite_real(path);

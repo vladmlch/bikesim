@@ -1,4 +1,5 @@
 {
+  "async_telemetry": false,
   "control_period_s": 0.005,
   "control_period_steps": 4,
   "drive_mode": "articulated_effort",
@@ -22,14 +23,14 @@
         0.115
       ],
       "ankle_rear": [
-        -0.165,
+        -0.10971345814839849,
         0.0,
-        0.115
+        0.1008384762384434
       ],
       "elbow": [
-        0.30822046286083987,
+        0.3031263367671595,
         0.0,
-        0.9204908418002589
+        0.9161638964899806
       ],
       "grip": [
         0.52,
@@ -37,24 +38,24 @@
         0.666
       ],
       "head_center": [
-        0.2875404788545618,
+        0.2719324976802588,
         0.0,
-        1.301210627352302
+        1.2987784075990576
       ],
       "hip": [
-        -0.17590108926892892,
+        -0.16874614044463943,
         0.0,
-        0.7860128780662257
+        0.7639801785120643
       ],
       "knee_front": [
-        0.19899153160815491,
+        0.217499888686484,
         0.0,
-        0.5624182845326411
+        0.560625747957977
       ],
       "knee_rear": [
-        0.11796301705207193,
+        0.15055711004693087,
         0.0,
-        0.4632391082804866
+        0.46634877279174175
       ],
       "pedal_front": [
         0.165,
@@ -67,29 +68,29 @@
         0.0
       ],
       "saddle": {
-        "exposed_post_m": 0.21660346644155704,
-        "height_m": 0.747018,
+        "exposed_post_m": 0.1934381228800611,
+        "height_m": 0.7239222,
         "saddle_pos": [
-          -0.17590108926892892,
+          -0.16874614044463943,
           0.0,
-          0.7110128780662256
+          0.6889801785120643
         ],
         "seatpost_top": [
-          -0.15190108926892892,
+          -0.14474614044463943,
           0.0,
-          0.6960128780662256
+          0.6739801785120643
         ],
         "top_center": [
-          -0.17590108926892892,
+          -0.16874614044463943,
           0.0,
-          0.7260128780662256
+          0.7039801785120643
         ],
-        "top_z_m": 0.7260128780662256
+        "top_z_m": 0.7039801785120643
       },
       "shoulder": [
-        0.18053628210002404,
+        0.17018404233480877,
         0.0,
-        1.1822564265987507
+        1.1752986447437015
       ]
     },
     "wheel_bodies": {
@@ -102,8 +103,8 @@
     "balance_dwell_s": 0.5,
     "balance_floor_mps": 1.1111111111111112,
     "balance_grace_s": 3.0,
-    "grounded_hold_s": 0.005,
-    "contact_dropout_s": 0.0125
+    "contact_dropout_s": 0.0125,
+    "grounded_hold_s": 0.005
   },
   "physics_mode": "physical",
   "record_retention": "legacy",
@@ -121,63 +122,63 @@
         "direction": -1,
         "maximum_anatomical_rad": 2.62,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 0.240227,
+        "neutral_anatomical_rad": 0.24022666750124758,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_elbow_right": {
         "direction": -1,
         "maximum_anatomical_rad": 2.62,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 0.240227,
+        "neutral_anatomical_rad": 0.24022666750124758,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_hip_front": {
         "direction": -1,
         "maximum_anatomical_rad": 2.36,
         "minimum_anatomical_rad": -0.35,
-        "neutral_anatomical_rad": 1.033011,
+        "neutral_anatomical_rad": 1.086182475920394,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_hip_rear": {
         "direction": -1,
         "maximum_anatomical_rad": 2.36,
         "minimum_anatomical_rad": -0.35,
-        "neutral_anatomical_rad": 0.73855,
+        "neutral_anatomical_rad": 0.8205119908195962,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_knee_front": {
         "direction": 1,
         "maximum_anatomical_rad": 2.44,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 1.108838,
+        "neutral_anatomical_rad": 1.2034535262521793,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_knee_rear": {
         "direction": 1,
         "maximum_anatomical_rad": 2.44,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 1.420899,
+        "neutral_anatomical_rad": 1.4392957743678496,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_shoulder_left": {
         "direction": -1,
         "maximum_anatomical_rad": 2.96,
         "minimum_anatomical_rad": -0.87,
-        "neutral_anatomical_rad": 1.186386,
+        "neutral_anatomical_rad": 1.1632224744841724,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_shoulder_right": {
         "direction": -1,
         "maximum_anatomical_rad": 2.96,
         "minimum_anatomical_rad": -0.87,
-        "neutral_anatomical_rad": 1.186386,
+        "neutral_anatomical_rad": 1.1632224744841724,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       },
       "rider_torso_hinge": {
         "direction": 1,
         "maximum_anatomical_rad": 1.3,
         "minimum_anatomical_rad": -0.5,
-        "neutral_anatomical_rad": 0.732562,
+        "neutral_anatomical_rad": 0.6892101899672877,
         "provenance": "standard adult ROM (AAOS goniometry) mapped to the articulated_planar build pose; planar only"
       }
     },
@@ -190,7 +191,7 @@
     "grip_pair_force_limit_n": null,
     "grip_pull_per_hand_n": 300.0,
     "grip_release_distance_m": 0.12,
-    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_joint_envelope_anatomical.json",
+    "joint_envelope_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/physics-2026-11-05/tests/fixtures/config/rider_joint_envelope_anatomical.json",
     "joint_envelope_soft_k_nm_rad": 100.0,
     "joint_envelope_soft_margin_rad": 0.1,
     "joint_kd_nms_rad": 15.0,
@@ -198,7 +199,7 @@
     "joint_limit_nm": 100.0,
     "joint_power_limit_w": 250.0,
     "joint_speed_limit_rad_s": 20.0,
-    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/rider_strength_reference.json",
+    "joint_strength_path": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/physics-2026-11-05/tests/fixtures/config/rider_strength_reference.json",
     "leg_active_damping_nms_rad": 35.0,
     "link_max_gap_m": 0.005,
     "pedal_ankle_amplitude_rad": 0.1,
@@ -536,63 +537,63 @@
         "direction": -1,
         "maximum_anatomical_rad": 2.62,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 0.240227,
+        "neutral_anatomical_rad": 0.24022666750124758,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_elbow_right": {
         "direction": -1,
         "maximum_anatomical_rad": 2.62,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 0.240227,
+        "neutral_anatomical_rad": 0.24022666750124758,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_hip_front": {
         "direction": -1,
         "maximum_anatomical_rad": 2.36,
         "minimum_anatomical_rad": -0.35,
-        "neutral_anatomical_rad": 1.033011,
+        "neutral_anatomical_rad": 1.086182475920394,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_hip_rear": {
         "direction": -1,
         "maximum_anatomical_rad": 2.36,
         "minimum_anatomical_rad": -0.35,
-        "neutral_anatomical_rad": 0.73855,
+        "neutral_anatomical_rad": 0.8205119908195962,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_knee_front": {
         "direction": 1,
         "maximum_anatomical_rad": 2.44,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 1.108838,
+        "neutral_anatomical_rad": 1.2034535262521793,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_knee_rear": {
         "direction": 1,
         "maximum_anatomical_rad": 2.44,
         "minimum_anatomical_rad": 0.0,
-        "neutral_anatomical_rad": 1.420899,
+        "neutral_anatomical_rad": 1.4392957743678496,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_shoulder_left": {
         "direction": -1,
         "maximum_anatomical_rad": 2.96,
         "minimum_anatomical_rad": -0.87,
-        "neutral_anatomical_rad": 1.186386,
+        "neutral_anatomical_rad": 1.1632224744841724,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_shoulder_right": {
         "direction": -1,
         "maximum_anatomical_rad": 2.96,
         "minimum_anatomical_rad": -0.87,
-        "neutral_anatomical_rad": 1.186386,
+        "neutral_anatomical_rad": 1.1632224744841724,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       },
       "rider_torso_hinge": {
         "direction": 1,
         "maximum_anatomical_rad": 1.3,
         "minimum_anatomical_rad": -0.5,
-        "neutral_anatomical_rad": 0.732562,
+        "neutral_anatomical_rad": 0.6892101899672877,
         "provenance": "healthy adults, sagittal plane, provisional magnitudes"
       }
     },
@@ -624,7 +625,7 @@
     "max_forward_lean_rad": 0.35,
     "min_elbow_flexion_deg": 15.0,
     "orientation_tau_s": 0.5,
-    "period_s": 0.01,
+    "period_s": 0.00125,
     "reaction_delay_s": 0.15,
     "surge_budget_s": 15.0,
     "surge_grade": 0.2,
@@ -633,50 +634,28 @@
     "target_crank_power_w": 250.0,
     "trim_dead_time_s": 0.2
   },
-  "rider_reaction": {
-    "hand_window_s": 0.5,
-    "hand_lag_s": 0.5,
-    "hand_drop_ratio": 0.7,
-    "pitch_rate_up_rad_s": 0.5,
-    "pitch_rad": 0.17,
-    "decision_s": 0.1,
-    "ease_enabled": false,
-    "lean_enabled": false,
-    "rear_brake_tap_enabled": false,
-    "ease_fraction": 0.7,
-    "ease_rate_per_s": 5.0,
-    "lean_add_rad": 0.1,
-    "lean_rate_rad_s": 0.5,
-    "clear_s": 0.3
-  },
   "rider_launch": {
-    "start_cog_grade_breaks": [],
-    "start_cog_teeth": [
-      51
-    ],
-    "start_pedal_angle_rad": 0.0,
-    "start_lean_grades": [
-      0.0
-    ],
-    "start_lean_rad": [
-      0.0
-    ],
-    "plan_enabled": false,
-    "standstill_speed_mps": 0.1,
-    "standstill_crank_rpm": 5.0,
-    "effort_rate_nm_s": 40.0,
+    "brake_release_s": 0.15,
     "effort_cap_asphalt_nm": 60.0,
-    "effort_cap_hardpack_nm": 60.0,
-    "effort_cap_loose_nm": 60.0,
-    "effort_cap_wet_nm": 60.0,
-    "effort_cap_scree_nm": 60.0,
-    "effort_cap_grades": [
-      0.0
-    ],
     "effort_cap_grade_nm": [
       1000.0
     ],
+    "effort_cap_grades": [
+      0.0
+    ],
+    "effort_cap_hardpack_nm": 60.0,
+    "effort_cap_loose_nm": 60.0,
+    "effort_cap_scree_nm": 60.0,
+    "effort_cap_wet_nm": 60.0,
+    "effort_rate_nm_s": 40.0,
     "effort_rise_speed_mps": 2.5,
+    "end_crank_rpm": 60.0,
+    "end_hold_s": 0.3,
+    "end_speed_mps": 3.0,
+    "handover_s": 0.9,
+    "max_hold_s": 1.5,
+    "max_launch_s": 6.0,
+    "plan_enabled": false,
     "release_torque_grades": [
       0.0,
       0.2
@@ -685,15 +664,37 @@
       0.0,
       30.0
     ],
-    "brake_release_s": 0.15,
-    "max_hold_s": 1.5,
-    "upshift_crank_rpm": 82.0,
     "shift_retry_s": 0.25,
-    "end_speed_mps": 3.0,
-    "end_crank_rpm": 60.0,
-    "end_hold_s": 0.3,
-    "max_launch_s": 6.0,
-    "handover_s": 0.9
+    "standstill_crank_rpm": 5.0,
+    "standstill_speed_mps": 0.1,
+    "start_cog_grade_breaks": [],
+    "start_cog_teeth": [
+      51
+    ],
+    "start_lean_grades": [
+      0.0
+    ],
+    "start_lean_rad": [
+      0.0
+    ],
+    "start_pedal_angle_rad": 0.0,
+    "upshift_crank_rpm": 82.0
+  },
+  "rider_reaction": {
+    "clear_s": 0.3,
+    "decision_s": 0.1,
+    "ease_enabled": false,
+    "ease_fraction": 0.7,
+    "ease_rate_per_s": 5.0,
+    "hand_drop_ratio": 0.7,
+    "hand_lag_s": 0.5,
+    "hand_window_s": 0.5,
+    "lean_add_rad": 0.1,
+    "lean_enabled": false,
+    "lean_rate_rad_s": 0.5,
+    "pitch_rad": 0.17,
+    "pitch_rate_up_rad_s": 0.5,
+    "rear_brake_tap_enabled": false
   },
   "runtime_schema": 1,
   "strict": false,
@@ -770,7 +771,7 @@
         "rear_teeth": 51
       },
       "human_torque_nm": 0.0,
-      "motor_clutch": false,
+      "motor_clutch": true,
       "pedaling": {
         "coast_above_rpm": 120.0,
         "coast_cadence_tau_s": 0.35,
@@ -778,7 +779,6 @@
         "enabled": true,
         "mash_cadence_rpm": 45.0,
         "mash_torque_nm": 60.0,
-        "resume_below_rpm": 105.0,
         "reposition_back_rate_rad_s": 3.0,
         "reposition_cooldown_s": 1.0,
         "reposition_min_effort_nm": 20.0,
@@ -788,14 +788,16 @@
         "reposition_stall_progress_rad": 0.5,
         "reposition_stall_window_s": 1.0,
         "reposition_timeout_s": 3.0,
+        "resume_below_rpm": 105.0,
         "rollback_brake": true,
         "rollback_demand": 1.0,
         "rollback_engage_mps": 0.25,
         "rollback_release_mps": 0.0,
         "stop_time_s": 0.35
       },
+      "rotor_inertia_kgm2": 0.0,
       "shifting": {
-        "cadence_smoothing_tau_s": 0.35,
+        "cadence_smoothing_tau_s": 0.05,
         "cassette": [
           10,
           12,
@@ -811,7 +813,7 @@
           51
         ],
         "enabled": true,
-        "shift_cooldown_s": 0.4,
+        "shift_cooldown_s": 0.25,
         "shift_cut_duration_s": 0.2,
         "target_cadence_max_rpm": 110.0,
         "target_cadence_min_rpm": 75.0,
@@ -948,10 +950,10 @@
       "distinct_normal_deg": 20.0,
       "front": {
         "material": {
+          "hysteresis_rate_eps_mps": 0.01,
+          "loss_factor": 0.07,
           "pressure_pa_gauge": 200000.0,
           "provenance": "synthetic",
-          "hysteresis_rate_eps_mps": 0.01,
-          "loss_factor": 0.0662,
           "radial_k_n_m": 130000.0,
           "valid_load_range_n": [
             0.0,
@@ -964,10 +966,10 @@
       },
       "rear": {
         "material": {
+          "hysteresis_rate_eps_mps": 0.01,
+          "loss_factor": 0.07,
           "pressure_pa_gauge": 200000.0,
           "provenance": "synthetic",
-          "hysteresis_rate_eps_mps": 0.01,
-          "loss_factor": 0.069,
           "radial_k_n_m": 130000.0,
           "valid_load_range_n": [
             0.0,

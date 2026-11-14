@@ -482,10 +482,10 @@ struct Settled {
 // With the feet welded to the pedals (spindle: the distributed and
 // pneumatic profiles, a rolling-start request) the settle holds it. A lumped
 // rider loads no pedal and is not held — the explicit hold would ring its
-// light crank — so its free, balanced crank keeps its world angle while the
-// frame pitches: the frame-relative drift stays within the settled pitch.
-// An articulated rider on flat pedals is not held either (the same light
-// crank); it must still settle.
+// light crank; its balanced free crank is an indifferent equilibrium and
+// wanders in the settle as before the hold (user ruling 2026-11-13: left
+// as is). An articulated rider on flat pedals is not held either (the same
+// light crank). Both must still settle.
 [[gnu::noinline]] void test_every_setup_keeps_the_crank_at_the_table_angle() {
     const auto distributed = launch_ride::repo_file("examples/research/viewer_physics_distributed.toml").string();
     const auto pneumatic = launch_ride::repo_file("examples/research/viewer_physics_pneumatic.toml").string();
@@ -509,11 +509,8 @@ struct Settled {
                         std::to_string(result.initial_crank_phase_rad));
     }
     const auto lumped = settle_cli({"--physics", "physical", "--rider", "lumped", "--track", "flat"});
-    bt::require(std::abs(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) <=
-                    std::abs(lumped.pitch_rad) + 1e-3,
-                "a lumped rider's free crank keeps its world angle: drift " +
-                    std::to_string(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) + ", pitch " +
-                    std::to_string(lumped.pitch_rad));
+    bt::require(std::isfinite(lumped.settled_crank_phase_rad) && std::isfinite(lumped.pitch_rad),
+                "a lumped rider settles without the hold");
     const auto flat = settle_cli({"--physics", "physical", "--drive", "articulated_effort", "--track", "flat"});
     bt::require(std::isfinite(flat.settled_crank_phase_rad) && std::isfinite(flat.pitch_rad),
                 "an articulated rider on flat pedals settles without the hold");

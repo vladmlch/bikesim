@@ -76,8 +76,9 @@ pneumatic гашение удержания 200 → 88. Решения поль�
    - `weld` не замерен, поэтому тоже без удержания.
    - Там, где удержания нет, шатун ведёт себя как сегодня. Для этих настроек требование спецификации `:38` не
      выполняется; это записывается в документ решений как ограничение.
-   - Сосредоточенный райдер шатун не нагружает. Шатун уравновешен, а свободный шарнир держит угол шатуна в мире,
-     пока рама наклоняется. Поэтому тест задачи 3 проверяет `|уход| ≤ |наклон рамы| + 1e-3` рад (ревью 4 I2).
+   - Сосредоточенный райдер шатун не нагружает, но уравновешенный свободный шатун при поиске гуляет: на ровном
+     уход 0,035 рад, при допуске поиска 0,001 — до 0,42 рад (задача 3, замер Devin). Так было и до удержания.
+     Пользователь 2026-11-13: оставить как есть, тест проверяет только, что поиск завершается, уход — в отчёт.
    - Почему нет проверки `a < 2 − b/2` по `M[crank,crank]`: диагональ матрицы масс не содержит ног, связанных со
      стопами приваркой, и у spindle тоже даёт ~0,013. Устойчивость при приваренных ногах подтверждают замер
      (собственное число −1,80 при 200 совпало с расчётом при 0,096) и 96 поездок Follow-up 1 при 88.
@@ -630,10 +631,10 @@ void test_leg_damping_is_required_and_nonnegative() {
 // With the feet welded to the pedals (spindle: the distributed and
 // pneumatic profiles, a rolling-start request) the settle holds it. A lumped
 // rider loads no pedal and is not held — the explicit hold would ring its
-// light crank — so its free, balanced crank keeps its world angle while the
-// frame pitches: the frame-relative drift stays within the settled pitch.
-// An articulated rider on flat pedals is not held either (the same light
-// crank); it must still settle.
+// light crank; its balanced free crank is an indifferent equilibrium and
+// wanders in the settle as before the hold (user ruling 2026-11-13: left
+// as is). An articulated rider on flat pedals is not held either (the same
+// light crank). Both must still settle.
 [[gnu::noinline]] void test_every_setup_keeps_the_crank_at_the_table_angle() {
     const auto distributed = launch_ride::repo_file("examples/research/viewer_physics_distributed.toml").string();
     const auto pneumatic = launch_ride::repo_file("examples/research/viewer_physics_pneumatic.toml").string();
@@ -657,11 +658,8 @@ void test_leg_damping_is_required_and_nonnegative() {
                         std::to_string(result.initial_crank_phase_rad));
     }
     const auto lumped = settle_cli({"--physics", "physical", "--rider", "lumped", "--track", "flat"});
-    bt::require(std::abs(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) <=
-                    std::abs(lumped.pitch_rad) + 1e-3,
-                "a lumped rider's free crank keeps its world angle: drift " +
-                    std::to_string(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) + ", pitch " +
-                    std::to_string(lumped.pitch_rad));
+    bt::require(std::isfinite(lumped.settled_crank_phase_rad) && std::isfinite(lumped.pitch_rad),
+                "a lumped rider settles without the hold");
     const auto flat = settle_cli({"--physics", "physical", "--drive", "articulated_effort", "--track", "flat"});
     bt::require(std::isfinite(flat.settled_crank_phase_rad) && std::isfinite(flat.pitch_rad),
                 "an articulated rider on flat pedals settles without the hold");
@@ -875,8 +873,8 @@ double crank_hold_torque(SetupContext const& context) {
     - удержание входит в ключ кэша и в контракт;
     - почему гашение удержания 88, а не 200: граница устойчивости явного момента (решение 1);
     - удержание только при приваренных ногах (`spindle`). У сосредоточенного райдера, без райдера, на плоских
-      педалях и на `weld` шатун при поиске свободен, как раньше. Для этих настроек требование спецификации `:38`
-      пока не выполнено (решение 2);
+      педалях и на `weld` шатун при поиске свободен, как раньше, и уходит от угла (у сосредоточенного на ровном
+      0,035 рад). Для этих настроек требование спецификации `:38` не выполнено (решение 2);
     - ссылка на «Не решено» п. 6.
   - «Райдер» (`:39`):
     - активное гашение ноги — момент контроллера `−c·(q̇ − q̇_kin)`, c = 35, проходит пределы;

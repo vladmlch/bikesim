@@ -2,6 +2,7 @@
 // -> sole ride owner. These tests are authored here, not executed in the
 // no-build/no-run implementation session.
 #include "support/fixture_test.hpp"
+#include "support/record_initial_state.hpp"
 #include "diag.hpp"
 #include "app/physical_session.hpp"
 #include "configuration/load.hpp"
@@ -176,6 +177,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
 int main() {
     return bt::run([] {
+        bt::record_initial_state(bt::fixture("requests/welded_flat.toml"));
         request_contract();
         shipped_backends();
         ownership_and_reset();

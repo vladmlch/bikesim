@@ -5,6 +5,7 @@
 // which is exactly what the Python test compares the batched sample against.
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
+#include "support/record_initial_state.hpp"
 #include "diag.hpp"
 #include "configuration/fields.hpp"
 #include "configuration/load.hpp"
@@ -425,15 +426,6 @@ RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugp
         bt::fixture("config/viewer_physics_welded.toml"));
     request.setup.model.mode = "ride";
     request.setup.model.physics->timestep_s = .00025;
-    // The oracle froze the Python equilibrium; the ported solver converges
-    // through a different allocator warm-start iterate, so the test restores
-    // the captured PhysicalInitialState document (initial_state_file path)
-    // instead of re-solving — the same settled-cache reset the oracle uses.
-    // The document's contract hash covers compiled-model fields, so each
-    // platform owns its capture under the golden platform key.
-    request.setup.initial_state.emplace(bt::text(bt::fixture(
-        std::string("initial_state/") + std::string(bt_oracle::platform()) +
-        "/probe_welded_0005.json")));
     request.setup.model.rider = bike::configuration::RiderSpecs{};
     request.setup.model.rider->variant = "articulated_planar";
     request.setup.track = bike::terrain::track_from_dict(
@@ -455,6 +447,19 @@ RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugp
     request.sensors.delivery.latency_s = timings.sensor_latency_s;
     request.sensors.delivery.maximum_age_s = timings.sensor_maximum_age_s;
     request.sensors.sample_period_s = .005;
+    // The oracle froze the Python equilibrium; the ported solver converges
+    // through a different allocator warm-start iterate, so the test restores
+    // the captured PhysicalInitialState document (initial_state_file path)
+    // instead of re-solving — the same settled-cache reset the oracle uses.
+    // The document's contract hash covers compiled-model fields, so each
+    // platform owns its capture under the golden platform key.
+    const auto state_document = bt::fixture(
+        std::string("initial_state/") + std::string(bt_oracle::platform()) +
+        "/probe_welded_0005.json");
+    // In record mode the fresh-start settle of this same request rewrites
+    // the document before it is embedded.
+    bt::record_initial_state(request, state_document);
+    request.setup.initial_state.emplace(bt::text(state_document));
     const auto prepared = research::prepare_environment(std::move(owner));
     RideRig rig;
     // The period buffer cadence is the physics control_period_s (.005 s -> 10

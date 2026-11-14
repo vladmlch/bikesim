@@ -462,8 +462,9 @@ RideRig make_ride(double control_period_s, int record_decimation, // NOLINT(bugp
     request.setup.initial_state.emplace(bt::text(state_document));
     const auto prepared = research::prepare_environment(std::move(owner));
     RideRig rig;
-    // The period buffer cadence is the physics control_period_s (.005 s -> 10
-    // steps), independent of the experiment's policy control period.
+    // The period buffer cadence is the physics control_period_s (.005 s -> 20
+    // steps at the .00025 dt override), independent of the experiment's
+    // policy control period.
     rig.period = prepared->bootstrap.ride.config.control_period_steps;
     rig.timestep_s = prepared->bootstrap.config.timestep_s;
     auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(
@@ -537,7 +538,8 @@ void test_non_aligned_flush_keeps_each_intervals_actual_held_command_terms() {
     bt_oracle::Node node(
         "period_buffer/non_aligned_flush_keeps_each_intervals_actual_held_command_terms");
     auto rig = make_ride(.0075, 1, .03);
-    bt::require(rig.period == 10, "the .005 s period buffer is 10 steps");
+    bt::require(rig.period == std::lround(.005 / rig.timestep_s),
+                "the .005 s period buffer is 20 steps");
     std::vector<runtime::SamplePtr> actual;
     for (std::int64_t i = 0; i < 60; ++i) {
         step_once(rig, {.motor_torque_nm = 0., .motor_limit_nm = {},
@@ -614,7 +616,8 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
         .motor_torque_nm = 0., .motor_limit_nm = {}, .human_torque_nm = 0.,
         .crank_target_rate_rad_s = {}, .posture = {}};
     auto rig = make_ride(.005, 1, 1.);
-    bt::require(rig.period == 10, "the default control period is 10 steps");
+    bt::require(rig.period == std::lround(.005 / rig.timestep_s),
+                "the default control period is 20 steps");
     std::vector<runtime::SamplePtr> actual;
     for (std::int64_t i = 0; i < 2003; ++i) {
         step_once(rig, command);
@@ -689,7 +692,8 @@ void test_runtime_batch_matches_preserved_scalar_step_and_flush() {
     // The frozen id set is the oracle's {i % 80 == 0 or period close or tail}.
     std::set<std::int64_t> expected_ids;
     for (std::int64_t i = 0; i < 2003; ++i)
-        if (i % 80 == 0 || (i + 1) % 10 == 0 || i == 2002) expected_ids.insert(i);
+        if (i % 80 == 0 || (i + 1) % decimated_rig.period == 0 || i == 2002)
+            expected_ids.insert(i);
     bt::require(full_ids == expected_ids,
                 "measured intervals are the decimation and period-closing set");
     bt::require(decimated.back()->channels.size() == actual.back()->channels.size() &&

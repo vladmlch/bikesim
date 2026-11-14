@@ -5,13 +5,13 @@
   "index": 0,
   "kind": "close",
   "label": "expected/qpos",
-  "nbytes": 416624,
+  "nbytes": 432648,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
   "offset": 0,
   "rtol": 0.0,
   "shape": [
    2003,
-   26
+   27
   ]
  },
  {
@@ -20,13 +20,13 @@
   "index": 1,
   "kind": "close",
   "label": "expected/qvel",
-  "nbytes": 416624,
+  "nbytes": 432648,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 416624,
+  "offset": 432648,
   "rtol": 0.0,
   "shape": [
    2003,
-   26
+   27
   ]
  },
  {
@@ -37,7 +37,7 @@
   "label": "expected/energy",
   "nbytes": 48072,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 833248,
+  "offset": 865296,
   "rtol": 0.0,
   "shape": [
    2003,
@@ -52,7 +52,7 @@
   "label": "expected/rider_positive_power_w",
   "nbytes": 16024,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 881320,
+  "offset": 913368,
   "rtol": 0.0,
   "shape": [
    2003
@@ -66,7 +66,7 @@
   "label": "expected/attachment_violations",
   "nbytes": 6010,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 897344,
+  "offset": 929392,
   "rtol": null,
   "shape": [
    6010
@@ -80,7 +80,7 @@
   "label": "monitor/first_failure_time_s",
   "nbytes": 0,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 903354,
+  "offset": 935402,
   "rtol": null,
   "shape": [
    0
@@ -94,7 +94,7 @@
   "label": "monitor/first_failure_violations",
   "nbytes": 4,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 903354,
+  "offset": 935402,
   "rtol": null,
   "shape": [
    4
@@ -106,12 +106,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "decimated/last_channel_keys",
-  "nbytes": 767,
+  "nbytes": 831,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 903358,
+  "offset": 935406,
   "rtol": null,
   "shape": [
-   767
+   831
   ]
  },
  {
@@ -120,12 +120,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "decimated/full_ids",
-  "nbytes": 1816,
+  "nbytes": 1016,
   "node": "period_buffer/runtime_batch_matches_preserved_scalar_step_and_flush",
-  "offset": 904125,
+  "offset": 936237,
   "rtol": null,
   "shape": [
-   227
+   127
   ]
  }
 ]

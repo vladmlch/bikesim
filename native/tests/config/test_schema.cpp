@@ -800,12 +800,13 @@ void test_schema() {
     // freehub_k_nm_rad, freehub_c_nms_rad (rotor_inertia_kgm2 was restored).
     bt::require(io::as_array(drive, "fields.drive.fields").size() == 16,
                 "drive field count");
-    // 66 = 69 minus leg_track_damping_nms_rad (no joint damping in any
+    // 65 = 69 minus leg_track_damping_nms_rad (no joint damping in any
     // form), coupled_task_control (removed with its welded-rider mode),
-    // and activation_tau_s (the 25 ms activation filter was removed 2026-11-07).
-    bt::require(fields_named(fields[9], "articulated").size() == 66,
+    // activation_tau_s, coasting_brake_d_nm_s_rad, coasting_brake_limit_nm,
+    // plus leg_active_damping_nms_rad.
+    bt::require(fields_named(fields[9], "articulated").size() == 65,
                 "articulated field count");
-    bt::require(fields_named(fields[10], "seated_climb").size() == 22,
+    bt::require(fields_named(fields[10], "seated_climb").size() == 19,
                 "seated_climb field count");
     // 28 = the 5 part-2 fields + the 19 launch plan fields of part 3b + the
     // 4 launch part 4 fields (the grade cap, its rise and the shift retry).

@@ -451,7 +451,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         });
     invalid_with(
         "invalid SimulationPhysicsConfig: SimulationPhysicsConfig.__init__() "
-        "missing 2 required positional arguments: 'rider_launch' and 'monitors'",
+        "missing 3 required positional arguments: 'rider_launch', "
+        "'front_lift_reaction', and 'monitors'",
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_monitors.toml",
@@ -1334,11 +1335,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 
     // Explicit --dt beats the file value; untouched fields keep file values.
     // The override tick keeps every counted period an integer multiple
-    // (control 10x, grounded 10x, dropout 25x at 0.5 ms).
+    // (intent 5x, control 20x, grounded 20x, dropout 50x at 0.25 ms).
     {
         const auto over = cfg::resolve_physics(
-            make_object({{"timestep_s", make_number("0.0005")}}), base);
-        bt::require(over.timestep_s == 0.0005, "explicit --dt wins");
+            make_object({{"timestep_s", make_number("0.00025")}}), base);
+        bt::require(over.timestep_s == 0.00025, "explicit --dt wins");
         bt::require(over.control_period_s == base.control_period_s,
                     "unmentioned fields keep file values");
         bt::require(over.articulated.joint_envelope_path ==
@@ -1384,7 +1385,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         const auto over = cfg::resolve_physics(
             make_object({{"seated_climb",
                           make_object({{"enabled", make_bool(false)}})},
-                         {"drive_mode", make_text("coast")}}),
+                         {"drive_mode", make_text("coast")},
+                         {"drive",
+                          make_object({{"motor_clutch", make_bool(false)}})}}),
             base);
         bt::require(over.drive_mode.has_value() &&
                         *over.drive_mode == "coast",
@@ -1411,9 +1414,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // the identical merge path (the 'JSON loading' half of the task brief).
     {
         const Value json_overrides = io::parse_json(
-            R"({"timestep_s": 0.0005, "drive": {"pedaling": {"mash_torque_nm": 61.5}}})");
+            R"({"timestep_s": 0.00025, "drive": {"pedaling": {"mash_torque_nm": 61.5}}})");
         const auto over = cfg::resolve_physics(json_overrides, base);
-        bt::require(over.timestep_s == 0.0005, "JSON timestep override");
+        bt::require(over.timestep_s == 0.00025, "JSON timestep override");
         bt::require(over.drive.pedaling.mash_torque_nm == 61.5,
                     "JSON nested override");
         bt::require(over.drive.gearing.front_teeth ==

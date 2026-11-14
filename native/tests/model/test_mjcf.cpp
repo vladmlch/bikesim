@@ -160,7 +160,7 @@ void physical_profiles_and_topology() {
         const auto model=mdl::compile_mjcf(mdl::generate_mjcf(*request));
         require_no_joint_damping(*model,name);
         require_limited_tendons_are_closures(*model,name);
-        bt::require(model->nq==26 && model->nv==26 && model->nu==12,"physical spindle profile inventory");
+        bt::require(model->nq==27 && model->nv==27 && model->nu==12,"physical spindle profile inventory");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"steer_joint")==-1,"physical steering is welded");
         bt::require(mj_name2id(model.get(),mjOBJ_JOINT,"rider_ankle_front")==-1,"spindle locks ankle hinge");
         id(*model,mjOBJ_EQUALITY,"connect_foot_front");id(*model,mjOBJ_EQUALITY,"connect_saddle");
@@ -182,7 +182,7 @@ void physical_profiles_and_topology() {
     require_no_joint_damping(*welded,"weld/spring attachments");
     require_limited_tendons_are_closures(*welded,"weld/spring attachments");
     id(*welded,mjOBJ_JOINT,"rider_ankle_front");id(*welded,mjOBJ_EQUALITY,"weld_foot_front");id(*welded,mjOBJ_EQUALITY,"weld_saddle");
-    bt::require(welded->nq==28,"welded foot preserves ankle DOFs");
+    bt::require(welded->nq==29,"welded foot preserves ankle DOFs");
     request=physical();request->physics->drive.motor_clutch=true; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
     const auto clutch=mdl::compile_mjcf(mdl::generate_mjcf(*request));
     require_no_joint_damping(*clutch,"motor clutch");
@@ -303,6 +303,7 @@ void rotor_body_welds_to_the_drive_axis() {
                        dof_inertia(*plain, "drive_shaft_spin") - inertia) < 1e-12,
                 "the welded rotor adds its inertia to the motor-shaft coordinate");
     auto rigid = physical();
+    rigid->physics->drive.motor_clutch = false; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; the rigid drive has no clutch shaft
     const auto rigid_plain = mdl::compile_mjcf(mdl::generate_mjcf(*rigid));
     rigid->physics->drive.rotor_inertia_kgm2 = inertia; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; -> is the loud check
     const auto rigid_model = mdl::compile_mjcf(mdl::generate_mjcf(*rigid));
@@ -378,7 +379,7 @@ void errors_and_ownership() {
     std::views::counted(first->body_mass,first->nbody)[1]+=1.;
     bt::require(std::views::counted(first->body_mass,first->nbody)[1]!=std::views::counted(second->body_mass,second->nbody)[1],"separate compilation owners do not alias mutable model arrays");
     first.reset();
-    bt::require(second->nq==26,"a model remains owned after sibling destruction");
+    bt::require(second->nq==27,"a model remains owned after sibling destruction");
     mdl::xml::Element const escaped("mujoco",{{"model","A & B < \"quoted\"\n"}});
     const auto text=mdl::xml::document(escaped);
     bt::require(text.find("A &amp; B &lt; &quot;quoted&quot;&#10;")!=std::string::npos,"XML attributes escape reserved characters and whitespace");

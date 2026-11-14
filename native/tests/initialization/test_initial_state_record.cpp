@@ -24,8 +24,8 @@ namespace {
 // environment (unsetenv keeps a missing variable absent either way).
 class RecordFlag {
 public:
-    RecordFlag() { ::setenv("BIKE_GOLDEN_RECORD", "1", 1); }
-    ~RecordFlag() { ::unsetenv("BIKE_GOLDEN_RECORD"); }
+    RecordFlag() { ::setenv("BIKE_GOLDEN_RECORD", "1", 1); } // NOLINT(concurrency-mt-unsafe) scoped in a single-threaded test process
+    ~RecordFlag() { ::unsetenv("BIKE_GOLDEN_RECORD"); } // NOLINT(concurrency-mt-unsafe) scoped in a single-threaded test process
     RecordFlag(const RecordFlag&) = delete;
     RecordFlag& operator=(const RecordFlag&) = delete;
     RecordFlag(RecordFlag&&) = delete;

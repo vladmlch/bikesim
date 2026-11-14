@@ -4,6 +4,7 @@
 #include "diag.hpp"
 
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -25,16 +26,16 @@ using bike::initialization::SetupRequest;
 // (initialization/request.cpp). A request whose top-level keys fit this set
 // takes the setup loader; any other top-level member names a research
 // request and the document goes through research::read_research_request.
-constexpr std::string_view setup_keys[] = {
-    "request_schema", "physics_file", "track_file", "model_mode",
-    "rider_variant", "speed_kph", "seed_decimal", "use_equilibrium_cache",
-    "initial_state_file", "overrides"};
+constexpr auto setup_keys = std::to_array<std::string_view>(
+    {"request_schema", "physics_file", "track_file", "model_mode",
+     "rider_variant", "speed_kph", "seed_decimal", "use_equilibrium_cache",
+     "initial_state_file", "overrides"});
 
 bool setup_request(const io::Value& document) {
     const auto& members = io::as_object(document, "request");
     return std::ranges::all_of(members, [](const auto& member) {
         return std::ranges::find(setup_keys, member.first) !=
-               std::end(setup_keys);
+               setup_keys.end();
     });
 }
 

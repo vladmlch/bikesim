@@ -52,26 +52,23 @@ struct PedelecEnv {
     std::unique_ptr<runtime::NativeRideRuntime> runtime;
     std::int64_t control_steps = 0, max_steps = 0;
     double track_length_m = 0.;
-    int root_x_dof = -1, root_x_qpos = -1;
+    int root_x_dof = -1, root_x_qpos = -1, root_pitch_qpos = -1;
     std::vector<int> cassette;
     double shift_band_min_rpm = 0., shift_band_max_rpm = 0.,
            shift_cadence_tau_s = 0.;
 };
 
-// Launch part 3a: the environment with a physics edit applied right after
-// the profile load, an explicit record decimation and capture mode (the
-// reaction channel's decimated-ride test: legacy capture keeps only every
-// decimation-th interval, accounting.cpp:764-776, so a full capture is
-// needed to see unmeasured intervals).
+namespace detail {
+
 template <typename Edit>
-[[nodiscard]] PedelecEnv environment(terrain::TrackSpec track,
-                                     double duration_s, Edit &&edit,
-                                     int record_decimation,
-                                     runtime::ResearchCaptureMode capture_mode) {
+[[nodiscard]] PedelecEnv build_environment(
+    std::string_view profile, terrain::TrackSpec track, double duration_s,
+    Edit &&edit, int record_decimation,
+    runtime::ResearchCaptureMode capture_mode, bool strict_limits) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
-    request.setup.model.physics = bike::configuration::load_physics(
-        repo_file("examples/research/viewer_physics_welded.toml"));
+    request.setup.model.physics =
+        bike::configuration::load_physics(repo_file(profile));
     std::forward<Edit>(edit)(*request.setup.model.physics);
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
@@ -82,9 +79,17 @@ template <typename Edit>
     request.experiment.duration_s = duration_s;
     request.experiment.record_decimation = record_decimation;
     request.capture_mode = capture_mode;
-    // --energy-tolerance 1e9 / --diagnostic-model-limits
-    request.experiment.maximum_energy_residual_ratio = 1e9;
-    request.experiment.stop_on_model_violation = false;
+    if (!strict_limits) {
+        // --energy-tolerance 1e9 / --diagnostic-model-limits
+        request.experiment.maximum_energy_residual_ratio = 1e9;
+        request.experiment.stop_on_model_violation = false;
+    } else {
+        bt::require(
+            request.experiment.stop_on_model_violation &&
+                request.experiment.maximum_energy_residual_ratio ==
+                    research::ExperimentConfig{}.maximum_energy_residual_ratio,
+            "launch_environment keeps strict model limits and default energy tolerance");
+    }
     request.sensors = research::SensorConfig{};
     // [research] is profile-owned now: copy the loaded physics
     // section across instead of relying on struct defaults.
@@ -132,14 +137,36 @@ template <typename Edit>
             const int root =
                 mj_name2id(stepper.model(), mjOBJ_JOINT, "root_x");
             bt::require(root >= 0, "the welded plant names its root slide");
-            env.root_x_dof = model_access::readonly_buffer(
-                stepper.model()->jnt_dofadr,
-                stepper.model()->njnt)[static_cast<std::size_t>(root)];
-            env.root_x_qpos = model_access::readonly_buffer(
-                stepper.model()->jnt_qposadr,
-                stepper.model()->njnt)[static_cast<std::size_t>(root)];
+            const int pitch =
+                mj_name2id(stepper.model(), mjOBJ_JOINT, "root_pitch");
+            bt::require(pitch >= 0, "the welded plant names its root pitch");
+            const auto dofs = model_access::readonly_buffer(
+                stepper.model()->jnt_dofadr, stepper.model()->njnt);
+            const auto qpos = model_access::readonly_buffer(
+                stepper.model()->jnt_qposadr, stepper.model()->njnt);
+            env.root_x_dof = dofs[static_cast<std::size_t>(root)];
+            env.root_x_qpos = qpos[static_cast<std::size_t>(root)];
+            env.root_pitch_qpos = qpos[static_cast<std::size_t>(pitch)];
         });
     return env;
+}
+
+} // namespace detail
+
+// Launch part 3a: the environment with a physics edit applied right after
+// the profile load, an explicit record decimation and capture mode (the
+// reaction channel's decimated-ride test: legacy capture keeps only every
+// decimation-th interval, accounting.cpp:764-776, so a full capture is
+// needed to see unmeasured intervals).
+template <typename Edit>
+[[nodiscard]] PedelecEnv environment(terrain::TrackSpec track,
+                                     double duration_s, Edit &&edit,
+                                     int record_decimation,
+                                     runtime::ResearchCaptureMode capture_mode) {
+    return detail::build_environment(
+        "examples/research/viewer_physics_welded.toml", std::move(track),
+        duration_s, std::forward<Edit>(edit), record_decimation, capture_mode,
+        false);
 }
 
 [[nodiscard]] inline PedelecEnv environment(terrain::TrackSpec track,
@@ -148,12 +175,28 @@ template <typename Edit>
                        runtime::ResearchCaptureMode::legacy);
 }
 
+// Launch part 4, task 6: strict-mode ride environment for a named profile
+// (default energy residual tolerance 0.05 and stop_on_model_violation = true).
+[[nodiscard]] inline PedelecEnv
+launch_environment(std::string_view profile, terrain::TrackSpec track,
+                   double duration_s) {
+    return detail::build_environment(
+        profile, std::move(track), duration_s, [](auto &) {}, 1,
+        runtime::ResearchCaptureMode::legacy, true);
+}
+
 [[nodiscard]] inline terrain::TrackSpec track(std::string_view knots,
-                                              double length) {
+                                              double length,
+                                              std::string_view surface) {
     return terrain::track_from_dict(terrain::parse_track_toml(
         "name = \"probe\"\nlength_m = " + std::to_string(length) +
-        "\nsurface = \"hardpack\"\ngrade_profile = { knots = " +
-        std::string(knots) + " }\n"));
+        "\nsurface = \"" + std::string(surface) +
+        "\"\ngrade_profile = { knots = " + std::string(knots) + " }\n"));
+}
+
+[[nodiscard]] inline terrain::TrackSpec track(std::string_view knots,
+                                              double length) {
+    return track(knots, length, "hardpack");
 }
 
 } // namespace launch_ride

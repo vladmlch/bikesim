@@ -333,6 +333,17 @@ bike_add_reference_test(launch_plan ENGINE
 bike_add_reference_test(launch_intent ENGINE
   SOURCES test_launch_intent.cpp LIBRARIES bike_app
   LABELS launch rider)
+# Launch part 4 — the launch rides against the approved thresholds, one
+# executable per rider type (about 26 rides of 20 s each).
+bike_add_reference_test(rider_launch_rides_normal ENGINE
+  SOURCES test_rider_launch_rides_normal.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider slow)
+bike_add_reference_test(rider_launch_rides_careful ENGINE
+  SOURCES test_rider_launch_rides_careful.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider slow)
+bike_add_reference_test(rider_launch_rides_aggressive ENGINE
+  SOURCES test_rider_launch_rides_aggressive.cpp LIBRARIES bike_app bike_validation
+  LABELS launch rider slow)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
   SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
   LABELS t52 rider slow)

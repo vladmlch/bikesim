@@ -8,6 +8,7 @@
 // asserted on the episode artifact the native runtime produces.
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
+#include "support/record_initial_state.hpp"
 #include "runtime/control.hpp"
 #include "configuration/model_config.hpp"
 #include "golden/episode.hpp"
@@ -110,6 +111,9 @@ void test_clock_rejects_invalid_durations() {
 // step, and reset returning the runtime to step 0.
 [[gnu::noinline]] void
 test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
+    bt::record_initial_state(
+        bt::oracle::root() / bt::oracle::platform() / "control_clock" /
+        "env_request" / "request.toml");
     const auto env = bike::research::make_environment(
             bt::oracle::root() / bt::oracle::platform() / "control_clock" /
                     "env_request" / "request.toml");

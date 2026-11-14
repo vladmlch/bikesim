@@ -8,6 +8,8 @@
 // capability flags.
 #include "tyre_reference_support.hpp"
 
+#include "support/record_initial_state.hpp"
+
 #include "io/json.hpp"
 #include "pneumatic/profile.hpp"
 #include "research/environment.hpp"
@@ -334,6 +336,7 @@ void set_array(io::Value::Object &o, std::string_view key,
 
 // native_distributed_tire/distributed_observations_declare_multi_contact
 [[gnu::noinline]] void test_distributed_observations_declare_multi_contact() {
+    bt::record_initial_state(bundle("env_request") / "request.toml");
     const auto env = bike::research::make_environment(
             bundle("env_request") / "request.toml");
     runtime::RideControl const command;

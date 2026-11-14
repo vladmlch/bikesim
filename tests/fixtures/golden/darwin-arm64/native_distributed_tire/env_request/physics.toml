@@ -108,7 +108,8 @@ shift_cooldown_s = 0.4
 # RU: на время переключения райдер сбрасывает усилие до 30%; мотор НЕ
 # режется — он следует за моментом райдера через свой лаг (спека S6).
 shift_cut_duration_s = 0.2
-torque_factor = 0.3
+torque_factor_larger_cog = 0.8
+torque_factor_smaller_cog = 0.3
 cadence_smoothing_tau_s = 0.35
 upshift_slip_limit_mps = 0.5
 

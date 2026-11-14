@@ -74,7 +74,7 @@
   "dtype": "|u1",
   "index": 5,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_extension_m",
+  "label": "channel_drive/bits/freehub_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 74,
@@ -88,13 +88,13 @@
   "dtype": "|u1",
   "index": 6,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_extension_rate_mps",
-  "nbytes": 16,
+  "label": "channel_drive/bits/freehub_engaged",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 90,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -102,10 +102,10 @@
   "dtype": "|u1",
   "index": 7,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_tension_n",
+  "label": "channel_drive/bits/freehub_power_w",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 106,
+  "offset": 92,
   "rtol": null,
   "shape": [
    16
@@ -116,10 +116,10 @@
   "dtype": "|u1",
   "index": 8,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_energy_j",
+  "label": "channel_drive/bits/cadence_rpm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 122,
+  "offset": 108,
   "rtol": null,
   "shape": [
    16
@@ -130,10 +130,10 @@
   "dtype": "|u1",
   "index": 9,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_dissipation_power_w",
+  "label": "channel_drive/bits/crank_rad_s",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 138,
+  "offset": 124,
   "rtol": null,
   "shape": [
    16
@@ -144,10 +144,10 @@
   "dtype": "|u1",
   "index": 10,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_power_w",
+  "label": "channel_drive/bits/drive_shaft_rad_s",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 154,
+  "offset": 140,
   "rtol": null,
   "shape": [
    16
@@ -158,10 +158,10 @@
   "dtype": "|u1",
   "index": 11,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_torque_nm",
+  "label": "channel_drive/bits/crank_phase_rad",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 170,
+  "offset": 156,
   "rtol": null,
   "shape": [
    16
@@ -172,10 +172,10 @@
   "dtype": "|u1",
   "index": 12,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_energy_j",
+  "label": "channel_drive/bits/human_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 186,
+  "offset": 172,
   "rtol": null,
   "shape": [
    16
@@ -186,13 +186,13 @@
   "dtype": "|u1",
   "index": 13,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_engaged",
-  "nbytes": 2,
+  "label": "channel_drive/bits/human_sensor_nm",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 202,
+  "offset": 188,
   "rtol": null,
   "shape": [
-   2
+   16
   ]
  },
  {
@@ -200,7 +200,7 @@
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_deflection_rad",
+  "label": "channel_drive/bits/human_setpoint_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 204,
@@ -214,13 +214,13 @@
   "dtype": "|u1",
   "index": 15,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_dissipation_power_w",
-  "nbytes": 16,
+  "label": "channel_drive/bits/human_setpoint_nm_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 220,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -228,10 +228,10 @@
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_power_w",
+  "label": "channel_drive/bits/human_command_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 236,
+  "offset": 222,
   "rtol": null,
   "shape": [
    16
@@ -242,10 +242,10 @@
   "dtype": "|u1",
   "index": 17,
   "kind": "bitwise",
-  "label": "channel_drive/bits/cadence_rpm",
+  "label": "channel_drive/bits/human_active_power_w",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 252,
+  "offset": 238,
   "rtol": null,
   "shape": [
    16
@@ -256,10 +256,10 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_rad_s",
+  "label": "channel_drive/bits/human_joint_power_w",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 268,
+  "offset": 254,
   "rtol": null,
   "shape": [
    16
@@ -270,13 +270,13 @@
   "dtype": "|u1",
   "index": 19,
   "kind": "bitwise",
-  "label": "channel_drive/bits/drive_shaft_rad_s",
-  "nbytes": 16,
+  "label": "channel_drive/bits/assist_demand_gated",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 284,
+  "offset": 270,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -284,10 +284,10 @@
   "dtype": "|u1",
   "index": 20,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_phase_rad",
+  "label": "channel_drive/bits/assist_sensor_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 300,
+  "offset": 272,
   "rtol": null,
   "shape": [
    16
@@ -298,13 +298,13 @@
   "dtype": "|u1",
   "index": 21,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_torque_nm",
-  "nbytes": 16,
+  "label": "channel_drive/bits/assist_mode",
+  "nbytes": 14,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 316,
+  "offset": 288,
   "rtol": null,
   "shape": [
-   16
+   14
   ]
  },
  {
@@ -312,10 +312,10 @@
   "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_sensor_nm",
+  "label": "channel_drive/bits/assist_gain",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 332,
+  "offset": 302,
   "rtol": null,
   "shape": [
    16
@@ -326,24 +326,10 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_setpoint_nm",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 348,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 24,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/human_setpoint_nm_present",
+  "label": "channel_drive/bits/assist_gain_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 364,
+  "offset": 318,
   "rtol": null,
   "shape": [
    2
@@ -352,15 +338,29 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 25,
+  "index": 24,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_command_nm",
-  "nbytes": 16,
+  "label": "channel_drive/bits/rider_mode",
+  "nbytes": 18,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 366,
+  "offset": 320,
   "rtol": null,
   "shape": [
-   16
+   18
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/coasting_reason",
+  "nbytes": 4,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 338,
+  "rtol": null,
+  "shape": [
+   4
   ]
  },
  {
@@ -368,13 +368,13 @@
   "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_active_power_w",
-  "nbytes": 16,
+  "label": "channel_drive/bits/coasting_reason_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 382,
+  "offset": 342,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -382,10 +382,10 @@
   "dtype": "|u1",
   "index": 27,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_joint_power_w",
+  "label": "channel_drive/bits/required_cadence_rpm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 398,
+  "offset": 344,
   "rtol": null,
   "shape": [
    16
@@ -396,13 +396,13 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_demand_gated",
-  "nbytes": 2,
+  "label": "channel_drive/bits/crank_target_phase_rad",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 414,
+  "offset": 360,
   "rtol": null,
   "shape": [
-   2
+   16
   ]
  },
  {
@@ -410,13 +410,13 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_sensor_nm",
-  "nbytes": 16,
+  "label": "channel_drive/bits/crank_target_phase_rad_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 416,
+  "offset": 376,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -424,13 +424,13 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_mode",
-  "nbytes": 14,
+  "label": "channel_drive/bits/crank_target_rate_rad_s",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 432,
+  "offset": 378,
   "rtol": null,
   "shape": [
-   14
+   16
   ]
  },
  {
@@ -438,13 +438,13 @@
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_gain",
-  "nbytes": 16,
+  "label": "channel_drive/bits/crank_target_rate_rad_s_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 446,
+  "offset": 394,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -452,66 +452,10 @@
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_gain_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 462,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rider_mode",
-  "nbytes": 18,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 464,
-  "rtol": null,
-  "shape": [
-   18
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/coasting_reason",
-  "nbytes": 4,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 482,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/coasting_reason_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 486,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/required_cadence_rpm",
+  "label": "channel_drive/bits/motor_request_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 488,
+  "offset": 396,
   "rtol": null,
   "shape": [
    16
@@ -520,12 +464,68 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
+  "index": 33,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_phase_rad",
+  "label": "channel_drive/bits/motor_setpoint_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 504,
+  "offset": 412,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_setpoint_nm_present",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 428,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 430,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm_present",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 446,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limited_request_nm",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 448,
   "rtol": null,
   "shape": [
    16
@@ -536,24 +536,10 @@
   "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_phase_rad_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 520,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 39,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_rate_rad_s",
+  "label": "channel_drive/bits/motor_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 522,
+  "offset": 464,
   "rtol": null,
   "shape": [
    16
@@ -562,12 +548,26 @@
  {
   "atol": null,
   "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_control_source",
+  "nbytes": 14,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 480,
+  "rtol": null,
+  "shape": [
+   14
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_rate_rad_s_present",
+  "label": "channel_drive/bits/safety_limited",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 538,
+  "offset": 494,
   "rtol": null,
   "shape": [
    2
@@ -578,13 +578,13 @@
   "dtype": "|u1",
   "index": 41,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_request_nm",
-  "nbytes": 16,
+  "label": "channel_drive/bits/motor_enabled",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 540,
+  "offset": 496,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -592,10 +592,10 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_setpoint_nm",
+  "label": "channel_drive/bits/motor_shaft_power_w",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 556,
+  "offset": 498,
   "rtol": null,
   "shape": [
    16
@@ -606,10 +606,10 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_setpoint_nm_present",
+  "label": "channel_drive/bits/motor_shaft_power_w_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 572,
+  "offset": 514,
   "rtol": null,
   "shape": [
    2
@@ -620,10 +620,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limit_nm",
+  "label": "channel_drive/bits/crank_clutch_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 574,
+  "offset": 516,
   "rtol": null,
   "shape": [
    16
@@ -634,10 +634,10 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limit_nm_present",
+  "label": "channel_drive/bits/crank_clutch_torque_nm_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 590,
+  "offset": 532,
   "rtol": null,
   "shape": [
    2
@@ -648,10 +648,38 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limited_request_nm",
+  "label": "channel_drive/bits/crank_clutch_engaged",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 534,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_engaged_present",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 536,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_front_teeth",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 592,
+  "offset": 538,
   "rtol": null,
   "shape": [
    16
@@ -660,9 +688,79 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 49,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_torque_nm",
+  "label": "channel_drive/bits/gear_rear_teeth",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 554,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_ratio",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 570,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_active",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 586,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_direction",
+  "nbytes": 10,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 588,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_rider_response",
+  "nbytes": 10,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 598,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_from_teeth",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 608,
@@ -674,110 +772,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_control_source",
-  "nbytes": 14,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 624,
-  "rtol": null,
-  "shape": [
-   14
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/safety_limited",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 638,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_enabled",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 640,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_shaft_power_w",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 642,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_shaft_power_w_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 658,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_engaged",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 660,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 54,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_torque_nm",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 662,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 55,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_dissipation_power_w",
+  "label": "channel_drive/bits/shift_count",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 678,
+  "offset": 624,
   "rtol": null,
   "shape": [
    16
@@ -788,10 +788,10 @@
   "dtype": "|u1",
   "index": 56,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_torque_nm",
+  "label": "channel_drive/bits/shift_time_s",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 694,
+  "offset": 640,
   "rtol": null,
   "shape": [
    16
@@ -802,10 +802,10 @@
   "dtype": "|u1",
   "index": 57,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_torque_nm_present",
+  "label": "channel_drive/bits/shift_time_s_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 710,
+  "offset": 656,
   "rtol": null,
   "shape": [
    2
@@ -816,13 +816,13 @@
   "dtype": "|u1",
   "index": 58,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_engaged",
-  "nbytes": 2,
+  "label": "channel_drive/bits/shift_torque_factor",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 712,
+  "offset": 658,
   "rtol": null,
   "shape": [
-   2
+   16
   ]
  },
  {
@@ -830,13 +830,13 @@
   "dtype": "|u1",
   "index": 59,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_engaged_present",
-  "nbytes": 2,
+  "label": "channel_drive/bits/front_brake_demand",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 714,
+  "offset": 674,
   "rtol": null,
   "shape": [
-   2
+   16
   ]
  },
  {
@@ -844,10 +844,10 @@
   "dtype": "|u1",
   "index": 60,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_dissipation_power_w",
+  "label": "channel_drive/bits/rear_brake_demand",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 716,
+  "offset": 690,
   "rtol": null,
   "shape": [
    16
@@ -858,13 +858,13 @@
   "dtype": "|u1",
   "index": 61,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_dissipation_power_w_present",
-  "nbytes": 2,
+  "label": "channel_drive/bits/rollback_brake_demand",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 732,
+  "offset": 706,
   "rtol": null,
   "shape": [
-   2
+   16
   ]
  },
  {
@@ -872,10 +872,10 @@
   "dtype": "|u1",
   "index": 62,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_front_teeth",
+  "label": "channel_drive/bits/rider_front_brake_demand",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 734,
+  "offset": 722,
   "rtol": null,
   "shape": [
    16
@@ -886,10 +886,10 @@
   "dtype": "|u1",
   "index": 63,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_rear_teeth",
+  "label": "channel_drive/bits/rider_rear_brake_demand",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 750,
+  "offset": 738,
   "rtol": null,
   "shape": [
    16
@@ -900,24 +900,10 @@
   "dtype": "|u1",
   "index": 64,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_ratio",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 766,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 65,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_active",
+  "label": "channel_drive/bits/motor_braking",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 782,
+  "offset": 754,
   "rtol": null,
   "shape": [
    2
@@ -926,15 +912,29 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 65,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_direction",
-  "nbytes": 10,
+  "label": "channel_drive/bits/front_brake_power_w",
+  "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 784,
+  "offset": 756,
   "rtol": null,
   "shape": [
-   10
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rear_brake_power_w",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 772,
+  "rtol": null,
+  "shape": [
+   16
   ]
  },
  {
@@ -942,10 +942,10 @@
   "dtype": "|u1",
   "index": 67,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_from_teeth",
+  "label": "channel_drive/bits/front_brake_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 794,
+  "offset": 788,
   "rtol": null,
   "shape": [
    16
@@ -956,10 +956,10 @@
   "dtype": "|u1",
   "index": 68,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_count",
+  "label": "channel_drive/bits/rear_brake_torque_nm",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 810,
+  "offset": 804,
   "rtol": null,
   "shape": [
    16
@@ -970,10 +970,10 @@
   "dtype": "|u1",
   "index": 69,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_time_s",
+  "label": "channel_drive/bits/transmission_phi_m",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 826,
+  "offset": 820,
   "rtol": null,
   "shape": [
    16
@@ -984,10 +984,10 @@
   "dtype": "|u1",
   "index": 70,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_time_s_present",
+  "label": "channel_drive/bits/transmission_phi_m_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 842,
+  "offset": 836,
   "rtol": null,
   "shape": [
    2
@@ -998,10 +998,10 @@
   "dtype": "|u1",
   "index": 71,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_torque_factor",
+  "label": "channel_drive/bits/transmission_boundary_m",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 844,
+  "offset": 838,
   "rtol": null,
   "shape": [
    16
@@ -1012,13 +1012,13 @@
   "dtype": "|u1",
   "index": 72,
   "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_demand",
-  "nbytes": 16,
+  "label": "channel_drive/bits/transmission_boundary_m_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 860,
+  "offset": 854,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -1026,10 +1026,10 @@
   "dtype": "|u1",
   "index": 73,
   "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_demand",
+  "label": "channel_drive/bits/transmission_gap_m",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 876,
+  "offset": 856,
   "rtol": null,
   "shape": [
    16
@@ -1040,7 +1040,49 @@
   "dtype": "|u1",
   "index": 74,
   "kind": "bitwise",
-  "label": "channel_drive/bits/rollback_brake_demand",
+  "label": "channel_drive/bits/transmission_gap_m_present",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 872,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n",
+  "nbytes": 16,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 874,
+  "rtol": null,
+  "shape": [
+   16
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n_present",
+  "nbytes": 2,
+  "node": "native_encode_columns/optional_leaf_absent_vs_null",
+  "offset": 890,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_constraint_defect_m",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 892,
@@ -1052,57 +1094,15 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 75,
+  "index": 78,
   "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_power_w",
-  "nbytes": 16,
+  "label": "channel_drive/bits/transmission_constraint_defect_m_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
   "offset": 908,
   "rtol": null,
   "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 76,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_power_w",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 924,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 77,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_torque_nm",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 940,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 78,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_torque_nm",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 956,
-  "rtol": null,
-  "shape": [
-   16
+   2
   ]
  },
  {
@@ -1110,10 +1110,10 @@
   "dtype": "|u1",
   "index": 79,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_phi_m",
+  "label": "channel_drive/bits/transmission_interval_work_j",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 972,
+  "offset": 910,
   "rtol": null,
   "shape": [
    16
@@ -1124,10 +1124,10 @@
   "dtype": "|u1",
   "index": 80,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_phi_m_present",
+  "label": "channel_drive/bits/transmission_interval_work_j_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 988,
+  "offset": 926,
   "rtol": null,
   "shape": [
    2
@@ -1138,10 +1138,10 @@
   "dtype": "|u1",
   "index": 81,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_boundary_m",
+  "label": "channel_drive/bits/transmission_reaction_error_n",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 990,
+  "offset": 928,
   "rtol": null,
   "shape": [
    16
@@ -1152,10 +1152,10 @@
   "dtype": "|u1",
   "index": 82,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_boundary_m_present",
+  "label": "channel_drive/bits/transmission_reaction_error_n_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1006,
+  "offset": 944,
   "rtol": null,
   "shape": [
    2
@@ -1166,13 +1166,13 @@
   "dtype": "|u1",
   "index": 83,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_gap_m",
-  "nbytes": 16,
+  "label": "channel_drive/bits/transmission_reference_status",
+  "nbytes": 20,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1008,
+  "offset": 946,
   "rtol": null,
   "shape": [
-   16
+   20
   ]
  },
  {
@@ -1180,10 +1180,10 @@
   "dtype": "|u1",
   "index": 84,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_gap_m_present",
+  "label": "channel_drive/bits/transmission_reference_status_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1024,
+  "offset": 966,
   "rtol": null,
   "shape": [
    2
@@ -1194,10 +1194,10 @@
   "dtype": "|u1",
   "index": 85,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_tension_n",
+  "label": "channel_drive/bits/shift_parameter_work_j",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1026,
+  "offset": 968,
   "rtol": null,
   "shape": [
    16
@@ -1208,10 +1208,10 @@
   "dtype": "|u1",
   "index": 86,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_tension_n_present",
+  "label": "channel_drive/bits/shift_parameter_work_j_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1042,
+  "offset": 984,
   "rtol": null,
   "shape": [
    2
@@ -1222,10 +1222,10 @@
   "dtype": "|u1",
   "index": 87,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_constraint_defect_m",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1044,
+  "offset": 986,
   "rtol": null,
   "shape": [
    16
@@ -1236,10 +1236,10 @@
   "dtype": "|u1",
   "index": 88,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_constraint_defect_m_present",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1060,
+  "offset": 1002,
   "rtol": null,
   "shape": [
    2
@@ -1250,10 +1250,10 @@
   "dtype": "|u1",
   "index": 89,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_interval_work_j",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
   "nbytes": 16,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1062,
+  "offset": 1004,
   "rtol": null,
   "shape": [
    16
@@ -1264,10 +1264,10 @@
   "dtype": "|u1",
   "index": 90,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_interval_work_j_present",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1078,
+  "offset": 1020,
   "rtol": null,
   "shape": [
    2
@@ -1278,13 +1278,13 @@
   "dtype": "|u1",
   "index": 91,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reaction_error_n",
-  "nbytes": 16,
+  "label": "channel_drive/bits/__drive_present",
+  "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1080,
+  "offset": 1022,
   "rtol": null,
   "shape": [
-   16
+   2
   ]
  },
  {
@@ -1292,150 +1292,10 @@
   "dtype": "|u1",
   "index": 92,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reaction_error_n_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1096,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 93,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reference_status",
-  "nbytes": 20,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1098,
-  "rtol": null,
-  "shape": [
-   20
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 94,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reference_status_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1118,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 95,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_parameter_work_j",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1120,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 96,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_parameter_work_j_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1136,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 97,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_interval_constraint_work_j",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1138,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 98,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1154,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 99,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
-  "nbytes": 16,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1156,
-  "rtol": null,
-  "shape": [
-   16
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 100,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1172,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 101,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/__drive_present",
-  "nbytes": 2,
-  "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1174,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 102,
-  "kind": "bitwise",
   "label": "channel_drive/bits/__drive_valid",
   "nbytes": 2,
   "node": "native_encode_columns/optional_leaf_absent_vs_null",
-  "offset": 1176,
+  "offset": 1024,
   "rtol": null,
   "shape": [
    2

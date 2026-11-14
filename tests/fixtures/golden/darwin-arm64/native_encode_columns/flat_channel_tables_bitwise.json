@@ -74,7 +74,7 @@
   "dtype": "|u1",
   "index": 5,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_extension_m",
+  "label": "channel_drive/bits/freehub_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 206,
@@ -88,13 +88,13 @@
   "dtype": "|u1",
   "index": 6,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_extension_rate_mps",
-  "nbytes": 48,
+  "label": "channel_drive/bits/freehub_engaged",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 254,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -102,10 +102,10 @@
   "dtype": "|u1",
   "index": 7,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_tension_n",
+  "label": "channel_drive/bits/freehub_power_w",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 302,
+  "offset": 260,
   "rtol": null,
   "shape": [
    48
@@ -116,10 +116,10 @@
   "dtype": "|u1",
   "index": 8,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_energy_j",
+  "label": "channel_drive/bits/cadence_rpm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 350,
+  "offset": 308,
   "rtol": null,
   "shape": [
    48
@@ -130,10 +130,10 @@
   "dtype": "|u1",
   "index": 9,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_dissipation_power_w",
+  "label": "channel_drive/bits/crank_rad_s",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 398,
+  "offset": 356,
   "rtol": null,
   "shape": [
    48
@@ -144,10 +144,10 @@
   "dtype": "|u1",
   "index": 10,
   "kind": "bitwise",
-  "label": "channel_drive/bits/chain_power_w",
+  "label": "channel_drive/bits/drive_shaft_rad_s",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 446,
+  "offset": 404,
   "rtol": null,
   "shape": [
    48
@@ -158,10 +158,10 @@
   "dtype": "|u1",
   "index": 11,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_torque_nm",
+  "label": "channel_drive/bits/crank_phase_rad",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 494,
+  "offset": 452,
   "rtol": null,
   "shape": [
    48
@@ -172,10 +172,10 @@
   "dtype": "|u1",
   "index": 12,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_energy_j",
+  "label": "channel_drive/bits/human_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 542,
+  "offset": 500,
   "rtol": null,
   "shape": [
    48
@@ -186,13 +186,13 @@
   "dtype": "|u1",
   "index": 13,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_engaged",
-  "nbytes": 6,
+  "label": "channel_drive/bits/human_sensor_nm",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 590,
+  "offset": 548,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -200,7 +200,7 @@
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_deflection_rad",
+  "label": "channel_drive/bits/human_setpoint_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 596,
@@ -214,13 +214,13 @@
   "dtype": "|u1",
   "index": 15,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_dissipation_power_w",
-  "nbytes": 48,
+  "label": "channel_drive/bits/human_setpoint_nm_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 644,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -228,10 +228,10 @@
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "channel_drive/bits/freehub_power_w",
+  "label": "channel_drive/bits/human_command_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 692,
+  "offset": 650,
   "rtol": null,
   "shape": [
    48
@@ -242,10 +242,10 @@
   "dtype": "|u1",
   "index": 17,
   "kind": "bitwise",
-  "label": "channel_drive/bits/cadence_rpm",
+  "label": "channel_drive/bits/human_active_power_w",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 740,
+  "offset": 698,
   "rtol": null,
   "shape": [
    48
@@ -256,10 +256,10 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_rad_s",
+  "label": "channel_drive/bits/human_joint_power_w",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 788,
+  "offset": 746,
   "rtol": null,
   "shape": [
    48
@@ -270,13 +270,13 @@
   "dtype": "|u1",
   "index": 19,
   "kind": "bitwise",
-  "label": "channel_drive/bits/drive_shaft_rad_s",
-  "nbytes": 48,
+  "label": "channel_drive/bits/assist_demand_gated",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 836,
+  "offset": 794,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -284,10 +284,10 @@
   "dtype": "|u1",
   "index": 20,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_phase_rad",
+  "label": "channel_drive/bits/assist_sensor_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 884,
+  "offset": 800,
   "rtol": null,
   "shape": [
    48
@@ -298,13 +298,13 @@
   "dtype": "|u1",
   "index": 21,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_torque_nm",
-  "nbytes": 48,
+  "label": "channel_drive/bits/assist_mode",
+  "nbytes": 42,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 932,
+  "offset": 848,
   "rtol": null,
   "shape": [
-   48
+   42
   ]
  },
  {
@@ -312,10 +312,10 @@
   "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_sensor_nm",
+  "label": "channel_drive/bits/assist_gain",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 980,
+  "offset": 890,
   "rtol": null,
   "shape": [
    48
@@ -326,24 +326,10 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_setpoint_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1028,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 24,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/human_setpoint_nm_present",
+  "label": "channel_drive/bits/assist_gain_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1076,
+  "offset": 938,
   "rtol": null,
   "shape": [
    6
@@ -352,15 +338,29 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 25,
+  "index": 24,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_command_nm",
-  "nbytes": 48,
+  "label": "channel_drive/bits/rider_mode",
+  "nbytes": 54,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1082,
+  "offset": 944,
   "rtol": null,
   "shape": [
-   48
+   54
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/coasting_reason",
+  "nbytes": 54,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 998,
+  "rtol": null,
+  "shape": [
+   54
   ]
  },
  {
@@ -368,13 +368,13 @@
   "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_active_power_w",
-  "nbytes": 48,
+  "label": "channel_drive/bits/coasting_reason_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1130,
+  "offset": 1052,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -382,10 +382,10 @@
   "dtype": "|u1",
   "index": 27,
   "kind": "bitwise",
-  "label": "channel_drive/bits/human_joint_power_w",
+  "label": "channel_drive/bits/required_cadence_rpm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1178,
+  "offset": 1058,
   "rtol": null,
   "shape": [
    48
@@ -396,13 +396,13 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_demand_gated",
-  "nbytes": 6,
+  "label": "channel_drive/bits/crank_target_phase_rad",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1226,
+  "offset": 1106,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -410,13 +410,13 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_sensor_nm",
-  "nbytes": 48,
+  "label": "channel_drive/bits/crank_target_phase_rad_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1232,
+  "offset": 1154,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -424,13 +424,13 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_mode",
-  "nbytes": 42,
+  "label": "channel_drive/bits/crank_target_rate_rad_s",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1280,
+  "offset": 1160,
   "rtol": null,
   "shape": [
-   42
+   48
   ]
  },
  {
@@ -438,13 +438,13 @@
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_gain",
-  "nbytes": 48,
+  "label": "channel_drive/bits/crank_target_rate_rad_s_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1322,
+  "offset": 1208,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -452,66 +452,10 @@
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "channel_drive/bits/assist_gain_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1370,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rider_mode",
-  "nbytes": 54,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1376,
-  "rtol": null,
-  "shape": [
-   54
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/coasting_reason",
-  "nbytes": 54,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1430,
-  "rtol": null,
-  "shape": [
-   54
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/coasting_reason_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1484,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/required_cadence_rpm",
+  "label": "channel_drive/bits/motor_request_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1490,
+  "offset": 1214,
   "rtol": null,
   "shape": [
    48
@@ -520,12 +464,68 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
+  "index": 33,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_phase_rad",
+  "label": "channel_drive/bits/motor_setpoint_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1538,
+  "offset": 1262,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_setpoint_nm_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1310,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1316,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limit_nm_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1364,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_limited_request_nm",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1370,
   "rtol": null,
   "shape": [
    48
@@ -536,24 +536,10 @@
   "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_phase_rad_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1586,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 39,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_rate_rad_s",
+  "label": "channel_drive/bits/motor_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1592,
+  "offset": 1418,
   "rtol": null,
   "shape": [
    48
@@ -562,12 +548,26 @@
  {
   "atol": null,
   "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/motor_control_source",
+  "nbytes": 42,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1466,
+  "rtol": null,
+  "shape": [
+   42
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_target_rate_rad_s_present",
+  "label": "channel_drive/bits/safety_limited",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1640,
+  "offset": 1508,
   "rtol": null,
   "shape": [
    6
@@ -578,13 +578,13 @@
   "dtype": "|u1",
   "index": 41,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_request_nm",
-  "nbytes": 48,
+  "label": "channel_drive/bits/motor_enabled",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1646,
+  "offset": 1514,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -592,10 +592,10 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_setpoint_nm",
+  "label": "channel_drive/bits/motor_shaft_power_w",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1694,
+  "offset": 1520,
   "rtol": null,
   "shape": [
    48
@@ -606,10 +606,10 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_setpoint_nm_present",
+  "label": "channel_drive/bits/motor_shaft_power_w_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1742,
+  "offset": 1568,
   "rtol": null,
   "shape": [
    6
@@ -620,10 +620,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limit_nm",
+  "label": "channel_drive/bits/crank_clutch_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1748,
+  "offset": 1574,
   "rtol": null,
   "shape": [
    48
@@ -634,10 +634,10 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limit_nm_present",
+  "label": "channel_drive/bits/crank_clutch_torque_nm_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1796,
+  "offset": 1622,
   "rtol": null,
   "shape": [
    6
@@ -648,10 +648,38 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_limited_request_nm",
+  "label": "channel_drive/bits/crank_clutch_engaged",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1628,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/crank_clutch_engaged_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1634,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_front_teeth",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1802,
+  "offset": 1640,
   "rtol": null,
   "shape": [
    48
@@ -660,9 +688,79 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 49,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_torque_nm",
+  "label": "channel_drive/bits/gear_rear_teeth",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1688,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/gear_ratio",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1736,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_active",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1784,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_direction",
+  "nbytes": 30,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1790,
+  "rtol": null,
+  "shape": [
+   30
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_rider_response",
+  "nbytes": 30,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 1820,
+  "rtol": null,
+  "shape": [
+   30
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/shift_from_teeth",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 1850,
@@ -674,110 +772,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_control_source",
-  "nbytes": 42,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1898,
-  "rtol": null,
-  "shape": [
-   42
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/safety_limited",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1940,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_enabled",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1946,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_shaft_power_w",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 1952,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_shaft_power_w_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2000,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_engaged",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2006,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 54,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_torque_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2012,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 55,
   "kind": "bitwise",
-  "label": "channel_drive/bits/motor_freewheel_dissipation_power_w",
+  "label": "channel_drive/bits/shift_count",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2060,
+  "offset": 1898,
   "rtol": null,
   "shape": [
    48
@@ -788,10 +788,10 @@
   "dtype": "|u1",
   "index": 56,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_torque_nm",
+  "label": "channel_drive/bits/shift_time_s",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2108,
+  "offset": 1946,
   "rtol": null,
   "shape": [
    48
@@ -802,10 +802,10 @@
   "dtype": "|u1",
   "index": 57,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_torque_nm_present",
+  "label": "channel_drive/bits/shift_time_s_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2156,
+  "offset": 1994,
   "rtol": null,
   "shape": [
    6
@@ -816,13 +816,13 @@
   "dtype": "|u1",
   "index": 58,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_engaged",
-  "nbytes": 6,
+  "label": "channel_drive/bits/shift_torque_factor",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2162,
+  "offset": 2000,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -830,13 +830,13 @@
   "dtype": "|u1",
   "index": 59,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_engaged_present",
-  "nbytes": 6,
+  "label": "channel_drive/bits/front_brake_demand",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2168,
+  "offset": 2048,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -844,10 +844,10 @@
   "dtype": "|u1",
   "index": 60,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_dissipation_power_w",
+  "label": "channel_drive/bits/rear_brake_demand",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2174,
+  "offset": 2096,
   "rtol": null,
   "shape": [
    48
@@ -858,13 +858,13 @@
   "dtype": "|u1",
   "index": 61,
   "kind": "bitwise",
-  "label": "channel_drive/bits/crank_clutch_dissipation_power_w_present",
-  "nbytes": 6,
+  "label": "channel_drive/bits/rollback_brake_demand",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2222,
+  "offset": 2144,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -872,10 +872,10 @@
   "dtype": "|u1",
   "index": 62,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_front_teeth",
+  "label": "channel_drive/bits/rider_front_brake_demand",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2228,
+  "offset": 2192,
   "rtol": null,
   "shape": [
    48
@@ -886,10 +886,10 @@
   "dtype": "|u1",
   "index": 63,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_rear_teeth",
+  "label": "channel_drive/bits/rider_rear_brake_demand",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2276,
+  "offset": 2240,
   "rtol": null,
   "shape": [
    48
@@ -900,24 +900,10 @@
   "dtype": "|u1",
   "index": 64,
   "kind": "bitwise",
-  "label": "channel_drive/bits/gear_ratio",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2324,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 65,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_active",
+  "label": "channel_drive/bits/motor_braking",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2372,
+  "offset": 2288,
   "rtol": null,
   "shape": [
    6
@@ -926,15 +912,29 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 65,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_direction",
-  "nbytes": 30,
+  "label": "channel_drive/bits/front_brake_power_w",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2378,
+  "offset": 2294,
   "rtol": null,
   "shape": [
-   30
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/rear_brake_power_w",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 2342,
+  "rtol": null,
+  "shape": [
+   48
   ]
  },
  {
@@ -942,10 +942,10 @@
   "dtype": "|u1",
   "index": 67,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_from_teeth",
+  "label": "channel_drive/bits/front_brake_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2408,
+  "offset": 2390,
   "rtol": null,
   "shape": [
    48
@@ -956,10 +956,10 @@
   "dtype": "|u1",
   "index": 68,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_count",
+  "label": "channel_drive/bits/rear_brake_torque_nm",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2456,
+  "offset": 2438,
   "rtol": null,
   "shape": [
    48
@@ -970,10 +970,10 @@
   "dtype": "|u1",
   "index": 69,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_time_s",
+  "label": "channel_drive/bits/transmission_phi_m",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2504,
+  "offset": 2486,
   "rtol": null,
   "shape": [
    48
@@ -984,10 +984,10 @@
   "dtype": "|u1",
   "index": 70,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_time_s_present",
+  "label": "channel_drive/bits/transmission_phi_m_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2552,
+  "offset": 2534,
   "rtol": null,
   "shape": [
    6
@@ -998,10 +998,10 @@
   "dtype": "|u1",
   "index": 71,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_torque_factor",
+  "label": "channel_drive/bits/transmission_boundary_m",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2558,
+  "offset": 2540,
   "rtol": null,
   "shape": [
    48
@@ -1012,13 +1012,13 @@
   "dtype": "|u1",
   "index": 72,
   "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_demand",
-  "nbytes": 48,
+  "label": "channel_drive/bits/transmission_boundary_m_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2606,
+  "offset": 2588,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -1026,10 +1026,10 @@
   "dtype": "|u1",
   "index": 73,
   "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_demand",
+  "label": "channel_drive/bits/transmission_gap_m",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2654,
+  "offset": 2594,
   "rtol": null,
   "shape": [
    48
@@ -1040,7 +1040,49 @@
   "dtype": "|u1",
   "index": 74,
   "kind": "bitwise",
-  "label": "channel_drive/bits/rollback_brake_demand",
+  "label": "channel_drive/bits/transmission_gap_m_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 2642,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n",
+  "nbytes": 48,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 2648,
+  "rtol": null,
+  "shape": [
+   48
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_tension_n_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 2696,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/transmission_constraint_defect_m",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 2702,
@@ -1052,57 +1094,15 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 75,
+  "index": 78,
   "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_power_w",
-  "nbytes": 48,
+  "label": "channel_drive/bits/transmission_constraint_defect_m_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
   "offset": 2750,
   "rtol": null,
   "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 76,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_power_w",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2798,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 77,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/front_brake_torque_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2846,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 78,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/rear_brake_torque_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2894,
-  "rtol": null,
-  "shape": [
-   48
+   6
   ]
  },
  {
@@ -1110,10 +1110,10 @@
   "dtype": "|u1",
   "index": 79,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_phi_m",
+  "label": "channel_drive/bits/transmission_interval_work_j",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2942,
+  "offset": 2756,
   "rtol": null,
   "shape": [
    48
@@ -1124,10 +1124,10 @@
   "dtype": "|u1",
   "index": 80,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_phi_m_present",
+  "label": "channel_drive/bits/transmission_interval_work_j_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2990,
+  "offset": 2804,
   "rtol": null,
   "shape": [
    6
@@ -1138,10 +1138,10 @@
   "dtype": "|u1",
   "index": 81,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_boundary_m",
+  "label": "channel_drive/bits/transmission_reaction_error_n",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 2996,
+  "offset": 2810,
   "rtol": null,
   "shape": [
    48
@@ -1152,10 +1152,10 @@
   "dtype": "|u1",
   "index": 82,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_boundary_m_present",
+  "label": "channel_drive/bits/transmission_reaction_error_n_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3044,
+  "offset": 2858,
   "rtol": null,
   "shape": [
    6
@@ -1166,13 +1166,13 @@
   "dtype": "|u1",
   "index": 83,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_gap_m",
-  "nbytes": 48,
+  "label": "channel_drive/bits/transmission_reference_status",
+  "nbytes": 60,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3050,
+  "offset": 2864,
   "rtol": null,
   "shape": [
-   48
+   60
   ]
  },
  {
@@ -1180,10 +1180,10 @@
   "dtype": "|u1",
   "index": 84,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_gap_m_present",
+  "label": "channel_drive/bits/transmission_reference_status_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3098,
+  "offset": 2924,
   "rtol": null,
   "shape": [
    6
@@ -1194,10 +1194,10 @@
   "dtype": "|u1",
   "index": 85,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_tension_n",
+  "label": "channel_drive/bits/shift_parameter_work_j",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3104,
+  "offset": 2930,
   "rtol": null,
   "shape": [
    48
@@ -1208,10 +1208,10 @@
   "dtype": "|u1",
   "index": 86,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_tension_n_present",
+  "label": "channel_drive/bits/shift_parameter_work_j_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3152,
+  "offset": 2978,
   "rtol": null,
   "shape": [
    6
@@ -1222,10 +1222,10 @@
   "dtype": "|u1",
   "index": 87,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_constraint_defect_m",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3158,
+  "offset": 2984,
   "rtol": null,
   "shape": [
    48
@@ -1236,10 +1236,10 @@
   "dtype": "|u1",
   "index": 88,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_constraint_defect_m_present",
+  "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3206,
+  "offset": 3032,
   "rtol": null,
   "shape": [
    6
@@ -1250,10 +1250,10 @@
   "dtype": "|u1",
   "index": 89,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_interval_work_j",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3212,
+  "offset": 3038,
   "rtol": null,
   "shape": [
    48
@@ -1264,10 +1264,10 @@
   "dtype": "|u1",
   "index": 90,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_interval_work_j_present",
+  "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3260,
+  "offset": 3086,
   "rtol": null,
   "shape": [
    6
@@ -1278,10 +1278,52 @@
   "dtype": "|u1",
   "index": 91,
   "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reaction_error_n",
+  "label": "channel_drive/bits/__drive_present",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 3092,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "channel_drive/bits/__drive_valid",
+  "nbytes": 6,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 3098,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<i8",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "channel_sensors/rows",
+  "nbytes": 8,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 3104,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/episode_id",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3266,
+  "offset": 3112,
   "rtol": null,
   "shape": [
    48
@@ -1290,54 +1332,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reaction_error_n_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3314,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 93,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reference_status",
-  "nbytes": 60,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3320,
-  "rtol": null,
-  "shape": [
-   60
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 94,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/transmission_reference_status_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3380,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 95,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_parameter_work_j",
+  "label": "channel_sensors/bits/interval_id",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3386,
+  "offset": 3160,
   "rtol": null,
   "shape": [
    48
@@ -1348,13 +1348,13 @@
   "dtype": "|u1",
   "index": 96,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_parameter_work_j_present",
-  "nbytes": 6,
+  "label": "channel_sensors/bits/frame_specific_force_body_mps2",
+  "nbytes": 173,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3434,
+  "offset": 3208,
   "rtol": null,
   "shape": [
-   6
+   173
   ]
  },
  {
@@ -1362,10 +1362,24 @@
   "dtype": "|u1",
   "index": 97,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_interval_constraint_work_j",
+  "label": "channel_sensors/bits/frame_gyro_body_rad_s",
+  "nbytes": 173,
+  "node": "native_encode_columns/flat_channel_tables_bitwise",
+  "offset": 3381,
+  "rtol": null,
+  "shape": [
+   173
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "channel_sensors/bits/encoder_front_wheel_rad_s",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3440,
+  "offset": 3554,
   "rtol": null,
   "shape": [
    48
@@ -1374,26 +1388,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 98,
-  "kind": "bitwise",
-  "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3488,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 99,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
+  "label": "channel_sensors/bits/encoder_rear_wheel_rad_s",
   "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3494,
+  "offset": 3602,
   "rtol": null,
   "shape": [
    48
@@ -1404,13 +1404,13 @@
   "dtype": "|u1",
   "index": 100,
   "kind": "bitwise",
-  "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
-  "nbytes": 6,
+  "label": "channel_sensors/bits/encoder_crank_rad_s",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3542,
+  "offset": 3650,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -1418,13 +1418,13 @@
   "dtype": "|u1",
   "index": 101,
   "kind": "bitwise",
-  "label": "channel_drive/bits/__drive_present",
-  "nbytes": 6,
+  "label": "channel_sensors/bits/motor_torque_nm",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3548,
+  "offset": 3698,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
@@ -1432,27 +1432,27 @@
   "dtype": "|u1",
   "index": 102,
   "kind": "bitwise",
-  "label": "channel_drive/bits/__drive_valid",
-  "nbytes": 6,
+  "label": "channel_sensors/bits/human_torque_nm",
+  "nbytes": 48,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3554,
+  "offset": 3746,
   "rtol": null,
   "shape": [
-   6
+   48
   ]
  },
  {
   "atol": null,
-  "dtype": "<i8",
+  "dtype": "|u1",
   "index": 103,
   "kind": "bitwise",
-  "label": "channel_sensors/rows",
-  "nbytes": 8,
+  "label": "channel_sensors/bits/__sensors_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3560,
+  "offset": 3794,
   "rtol": null,
   "shape": [
-   1
+   6
   ]
  },
  {
@@ -1460,13 +1460,13 @@
   "dtype": "|u1",
   "index": 104,
   "kind": "bitwise",
-  "label": "channel_sensors/bits/episode_id",
-  "nbytes": 48,
+  "label": "channel_sensors/bits/__sensors_valid",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3568,
+  "offset": 3800,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -1474,13 +1474,13 @@
   "dtype": "|u1",
   "index": 105,
   "kind": "bitwise",
-  "label": "channel_sensors/bits/interval_id",
-  "nbytes": 48,
+  "label": "channel_sensors/bits/__sensors.encoders_rad_s_present",
+  "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3616,
+  "offset": 3806,
   "rtol": null,
   "shape": [
-   48
+   6
   ]
  },
  {
@@ -1488,150 +1488,10 @@
   "dtype": "|u1",
   "index": 106,
   "kind": "bitwise",
-  "label": "channel_sensors/bits/frame_specific_force_body_mps2",
-  "nbytes": 173,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3664,
-  "rtol": null,
-  "shape": [
-   173
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 107,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/frame_gyro_body_rad_s",
-  "nbytes": 173,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 3837,
-  "rtol": null,
-  "shape": [
-   173
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 108,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/encoder_front_wheel_rad_s",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4010,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 109,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/encoder_rear_wheel_rad_s",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4058,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 110,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/encoder_crank_rad_s",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4106,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 111,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/motor_torque_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4154,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 112,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/human_torque_nm",
-  "nbytes": 48,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4202,
-  "rtol": null,
-  "shape": [
-   48
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 113,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/__sensors_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4250,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 114,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/__sensors_valid",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4256,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 115,
-  "kind": "bitwise",
-  "label": "channel_sensors/bits/__sensors.encoders_rad_s_present",
-  "nbytes": 6,
-  "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4262,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 116,
-  "kind": "bitwise",
   "label": "channel_sensors/bits/__sensors.encoders_rad_s_valid",
   "nbytes": 6,
   "node": "native_encode_columns/flat_channel_tables_bitwise",
-  "offset": 4268,
+  "offset": 3812,
   "rtol": null,
   "shape": [
    6

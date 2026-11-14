@@ -183,16 +183,16 @@
  },
  {
   "atol": null,
-  "dtype": "<i8",
+  "dtype": "|u1",
   "index": 13,
   "kind": "bitwise",
-  "label": "applied/1/rows",
-  "nbytes": 8,
+  "label": "applied/0/bits/rider_front_brake_demand",
+  "nbytes": 16,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
   "offset": 282,
   "rtol": null,
   "shape": [
-   1
+   16
   ]
  },
  {
@@ -200,13 +200,13 @@
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "applied/1/bits/episode_id",
-  "nbytes": 8,
+  "label": "applied/0/bits/rider_front_brake_demand_present",
+  "nbytes": 2,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 290,
+  "offset": 298,
   "rtol": null,
   "shape": [
-   8
+   2
   ]
  },
  {
@@ -214,13 +214,13 @@
   "dtype": "|u1",
   "index": 15,
   "kind": "bitwise",
-  "label": "applied/1/bits/application_id",
-  "nbytes": 8,
+  "label": "applied/0/bits/rider_rear_brake_demand",
+  "nbytes": 16,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 298,
+  "offset": 300,
   "rtol": null,
   "shape": [
-   8
+   16
   ]
  },
  {
@@ -228,13 +228,13 @@
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "applied/1/bits/time_s",
-  "nbytes": 8,
+  "label": "applied/0/bits/rider_rear_brake_demand_present",
+  "nbytes": 2,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 306,
+  "offset": 316,
   "rtol": null,
   "shape": [
-   8
+   2
   ]
  },
  {
@@ -242,13 +242,13 @@
   "dtype": "|u1",
   "index": 17,
   "kind": "bitwise",
-  "label": "applied/1/bits/step",
-  "nbytes": 8,
+  "label": "applied/0/bits/motor_braking",
+  "nbytes": 2,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 314,
+  "offset": 318,
   "rtol": null,
   "shape": [
-   8
+   2
   ]
  },
  {
@@ -256,38 +256,24 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "applied/1/bits/control",
-  "nbytes": 88,
+  "label": "applied/0/bits/motor_braking_present",
+  "nbytes": 2,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 322,
+  "offset": 320,
   "rtol": null,
   "shape": [
-   88
+   2
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<i8",
   "index": 19,
   "kind": "bitwise",
-  "label": "applied/1/bits/front_brake_demand",
+  "label": "applied/1/rows",
   "nbytes": 8,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 410,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 20,
-  "kind": "bitwise",
-  "label": "applied/1/bits/front_brake_demand_present",
-  "nbytes": 1,
-  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 418,
+  "offset": 322,
   "rtol": null,
   "shape": [
    1
@@ -296,12 +282,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 21,
+  "index": 20,
   "kind": "bitwise",
-  "label": "applied/1/bits/rear_brake_demand",
+  "label": "applied/1/bits/episode_id",
   "nbytes": 8,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 419,
+  "offset": 330,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "applied/1/bits/application_id",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 338,
   "rtol": null,
   "shape": [
    8
@@ -312,13 +312,13 @@
   "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "applied/1/bits/rear_brake_demand_present",
-  "nbytes": 1,
+  "label": "applied/1/bits/time_s",
+  "nbytes": 8,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 427,
+  "offset": 346,
   "rtol": null,
   "shape": [
-   1
+   8
   ]
  },
  {
@@ -326,10 +326,10 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "applied/1/bits/rollback_brake_demand",
+  "label": "applied/1/bits/step",
   "nbytes": 8,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 428,
+  "offset": 354,
   "rtol": null,
   "shape": [
    8
@@ -340,10 +340,178 @@
   "dtype": "|u1",
   "index": 24,
   "kind": "bitwise",
+  "label": "applied/1/bits/control",
+  "nbytes": 88,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 362,
+  "rtol": null,
+  "shape": [
+   88
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "applied/1/bits/front_brake_demand",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 450,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "applied/1/bits/front_brake_demand_present",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 458,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rear_brake_demand",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 459,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rear_brake_demand_present",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 467,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rollback_brake_demand",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 468,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 30,
+  "kind": "bitwise",
   "label": "applied/1/bits/rollback_brake_demand_present",
   "nbytes": 1,
   "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
-  "offset": 436,
+  "offset": 476,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rider_front_brake_demand",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 477,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rider_front_brake_demand_present",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 485,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rider_rear_brake_demand",
+  "nbytes": 8,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 486,
+  "rtol": null,
+  "shape": [
+   8
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "applied/1/bits/rider_rear_brake_demand_present",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 494,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "applied/1/bits/motor_braking",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 495,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "applied/1/bits/motor_braking_present",
+  "nbytes": 1,
+  "node": "native_encode_columns/applied_rows_bitwise_vs_python_mirror",
+  "offset": 496,
   "rtol": null,
   "shape": [
    1

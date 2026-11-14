@@ -130,13 +130,13 @@
   "dtype": "|u1",
   "index": 9,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_control",
-  "nbytes": 44,
+  "label": "channel_rider/bits/front_pedal_press_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 1231,
   "rtol": null,
   "shape": [
-   44
+   26
   ]
  },
  {
@@ -144,10 +144,10 @@
   "dtype": "|u1",
   "index": 10,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_control_present",
+  "label": "channel_rider/bits/front_pedal_press_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1275,
+  "offset": 1257,
   "rtol": null,
   "shape": [
    3
@@ -158,13 +158,13 @@
   "dtype": "|u1",
   "index": 11,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_allocation",
-  "nbytes": 104,
+  "label": "channel_rider/bits/front_pedal_shear_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1278,
+  "offset": 1260,
   "rtol": null,
   "shape": [
-   104
+   26
   ]
  },
  {
@@ -172,10 +172,10 @@
   "dtype": "|u1",
   "index": 12,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_allocation_present",
+  "label": "channel_rider/bits/front_pedal_shear_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1382,
+  "offset": 1286,
   "rtol": null,
   "shape": [
    3
@@ -186,13 +186,13 @@
   "dtype": "|u1",
   "index": 13,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_ik_saturation",
-  "nbytes": 20,
+  "label": "channel_rider/bits/rear_pedal_press_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1385,
+  "offset": 1289,
   "rtol": null,
   "shape": [
-   20
+   26
   ]
  },
  {
@@ -200,10 +200,10 @@
   "dtype": "|u1",
   "index": 14,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_ik_saturation_present",
+  "label": "channel_rider/bits/rear_pedal_press_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1405,
+  "offset": 1315,
   "rtol": null,
   "shape": [
    3
@@ -214,13 +214,13 @@
   "dtype": "|u1",
   "index": 15,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_support_targets",
-  "nbytes": 688,
+  "label": "channel_rider/bits/rear_pedal_shear_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 1408,
+  "offset": 1318,
   "rtol": null,
   "shape": [
-   688
+   26
   ]
  },
  {
@@ -228,10 +228,10 @@
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_support_targets_present",
+  "label": "channel_rider/bits/rear_pedal_shear_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2096,
+  "offset": 1344,
   "rtol": null,
   "shape": [
    3
@@ -242,13 +242,13 @@
   "dtype": "|u1",
   "index": 17,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_intent",
-  "nbytes": 144,
+  "label": "channel_rider/bits/saddle_support_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2099,
+  "offset": 1347,
   "rtol": null,
   "shape": [
-   144
+   26
   ]
  },
  {
@@ -256,10 +256,10 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_intent_present",
+  "label": "channel_rider/bits/saddle_support_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2243,
+  "offset": 1373,
   "rtol": null,
   "shape": [
    3
@@ -270,13 +270,13 @@
   "dtype": "|u1",
   "index": 19,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_torques",
-  "nbytes": 20,
+  "label": "channel_rider/bits/saddle_shear_n",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2246,
+  "offset": 1376,
   "rtol": null,
   "shape": [
-   20
+   26
   ]
  },
  {
@@ -284,10 +284,10 @@
   "dtype": "|u1",
   "index": 20,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_torques_present",
+  "label": "channel_rider/bits/saddle_shear_n_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2266,
+  "offset": 1402,
   "rtol": null,
   "shape": [
    3
@@ -298,13 +298,13 @@
   "dtype": "|u1",
   "index": 21,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_capacity_nm",
-  "nbytes": 20,
+  "label": "channel_rider/bits/rider_control",
+  "nbytes": 44,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2269,
+  "offset": 1405,
   "rtol": null,
   "shape": [
-   20
+   44
   ]
  },
  {
@@ -312,10 +312,10 @@
   "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_capacity_nm_present",
+  "label": "channel_rider/bits/rider_control_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2289,
+  "offset": 1449,
   "rtol": null,
   "shape": [
    3
@@ -326,13 +326,13 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_lean_limit_rad",
-  "nbytes": 26,
+  "label": "channel_rider/bits/rider_allocation",
+  "nbytes": 104,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2292,
+  "offset": 1452,
   "rtol": null,
   "shape": [
-   26
+   104
   ]
  },
  {
@@ -340,10 +340,10 @@
   "dtype": "|u1",
   "index": 24,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_lean_limit_rad_present",
+  "label": "channel_rider/bits/rider_allocation_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2318,
+  "offset": 1556,
   "rtol": null,
   "shape": [
    3
@@ -354,13 +354,13 @@
   "dtype": "|u1",
   "index": 25,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_balance",
-  "nbytes": 113,
+  "label": "channel_rider/bits/rider_ik_saturation",
+  "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2321,
+  "offset": 1559,
   "rtol": null,
   "shape": [
-   113
+   20
   ]
  },
  {
@@ -368,10 +368,10 @@
   "dtype": "|u1",
   "index": 26,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_balance_present",
+  "label": "channel_rider/bits/rider_ik_saturation_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2434,
+  "offset": 1579,
   "rtol": null,
   "shape": [
    3
@@ -382,13 +382,13 @@
   "dtype": "|u1",
   "index": 27,
   "kind": "bitwise",
-  "label": "channel_rider/bits/attachment_samples",
-  "nbytes": 27,
+  "label": "channel_rider/bits/rider_support_targets",
+  "nbytes": 688,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2437,
+  "offset": 1582,
   "rtol": null,
   "shape": [
-   27
+   688
   ]
  },
  {
@@ -396,10 +396,10 @@
   "dtype": "|u1",
   "index": 28,
   "kind": "bitwise",
-  "label": "channel_rider/bits/attachment_samples_present",
+  "label": "channel_rider/bits/rider_support_targets_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2464,
+  "offset": 2270,
   "rtol": null,
   "shape": [
    3
@@ -410,13 +410,13 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_request_nm",
-  "nbytes": 20,
+  "label": "channel_rider/bits/rider_intent",
+  "nbytes": 144,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2467,
+  "offset": 2273,
   "rtol": null,
   "shape": [
-   20
+   144
   ]
  },
  {
@@ -424,10 +424,10 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_request_nm_present",
+  "label": "channel_rider/bits/rider_intent_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2487,
+  "offset": 2417,
   "rtol": null,
   "shape": [
    3
@@ -438,10 +438,10 @@
   "dtype": "|u1",
   "index": 31,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_delivered_nm",
+  "label": "channel_rider/bits/rider_joint_torques",
   "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2490,
+  "offset": 2420,
   "rtol": null,
   "shape": [
    20
@@ -452,10 +452,10 @@
   "dtype": "|u1",
   "index": 32,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_delivered_nm_present",
+  "label": "channel_rider/bits/rider_joint_torques_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2510,
+  "offset": 2440,
   "rtol": null,
   "shape": [
    3
@@ -466,10 +466,10 @@
   "dtype": "|u1",
   "index": 33,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_positive_power_w",
+  "label": "channel_rider/bits/rider_joint_capacity_nm",
   "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2513,
+  "offset": 2443,
   "rtol": null,
   "shape": [
    20
@@ -480,10 +480,10 @@
   "dtype": "|u1",
   "index": 34,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_positive_power_w_present",
+  "label": "channel_rider/bits/rider_joint_capacity_nm_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2533,
+  "offset": 2463,
   "rtol": null,
   "shape": [
    3
@@ -494,10 +494,10 @@
   "dtype": "|u1",
   "index": 35,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_power_w",
+  "label": "channel_rider/bits/rider_lean_limit_rad",
   "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2536,
+  "offset": 2466,
   "rtol": null,
   "shape": [
    26
@@ -508,10 +508,10 @@
   "dtype": "|u1",
   "index": 36,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_power_w_present",
+  "label": "channel_rider/bits/rider_lean_limit_rad_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2562,
+  "offset": 2492,
   "rtol": null,
   "shape": [
    3
@@ -522,13 +522,13 @@
   "dtype": "|u1",
   "index": 37,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_work_step_j",
-  "nbytes": 26,
+  "label": "channel_rider/bits/rider_balance",
+  "nbytes": 113,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2565,
+  "offset": 2495,
   "rtol": null,
   "shape": [
-   26
+   113
   ]
  },
  {
@@ -536,10 +536,10 @@
   "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_positive_work_step_j_present",
+  "label": "channel_rider/bits/rider_balance_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2591,
+  "offset": 2608,
   "rtol": null,
   "shape": [
    3
@@ -550,13 +550,13 @@
   "dtype": "|u1",
   "index": 39,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_activation_saturated",
-  "nbytes": 5,
+  "label": "channel_rider/bits/attachment_samples",
+  "nbytes": 27,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2594,
+  "offset": 2611,
   "rtol": null,
   "shape": [
-   5
+   27
   ]
  },
  {
@@ -564,10 +564,10 @@
   "dtype": "|u1",
   "index": 40,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_activation_saturated_present",
+  "label": "channel_rider/bits/attachment_samples_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2599,
+  "offset": 2638,
   "rtol": null,
   "shape": [
    3
@@ -578,13 +578,13 @@
   "dtype": "|u1",
   "index": 41,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_limited",
-  "nbytes": 19,
+  "label": "channel_rider/bits/rider_active_request_nm",
+  "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2602,
+  "offset": 2641,
   "rtol": null,
   "shape": [
-   19
+   20
   ]
  },
  {
@@ -592,10 +592,10 @@
   "dtype": "|u1",
   "index": 42,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_limited_present",
+  "label": "channel_rider/bits/rider_active_request_nm_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2621,
+  "offset": 2661,
   "rtol": null,
   "shape": [
    3
@@ -606,13 +606,13 @@
   "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_violations",
-  "nbytes": 19,
+  "label": "channel_rider/bits/rider_active_delivered_nm",
+  "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2624,
+  "offset": 2664,
   "rtol": null,
   "shape": [
-   19
+   20
   ]
  },
  {
@@ -620,10 +620,10 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_strength_violations_present",
+  "label": "channel_rider/bits/rider_active_delivered_nm_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2643,
+  "offset": 2684,
   "rtol": null,
   "shape": [
    3
@@ -634,13 +634,13 @@
   "dtype": "|u1",
   "index": 45,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_power_violations",
-  "nbytes": 19,
+  "label": "channel_rider/bits/rider_joint_positive_power_w",
+  "nbytes": 20,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2646,
+  "offset": 2687,
   "rtol": null,
   "shape": [
-   19
+   20
   ]
  },
  {
@@ -648,10 +648,10 @@
   "dtype": "|u1",
   "index": 46,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_power_violations_present",
+  "label": "channel_rider/bits/rider_joint_positive_power_w_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2665,
+  "offset": 2707,
   "rtol": null,
   "shape": [
    3
@@ -662,13 +662,13 @@
   "dtype": "|u1",
   "index": 47,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_speed_violations",
-  "nbytes": 19,
+  "label": "channel_rider/bits/rider_positive_power_w",
+  "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2668,
+  "offset": 2710,
   "rtol": null,
   "shape": [
-   19
+   26
   ]
  },
  {
@@ -676,10 +676,10 @@
   "dtype": "|u1",
   "index": 48,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_joint_speed_violations_present",
+  "label": "channel_rider/bits/rider_positive_power_w_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2687,
+  "offset": 2736,
   "rtol": null,
   "shape": [
    3
@@ -690,38 +690,10 @@
   "dtype": "|u1",
   "index": 49,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_budget_exceeded",
-  "nbytes": 5,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2690,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2695,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_positive_power_limit_w",
+  "label": "channel_rider/bits/rider_positive_work_step_j",
   "nbytes": 26,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2698,
+  "offset": 2739,
   "rtol": null,
   "shape": [
    26
@@ -730,191 +702,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 50,
   "kind": "bitwise",
-  "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2724,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_observation",
-  "nbytes": 5,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2727,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 54,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/rider_effort_observation_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2732,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 55,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__attachment_samples_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2735,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 56,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__attachment_samples_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2738,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 57,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2741,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 58,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2744,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 59,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_activation_saturated_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2747,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 60,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_activation_saturated_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2750,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 61,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_delivered_nm_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2753,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 62,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2756,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 63,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2759,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 64,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2762,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 65,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_request_nm_present",
+  "label": "channel_rider/bits/rider_positive_work_step_j_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2765,
@@ -926,26 +716,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 51,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_active_request_nm_valid",
-  "nbytes": 3,
+  "label": "channel_rider/bits/rider_activation_saturated",
+  "nbytes": 5,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2768,
   "rtol": null,
   "shape": [
-   3
+   5
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 52,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_allocation_present",
+  "label": "channel_rider/bits/rider_activation_saturated_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2771,
+  "offset": 2773,
   "rtol": null,
   "shape": [
    3
@@ -954,107 +744,23 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 68,
+  "index": 53,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_allocation_valid",
-  "nbytes": 3,
+  "label": "channel_rider/bits/rider_strength_limited",
+  "nbytes": 19,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2774,
+  "offset": 2776,
   "rtol": null,
   "shape": [
-   3
+   19
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 69,
+  "index": 54,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_balance_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2777,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 70,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_balance_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2780,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 71,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_control_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2783,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 72,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_control_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2786,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 73,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2789,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 74,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2792,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 75,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_observation_present",
+  "label": "channel_rider/bits/rider_strength_limited_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2795,
@@ -1066,26 +772,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 76,
+  "index": 55,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_effort_observation_valid",
-  "nbytes": 3,
+  "label": "channel_rider/bits/rider_strength_violations",
+  "nbytes": 19,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2798,
   "rtol": null,
   "shape": [
-   3
+   19
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 77,
+  "index": 56,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_ik_saturation_present",
+  "label": "channel_rider/bits/rider_strength_violations_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2801,
+  "offset": 2817,
   "rtol": null,
   "shape": [
    3
@@ -1094,12 +800,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 78,
+  "index": 57,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_ik_saturation_valid",
+  "label": "channel_rider/bits/rider_joint_power_violations",
+  "nbytes": 19,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2820,
+  "rtol": null,
+  "shape": [
+   19
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_joint_power_violations_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2804,
+  "offset": 2839,
   "rtol": null,
   "shape": [
    3
@@ -1108,261 +828,23 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 79,
+  "index": 59,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_intent_present",
-  "nbytes": 3,
+  "label": "channel_rider/bits/rider_joint_speed_violations",
+  "nbytes": 19,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2807,
+  "offset": 2842,
   "rtol": null,
   "shape": [
-   3
+   19
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 60,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_intent_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2810,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 81,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2813,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 82,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2816,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 83,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2819,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 84,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2822,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 85,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_power_violations_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2825,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 86,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_power_violations_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2828,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 87,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_speed_violations_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2831,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 88,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2834,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 89,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_torques_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2837,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 90,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_joint_torques_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2840,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 91,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_lean_limit_rad_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2843,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 92,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2846,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 93,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_power_w_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2849,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 94,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_power_w_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2852,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 95,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_work_step_j_present",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2855,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 96,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
-  "nbytes": 3,
-  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2858,
-  "rtol": null,
-  "shape": [
-   3
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 97,
-  "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_limited_present",
+  "label": "channel_rider/bits/rider_joint_speed_violations_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2861,
@@ -1374,12 +856,530 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 98,
+  "index": 61,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_limited_valid",
-  "nbytes": 3,
+  "label": "channel_rider/bits/rider_effort_budget_exceeded",
+  "nbytes": 5,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
   "offset": 2864,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2869,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w",
+  "nbytes": 26,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2872,
+  "rtol": null,
+  "shape": [
+   26
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2898,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 65,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_observation",
+  "nbytes": 5,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2901,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 66,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/rider_effort_observation_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2906,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 67,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__attachment_samples_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2909,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__attachment_samples_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2912,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 69,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2915,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2918,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 71,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_activation_saturated_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2921,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 72,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_activation_saturated_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2924,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2927,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 74,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2930,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 75,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2933,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2936,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 77,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_request_nm_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2939,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 78,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_active_request_nm_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2942,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 79,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_allocation_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2945,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 80,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_allocation_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2948,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 81,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_balance_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2951,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 82,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_balance_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2954,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 83,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_control_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2957,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_control_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2960,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 85,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2963,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 86,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2966,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_observation_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2969,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 88,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_effort_observation_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2972,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 89,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_ik_saturation_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2975,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 90,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_ik_saturation_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2978,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 91,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_intent_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2981,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_intent_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2984,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 93,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2987,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 94,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2990,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 95,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2993,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 96,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2996,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 97,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_power_violations_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 2999,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 98,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_joint_power_violations_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3002,
   "rtol": null,
   "shape": [
    3
@@ -1390,10 +1390,10 @@
   "dtype": "|u1",
   "index": 99,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_violations_present",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2867,
+  "offset": 3005,
   "rtol": null,
   "shape": [
    3
@@ -1404,10 +1404,10 @@
   "dtype": "|u1",
   "index": 100,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_strength_violations_valid",
+  "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2870,
+  "offset": 3008,
   "rtol": null,
   "shape": [
    3
@@ -1418,10 +1418,10 @@
   "dtype": "|u1",
   "index": 101,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_support_targets_present",
+  "label": "channel_rider/bits/__rider_joint_torques_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2873,
+  "offset": 3011,
   "rtol": null,
   "shape": [
    3
@@ -1432,10 +1432,10 @@
   "dtype": "|u1",
   "index": 102,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_support_targets_valid",
+  "label": "channel_rider/bits/__rider_joint_torques_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2876,
+  "offset": 3014,
   "rtol": null,
   "shape": [
    3
@@ -1446,10 +1446,10 @@
   "dtype": "|u1",
   "index": 103,
   "kind": "bitwise",
-  "label": "channel_rider/bits/__rider_welds_present",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_present",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2879,
+  "offset": 3017,
   "rtol": null,
   "shape": [
    3
@@ -1460,10 +1460,178 @@
   "dtype": "|u1",
   "index": 104,
   "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3020,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 105,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_power_w_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3023,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 106,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_power_w_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3026,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 107,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3029,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 108,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3032,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 109,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_limited_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3035,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_limited_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3038,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_violations_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3041,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_strength_violations_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3044,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_support_targets_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3047,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_support_targets_valid",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3050,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 115,
+  "kind": "bitwise",
+  "label": "channel_rider/bits/__rider_welds_present",
+  "nbytes": 3,
+  "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
+  "offset": 3053,
+  "rtol": null,
+  "shape": [
+   3
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 116,
+  "kind": "bitwise",
   "label": "channel_rider/bits/__rider_welds_valid",
   "nbytes": 3,
   "node": "native_encode_columns/map_struct_except_keys_and_nesting_channel_rider",
-  "offset": 2882,
+  "offset": 3056,
   "rtol": null,
   "shape": [
    3

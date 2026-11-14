@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 57,
+  "nbytes": 40,
   "node": "native_numeric_completion/zero_disable_policy_fields_remain_bitwise_valid",
   "offset": 0,
   "rtol": null,
   "shape": [
-   57
+   40
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.chain",
   "nbytes": 64,
   "node": "native_numeric_completion/zero_disable_policy_fields_remain_bitwise_valid",
-  "offset": 57,
+  "offset": 40,
   "rtol": null,
   "shape": [
    8
@@ -32,10 +32,10 @@
   "dtype": "<f8",
   "index": 2,
   "kind": "bitwise",
-  "label": "$.drive_bearings",
+  "label": "$.freehub",
   "nbytes": 64,
   "node": "native_numeric_completion/zero_disable_policy_fields_remain_bitwise_valid",
-  "offset": 121,
+  "offset": 104,
   "rtol": null,
   "shape": [
    8
@@ -46,24 +46,10 @@
   "dtype": "<f8",
   "index": 3,
   "kind": "bitwise",
-  "label": "$.freehub",
-  "nbytes": 64,
-  "node": "native_numeric_completion/zero_disable_policy_fields_remain_bitwise_valid",
-  "offset": 185,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 4,
-  "kind": "bitwise",
   "label": "$.ideal_transmission",
   "nbytes": 64,
   "node": "native_numeric_completion/zero_disable_policy_fields_remain_bitwise_valid",
-  "offset": 249,
+  "offset": 168,
   "rtol": null,
   "shape": [
    8

@@ -356,6 +356,15 @@ GradedEnv graded_env(bool diagnostic) {
     auto &request = *owner;
     request.setup.model.physics = cfg::load_physics(
         repo_file("examples/research/viewer_physics_welded.toml"));
+    // Launch parts 4/4b moved the welded profile onto the calibrated 33T /
+    // -0.8 rad launch table and enabled the launch plan and front-lift
+    // reaction; on this unassisted 30 N*m caller-torque climb the -0.8 rad /
+    // 33T start (3a0048b8) keeps both hands in compression across [2.5, 3.0] s,
+    // so the one-sided pull_n channel reads 0 in both runs even though the
+    // pulse shifts the compressive bar force. Keep this R6 posture-program
+    // episode on the file's switched-off 51T / 0 rad baseline.
+    request.setup.model.physics->rider_launch = switched_off_launch();
+    request.setup.model.physics->front_lift_reaction = kSwitchedOffReaction;
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
     request.setup.model.physics->initial_speed_mps = 0.;

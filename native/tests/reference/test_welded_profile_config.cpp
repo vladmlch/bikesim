@@ -389,7 +389,7 @@ const RiderTable &careful_rider_table() {
         .launch{
             .start_cog_grade_breaks = {.03, .08, .13, .18},
             .start_cog_teeth = {28, 39, 45, 39, 39},
-            .start_pedal_angle_rad = .9,
+            .start_pedal_angle_rad = -.8,
             .start_lean_grades = {0., .15},
             .start_lean_rad = {0., .35},
             .plan_enabled = true,
@@ -399,10 +399,10 @@ const RiderTable &careful_rider_table() {
             .effort_cap_asphalt_nm = 45.,
             .effort_cap_hardpack_nm = 45.,
             .effort_cap_loose_nm = 35.,
-            .effort_cap_wet_nm = 35.,
+            .effort_cap_wet_nm = 11.,
             .effort_cap_scree_nm = 30.,
             .effort_cap_grades = {0., .05, .08, .12, .13, .15, .2},
-            .effort_cap_grade_nm = {26., 14., 11.5, 13., 14., 15., 18.},
+            .effort_cap_grade_nm = {26., 14., 11.5, 13., 14., 13., 14.},
             .effort_rise_speed_mps = 2.5,
             .release_torque_grades = {0., .05, .1, .15, .2},
             .release_torque_nm = {0., 7., 7., 7., 7.},
@@ -441,7 +441,7 @@ const RiderTable &normal_rider_table() {
         .launch{
             .start_cog_grade_breaks = {.03, .08, .13, .18},
             .start_cog_teeth = {24, 33, 39, 33, 39},
-            .start_pedal_angle_rad = 1.12,
+            .start_pedal_angle_rad = -.8,
             .start_lean_grades = {0., .15},
             .start_lean_rad = {0., .35},
             .plan_enabled = true,
@@ -451,10 +451,10 @@ const RiderTable &normal_rider_table() {
             .effort_cap_asphalt_nm = 45.,
             .effort_cap_hardpack_nm = 60.,
             .effort_cap_loose_nm = 45.,
-            .effort_cap_wet_nm = 45.,
+            .effort_cap_wet_nm = 13.,
             .effort_cap_scree_nm = 40.,
             .effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2},
-            .effort_cap_grade_nm = {38.5, 18., 14.5, 13.2, 14., 15.5, 19.5, 18.5},
+            .effort_cap_grade_nm = {38.5, 15., 14.5, 13.2, 14., 15.5, 19.5, 18.5},
             .effort_rise_speed_mps = 2.5,
             .release_torque_grades = {0., .05, .1, .15, .2},
             .release_torque_nm = {0., 9., 9., 9., 8.},
@@ -493,7 +493,7 @@ const RiderTable &aggressive_rider_table() {
         .launch{
             .start_cog_grade_breaks = {.03, .08, .13, .18},
             .start_cog_teeth = {21, 28, 33, 28, 33},
-            .start_pedal_angle_rad = 1.24,
+            .start_pedal_angle_rad = -.8,
             .start_lean_grades = {0., .15},
             .start_lean_rad = {0., .35},
             .plan_enabled = true,
@@ -629,9 +629,10 @@ const RiderTable &aggressive_rider_table() {
 }
 
 // The welded profile carries the calibrated normal rider's launch table
-// (launch part 4, decision 5): the start cog steps down by grade, the
-// pedal leads at 1.12 rad and the torso leans up to .35 rad. The built-in
-// default profile keeps its own 34/24 drivetrain with the plan off.
+// (launch part 4, decision 5; launch part 4b, decision 6): the start cog steps
+// down by grade, the pedal leads at -0.8 rad and the torso leans up to .35
+// rad. The built-in default profile keeps its own 34/24 drivetrain with the
+// plan off.
 [[gnu::noinline]] void test_launch_table_is_the_normal_rider() {
     require_launch_table(profile().rider_launch, normal_rider_table().launch,
                          "viewer_physics_welded.toml");
@@ -762,14 +763,14 @@ text_outside_rider_sections(std::string_view text) {
 [[gnu::noinline]] void test_launch_table_keys_are_required() {
     for (const char *line : {"start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]\n",
                              "start_cog_teeth = [24, 33, 39, 33, 39]\n",
-                             "start_pedal_angle_rad = 1.12\n", "start_lean_grades = [0.0, 0.15]\n",
+                             "start_pedal_angle_rad = -0.8\n", "start_lean_grades = [0.0, 0.15]\n",
                              "start_lean_rad = [0.0, 0.35]\n", "plan_enabled = true\n",
                              "standstill_speed_mps = 0.1\n", "standstill_crank_rpm = 5.0\n",
                              "effort_rate_nm_s = 80.0\n", "effort_cap_asphalt_nm = 45.0\n",
                              "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 45.0\n",
-                             "effort_cap_wet_nm = 45.0\n", "effort_cap_scree_nm = 40.0\n",
+                             "effort_cap_wet_nm = 13.0\n", "effort_cap_scree_nm = 40.0\n",
                              "effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]\n",
-                             "effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]\n",
+                             "effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]\n",
                              "effort_rise_speed_mps = 2.5\n",
                              "release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]\n",
                              "release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]\n",
@@ -894,19 +895,19 @@ template <typename Edit>
 
 // Loading resolves the computed members for a flat start from the
 // document's own table: the shipped profile carries the normal rider's
-// 24T cog at 1.12 rad, and a stepwise table puts grade 0 on the cog of
+// 24T cog at -0.8 rad, and a stepwise table puts grade 0 on the cog of
 // its middle interval. An override of the table re-resolves them after
 // the merge.
 [[gnu::noinline]] void test_load_resolves_a_flat_start() {
     bt::require(profile().drive.gearing.rear_teeth == 24 &&
-                    profile().drive.crank_phase_rad == 1.12,
+                    profile().drive.crank_phase_rad == -.8,
                 "the shipped profile resolves to the flat-start cog and pedal angle");
     const auto stepwise = load_edited_profile([](std::string &t) {
         replace_once(t, "start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]",
                      "start_cog_grade_breaks = [-0.01, 0.05]");
         replace_once(t, "start_cog_teeth = [24, 33, 39, 33, 39]",
                      "start_cog_teeth = [21, 39, 51]");
-        replace_once(t, "start_pedal_angle_rad = 1.12",
+        replace_once(t, "start_pedal_angle_rad = -0.8",
                      "start_pedal_angle_rad = 0.5");
     });
     bt::require(stepwise.drive.gearing.rear_teeth == 39 && stepwise.drive.crank_phase_rad == .5,
@@ -940,7 +941,7 @@ template <typename Edit>
     bt::require(reread.rider_launch.start_cog_teeth == stepwise->rider_launch.start_cog_teeth &&
                     reread.rider_launch.start_cog_grade_breaks == stepwise->rider_launch.start_cog_grade_breaks,
                 "the written table loads back unchanged");
-    bt::require(reread.drive.gearing.rear_teeth == 39 && reread.drive.crank_phase_rad == 1.12,
+    bt::require(reread.drive.gearing.rear_teeth == 39 && reread.drive.crank_phase_rad == -.8,
                 "the computed members come back as the flat start");
 }
 

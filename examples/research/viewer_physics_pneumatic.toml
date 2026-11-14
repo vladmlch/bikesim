@@ -220,7 +220,8 @@ launch_standstill_crank_rate_rad_s = 1.0
 [rider_launch]
 start_cog_grade_breaks = [0.03, 0.08, 0.13, 0.18]
 start_cog_teeth = [24, 33, 39, 33, 39]
-start_pedal_angle_rad = 1.12
+# launch part 4b — the -0.8 rad start (Follow-up 10, user ruling 2026-11-13)
+start_pedal_angle_rad = -0.8
 start_lean_grades = [0.0, 0.15]
 start_lean_rad = [0.0, 0.35]
 plan_enabled = true
@@ -230,10 +231,12 @@ effort_rate_nm_s = 80.0
 effort_cap_asphalt_nm = 45.0
 effort_cap_hardpack_nm = 60.0
 effort_cap_loose_nm = 45.0
-effort_cap_wet_nm = 45.0
+# launch part 4b — the -0.8 rad start (Follow-up 10, user ruling 2026-11-13)
+effort_cap_wet_nm = 13.0
 effort_cap_scree_nm = 40.0
 effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]
-effort_cap_grade_nm = [38.5, 18.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]
+# launch part 4b — the -0.8 rad start (Follow-up 10, user ruling 2026-11-13)
+effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]
 effort_rise_speed_mps = 2.5
 release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]
 release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]

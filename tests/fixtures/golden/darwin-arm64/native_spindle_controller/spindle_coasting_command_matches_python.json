@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compute.state",
-  "nbytes": 4868,
+  "nbytes": 4600,
   "node": "native_spindle_controller/spindle_coasting_command_matches_python",
   "offset": 72,
   "rtol": null,
   "shape": [
-   4868
+   4600
   ]
  }
 ]

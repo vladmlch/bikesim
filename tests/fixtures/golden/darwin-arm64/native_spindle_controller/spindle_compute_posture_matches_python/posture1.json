@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compute.state",
-  "nbytes": 4810,
+  "nbytes": 4577,
   "node": "native_spindle_controller/spindle_compute_posture_matches_python/posture1",
   "offset": 72,
   "rtol": null,
   "shape": [
-   4810
+   4577
   ]
  }
 ]

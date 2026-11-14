@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compute.state",
-  "nbytes": 4847,
+  "nbytes": 4585,
   "node": "native_spindle_controller/spindle_rear_chain_effort_matches_python/0.0",
   "offset": 72,
   "rtol": null,
   "shape": [
-   4847
+   4585
   ]
  }
 ]

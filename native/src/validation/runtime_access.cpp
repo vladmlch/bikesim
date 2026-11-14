@@ -32,6 +32,9 @@ void RuntimeRigAccess::set_rider_commands(runtime::NativeRideRuntime& ride,std::
 void RuntimeRigAccess::set_rider_commands(runtime::NativeResearchRuntime& research,std::optional<::rider::RiderCommands> commands) {
     const Guard guard(research.busy_);research.require_open();set_rider_commands(*research.runtime_,commands);
 }
+void RuntimeRigAccess::consume_sample(runtime::NativeResearchRuntime& research,const runtime::SamplePtr& sample,bool stop_at_outcome) {
+    const Guard guard(research.busy_);research.require_open();research.consume_sample(sample,stop_at_outcome);
+}
 const runtime::StaticBrake &RuntimeRigAccess::static_brake(const runtime::PhysicalStep& physical) {
     return physical.brake_;
 }

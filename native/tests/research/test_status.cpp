@@ -6,11 +6,14 @@
 #include "research/policy_session.hpp"
 #include "io/hash.hpp"
 #include "io/json.hpp"
+#include "runtime/research_io.hpp"
 #include "runtime/setup_values.hpp"
 #include "runtime/status.hpp"
+#include "validation/runtime_access.hpp"
 #include <algorithm>
 #include <bit>
 #include <limits>
+#include <optional>
 
 namespace {
 using namespace bike::research;
@@ -105,6 +108,60 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 bt::require(!transition.valid_for_learning(), "failure reasons reject a transition independently of validity");
             }
         }
+}
+[[gnu::noinline]] void hybrid_energy_gate() {
+    // An unmeasured interval quotes its period's closing energy against its
+    // own cumulative ledger, so its residual is bookkeeping — not a measured
+    // verdict. It must neither truncate the episode nor raise
+    // max_energy_residual_ratio; a measured row over the gate still fails.
+    auto request = std::make_unique<ResearchRequest>(read_research_request(bt::fixture("requests/research_delay.toml")));
+    request->capture_mode = runtime::ResearchCaptureMode::full;
+    request->experiment.duration_s = .05;
+    request->experiment.stop_on_model_violation = false;
+    request->experiment.maximum_energy_residual_ratio = 1e12;
+    request->setup.model.physics.value().initial_speed_mps = 0.; // NOLINT(bugprone-unchecked-optional-access) fixture contract guarantees engagement; .value() is the loud check
+    auto seed = std::make_unique<PreparedEnvironment>(prepare_environment(std::move(*request)));
+    auto env = runtime::make_research(seed->bootstrap);
+    env->begin_control(runtime::RideControl{}, 0., 0.);
+    std::optional<runtime::ResearchTransition> warmup;
+    for (int guard = 0; guard < 1024 && !warmup; ++guard)
+        warmup = env->advance_control(std::nullopt, std::nullopt);
+    bt::require(warmup.has_value() && warmup->numerically_valid, "the warm-up window completes before hybrid rows are injected");
+    env->acknowledge_control();
+    const auto owned = env->evidence_snapshot();
+    bt::require(!owned.physical.samples.empty(), "the warm-up window publishes intervals to clone");
+    runtime::PhysicalSampleData injected = *owned.physical.samples.back();
+    const auto set_energy = [](runtime::PhysicalSampleData &sample, bool measured, double residual) {
+        auto energy = wire::object(wire::required(sample.channels, "energy"));
+        wire::set(energy, "measured", runtime::Wire(measured));
+        wire::set(energy, "residual_j", runtime::Wire(residual));
+        wire::set(sample.channels, "energy", runtime::Wire(std::move(energy)));
+    };
+    const double dt = injected.dt_s();
+    const auto advance = [&injected, dt]() {
+        injected.interval_id += 1;
+        injected.time_s = injected.end_time_s;
+        injected.end_time_s = injected.time_s + dt;
+        return std::make_shared<const runtime::PhysicalSampleData>(injected);
+    };
+    const double before = wire::number(wire::required(env->status(), "max_energy_residual_ratio"));
+    set_energy(injected, false, 1e30);
+    bike::validation::RuntimeRigAccess::consume_sample(*env, advance(), true);
+    const auto after_unmeasured = env->status();
+    bt::require(wire::boolean(wire::required(after_unmeasured, "numerically_valid")) &&
+        !wire::boolean(wire::required(after_unmeasured, "truncated")),
+        "an unmeasured hybrid row over the gate does not truncate the episode");
+    bt::require(wire::number(wire::required(after_unmeasured, "max_energy_residual_ratio")) == before,
+        "an unmeasured hybrid row does not raise max_energy_residual_ratio");
+    set_energy(injected, true, 1e30);
+    bike::validation::RuntimeRigAccess::consume_sample(*env, advance(), true);
+    const auto after_measured = env->status();
+    bt::require(!wire::boolean(wire::required(after_measured, "numerically_valid")) &&
+        wire::boolean(wire::required(after_measured, "truncated")) &&
+        wire::string(wire::required(after_measured, "reason")) == "numerical_quality",
+        "a measured row over the gate still truncates with numerical_quality");
+    bt::require(wire::number(wire::required(after_measured, "max_energy_residual_ratio")) > 1.,
+        "a measured row over the gate raises max_energy_residual_ratio");
 }
 [[gnu::noinline]] void support_pull_contract() {
     const auto support = [](double front, double rear, double saddle) {
@@ -233,5 +290,5 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] { (void)summarize(*invalid); });
 }
 } // namespace
-int main() { return bt::run([] { energy_contract(); status_contract(); support_pull_contract(); rider_sensor_boundary(); owned_evidence(); }); }
+int main() { return bt::run([] { energy_contract(); status_contract(); hybrid_energy_gate(); support_pull_contract(); rider_sensor_boundary(); owned_evidence(); }); }
 NATIVE_DIAG_POP

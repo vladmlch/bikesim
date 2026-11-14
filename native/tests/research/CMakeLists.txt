@@ -51,6 +51,9 @@ foreach(_research_test IN ITEMS research_environment research_policy
       WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_research_test}>")
   endif()
 endforeach()
+# test_status's hybrid energy-gate regression reaches the private
+# consume_sample through the RuntimeRigAccess validation seam.
+target_link_libraries(research_status PRIVATE bike_validation)
 
 # Shared-module failure controls for research_policy. Registration/build
 # graph changes do not execute or load these deliberately invalid

@@ -241,13 +241,21 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     }
     e.tracker.update(*e.truth, s.dt_s(), delivered, applied);
     if (config_.capture_mode == ResearchCaptureMode::legacy) e.recorder.append(sample);
-    const auto quality = research_quality(section(s.channels, "energy"), config_.maximum_energy_residual_ratio);
-    e.max_energy_residual_ratio = std::max(e.max_energy_residual_ratio, quality.residual_ratio);
-    if (!quality.acceptable) {
-        e.numerically_valid = false;
-        e.truncated = true;
-        e.reason = "numerical_quality";
-        if (stop_at_outcome) return;
+    // Energy quality judges a measurement. An unmeasured interval quotes its
+    // period's closing energy against its own ledger, so its residual is
+    // bookkeeping — skip it the way accounting.cpp:734-740 passes the same
+    // `measured` flag to model_status.observe as include_energy.
+    const auto &energy = section(s.channels, "energy");
+    const auto *measured = find(energy, "measured");
+    if (measured == nullptr || is_none(*measured) || boolean(*measured)) {
+        const auto quality = research_quality(energy, config_.maximum_energy_residual_ratio);
+        e.max_energy_residual_ratio = std::max(e.max_energy_residual_ratio, quality.residual_ratio);
+        if (!quality.acceptable) {
+            e.numerically_valid = false;
+            e.truncated = true;
+            e.reason = "numerical_quality";
+            if (stop_at_outcome) return;
+        }
     }
     if (config_.stop_on_model_violation && !boolean(required(section(s.channels, "model_status"), "model_valid"))) {
         e.truncated = true;

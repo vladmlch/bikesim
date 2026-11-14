@@ -15,7 +15,7 @@
       "$array": "model/seated_pose.arrays/a012.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "sha256": "94e2535be75923d9ada154012f8bfb39230db645b9417c0874a22f80964c73cb",
       "shape": [
         3
       ]
@@ -24,7 +24,7 @@
       "$array": "model/seated_pose.arrays/a005.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+      "sha256": "f574cbd029690086e93ce576b43feb7b7ed30beadd8d7bb7501e2dc0db92c668",
       "shape": [
         3
       ]
@@ -42,7 +42,7 @@
       "$array": "model/seated_pose.arrays/a008.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+      "sha256": "39bea0ff8967680323bdf518459396d23ac2def30068e091889697cab74d485d",
       "shape": [
         3
       ]
@@ -51,19 +51,19 @@
       "$array": "model/seated_pose.arrays/a003.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+      "sha256": "864aa5052bcd806540ba6cd9049fc05da2aeb6a265a06826bdd95ea7eb6b8047",
       "shape": [
         3
       ]
     },
-    "knee_flexion_bdc_deg": 30.36825475048437,
-    "knee_flexion_front_deg": 63.53173991103736,
-    "knee_flexion_rear_deg": 81.41149947145689,
+    "knee_flexion_bdc_deg": 40.024160870188354,
+    "knee_flexion_front_deg": 68.9528078943863,
+    "knee_flexion_rear_deg": 82.46557334229138,
     "knee_front": {
       "$array": "model/seated_pose.arrays/a009.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+      "sha256": "bbbbdf89df6f89336f6ecf7d1f319faec01c02bfd47e3051495a53c34c585b3a",
       "shape": [
         3
       ]
@@ -72,7 +72,7 @@
       "$array": "model/seated_pose.arrays/a010.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+      "sha256": "03304e43d0f36e7673fb68c95ad73005f04ffc6a43505c3296f08c11b453d8e4",
       "shape": [
         3
       ]
@@ -96,13 +96,13 @@
       ]
     },
     "saddle": {
-      "exposed_post_m": 0.21660346644155704,
-      "height_m": 0.747018,
+      "exposed_post_m": 0.1934381228800611,
+      "height_m": 0.7239222,
       "saddle_pos": {
         "$array": "model/seated_pose.arrays/a001.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "e6a13a7ed9adec0449e2ccb0fdd488ae41617f4c5b7b5d1d0dbec54c8a812566",
+        "sha256": "f07518063e7ccbf0cffab98166b367124bacc4d71529e4d60b969eecd58fec4c",
         "shape": [
           3
         ]
@@ -111,7 +111,7 @@
         "$array": "model/seated_pose.arrays/a000.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "11c50ccd4d1c4ed1dac4a4338e015284fbffb4a75850117740fc4e1232db5d52",
+        "sha256": "3589256e39a5ce71c2c5e6c8edfec7cb83c158ea203354ab12094ece8f634e2c",
         "shape": [
           3
         ]
@@ -120,28 +120,28 @@
         "$array": "model/seated_pose.arrays/a002.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "fdf9e4a912de2ffc5a60af62bb3392bf5fdefda3ebec00ac28c3e16b9a55a9a9",
+        "sha256": "f20365572a413a27919d92eb481c614782f3c1ebdbf9343c862dedc191fe5d70",
         "shape": [
           3
         ]
       },
-      "top_z_m": 0.7260128780662256
+      "top_z_m": 0.7039801785120643
     },
     "shoulder": {
       "$array": "model/seated_pose.arrays/a004.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+      "sha256": "b120b39ac99bec03a7556be7e062c81bd7dd1c65a2e8403e2cc14f2f4c559f55",
       "shape": [
         3
       ]
     },
-    "torso_lean_deg": 41.97268375026517,
+    "torso_lean_deg": 39.48883508253531,
     "wrist": {
       "$array": "model/seated_pose.arrays/a006.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "25014573e1f898860a2b5506a8ac0d23c75412d7d3c3740e5da4d1e671320a1e",
+      "sha256": "b0fe44b976ed405017d438aa62b16a3e696984d0dc7fe1074d55887631bd70dc",
       "shape": [
         3
       ]
@@ -161,7 +161,7 @@
       "$array": "model/seated_pose.arrays/a059.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "sha256": "35303316f12aa58d9ec83b3b828396582f863b562ad9cac861c7bfe957c74637",
       "shape": [
         3
       ]
@@ -170,7 +170,7 @@
       "$array": "model/seated_pose.arrays/a052.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "16dc77890254eb8a0b59efe71955f6df97bd5080f997014730da8161aff43946",
+      "sha256": "b89defae9135f7efca0f98b469efbf66dde883185a7b7a064a8c31ca7c52acd6",
       "shape": [
         3
       ]
@@ -188,7 +188,7 @@
       "$array": "model/seated_pose.arrays/a055.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "6330aee545224e589dc7487c9140d80c519629757de8bf02ddad292521ad7139",
+      "sha256": "b5f3b5f18e9316d76a8f6d37981631ec6a900bc9e39310ac36a2a2abdb6d1512",
       "shape": [
         3
       ]
@@ -197,19 +197,19 @@
       "$array": "model/seated_pose.arrays/a050.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "fb9aa8c6cfa89636c46da2bc5943613390041899e3f272f8f52f67c9d777ae5d",
+      "sha256": "817fb4cd4b54b58f948fcc000630e58358c1c48e45c0a40b05dcf2844c28abaf",
       "shape": [
         3
       ]
     },
-    "knee_flexion_bdc_deg": 28.78237771689396,
-    "knee_flexion_front_deg": 63.442115914157995,
-    "knee_flexion_rear_deg": 81.6616798316208,
+    "knee_flexion_bdc_deg": 38.839940856298824,
+    "knee_flexion_front_deg": 68.86657005551626,
+    "knee_flexion_rear_deg": 82.55241073916437,
     "knee_front": {
       "$array": "model/seated_pose.arrays/a056.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "6a9ef17f652b7da5dc019b2af6d8c2278b416aa91ff768e082dbc6c19c3a031e",
+      "sha256": "ccf795e42db07060c48b9638fa11b229be77fbdd4684eb291338566045058ff5",
       "shape": [
         3
       ]
@@ -218,7 +218,7 @@
       "$array": "model/seated_pose.arrays/a057.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "2796174841e768d03a6f6e64b2a0b4f9fc22b2683503d566578901351935cd3e",
+      "sha256": "d82e22517e4d1412706e8b2cc1e009391cef8dd6f5694ebc329bac556846ffff",
       "shape": [
         3
       ]
@@ -242,13 +242,13 @@
       ]
     },
     "saddle": {
-      "exposed_post_m": 0.1957906874890082,
-      "height_m": 0.7262675000000001,
+      "exposed_post_m": 0.17326488821281888,
+      "height_m": 0.7038132500000001,
       "saddle_pos": {
         "$array": "model/seated_pose.arrays/a048.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "94f08c732daf2cac974cd9e25b00cc0e5c246b2b322a4bc35406d0f92ba6ac4d",
+        "sha256": "48252fff0feb86b719b879d6bdb0f68b25f920db7eea0a16dbdbd54bb29b26f5",
         "shape": [
           3
         ]
@@ -257,7 +257,7 @@
         "$array": "model/seated_pose.arrays/a047.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "16d4d43d47ed461270b3b21858d3cb2f3b168db2fa54d51485e788b748472d49",
+        "sha256": "00246679ad08c0bab09c0e8efe31df36054162d2f715feafdf073e68b253f2c9",
         "shape": [
           3
         ]
@@ -266,28 +266,28 @@
         "$array": "model/seated_pose.arrays/a049.f64",
         "dtype": "<f8",
         "order": "C",
-        "sha256": "286b9405c917f03198897828d087bec725d227c0ebce0d3d1bf2e3ab2e1378ee",
+        "sha256": "b1de167cbe07fe7b64da27e280f4dc0419d1b5457115cbb2b168a115c3476382",
         "shape": [
           3
         ]
       },
-      "top_z_m": 0.7062177170606762
+      "top_z_m": 0.6847932919770546
     },
     "shoulder": {
       "$array": "model/seated_pose.arrays/a051.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "22ccd909d9c7bef529307ffec770ed09ea555102a2a50e50bd455b4438666adb",
+      "sha256": "9ded15cdb78852ffea85b3fdf588a3a9238517987f67da126a76808ae2d1cccb",
       "shape": [
         3
       ]
     },
-    "torso_lean_deg": 41.253540626383085,
+    "torso_lean_deg": 38.811601080636024,
     "wrist": {
       "$array": "model/seated_pose.arrays/a053.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "a0f81e500961df8a820bd7165ac0625bc29baa57df14bfaf8ddfedafac7d9ed5",
+      "sha256": "4b3db4ae8731942027a1b31f10154e8c28feaa2cf57e22cb1f38ad2898bce660",
       "shape": [
         3
       ]

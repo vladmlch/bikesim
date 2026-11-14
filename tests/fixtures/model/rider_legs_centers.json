@@ -33,7 +33,7 @@
           "$array": "model/rider_legs_centers.arrays/a041.f64",
           "dtype": "<f8",
           "order": "C",
-          "sha256": "119a7ccda3c0b78a7ac8ad9d217a205e5ee73f334bff259edc2a11294e675cab",
+          "sha256": "23e6f5992e129a0ca5966e643794dbfd66ee6fc10b7e6e94316950022fc6b5dd",
           "shape": [
             13,
             3

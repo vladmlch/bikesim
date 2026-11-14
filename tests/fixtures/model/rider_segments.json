@@ -16,7 +16,7 @@
       "$array": "model/rider_segments.arrays/a023.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "d8efaf7f1c1d160f5b05154f390ff9f4701ccdb3e96a8add072c4301c0d04eeb",
+      "sha256": "94e2535be75923d9ada154012f8bfb39230db645b9417c0874a22f80964c73cb",
       "shape": [
         3
       ]
@@ -25,7 +25,7 @@
       "$array": "model/rider_segments.arrays/a017.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "f21ec6012cbc0211a609a5a54206c29a318ae4fe77eaf53abe299e3c86287661",
+      "sha256": "f574cbd029690086e93ce576b43feb7b7ed30beadd8d7bb7501e2dc0db92c668",
       "shape": [
         3
       ]
@@ -43,7 +43,7 @@
       "$array": "model/rider_segments.arrays/a019.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "c200eae5c936aae1cc7126ca4a6240516616440eef2fb95d7bfab876057bd0dd",
+      "sha256": "39bea0ff8967680323bdf518459396d23ac2def30068e091889697cab74d485d",
       "shape": [
         3
       ]
@@ -52,7 +52,7 @@
       "$array": "model/rider_segments.arrays/a015.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "ed407f836c168c2ab61928392d09ebfcdf3c40f5b26338f7df6438c258fc88a3",
+      "sha256": "864aa5052bcd806540ba6cd9049fc05da2aeb6a265a06826bdd95ea7eb6b8047",
       "shape": [
         3
       ]
@@ -61,7 +61,7 @@
       "$array": "model/rider_segments.arrays/a020.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "6b7cd2ff8e7715f65a9cae05a6b61b8e9f273497ee30ff6170edc0637499cf1a",
+      "sha256": "bbbbdf89df6f89336f6ecf7d1f319faec01c02bfd47e3051495a53c34c585b3a",
       "shape": [
         3
       ]
@@ -70,7 +70,7 @@
       "$array": "model/rider_segments.arrays/a021.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "e91127bb8795d158a09c49b2e02709d1f65d4201b42a85a606c006e24c0e01cf",
+      "sha256": "03304e43d0f36e7673fb68c95ad73005f04ffc6a43505c3296f08c11b453d8e4",
       "shape": [
         3
       ]
@@ -96,13 +96,13 @@
     "saddle": {
       "$dataclass": "bike_sim.geometry.cockpit.SaddleGeometry",
       "fields": {
-        "exposed_post_m": 0.21660346644155704,
-        "height_m": 0.747018,
+        "exposed_post_m": 0.1934381228800611,
+        "height_m": 0.7239222,
         "saddle_pos": {
           "$array": "model/rider_segments.arrays/a013.f64",
           "dtype": "<f8",
           "order": "C",
-          "sha256": "e6a13a7ed9adec0449e2ccb0fdd488ae41617f4c5b7b5d1d0dbec54c8a812566",
+          "sha256": "f07518063e7ccbf0cffab98166b367124bacc4d71529e4d60b969eecd58fec4c",
           "shape": [
             3
           ]
@@ -111,7 +111,7 @@
           "$array": "model/rider_segments.arrays/a012.f64",
           "dtype": "<f8",
           "order": "C",
-          "sha256": "11c50ccd4d1c4ed1dac4a4338e015284fbffb4a75850117740fc4e1232db5d52",
+          "sha256": "3589256e39a5ce71c2c5e6c8edfec7cb83c158ea203354ab12094ece8f634e2c",
           "shape": [
             3
           ]
@@ -120,19 +120,19 @@
           "$array": "model/rider_segments.arrays/a014.f64",
           "dtype": "<f8",
           "order": "C",
-          "sha256": "fdf9e4a912de2ffc5a60af62bb3392bf5fdefda3ebec00ac28c3e16b9a55a9a9",
+          "sha256": "f20365572a413a27919d92eb481c614782f3c1ebdbf9343c862dedc191fe5d70",
           "shape": [
             3
           ]
         },
-        "top_z_m": 0.7260128780662256
+        "top_z_m": 0.7039801785120643
       }
     },
     "shoulder": {
       "$array": "model/rider_segments.arrays/a016.f64",
       "dtype": "<f8",
       "order": "C",
-      "sha256": "d70c8795708df792aa431b9639a930e5760242b8d7668c262992284a090baff2",
+      "sha256": "b120b39ac99bec03a7556be7e062c81bd7dd1c65a2e8403e2cc14f2f4c559f55",
       "shape": [
         3
       ]

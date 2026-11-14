@@ -295,7 +295,12 @@ void test_caller_braking_still_coasts_the_legs() {
 void test_flags_match_old_semantics_without_commands() {
     const auto track = terrain::load_track(launch_ride::repo_file(
         "tests/fixtures/tracks/climb_15pct_standstill.toml"));
-    auto env = launch_ride::environment(track, 2.);
+    // Pre-launch-plan fallback semantics: run with the launch plan off so the
+    // intent does not hold brakes or own shifting on the 15 % standstill start.
+    auto env = launch_ride::environment(
+        track, 2.,
+        [](auto &physics) { physics.rider_launch.plan_enabled = false; }, 1,
+        runtime::ResearchCaptureMode::legacy);
     runtime::RideControl control;
     control.human_torque_nm = 30.;
     ride_intervals(env, 160, control);          // unbraked press
@@ -549,7 +554,17 @@ void test_rider_shift_request_flows_to_the_shifter() {
     // commanded rider brake itself. The welded gear starts at 51T.
     const auto track = terrain::load_track(launch_ride::repo_file(
         "tests/fixtures/tracks/flat.toml"));
-    auto env = launch_ride::environment(track, 12.);
+    // Launch part 4 moved the welded profile's flat start cog to 24T and
+    // enabled the launch plan; keep this transport test on its original
+    // 51T plan-off baseline so phase 1 still tests 'down' past 51T.
+    auto env = launch_ride::environment(
+        track, 12.,
+        [](auto &physics) {
+            physics.rider_launch.plan_enabled = false;
+            physics.rider_launch.start_cog_grade_breaks.clear();
+            physics.rider_launch.start_cog_teeth = {51};
+        },
+        1, runtime::ResearchCaptureMode::legacy);
     runtime::RideControl control;
     control.human_torque_nm = 30.;
     ride_intervals(env, 8, control);   // 10 ms — the gear is still 51T.

@@ -46,6 +46,17 @@ target_include_directories(bike_test_fixtures SYSTEM PRIVATE
 target_link_libraries(bike_test_fixtures PUBLIC bike_io)
 bike_apply_native_policy(bike_test_fixtures)
 
+# Schema-2 initial-state record support: the record path settles the request
+# through the full app stack, so it stays outside the stdlib+bike_io fixture
+# library. Test targets link it only where a document is regenerated.
+add_library(bike_test_initial_state_record STATIC
+  support/record_initial_state.cpp
+  support/record_initial_state.hpp)
+bike_startup_target_policy(bike_test_initial_state_record
+  "${_test_repo_root}/native")
+target_link_libraries(bike_test_initial_state_record PUBLIC
+  bike_test_fixtures bike_app)
+
 # allocation_faults.cpp is the throwing-allocation override TU: it defines
 # replacement operator new/delete plus the counting seam, so it must land
 # in test binaries directly, never in a shipped library. Two consumers

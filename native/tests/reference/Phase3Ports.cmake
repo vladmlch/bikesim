@@ -41,7 +41,7 @@ bike_add_reference_test(playback_clock ENGINE
   LABELS t52 runtime)
 bike_add_reference_test(control_clock ENGINE
   SOURCES test_control_clock.cpp LIBRARIES bike_app
-  LABELS t52 runtime)
+  bike_test_initial_state_record LABELS t52 runtime)
 bike_add_reference_test(native_static_brake ENGINE
   SOURCES test_native_static_brake.cpp LIBRARIES bike_app LABELS t52 runtime golden)
 # 3.20 T52 batch — brakes, cruise, suspension, clocks. Golden consumers
@@ -100,7 +100,7 @@ bike_add_reference_test(native_pneumatic_wire ENGINE
   LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_tire ENGINE
   SOURCES test_native_pneumatic_tire.cpp LIBRARIES bike_app bike_random
-  bike_golden LABELS t52 tyre golden slow)
+  bike_golden bike_test_initial_state_record LABELS t52 tyre golden slow)
 # 3.13 T52 terrain/tyre batch — the frozen-file surface asserts, the
 # placement-refactor hash pins, the wheel-stand rigs and the portable
 # distributed reference; the tyre road-profile + scalar-formula checks
@@ -128,7 +128,8 @@ bike_add_reference_test(native_tire ENGINE
   bike_golden LABELS t52 tyre golden slow)
 bike_add_reference_test(native_distributed_tire ENGINE
   SOURCES test_native_distributed_tire.cpp LIBRARIES bike_app
-  bike_random bike_golden LABELS t52 tyre golden slow)
+  bike_random bike_golden bike_test_initial_state_record
+  LABELS t52 tyre golden slow)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)
@@ -166,7 +167,8 @@ bike_add_reference_test(recorder_columns ENGINE
 bike_add_reference_test(hud_columns ENGINE
   SOURCES test_hud_columns.cpp LIBRARIES bike_app bike_viewer LABELS t52 recording)
 bike_add_reference_test(period_buffer ENGINE
-  SOURCES test_period_buffer.cpp LIBRARIES bike_app LABELS t52 recording golden slow)
+  SOURCES test_period_buffer.cpp LIBRARIES bike_app
+  bike_test_initial_state_record LABELS t52 recording golden slow)
 # 3.22a encode columns — the columnar encoder + physical source against the
 # frozen column_bits identity; the staged bootstrap replays the recorded
 # ride on both qualified platforms.

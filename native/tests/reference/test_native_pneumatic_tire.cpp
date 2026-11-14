@@ -13,6 +13,7 @@
 // additive _fixture_save_* hooks in the Python file.
 #include "diag.hpp"
 #include "pneumatic_reference_support.hpp"
+#include "support/record_initial_state.hpp"
 
 #include <algorithm>
 #include <map>
@@ -1124,6 +1125,11 @@ NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
+        // The env_fast document feeds two consumers below (the golden
+        // reset-restore and the committed-channel checks): regenerate it
+        // once, before either reads the request.
+        bt::record_initial_state(
+            platform_fixture("env_fast") / "request.toml");
         test_config_projection_carries_the_pneumatic_section();
         test_config_rejects_bad_pneumatic_sections();
         test_pneumatic_state_wire_schema_and_round_trip();

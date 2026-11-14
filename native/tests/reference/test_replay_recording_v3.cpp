@@ -131,63 +131,18 @@ void checksum_before_plant() {
       "checksum");
 }
 
-// The battery energy model was removed; legacy recordings still carry a
-// resolved drive.battery section. The shipped disabled section is inert and
-// replays, but an enabled one could have clamped assist torque once its
-// energy ran out, so the legacy-bundle rebuild refuses it.
-void removed_battery_gate() {
-    auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
-    const auto& recorded_drive = field(field(field(input.summary, "resolved_config"), "physics"), "drive");
-    bt::require(rr::io::find_member(rr::io::as_object(recorded_drive, "drive"), "battery") != nullptr,
-                "the legacy fixture still records a drive.battery section");
-    {
-        const rr::replay::FixedAssets assets(input);
-        bt::require(
-            static_cast<bool>(rr::replay::request_from_input(input, assets)),
-            "a recorded disabled battery is inert and replays");
-    }
-    auto resolved = field(input.summary, "resolved_config");
-    auto physics = field(resolved, "physics");
-    auto drive = field(physics, "drive");
-    auto battery = field(drive, "battery");
-    rr::set(battery, "enabled", rr::io::Value{true});
-    rr::set(drive, "battery", std::move(battery));
-    rr::set(physics, "drive", std::move(drive));
-    rr::set(resolved, "physics", std::move(physics));
-    rr::set(input.summary, "resolved_config", std::move(resolved));
-    const rr::replay::FixedAssets assets(input);
-    rr::incompatible(
-        [&] { (void)rr::replay::request_from_input(input, assets); },
-        "drive.battery");
-}
-
-// The seated-only rider fields left RiderSpecs; legacy recordings still
-// carry them in resolved_config.rider. At the shipped defaults they are
-// inert and the recording replays; any other value is refused by name.
-void removed_rider_fields_gate() {
+// There is no legacy reader, so the rebuild must refuse old recordings by name.
+void legacy_recording_refused() {
     const auto input = rr::replay::load_legacy_input(bt::fixture("replay/legacy_v2"));
-    const auto& recorded_rider = field(field(input.summary, "resolved_config"), "rider");
-    bt::require(rr::io::find_member(rr::io::as_object(recorded_rider, "rider"), "saddle_share") != nullptr,
-                "the legacy fixture still records the seated-only rider fields");
-    {
-        const rr::replay::FixedAssets assets(input);
-        bt::require(static_cast<bool>(rr::replay::request_from_input(input, assets)),
-                    "default seated-only rider fields are inert and replay");
+    const rr::replay::FixedAssets assets(input);
+    std::string message;
+    try {
+        (void)rr::replay::request_from_input(input, assets);
+    } catch (const std::invalid_argument& failure) {
+        message = failure.what();
     }
-    for (const auto& [key, value] :
-         {std::pair<std::string_view, rr::io::Value>{"legs", rr::io::Value{std::string("articulated")}},
-          std::pair<std::string_view, rr::io::Value>{"damping_ratio", rr::io::Value{rr::io::Number{"0.9"}}}}) {
-        auto changed = input;
-        auto resolved = field(changed.summary, "resolved_config");
-        auto rider = field(resolved, "rider");
-        rr::set(rider, key, value);
-        rr::set(resolved, "rider", std::move(rider));
-        rr::set(changed.summary, "resolved_config", std::move(resolved));
-        const rr::replay::FixedAssets assets(changed);
-        rr::incompatible(
-            [&] { (void)rr::replay::request_from_input(changed, assets); },
-            "rider." + std::string(key));
-    }
+    bt::require(message.find("bearing_c_nms_rad") != std::string::npos,
+                "the legacy rebuild is refused by naming a removed drive field (got: " + message + ")");
 }
 } // namespace
 int main() {
@@ -198,7 +153,6 @@ int main() {
         policy_never_loaded();
         final_state_boundary();
         checksum_before_plant();
-        removed_battery_gate();
-        removed_rider_fields_gate();
+        legacy_recording_refused();
     });
 }

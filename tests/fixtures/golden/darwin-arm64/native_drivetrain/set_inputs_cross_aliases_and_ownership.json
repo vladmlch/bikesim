@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 57,
+  "nbytes": 40,
   "node": "native_drivetrain/set_inputs_cross_aliases_and_ownership",
   "offset": 320,
   "rtol": null,
   "shape": [
-   57
+   40
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "$.chain",
   "nbytes": 64,
   "node": "native_drivetrain/set_inputs_cross_aliases_and_ownership",
-  "offset": 377,
+  "offset": 360,
   "rtol": null,
   "shape": [
    8
@@ -144,10 +144,10 @@
   "dtype": "<f8",
   "index": 10,
   "kind": "bitwise",
-  "label": "$.drive_bearings",
+  "label": "$.freehub",
   "nbytes": 64,
   "node": "native_drivetrain/set_inputs_cross_aliases_and_ownership",
-  "offset": 441,
+  "offset": 424,
   "rtol": null,
   "shape": [
    8
@@ -158,24 +158,10 @@
   "dtype": "<f8",
   "index": 11,
   "kind": "bitwise",
-  "label": "$.freehub",
-  "nbytes": 64,
-  "node": "native_drivetrain/set_inputs_cross_aliases_and_ownership",
-  "offset": 505,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 12,
-  "kind": "bitwise",
   "label": "$.ideal_transmission",
   "nbytes": 64,
   "node": "native_drivetrain/set_inputs_cross_aliases_and_ownership",
-  "offset": 569,
+  "offset": 488,
   "rtol": null,
   "shape": [
    8

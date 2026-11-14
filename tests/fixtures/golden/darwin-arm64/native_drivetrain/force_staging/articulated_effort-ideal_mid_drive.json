@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 57,
+  "nbytes": 40,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
   "offset": 0,
   "rtol": null,
   "shape": [
-   57
+   40
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.chain",
   "nbytes": 64,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 57,
+  "offset": 40,
   "rtol": null,
   "shape": [
    8
@@ -32,10 +32,10 @@
   "dtype": "<f8",
   "index": 2,
   "kind": "bitwise",
-  "label": "$.drive_bearings",
+  "label": "$.freehub",
   "nbytes": 64,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 121,
+  "offset": 104,
   "rtol": null,
   "shape": [
    8
@@ -46,10 +46,10 @@
   "dtype": "<f8",
   "index": 3,
   "kind": "bitwise",
-  "label": "$.freehub",
+  "label": "$.ideal_transmission",
   "nbytes": 64,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 185,
+  "offset": 168,
   "rtol": null,
   "shape": [
    8
@@ -60,24 +60,10 @@
   "dtype": "<f8",
   "index": 4,
   "kind": "bitwise",
-  "label": "$.ideal_transmission",
-  "nbytes": 64,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 249,
-  "rtol": null,
-  "shape": [
-   8
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 5,
-  "kind": "bitwise",
   "label": "",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 313,
+  "offset": 232,
   "rtol": null,
   "shape": [
    1
@@ -86,26 +72,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 6,
+  "index": 5,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 993,
+  "nbytes": 740,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 321,
+  "offset": 240,
   "rtol": null,
   "shape": [
-   993
+   740
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 7,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.assist_demand_gated",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1314,
+  "offset": 980,
   "rtol": null,
   "shape": [
    4
@@ -114,24 +100,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 8,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.assist_gain",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1318,
+  "offset": 984,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 9,
+  "index": 8,
   "kind": "bitwise",
   "label": "$.assist_mode",
   "nbytes": 7,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1326,
+  "offset": 992,
   "rtol": null,
   "shape": [
    7
@@ -140,60 +126,76 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 10,
+  "index": 9,
   "kind": "bitwise",
   "label": "$.assist_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1333,
+  "offset": 999,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 11,
+  "index": 10,
   "kind": "bitwise",
   "label": "$.cadence_rpm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1341,
+  "offset": 1007,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.coasting_reason",
+  "nbytes": 2,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1015,
+  "rtol": null,
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 12,
   "kind": "bitwise",
-  "label": "$.chain_dissipation_power_w",
+  "label": "$.crank_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1349,
+  "offset": 1017,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 13,
   "kind": "bitwise",
-  "label": "$.chain_energy_j",
-  "nbytes": 8,
+  "label": "$.crank_target_phase_rad",
+  "nbytes": 4,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1357,
+  "offset": 1025,
   "rtol": null,
-  "shape": []
+  "shape": [
+   4
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 14,
   "kind": "bitwise",
-  "label": "$.chain_extension_m",
+  "label": "$.crank_target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1365,
+  "offset": 1029,
   "rtol": null,
   "shape": []
  },
@@ -202,34 +204,48 @@
   "dtype": "<f8",
   "index": 15,
   "kind": "bitwise",
-  "label": "$.chain_extension_rate_mps",
+  "label": "$.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1373,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 16,
-  "kind": "bitwise",
-  "label": "$.chain_tension_n",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1381,
+  "offset": 1037,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.freehub_engaged",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1045,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.coasting_reason",
+  "label": "$.freehub_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1050,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1389,
+  "offset": 1058,
   "rtol": null,
   "shape": [
    2
@@ -238,50 +254,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 18,
+  "index": 19,
   "kind": "bitwise",
-  "label": "$.crank_rad_s",
+  "label": "$.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1391,
+  "offset": 1060,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.crank_target_phase_rad",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1399,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 20,
   "kind": "bitwise",
-  "label": "$.crank_target_rate_rad_s",
-  "nbytes": 8,
+  "label": "$.gear_rear_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1403,
+  "offset": 1068,
   "rtol": null,
-  "shape": []
+  "shape": [
+   2
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 21,
   "kind": "bitwise",
-  "label": "$.drive_shaft_rad_s",
+  "label": "$.human_command_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1411,
+  "offset": 1070,
   "rtol": null,
   "shape": []
  },
@@ -290,34 +294,36 @@
   "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.freehub_deflection_rad",
+  "label": "$.human_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1419,
+  "offset": 1078,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.human_setpoint_nm",
+  "nbytes": 4,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1427,
+  "offset": 1086,
   "rtol": null,
-  "shape": []
+  "shape": [
+   4
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.freehub_energy_j",
+  "label": "$.human_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1435,
+  "offset": 1090,
   "rtol": null,
   "shape": []
  },
@@ -326,126 +332,10 @@
   "dtype": "|u1",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.freehub_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1443,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1448,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 27,
-  "kind": "bitwise",
-  "label": "$.gear_front_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1456,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.gear_ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1458,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1466,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.human_command_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1468,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.human_sensor_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1476,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.human_setpoint_nm",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1484,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "$.human_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1488,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
   "label": "$.motor_control_source",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1496,
+  "offset": 1098,
   "rtol": null,
   "shape": [
    8
@@ -454,12 +344,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 35,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.motor_enabled",
   "nbytes": 5,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1504,
+  "offset": 1106,
   "rtol": null,
   "shape": [
    5
@@ -467,51 +357,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1509,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1517,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 38,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1522,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 39,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.motor_limit_nm",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1530,
+  "offset": 1111,
   "rtol": null,
   "shape": [
    4
@@ -520,36 +372,198 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 40,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.motor_limited_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1534,
+  "offset": 1115,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.motor_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1542,
+  "offset": 1123,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 30,
   "kind": "bitwise",
   "label": "$.motor_setpoint_nm",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1550,
+  "offset": 1131,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.motor_shaft_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1135,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.motor_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1143,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.omits_suspension_coupling",
+  "nbytes": 4,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1151,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1155,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.rider_mode",
+  "nbytes": 10,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1163,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.safety_limited",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1173,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.shift_active",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1178,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.shift_count",
+  "nbytes": 1,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1183,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.shift_direction",
+  "nbytes": 6,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1184,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.shift_from_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1190,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.shift_rider_response",
+  "nbytes": 6,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1192,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.shift_time_s",
+  "nbytes": 4,
+  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
+  "offset": 1198,
   "rtol": null,
   "shape": [
    4
@@ -560,170 +574,22 @@
   "dtype": "<f8",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1554,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.motor_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1562,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.omits_suspension_coupling",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1570,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.required_cadence_rpm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1574,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.rider_mode",
-  "nbytes": 10,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1582,
-  "rtol": null,
-  "shape": [
-   10
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.safety_limited",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1592,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1597,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.shift_count",
-  "nbytes": 1,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1602,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.shift_direction",
-  "nbytes": 6,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1603,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.shift_from_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1609,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 53,
-  "kind": "bitwise",
-  "label": "$.shift_time_s",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1611,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 54,
-  "kind": "bitwise",
   "label": "$.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1615,
+  "offset": 1202,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.transmission_model",
   "nbytes": 17,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1623,
+  "offset": 1210,
   "rtol": null,
   "shape": [
    17
@@ -732,12 +598,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 56,
+  "index": 45,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 2,
   "node": "native_drivetrain/force_staging/articulated_effort-ideal_mid_drive",
-  "offset": 1640,
+  "offset": 1227,
   "rtol": null,
   "shape": [
    2

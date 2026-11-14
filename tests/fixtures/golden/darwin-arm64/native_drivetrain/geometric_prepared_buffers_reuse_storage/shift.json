@@ -97,12 +97,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 141,
+  "nbytes": 111,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
   "offset": 131,
   "rtol": null,
   "shape": [
-   141
+   111
   ]
  },
  {
@@ -113,7 +113,7 @@
   "label": "$.angles#length",
   "nbytes": 1,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 272,
+  "offset": 242,
   "rtol": null,
   "shape": [
    1
@@ -127,7 +127,7 @@
   "label": "$.angles[0]",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 273,
+  "offset": 243,
   "rtol": null,
   "shape": []
  },
@@ -139,7 +139,7 @@
   "label": "$.clutch",
   "nbytes": 4,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 281,
+  "offset": 251,
   "rtol": null,
   "shape": [
    4
@@ -150,24 +150,10 @@
   "dtype": "|u1",
   "index": 11,
   "kind": "bitwise",
-  "label": "$.freewheel",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 285,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 12,
-  "kind": "bitwise",
   "label": "$.ideal_hub#keys",
   "nbytes": 165,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 289,
+  "offset": 255,
   "rtol": null,
   "shape": [
    165
@@ -176,24 +162,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 13,
+  "index": 12,
   "kind": "bitwise",
   "label": "$.ideal_hub.boundary",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 454,
+  "offset": 420,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 14,
+  "index": 13,
   "kind": "bitwise",
   "label": "$.ideal_hub.coefficients",
   "nbytes": 64,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 462,
+  "offset": 428,
   "rtol": null,
   "shape": [
    8
@@ -202,12 +188,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 15,
+  "index": 14,
   "kind": "bitwise",
   "label": "$.ideal_hub.diagnostics#keys",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 526,
+  "offset": 492,
   "rtol": null,
   "shape": [
    2
@@ -216,24 +202,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 16,
+  "index": 15,
   "kind": "bitwise",
   "label": "$.ideal_hub.last_tension_n",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 528,
+  "offset": 494,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 17,
+  "index": 16,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared#keys",
   "nbytes": 32,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 536,
+  "offset": 502,
   "rtol": null,
   "shape": [
    32
@@ -242,38 +228,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 18,
+  "index": 17,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.jacobian",
   "nbytes": 64,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 568,
+  "offset": 534,
   "rtol": null,
   "shape": [
    8
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.prepared.phi",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 598,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 19,
   "kind": "bitwise",
-  "label": "$.ideal_hub.prepared.phi",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 632,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 20,
-  "kind": "bitwise",
   "label": "$.ideal_hub.prepared.qpos",
   "nbytes": 64,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 640,
+  "offset": 606,
   "rtol": null,
   "shape": [
    8
@@ -282,50 +268,74 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 21,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.ideal_hub.prepared.time",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 704,
+  "offset": 670,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.range#length",
+  "nbytes": 1,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 678,
+  "rtol": null,
+  "shape": [
+   1
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.ideal_hub.range",
-  "nbytes": 16,
+  "label": "$.ideal_hub.range[0]",
+  "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 712,
+  "offset": 679,
   "rtol": null,
-  "shape": [
-   2
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 23,
   "kind": "bitwise",
+  "label": "$.ideal_hub.range[1]",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 687,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
   "label": "$.ideal_hub.ratio",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 728,
+  "offset": 695,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 24,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.ideal_hub.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 736,
+  "offset": 703,
   "rtol": null,
   "shape": [
    2
@@ -334,36 +344,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.ideal_hub.shift_constraint_work_j",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 738,
+  "offset": 705,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 26,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.ideal_hub.shift_parameter_work_j",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 746,
+  "offset": 713,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 27,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.ideal_hub.shift_pending",
   "nbytes": 4,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 754,
+  "offset": 721,
   "rtol": null,
   "shape": [
    4
@@ -372,62 +382,38 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last#keys",
-  "nbytes": 338,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 758,
-  "rtol": null,
-  "shape": [
-   338
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 29,
   "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
-  "nbytes": 8,
+  "label": "$.last#keys",
+  "nbytes": 233,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1096,
+  "offset": 725,
   "rtol": null,
-  "shape": []
+  "shape": [
+   233
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 30,
   "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1104,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 31,
-  "kind": "bitwise",
   "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1112,
+  "offset": 958,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 32,
+  "index": 31,
   "kind": "bitwise",
   "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1120,
+  "offset": 966,
   "rtol": null,
   "shape": [
    2
@@ -436,62 +422,62 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 33,
+  "index": 32,
   "kind": "bitwise",
   "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1122,
+  "offset": 968,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 34,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.last.gear_rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1130,
+  "offset": 976,
   "rtol": null,
   "shape": [
    2
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.last.human_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 978,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 35,
   "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
+  "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1132,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1140,
+  "offset": 986,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
+  "index": 36,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
+  "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1148,
+  "offset": 994,
   "rtol": null,
   "shape": [
    5
@@ -499,10 +485,148 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.last.shift_count",
+  "nbytes": 1,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 999,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
+  "label": "$.last.shift_direction",
+  "nbytes": 6,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1000,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.last.shift_from_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1006,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.last.shift_rider_response",
+  "nbytes": 6,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1008,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.last.shift_time_s",
+  "nbytes": 4,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1014,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.last.shift_torque_factor",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1018,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.last_time_s",
+  "nbytes": 4,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1026,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.pending_actuation",
+  "nbytes": 4,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1030,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.policies#keys",
+  "nbytes": 32,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1034,
+  "rtol": null,
+  "shape": [
+   32
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "$.policies.assist#keys",
+  "nbytes": 87,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1066,
+  "rtol": null,
+  "shape": [
+   87
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.policies.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
   "offset": 1153,
@@ -512,9 +636,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 39,
+  "index": 48,
   "kind": "bitwise",
-  "label": "$.last.motor_torque_nm",
+  "label": "$.policies.assist.hold_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
   "offset": 1161,
@@ -523,167 +647,41 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
-  "index": 40,
-  "kind": "bitwise",
-  "label": "$.last.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1169,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 41,
-  "kind": "bitwise",
-  "label": "$.last.shift_count",
-  "nbytes": 1,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1174,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 42,
-  "kind": "bitwise",
-  "label": "$.last.shift_direction",
-  "nbytes": 6,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1175,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 43,
-  "kind": "bitwise",
-  "label": "$.last.shift_from_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1181,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.last.shift_time_s",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1183,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
   "dtype": "<f8",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.last.shift_torque_factor",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1187,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.last_time_s",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1195,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.pending_actuation",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1199,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.policies#keys",
-  "nbytes": 38,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1203,
-  "rtol": null,
-  "shape": [
-   38
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 49,
-  "kind": "bitwise",
-  "label": "$.policies.assist#keys",
-  "nbytes": 33,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1241,
-  "rtol": null,
-  "shape": [
-   33
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1274,
+  "offset": 1169,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1282,
+  "offset": 1177,
   "rtol": null,
   "shape": [
    5
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.policies.assist.release_hold_left_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1182,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
@@ -693,7 +691,7 @@
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1287,
+  "offset": 1190,
   "rtol": null,
   "shape": []
  },
@@ -702,24 +700,10 @@
   "dtype": "|u1",
   "index": 53,
   "kind": "bitwise",
-  "label": "$.policies.hub",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1295,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 54,
-  "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1299,
+  "offset": 1198,
   "rtol": null,
   "shape": [
    98
@@ -728,36 +712,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 55,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1397,
+  "offset": 1296,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1405,
+  "offset": 1304,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1413,
+  "offset": 1312,
   "rtol": null,
   "shape": [
    5
@@ -766,24 +750,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 58,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1418,
+  "offset": 1317,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1426,
+  "offset": 1325,
   "rtol": null,
   "shape": [
    4
@@ -792,38 +776,50 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1430,
+  "offset": 1329,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 60,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
-  "nbytes": 113,
+  "nbytes": 130,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1438,
+  "offset": 1337,
   "rtol": null,
   "shape": [
-   113
+   130
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.cadence_ema",
+  "nbytes": 8,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1467,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 62,
   "kind": "bitwise",
-  "label": "$.policies.shifting.cadence_ema",
+  "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1551,
+  "offset": 1475,
   "rtol": null,
   "shape": []
  },
@@ -832,34 +828,22 @@
   "dtype": "<f8",
   "index": 63,
   "kind": "bitwise",
-  "label": "$.policies.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1559,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 64,
-  "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1567,
+  "offset": 1483,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 64,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 4,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1575,
+  "offset": 1491,
   "rtol": null,
   "shape": [
    4
@@ -868,12 +852,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 66,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1579,
+  "offset": 1495,
   "rtol": null,
   "shape": [
    2
@@ -882,12 +866,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1581,
+  "offset": 1497,
   "rtol": null,
   "shape": [
    2
@@ -896,14 +880,28 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 68,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1583,
+  "offset": 1499,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 68,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.rider_response",
+  "nbytes": 6,
+  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
+  "offset": 1507,
+  "rtol": null,
+  "shape": [
+   6
+  ]
  },
  {
   "atol": null,
@@ -913,7 +911,7 @@
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1591,
+  "offset": 1513,
   "rtol": null,
   "shape": [
    1
@@ -927,7 +925,7 @@
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1592,
+  "offset": 1514,
   "rtol": null,
   "shape": [
    4
@@ -935,39 +933,13 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 71,
-  "kind": "bitwise",
-  "label": "$.psi",
-  "nbytes": 4,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1596,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 72,
-  "kind": "bitwise",
-  "label": "$.reference",
-  "nbytes": 8,
-  "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1600,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 73,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 8,
   "node": "native_drivetrain/geometric_prepared_buffers_reuse_storage/shift",
-  "offset": 1608,
+  "offset": 1518,
   "rtol": null,
   "shape": []
  }

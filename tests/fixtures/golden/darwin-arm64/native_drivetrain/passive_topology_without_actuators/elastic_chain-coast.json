@@ -32,7 +32,7 @@
   "dtype": "<f8",
   "index": 2,
   "kind": "bitwise",
-  "label": "$.drive_bearings",
+  "label": "$.freehub",
   "nbytes": 72,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
   "offset": 108,
@@ -46,7 +46,7 @@
   "dtype": "<f8",
   "index": 3,
   "kind": "bitwise",
-  "label": "$.freehub",
+  "label": "",
   "nbytes": 72,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
   "offset": 180,
@@ -57,27 +57,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 4,
-  "kind": "bitwise",
-  "label": "",
-  "nbytes": 72,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 252,
-  "rtol": null,
-  "shape": [
-   9
-  ]
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 5,
+  "index": 4,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 141,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 324,
+  "offset": 252,
   "rtol": null,
   "shape": [
    141
@@ -86,12 +72,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 6,
+  "index": 5,
   "kind": "bitwise",
   "label": "$.angles#length",
   "nbytes": 1,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 465,
+  "offset": 393,
   "rtol": null,
   "shape": [
    1
@@ -100,36 +86,50 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 7,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.angles[0]",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 466,
+  "offset": 394,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 8,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.angles[1]",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 474,
+  "offset": 402,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 9,
+  "index": 8,
   "kind": "bitwise",
   "label": "$.clutch",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 482,
+  "offset": 410,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.ideal_hub",
+  "nbytes": 4,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 414,
   "rtol": null,
   "shape": [
    4
@@ -140,38 +140,10 @@
   "dtype": "|u1",
   "index": 10,
   "kind": "bitwise",
-  "label": "$.freewheel",
-  "nbytes": 4,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 486,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 11,
-  "kind": "bitwise",
-  "label": "$.ideal_hub",
-  "nbytes": 4,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 490,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 12,
-  "kind": "bitwise",
   "label": "$.last#keys",
   "nbytes": 993,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 494,
+  "offset": 418,
   "rtol": null,
   "shape": [
    993
@@ -180,12 +152,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 13,
+  "index": 11,
   "kind": "bitwise",
   "label": "$.last.assist_demand_gated",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1487,
+  "offset": 1411,
   "rtol": null,
   "shape": [
    4
@@ -194,24 +166,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 14,
+  "index": 12,
   "kind": "bitwise",
   "label": "$.last.assist_gain",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1491,
+  "offset": 1415,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 15,
+  "index": 13,
   "kind": "bitwise",
   "label": "$.last.assist_mode",
   "nbytes": 7,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1499,
+  "offset": 1423,
   "rtol": null,
   "shape": [
    7
@@ -220,48 +192,76 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 16,
+  "index": 14,
   "kind": "bitwise",
   "label": "$.last.assist_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1506,
+  "offset": 1430,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.last.cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1438,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.last.coasting_reason",
+  "nbytes": 10,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1446,
+  "rtol": null,
+  "shape": [
+   10
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.last.cadence_rpm",
+  "label": "$.last.crank_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1514,
+  "offset": 1456,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "$.last.chain_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.last.crank_target_phase_rad",
+  "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1522,
+  "offset": 1464,
   "rtol": null,
-  "shape": []
+  "shape": [
+   4
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 19,
   "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
+  "label": "$.last.crank_target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1530,
+  "offset": 1468,
   "rtol": null,
   "shape": []
  },
@@ -270,34 +270,36 @@
   "dtype": "<f8",
   "index": 20,
   "kind": "bitwise",
-  "label": "$.last.chain_extension_m",
+  "label": "$.last.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1538,
+  "offset": 1476,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 21,
   "kind": "bitwise",
-  "label": "$.last.chain_extension_rate_mps",
-  "nbytes": 8,
+  "label": "$.last.freehub_engaged",
+  "nbytes": 5,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1546,
+  "offset": 1484,
   "rtol": null,
-  "shape": []
+  "shape": [
+   5
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.last.chain_tension_n",
+  "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1554,
+  "offset": 1489,
   "rtol": null,
   "shape": []
  },
@@ -306,13 +308,13 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.last.coasting_reason",
-  "nbytes": 10,
+  "label": "$.last.gear_front_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1562,
+  "offset": 1497,
   "rtol": null,
   "shape": [
-   10
+   2
   ]
  },
  {
@@ -320,10 +322,10 @@
   "dtype": "<f8",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.last.crank_rad_s",
+  "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1572,
+  "offset": 1499,
   "rtol": null,
   "shape": []
  },
@@ -332,13 +334,13 @@
   "dtype": "|u1",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.last.crank_target_phase_rad",
-  "nbytes": 4,
+  "label": "$.last.gear_rear_teeth",
+  "nbytes": 2,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1580,
+  "offset": 1507,
   "rtol": null,
   "shape": [
-   4
+   2
   ]
  },
  {
@@ -346,10 +348,10 @@
   "dtype": "<f8",
   "index": 26,
   "kind": "bitwise",
-  "label": "$.last.crank_target_rate_rad_s",
+  "label": "$.last.human_command_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1584,
+  "offset": 1509,
   "rtol": null,
   "shape": []
  },
@@ -358,148 +360,22 @@
   "dtype": "<f8",
   "index": 27,
   "kind": "bitwise",
-  "label": "$.last.drive_shaft_rad_s",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1592,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.freehub_deflection_rad",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1600,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.last.freehub_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1608,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1616,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.last.freehub_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1624,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.last.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1629,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 33,
-  "kind": "bitwise",
-  "label": "$.last.gear_front_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1637,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.last.gear_ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1639,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.last.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1647,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.last.human_command_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1649,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 37,
-  "kind": "bitwise",
   "label": "$.last.human_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1657,
+  "offset": 1517,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.last.human_setpoint_nm",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1665,
+  "offset": 1525,
   "rtol": null,
   "shape": [
    4
@@ -508,24 +384,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 39,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1669,
+  "offset": 1529,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 30,
   "kind": "bitwise",
   "label": "$.last.motor_control_source",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1677,
+  "offset": 1537,
   "rtol": null,
   "shape": [
    8
@@ -534,12 +410,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 41,
+  "index": 31,
   "kind": "bitwise",
   "label": "$.last.motor_enabled",
   "nbytes": 5,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1685,
+  "offset": 1545,
   "rtol": null,
   "shape": [
    5
@@ -547,51 +423,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 42,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1690,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 43,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1698,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1703,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
+  "index": 32,
   "kind": "bitwise",
   "label": "$.last.motor_limit_nm",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1711,
+  "offset": 1550,
   "rtol": null,
   "shape": [
    4
@@ -600,36 +438,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 33,
   "kind": "bitwise",
   "label": "$.last.motor_limited_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1715,
+  "offset": 1554,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 47,
+  "index": 34,
   "kind": "bitwise",
   "label": "$.last.motor_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1723,
+  "offset": 1562,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
+  "index": 35,
   "kind": "bitwise",
   "label": "$.last.motor_setpoint_nm",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1731,
+  "offset": 1570,
   "rtol": null,
   "shape": [
    4
@@ -638,36 +476,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 49,
+  "index": 36,
   "kind": "bitwise",
   "label": "$.last.motor_shaft_power_w",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1735,
+  "offset": 1574,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 50,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1743,
+  "offset": 1582,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.last.omits_suspension_coupling",
   "nbytes": 5,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1751,
+  "offset": 1590,
   "rtol": null,
   "shape": [
    5
@@ -676,24 +514,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 52,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.last.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1756,
+  "offset": 1595,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.last.rider_mode",
   "nbytes": 10,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1764,
+  "offset": 1603,
   "rtol": null,
   "shape": [
    10
@@ -702,12 +540,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.last.safety_limited",
   "nbytes": 5,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1774,
+  "offset": 1613,
   "rtol": null,
   "shape": [
    5
@@ -716,12 +554,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1779,
+  "offset": 1618,
   "rtol": null,
   "shape": [
    5
@@ -730,12 +568,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 56,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1784,
+  "offset": 1623,
   "rtol": null,
   "shape": [
    1
@@ -744,12 +582,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 44,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1785,
+  "offset": 1624,
   "rtol": null,
   "shape": [
    6
@@ -758,12 +596,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 58,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1791,
+  "offset": 1630,
   "rtol": null,
   "shape": [
    2
@@ -772,12 +610,24 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 46,
+  "kind": "bitwise",
+  "label": "$.last.shift_rider_response",
+  "nbytes": 1,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1632,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1793,
+  "offset": 1633,
   "rtol": null,
   "shape": [
    4
@@ -786,24 +636,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 60,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1797,
+  "offset": 1637,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.last.transmission_model",
   "nbytes": 15,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1805,
+  "offset": 1645,
   "rtol": null,
   "shape": [
    15
@@ -812,24 +662,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 62,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1820,
+  "offset": 1660,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 63,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.pending_actuation",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1828,
+  "offset": 1668,
   "rtol": null,
   "shape": [
    4
@@ -838,12 +688,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.policies#keys",
   "nbytes": 38,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1832,
+  "offset": 1672,
   "rtol": null,
   "shape": [
    38
@@ -852,12 +702,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1870,
+  "offset": 1710,
   "rtol": null,
   "shape": [
    33
@@ -866,9 +716,137 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 66,
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.policies.assist.hold_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1743,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "$.policies.assist.hold_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1751,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1759,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "$.policies.assist.pedaling",
+  "nbytes": 5,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1767,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "$.policies.assist.release_hold_left_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1772,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "$.policies.assist.torque",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1780,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1788,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling._cadence_ema",
+  "nbytes": 4,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1886,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1890,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 1898,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 64,
+  "kind": "bitwise",
+  "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
   "offset": 1903,
@@ -878,154 +856,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 67,
-  "kind": "bitwise",
-  "label": "$.policies.assist.pedaling",
-  "nbytes": 5,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1911,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 68,
-  "kind": "bitwise",
-  "label": "$.policies.assist.torque",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1916,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 69,
-  "kind": "bitwise",
-  "label": "$.policies.hub#keys",
-  "nbytes": 35,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1924,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 70,
-  "kind": "bitwise",
-  "label": "$.policies.hub.boundary",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1959,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 71,
-  "kind": "bitwise",
-  "label": "$.policies.hub.energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1967,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 72,
-  "kind": "bitwise",
-  "label": "$.policies.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1975,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 73,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling#keys",
-  "nbytes": 98,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 1983,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 74,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2081,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 75,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling._effort",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2085,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 76,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.coasting",
-  "nbytes": 5,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2093,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 77,
-  "kind": "bitwise",
-  "label": "$.policies.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2098,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 78,
+  "index": 65,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2106,
+  "offset": 1911,
   "rtol": null,
   "shape": [
    4
@@ -1034,24 +870,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 79,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2110,
+  "offset": 1915,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 67,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2118,
+  "offset": 1923,
   "rtol": null,
   "shape": [
    113
@@ -1060,12 +896,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 81,
+  "index": 68,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2231,
+  "offset": 2036,
   "rtol": null,
   "shape": [
    4
@@ -1074,36 +910,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 82,
+  "index": 69,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2235,
+  "offset": 2040,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 83,
+  "index": 70,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2243,
+  "offset": 2048,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 84,
+  "index": 71,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2251,
+  "offset": 2056,
   "rtol": null,
   "shape": [
    6
@@ -1112,12 +948,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 85,
+  "index": 72,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2257,
+  "offset": 2062,
   "rtol": null,
   "shape": [
    2
@@ -1126,12 +962,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 86,
+  "index": 73,
   "kind": "bitwise",
   "label": "$.policies.shifting.rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2259,
+  "offset": 2064,
   "rtol": null,
   "shape": [
    2
@@ -1140,12 +976,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 87,
+  "index": 74,
   "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2261,
+  "offset": 2066,
   "rtol": null,
   "shape": [
    4
@@ -1154,12 +990,24 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 88,
+  "index": 75,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.rider_response",
+  "nbytes": 1,
+  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
+  "offset": 2070,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 76,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2265,
+  "offset": 2071,
   "rtol": null,
   "shape": [
    1
@@ -1168,12 +1016,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 89,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2266,
+  "offset": 2072,
   "rtol": null,
   "shape": [
    4
@@ -1181,37 +1029,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 90,
-  "kind": "bitwise",
-  "label": "$.psi",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2270,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 91,
-  "kind": "bitwise",
-  "label": "$.reference",
-  "nbytes": 8,
-  "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2278,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/passive_topology_without_actuators/elastic_chain-coast",
-  "offset": 2286,
+  "offset": 2076,
   "rtol": null,
   "shape": [
    4

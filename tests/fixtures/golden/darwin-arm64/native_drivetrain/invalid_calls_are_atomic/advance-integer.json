@@ -58,24 +58,10 @@
   "dtype": "|u1",
   "index": 4,
   "kind": "bitwise",
-  "label": "$.freewheel",
-  "nbytes": 4,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 154,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 5,
-  "kind": "bitwise",
   "label": "$.ideal_hub#keys",
   "nbytes": 165,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 158,
+  "offset": 154,
   "rtol": null,
   "shape": [
    165
@@ -84,38 +70,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 6,
+  "index": 5,
   "kind": "bitwise",
   "label": "$.ideal_hub.boundary",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 323,
+  "offset": 319,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 7,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.ideal_hub.coefficients",
-  "nbytes": 8,
+  "nbytes": 64,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 331,
+  "offset": 327,
   "rtol": null,
   "shape": [
-   1
+   8
   ]
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 8,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.ideal_hub.diagnostics#keys",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 339,
+  "offset": 391,
   "rtol": null,
   "shape": [
    2
@@ -124,102 +110,116 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 9,
+  "index": 8,
   "kind": "bitwise",
   "label": "$.ideal_hub.last_tension_n",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 341,
+  "offset": 393,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 10,
+  "index": 9,
   "kind": "bitwise",
-  "label": "$.ideal_hub.prepared",
-  "nbytes": 4,
+  "label": "$.ideal_hub.prepared#keys",
+  "nbytes": 32,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 349,
+  "offset": 401,
   "rtol": null,
   "shape": [
-   4
+   32
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
-  "index": 11,
+  "dtype": "<f8",
+  "index": 10,
   "kind": "bitwise",
-  "label": "$.ideal_hub.range#length",
-  "nbytes": 1,
+  "label": "$.ideal_hub.prepared.jacobian",
+  "nbytes": 64,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 353,
+  "offset": 433,
   "rtol": null,
   "shape": [
-   1
+   8
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.prepared.phi",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 497,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 12,
   "kind": "bitwise",
-  "label": "$.ideal_hub.range[0]",
-  "nbytes": 8,
+  "label": "$.ideal_hub.prepared.qpos",
+  "nbytes": 64,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 354,
+  "offset": 505,
   "rtol": null,
-  "shape": []
+  "shape": [
+   8
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 13,
   "kind": "bitwise",
-  "label": "$.ideal_hub.range[1]",
+  "label": "$.ideal_hub.prepared.time",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 362,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 14,
-  "kind": "bitwise",
-  "label": "$.ideal_hub.ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 370,
+  "offset": 569,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 15,
+  "index": 14,
   "kind": "bitwise",
-  "label": "$.ideal_hub.rear_teeth",
-  "nbytes": 2,
+  "label": "$.ideal_hub.range#length",
+  "nbytes": 1,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 378,
+  "offset": 577,
   "rtol": null,
   "shape": [
-   2
+   1
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.range[0]",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 578,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.ideal_hub.shift_constraint_work_j",
+  "label": "$.ideal_hub.range[1]",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 380,
+  "offset": 586,
   "rtol": null,
   "shape": []
  },
@@ -228,10 +228,10 @@
   "dtype": "<f8",
   "index": 17,
   "kind": "bitwise",
-  "label": "$.ideal_hub.shift_parameter_work_j",
+  "label": "$.ideal_hub.ratio",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 388,
+  "offset": 594,
   "rtol": null,
   "shape": []
  },
@@ -240,10 +240,48 @@
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
+  "label": "$.ideal_hub.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 602,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_constraint_work_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 604,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.ideal_hub.shift_parameter_work_j",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 612,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
   "label": "$.ideal_hub.shift_pending",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 396,
+  "offset": 620,
   "rtol": null,
   "shape": [
    5
@@ -252,12 +290,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 19,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.last#keys",
   "nbytes": 338,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 401,
+  "offset": 625,
   "rtol": null,
   "shape": [
    338
@@ -266,48 +304,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 20,
-  "kind": "bitwise",
-  "label": "$.last.chain_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 739,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 21,
-  "kind": "bitwise",
-  "label": "$.last.freehub_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 747,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 22,
+  "index": 23,
   "kind": "bitwise",
   "label": "$.last.freehub_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 755,
+  "offset": 963,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 23,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.last.gear_front_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 763,
+  "offset": 971,
   "rtol": null,
   "shape": [
    2
@@ -316,100 +330,62 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 24,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.last.gear_ratio",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 765,
+  "offset": 973,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 25,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.last.gear_rear_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 773,
+  "offset": 981,
   "rtol": null,
   "shape": [
    2
   ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.last.human_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 775,
-  "rtol": null,
-  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 27,
   "kind": "bitwise",
-  "label": "$.last.motor_freewheel_dissipation_power_w",
+  "label": "$.last.human_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 783,
+  "offset": 983,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 28,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 791,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.last.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 796,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
   "kind": "bitwise",
   "label": "$.last.motor_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 804,
+  "offset": 991,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 31,
+  "index": 29,
   "kind": "bitwise",
   "label": "$.last.shift_active",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 812,
+  "offset": 999,
   "rtol": null,
   "shape": [
    5
@@ -418,12 +394,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 32,
+  "index": 30,
   "kind": "bitwise",
   "label": "$.last.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 817,
+  "offset": 1004,
   "rtol": null,
   "shape": [
    1
@@ -432,12 +408,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 33,
+  "index": 31,
   "kind": "bitwise",
   "label": "$.last.shift_direction",
   "nbytes": 6,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 818,
+  "offset": 1005,
   "rtol": null,
   "shape": [
    6
@@ -446,12 +422,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 34,
+  "index": 32,
   "kind": "bitwise",
   "label": "$.last.shift_from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 824,
+  "offset": 1011,
   "rtol": null,
   "shape": [
    2
@@ -460,12 +436,24 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 35,
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.last.shift_rider_response",
+  "nbytes": 1,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1013,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
   "kind": "bitwise",
   "label": "$.last.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 826,
+  "offset": 1014,
   "rtol": null,
   "shape": [
    4
@@ -474,24 +462,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 36,
+  "index": 35,
   "kind": "bitwise",
   "label": "$.last.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 830,
+  "offset": 1018,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
+  "index": 36,
   "kind": "bitwise",
   "label": "$.last_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 838,
+  "offset": 1026,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.pending_actuation",
+  "nbytes": 4,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1030,
   "rtol": null,
   "shape": [
    4
@@ -502,24 +504,10 @@
   "dtype": "|u1",
   "index": 38,
   "kind": "bitwise",
-  "label": "$.pending_actuation",
-  "nbytes": 4,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 842,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 39,
-  "kind": "bitwise",
   "label": "$.policies#keys",
   "nbytes": 38,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 846,
+  "offset": 1034,
   "rtol": null,
   "shape": [
    38
@@ -528,12 +516,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.policies.assist#keys",
   "nbytes": 33,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 884,
+  "offset": 1072,
   "rtol": null,
   "shape": [
    33
@@ -542,24 +530,48 @@
  {
   "atol": null,
   "dtype": "<f8",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.policies.assist.hold_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1105,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
   "index": 41,
+  "kind": "bitwise",
+  "label": "$.policies.assist.hold_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1113,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 42,
   "kind": "bitwise",
   "label": "$.policies.assist.last_gain",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 917,
+  "offset": 1121,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.policies.assist.pedaling",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 925,
+  "offset": 1129,
   "rtol": null,
   "shape": [
    5
@@ -568,38 +580,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 43,
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.policies.assist.release_hold_left_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1134,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 45,
   "kind": "bitwise",
   "label": "$.policies.assist.torque",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 930,
+  "offset": 1142,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.policies.hub",
-  "nbytes": 4,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 938,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.policies.pedaling#keys",
   "nbytes": 98,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 942,
+  "offset": 1150,
   "rtol": null,
   "shape": [
    98
@@ -608,12 +618,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 46,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.policies.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1040,
+  "offset": 1248,
   "rtol": null,
   "shape": [
    4
@@ -622,24 +632,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 47,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.policies.pedaling._effort",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1044,
+  "offset": 1252,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.policies.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1052,
+  "offset": 1260,
   "rtol": null,
   "shape": [
    5
@@ -648,24 +658,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 49,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.policies.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1057,
+  "offset": 1265,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 50,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1065,
+  "offset": 1273,
   "rtol": null,
   "shape": [
    4
@@ -674,24 +684,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 51,
+  "index": 52,
   "kind": "bitwise",
   "label": "$.policies.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1069,
+  "offset": 1277,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 53,
   "kind": "bitwise",
   "label": "$.policies.shifting#keys",
   "nbytes": 113,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1077,
+  "offset": 1285,
   "rtol": null,
   "shape": [
    113
@@ -700,12 +710,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 54,
   "kind": "bitwise",
   "label": "$.policies.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1190,
+  "offset": 1398,
   "rtol": null,
   "shape": [
    4
@@ -714,36 +724,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 54,
+  "index": 55,
   "kind": "bitwise",
   "label": "$.policies.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1194,
+  "offset": 1402,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 55,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.policies.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1202,
+  "offset": 1410,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 56,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.policies.shifting.direction",
   "nbytes": 6,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1210,
+  "offset": 1418,
   "rtol": null,
   "shape": [
    6
@@ -752,26 +762,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 57,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.policies.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1216,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 58,
-  "kind": "bitwise",
-  "label": "$.policies.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1218,
+  "offset": 1424,
   "rtol": null,
   "shape": [
    2
@@ -782,10 +778,24 @@
   "dtype": "|u1",
   "index": 59,
   "kind": "bitwise",
+  "label": "$.policies.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1426,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
   "label": "$.policies.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1220,
+  "offset": 1428,
   "rtol": null,
   "shape": [
    4
@@ -794,12 +804,24 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 60,
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.policies.shifting.rider_response",
+  "nbytes": 1,
+  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
+  "offset": 1432,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 62,
   "kind": "bitwise",
   "label": "$.policies.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1224,
+  "offset": 1433,
   "rtol": null,
   "shape": [
    1
@@ -808,42 +830,16 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 61,
+  "index": 63,
   "kind": "bitwise",
   "label": "$.probe_last",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1225,
+  "offset": 1434,
   "rtol": null,
   "shape": [
    4
   ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 62,
-  "kind": "bitwise",
-  "label": "$.psi",
-  "nbytes": 4,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1229,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 63,
-  "kind": "bitwise",
-  "label": "$.reference",
-  "nbytes": 8,
-  "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1233,
-  "rtol": null,
-  "shape": []
  },
  {
   "atol": null,
@@ -853,7 +849,7 @@
   "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1241,
+  "offset": 1438,
   "rtol": null,
   "shape": [
    4
@@ -867,7 +863,7 @@
   "label": "",
   "nbytes": 16,
   "node": "native_drivetrain/invalid_calls_are_atomic/advance-integer",
-  "offset": 1245,
+  "offset": 1442,
   "rtol": null,
   "shape": [
    2

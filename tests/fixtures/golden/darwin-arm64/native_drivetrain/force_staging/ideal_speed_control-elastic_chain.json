@@ -32,7 +32,7 @@
   "dtype": "<f8",
   "index": 2,
   "kind": "bitwise",
-  "label": "$.drive_bearings",
+  "label": "$.freehub",
   "nbytes": 72,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
   "offset": 108,
@@ -46,24 +46,10 @@
   "dtype": "<f8",
   "index": 3,
   "kind": "bitwise",
-  "label": "$.freehub",
-  "nbytes": 72,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 180,
-  "rtol": null,
-  "shape": [
-   9
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 4,
-  "kind": "bitwise",
   "label": "",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 252,
+  "offset": 180,
   "rtol": null,
   "shape": [
    1
@@ -72,12 +58,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 5,
+  "index": 4,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 993,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 260,
+  "offset": 188,
   "rtol": null,
   "shape": [
    993
@@ -86,12 +72,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 6,
+  "index": 5,
   "kind": "bitwise",
   "label": "$.assist_demand_gated",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1253,
+  "offset": 1181,
   "rtol": null,
   "shape": [
    4
@@ -100,24 +86,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 7,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.assist_gain",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1257,
+  "offset": 1185,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 8,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.assist_mode",
   "nbytes": 7,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1265,
+  "offset": 1193,
   "rtol": null,
   "shape": [
    7
@@ -126,96 +112,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 9,
+  "index": 8,
   "kind": "bitwise",
   "label": "$.assist_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1272,
+  "offset": 1200,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 10,
+  "index": 9,
   "kind": "bitwise",
   "label": "$.cadence_rpm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1280,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 11,
-  "kind": "bitwise",
-  "label": "$.chain_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1288,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 12,
-  "kind": "bitwise",
-  "label": "$.chain_energy_j",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1296,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 13,
-  "kind": "bitwise",
-  "label": "$.chain_extension_m",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1304,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 14,
-  "kind": "bitwise",
-  "label": "$.chain_extension_rate_mps",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1312,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 15,
-  "kind": "bitwise",
-  "label": "$.chain_tension_n",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1320,
+  "offset": 1208,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 16,
+  "index": 10,
   "kind": "bitwise",
   "label": "$.coasting_reason",
   "nbytes": 10,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1328,
+  "offset": 1216,
   "rtol": null,
   "shape": [
    10
@@ -224,24 +150,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 17,
+  "index": 11,
   "kind": "bitwise",
   "label": "$.crank_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1338,
+  "offset": 1226,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 18,
+  "index": 12,
   "kind": "bitwise",
   "label": "$.crank_target_phase_rad",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1346,
+  "offset": 1234,
   "rtol": null,
   "shape": [
    4
@@ -250,24 +176,102 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 19,
+  "index": 13,
   "kind": "bitwise",
   "label": "$.crank_target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1350,
+  "offset": 1238,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 20,
+  "index": 14,
   "kind": "bitwise",
   "label": "$.drive_shaft_rad_s",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1358,
+  "offset": 1246,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.freehub_engaged",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1254,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.freehub_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1259,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.gear_front_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1267,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.gear_ratio",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1269,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.gear_rear_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1277,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.human_command_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1279,
   "rtol": null,
   "shape": []
  },
@@ -276,34 +280,36 @@
   "dtype": "<f8",
   "index": 21,
   "kind": "bitwise",
-  "label": "$.freehub_deflection_rad",
+  "label": "$.human_sensor_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1366,
+  "offset": 1287,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.freehub_dissipation_power_w",
-  "nbytes": 8,
+  "label": "$.human_setpoint_nm",
+  "nbytes": 4,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1374,
+  "offset": 1295,
   "rtol": null,
-  "shape": []
+  "shape": [
+   4
+  ]
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.freehub_energy_j",
+  "label": "$.human_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1382,
+  "offset": 1299,
   "rtol": null,
   "shape": []
  },
@@ -312,126 +318,10 @@
   "dtype": "|u1",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.freehub_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1390,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 25,
-  "kind": "bitwise",
-  "label": "$.freehub_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1395,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 26,
-  "kind": "bitwise",
-  "label": "$.gear_front_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1403,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 27,
-  "kind": "bitwise",
-  "label": "$.gear_ratio",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1405,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 28,
-  "kind": "bitwise",
-  "label": "$.gear_rear_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1413,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 29,
-  "kind": "bitwise",
-  "label": "$.human_command_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1415,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 30,
-  "kind": "bitwise",
-  "label": "$.human_sensor_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1423,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 31,
-  "kind": "bitwise",
-  "label": "$.human_setpoint_nm",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1431,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 32,
-  "kind": "bitwise",
-  "label": "$.human_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1435,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 33,
-  "kind": "bitwise",
   "label": "$.motor_control_source",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1443,
+  "offset": 1307,
   "rtol": null,
   "shape": [
    8
@@ -440,12 +330,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 34,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.motor_enabled",
   "nbytes": 5,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1451,
+  "offset": 1315,
   "rtol": null,
   "shape": [
    5
@@ -453,51 +343,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 35,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_dissipation_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1456,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
   "dtype": "|u1",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_engaged",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1464,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 37,
-  "kind": "bitwise",
-  "label": "$.motor_freewheel_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1469,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 38,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.motor_limit_nm",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1477,
+  "offset": 1320,
   "rtol": null,
   "shape": [
    4
@@ -506,24 +358,184 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 39,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.motor_limited_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1481,
+  "offset": 1324,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 40,
+  "index": 28,
   "kind": "bitwise",
   "label": "$.motor_request_nm",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1489,
+  "offset": 1332,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.motor_setpoint_nm",
+  "nbytes": 4,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1340,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.motor_shaft_power_w",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1344,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.motor_torque_nm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1352,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.omits_suspension_coupling",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1360,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.required_cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1365,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.rider_mode",
+  "nbytes": 10,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1373,
+  "rtol": null,
+  "shape": [
+   10
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.safety_limited",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1383,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.shift_active",
+  "nbytes": 5,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1388,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.shift_count",
+  "nbytes": 1,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1393,
+  "rtol": null,
+  "shape": [
+   1
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.shift_direction",
+  "nbytes": 6,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1394,
+  "rtol": null,
+  "shape": [
+   6
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.shift_from_teeth",
+  "nbytes": 2,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1400,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.shift_rider_response",
+  "nbytes": 1,
+  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
+  "offset": 1402,
   "rtol": null,
   "shape": []
  },
@@ -532,10 +544,10 @@
   "dtype": "|u1",
   "index": 41,
   "kind": "bitwise",
-  "label": "$.motor_setpoint_nm",
+  "label": "$.shift_time_s",
   "nbytes": 4,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1497,
+  "offset": 1403,
   "rtol": null,
   "shape": [
    4
@@ -546,170 +558,22 @@
   "dtype": "<f8",
   "index": 42,
   "kind": "bitwise",
-  "label": "$.motor_shaft_power_w",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1501,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 43,
-  "kind": "bitwise",
-  "label": "$.motor_torque_nm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1509,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.omits_suspension_coupling",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1517,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.required_cadence_rpm",
-  "nbytes": 8,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1522,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.rider_mode",
-  "nbytes": 10,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1530,
-  "rtol": null,
-  "shape": [
-   10
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.safety_limited",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1540,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 48,
-  "kind": "bitwise",
-  "label": "$.shift_active",
-  "nbytes": 5,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1545,
-  "rtol": null,
-  "shape": [
-   5
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 49,
-  "kind": "bitwise",
-  "label": "$.shift_count",
-  "nbytes": 1,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1550,
-  "rtol": null,
-  "shape": [
-   1
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 50,
-  "kind": "bitwise",
-  "label": "$.shift_direction",
-  "nbytes": 6,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1551,
-  "rtol": null,
-  "shape": [
-   6
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 51,
-  "kind": "bitwise",
-  "label": "$.shift_from_teeth",
-  "nbytes": 2,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1557,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 52,
-  "kind": "bitwise",
-  "label": "$.shift_time_s",
-  "nbytes": 4,
-  "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1559,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 53,
-  "kind": "bitwise",
   "label": "$.shift_torque_factor",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1563,
+  "offset": 1407,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 43,
   "kind": "bitwise",
   "label": "$.transmission_model",
   "nbytes": 15,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1571,
+  "offset": 1415,
   "rtol": null,
   "shape": [
    15
@@ -718,12 +582,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 55,
+  "index": 44,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 19,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1586,
+  "offset": 1430,
   "rtol": null,
   "shape": [
    19
@@ -732,24 +596,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.chain",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1605,
+  "offset": 1449,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 57,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.freehub",
   "nbytes": 8,
   "node": "native_drivetrain/force_staging/ideal_speed_control-elastic_chain",
-  "offset": 1613,
+  "offset": 1457,
   "rtol": null,
   "shape": []
  }

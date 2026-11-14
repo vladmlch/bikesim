@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 151,
+  "nbytes": 145,
   "node": "native_drivetrain/projection",
   "offset": 0,
   "rtol": null,
   "shape": [
-   151
+   145
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "$.cutoff_mps",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 151,
+  "offset": 145,
   "rtol": null,
   "shape": []
  },
@@ -33,7 +33,7 @@
   "label": "$.engage_torque_nm",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 159,
+  "offset": 153,
   "rtol": null,
   "shape": []
  },
@@ -45,7 +45,7 @@
   "label": "$.gain",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 167,
+  "offset": 161,
   "rtol": null,
   "shape": []
  },
@@ -54,10 +54,10 @@
   "dtype": "<f8",
   "index": 4,
   "kind": "bitwise",
-  "label": "$.gate_min_crank_rad_s",
+  "label": "$.max_power",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 175,
+  "offset": 169,
   "rtol": null,
   "shape": []
  },
@@ -66,34 +66,22 @@
   "dtype": "<f8",
   "index": 5,
   "kind": "bitwise",
-  "label": "$.max_power",
-  "nbytes": 8,
-  "node": "native_drivetrain/projection",
-  "offset": 183,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 6,
-  "kind": "bitwise",
   "label": "$.max_torque",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 191,
+  "offset": 177,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 7,
+  "index": 6,
   "kind": "bitwise",
   "label": "$.mode",
   "nbytes": 7,
   "node": "native_drivetrain/projection",
-  "offset": 199,
+  "offset": 185,
   "rtol": null,
   "shape": [
    7
@@ -102,16 +90,28 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 8,
+  "index": 7,
   "kind": "bitwise",
   "label": "$.profile",
   "nbytes": 4,
   "node": "native_drivetrain/projection",
-  "offset": 206,
+  "offset": 192,
   "rtol": null,
   "shape": [
    4
   ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.release_hold_s",
+  "nbytes": 8,
+  "node": "native_drivetrain/projection",
+  "offset": 196,
+  "rtol": null,
+  "shape": []
  },
  {
   "atol": null,
@@ -121,7 +121,7 @@
   "label": "$.slew",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 210,
+  "offset": 204,
   "rtol": null,
   "shape": []
  },
@@ -133,7 +133,7 @@
   "label": "$.taper_width_mps",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 218,
+  "offset": 212,
   "rtol": null,
   "shape": []
  },
@@ -145,7 +145,7 @@
   "label": "$.tau",
   "nbytes": 8,
   "node": "native_drivetrain/projection",
-  "offset": 226,
+  "offset": 220,
   "rtol": null,
   "shape": []
  },
@@ -157,7 +157,7 @@
   "label": "$.torque_curve",
   "nbytes": 4,
   "node": "native_drivetrain/projection",
-  "offset": 234,
+  "offset": 228,
   "rtol": null,
   "shape": [
    4

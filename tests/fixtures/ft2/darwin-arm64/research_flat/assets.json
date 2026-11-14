@@ -12,17 +12,17 @@
   {
     "media_type": "application/json",
     "name": "resolved_config.json",
-    "sha256": "68ea3527c04c0964d58efd89a629c345a3f28f4c46cfa93663f83a843136f890"
+    "sha256": "f74073717328d0ba2aa25f8f923c78d22457e375a0ac742456452e44b3565a89"
   },
   {
     "media_type": "application/json",
     "name": "rider_joint_envelope.json",
-    "sha256": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64"
+    "sha256": "865658885b220eb6e3b60542c7f8332b2bee27cef3a021b45db7e24798ea0db8"
   },
   {
     "media_type": "application/json",
     "name": "rider_joint_strength.json",
-    "sha256": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8"
+    "sha256": "071e8e8bc19cd23c229bfcad98c62fe03e56bbde374f9dcab61a9cc8c5a7d760"
   },
   {
     "media_type": "application/json",

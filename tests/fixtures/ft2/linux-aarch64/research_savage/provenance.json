@@ -391,9 +391,9 @@
         "wheel_radius": 372.0,
         "wheelbase": 1280.55
       },
-      "joint_envelope_sha256": "4e9cacbce5b7a39d369f3e1d7eacedbef5386c56e1707045ea140621baa43f64",
+      "joint_envelope_sha256": "865658885b220eb6e3b60542c7f8332b2bee27cef3a021b45db7e24798ea0db8",
       "joint_envelope_status": "declared_unvalidated",
-      "joint_strength_sha256": "0921312611e18611da3e384d2827e63c183eb642f0b9be1cbbf0a58480eee5f8",
+      "joint_strength_sha256": "071e8e8bc19cd23c229bfcad98c62fe03e56bbde374f9dcab61a9cc8c5a7d760",
       "joint_strength_status": "declared_unvalidated",
       "mass_budget": {
         "battery_mass": 4.3,
@@ -446,6 +446,7 @@
           "joint_power_limit_w": 250.0,
           "joint_speed_limit_rad_s": 20.0,
           "joint_strength_path": "/src/examples/research/rider_strength_reference.json",
+          "leg_active_damping_nms_rad": 35.0,
           "link_max_gap_m": 0.005,
           "pedal_ankle_amplitude_rad": 0.1,
           "pedal_attachment": "spindle",
@@ -492,11 +493,11 @@
             "cutoff_mps": 6.944444444444445,
             "engage_torque_nm": 4.0,
             "gain": 2.0,
-            "gate_min_crank_rad_s": 0.08726646259971647,
             "max_power": 500.0,
             "max_torque": 80.0,
             "mode": "turbo",
             "profile": "bosch_cx_gen4",
+            "release_hold_s": 0.3,
             "slew": 400.0,
             "taper_width_mps": 0.5555555555555556,
             "tau": 0.05,
@@ -529,18 +530,13 @@
               ]
             }
           },
-          "bearing_c_nms_rad": 0.03,
           "brake_ceiling_nm": 200.0,
           "brake_hold_damping_nms_rad": 10.0,
           "brake_hold_engage_radps": 0.5,
           "brake_hold_release_radps": 1.0,
           "brake_hold_stiffness_nm_rad": 20000.0,
           "brake_hold_torque_nm": 200.0,
-          "chain_c_ns_m": 10.0,
-          "chain_k_n_m": 200000.0,
           "crank_phase_rad": 0.0,
-          "freehub_c_nms_rad": 0.5,
-          "freehub_k_nm_rad": 1000.0,
           "gearing": {
             "chain_pitch_m": 0.0127,
             "front_teeth": 22,
@@ -595,7 +591,8 @@
             "shift_cut_duration_s": 0.2,
             "target_cadence_max_rpm": 110.0,
             "target_cadence_min_rpm": 75.0,
-            "torque_factor": 0.3,
+            "torque_factor_larger_cog": 0.8,
+            "torque_factor_smaller_cog": 0.3,
             "upshift_slip_limit_mps": 0.5,
             "upshift_slip_mode": "legacy_signed"
           },
@@ -611,23 +608,45 @@
           "reference_force_n": 7000.0
         },
         "equilibrium_cache_enabled": true,
+        "equilibrium_crank_hold_kd_nms_rad": 88.0,
+        "equilibrium_crank_hold_kp_nm_rad": 20000.0,
         "equilibrium_refine_after_s": 1.0,
         "equilibrium_refine_period_s": 3.0,
         "equilibrium_state_file": null,
+        "front_lift_reaction": {
+          "clear_s": 0.3,
+          "decision_s": 0.1,
+          "ease_enabled": false,
+          "ease_fraction": 0.7,
+          "ease_rate_per_s": 5.0,
+          "hand_drop_ratio": 0.7,
+          "hand_lag_s": 0.5,
+          "hand_window_s": 0.5,
+          "lean_add_rad": 0.1,
+          "lean_enabled": false,
+          "lean_rate_rad_s": 0.5,
+          "pitch_rad": 0.17,
+          "pitch_rate_up_rad_s": 0.5,
+          "rear_brake_tap_enabled": false
+        },
         "initial_front_brake": 1.0,
         "initial_rear_brake": 1.0,
         "initial_speed_mps": 0.0,
+        "monitors": {
+          "contact_dropout_s": 0.0125,
+          "grounded_hold_s": 0.005
+        },
         "physics_mode": "physical",
         "pitch_assist": false,
-              "research": {
-        "actuator_delay_s": 0.005,
-        "control_period_s": 0.01,
-        "record_decimation": 80,
-        "sample_period_s": 0.005,
-        "sensor_latency_s": 0.01,
-        "sensor_maximum_age_s": 0.1
-      },
-"resistance": {
+        "research": {
+          "actuator_delay_s": 0.005,
+          "control_period_s": 0.01,
+          "record_decimation": 80,
+          "sample_period_s": 0.005,
+          "sensor_latency_s": 0.01,
+          "sensor_maximum_age_s": 0.1
+        },
+        "resistance": {
           "cda_m2": 0.5,
           "crr": 0.015,
           "point_body_m": {
@@ -647,12 +666,55 @@
             ]
           }
         },
+        "rider_launch": {
+          "brake_release_s": 0.15,
+          "effort_cap_asphalt_nm": 60.0,
+          "effort_cap_grade_nm": [
+            1000.0
+          ],
+          "effort_cap_grades": [
+            0.0
+          ],
+          "effort_cap_hardpack_nm": 60.0,
+          "effort_cap_loose_nm": 60.0,
+          "effort_cap_scree_nm": 60.0,
+          "effort_cap_wet_nm": 60.0,
+          "effort_rate_nm_s": 40.0,
+          "effort_rise_speed_mps": 2.5,
+          "end_crank_rpm": 60.0,
+          "end_hold_s": 0.3,
+          "end_speed_mps": 3.0,
+          "handover_s": 0.9,
+          "max_hold_s": 1.5,
+          "max_launch_s": 6.0,
+          "plan_enabled": false,
+          "release_torque_grades": [
+            0.0,
+            0.2
+          ],
+          "release_torque_nm": [
+            0.0,
+            30.0
+          ],
+          "shift_retry_s": 0.25,
+          "standstill_crank_rpm": 5.0,
+          "standstill_speed_mps": 0.1,
+          "start_cog_grade_breaks": [],
+          "start_cog_teeth": [
+            51
+          ],
+          "start_lean_grades": [
+            0.0
+          ],
+          "start_lean_rad": [
+            0.0
+          ],
+          "start_pedal_angle_rad": 0.0,
+          "upshift_crank_rpm": 82.0
+        },
         "seated_climb": {
           "enabled": true,
           "front_load_share_target": 0.3,
-          "launch_effort_ramp_s": 1.5,
-          "launch_min_grade": 0.03,
-          "launch_standstill_crank_rate_rad_s": 1.0,
           "lean_gain": 1.0,
           "lean_rate_rad_s": 0.5,
           "lean_trim_gain_rad_s": 0.3,
@@ -668,7 +730,6 @@
           "surge_power_w": 400.0,
           "surge_recovery_rate": 0.3333333333333333,
           "target_crank_power_w": 250.0,
-          "torque_slew_nm_s": 300.0,
           "trim_dead_time_s": 0.2,
           "min_elbow_flexion_deg": 15.0
         },

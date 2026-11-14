@@ -99,6 +99,20 @@ struct SimulationPhysicsConfig {
     double closure_time_constant_s = .001;
     double equilibrium_refine_after_s = 1.;
     double equilibrium_refine_period_s = 3.;
+    // Launch part 4b (user ruling 2026-11-13): the settle holds crank_spin at
+    // the prepared pedal angle with this PD torque
+    // (initialization/settle_contacts.cpp). It shapes the rest pose, so both
+    // gains bind the equilibrium key and the initial-state contract — unlike
+    // the refine schedule, which leaves the pose untouched and is erased
+    // there.
+    // The torque enters as an external force, so the step integrates it
+    // explicitly: the settle is stable only while kd*h/I < 2 - kp*h*h/(2*I).
+    // With the feet welded to the pedals (spindle, the only setups the hold acts in) the
+    // decoupled crank inertia I is about 0.096 kg·m²: kd 200 at h = 1.25 ms
+    // diverged, 88 is the critical damping of kp 20000.
+    // Required from the profile.
+    double equilibrium_crank_hold_kp_nm_rad = -1.;
+    double equilibrium_crank_hold_kd_nms_rad = -1.;
     bool equilibrium_cache_enabled = false;
     std::optional<std::string> equilibrium_state_file;
     // Initial-equilibrium relaxation schedule: "cycle" (fixed 20 ms velocity
@@ -456,6 +470,12 @@ inline constexpr auto kSimulationPhysicsConfigFields = std::to_array<FieldDecl>(
      .factory="", .nested=nullptr, .nested2=nullptr},
     {.name="equilibrium_refine_period_s", .type="<class 'float'>", .kind=FieldKind::Real,
      .offset=offsetof(SimulationPhysicsConfig, equilibrium_refine_period_s), .required=false,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_crank_hold_kp_nm_rad", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_crank_hold_kp_nm_rad), .required=true,
+     .factory="", .nested=nullptr, .nested2=nullptr},
+    {.name="equilibrium_crank_hold_kd_nms_rad", .type="<class 'float'>", .kind=FieldKind::Real,
+     .offset=offsetof(SimulationPhysicsConfig, equilibrium_crank_hold_kd_nms_rad), .required=true,
      .factory="", .nested=nullptr, .nested2=nullptr},
     {.name="equilibrium_cache_enabled", .type="<class 'bool'>", .kind=FieldKind::Boolean,
      .offset=offsetof(SimulationPhysicsConfig, equilibrium_cache_enabled), .required=false,

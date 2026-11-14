@@ -216,6 +216,8 @@ std::unique_ptr<research::ResearchRequest> resolve_research(const Arguments& arg
     defaults->drive.assist.max_torque = 80.; defaults->drive.assist.max_power = 500.;
     defaults->equilibrium_refine_after_s = args.text("rider") == "articulated_planar" ? 3. : .1;
     defaults->equilibrium_refine_period_s = args.text("rider") == "articulated_planar" ? 3. : .5;
+    defaults->equilibrium_crank_hold_kp_nm_rad = 20000.;
+    defaults->equilibrium_crank_hold_kd_nms_rad = 88.;
     Value overrides{Object{}}, drive{Object{}}, assist{Object{}}, gearing{Object{}}, launch{Object{}};
     if (args.present("dt")) set(overrides, "timestep_s", real(args.real("dt")));
     if (args.present("initial_speed")) set(overrides, "initial_speed_mps", real(args.real("initial_speed")));

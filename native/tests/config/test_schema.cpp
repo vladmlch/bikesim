@@ -192,6 +192,8 @@ cfg::SimulationPhysicsConfig welded_profile() {
     c.initial_rear_brake = 1.0;
     c.equilibrium_refine_after_s = 1.0;
     c.equilibrium_refine_period_s = 3.0;
+    c.equilibrium_crank_hold_kp_nm_rad = 20000.0;
+    c.equilibrium_crank_hold_kd_nms_rad = 88.0;
     c.equilibrium_cache_enabled = true;
     c.tires.backend = "compliant_2d";
     c.tires.surface_mode = "track";
@@ -739,7 +741,7 @@ void test_schema() {
                 "schema config_class");
     const Value::Array& fields = io::as_array(
         member(document, "fields", "schema"), "schema.fields");
-    static constexpr std::array<std::string_view, 24> kTopOrder{
+    static constexpr std::array<std::string_view, 26> kTopOrder{
         "physics_mode",
         "drive_mode",
         "timestep_s",
@@ -761,11 +763,13 @@ void test_schema() {
         "closure_time_constant_s",
         "equilibrium_refine_after_s",
         "equilibrium_refine_period_s",
+        "equilibrium_crank_hold_kp_nm_rad",
+        "equilibrium_crank_hold_kd_nms_rad",
         "equilibrium_cache_enabled",
         "equilibrium_state_file",
         "equilibrium_relaxation",
     };
-    bt::require(fields.size() == 24, "top-level field count");
+    bt::require(fields.size() == 26, "top-level field count");
     for (std::size_t i = 0; i < fields.size(); ++i)
         bt::require(
             string_of(member(fields[i], "name", "fields"), "name") ==

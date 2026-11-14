@@ -949,6 +949,8 @@
         "reference_force_n": 7000.0
       },
       "equilibrium_cache_enabled": true,
+      "equilibrium_crank_hold_kd_nms_rad": 88.0,
+      "equilibrium_crank_hold_kp_nm_rad": 20000.0,
       "equilibrium_refine_after_s": 1.0,
       "equilibrium_refine_period_s": 3.0,
       "initial_front_brake": 1.0,

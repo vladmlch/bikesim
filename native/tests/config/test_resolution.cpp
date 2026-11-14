@@ -435,7 +435,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_timestep.toml",
-                "control_period_s = 0.005\n"
+                "control_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
@@ -445,7 +445,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_control_period.toml",
-                "timestep_s = 0.00125\n"
+                "timestep_s = 0.00125\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
@@ -455,7 +455,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_monitors.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n" + std::string(kResearchSection))));
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n" + std::string(kResearchSection))));
         });
     invalid_with(
         "invalid MonitorsConfig: MonitorsConfig.__init__() missing 1 "
@@ -463,7 +463,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_grounded_hold.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ncontact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
         });
     invalid_with(
@@ -472,7 +472,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_contact_dropout.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n" + std::string(kResearchSection))));
         });
 
@@ -483,7 +483,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "nonmultiple_grounded.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.006\n"
                 "contact_dropout_s = 0.0125\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
@@ -503,7 +503,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "nonmultiple_dropout.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.006\n"
                 "[seated_climb]\nperiod_s = 0.00125\n"
@@ -523,7 +523,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
             "nonfinite.toml",
-            "timestep_s = inf\ncontrol_period_s = 0.005\n"
+            "timestep_s = inf\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
@@ -540,7 +540,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
             "nonfinite2.toml",
-            "timestep_s = nan\ncontrol_period_s = 0.005\n"
+            "timestep_s = nan\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
@@ -569,7 +569,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::invalid([&] {
         discard(cfg::load_physics(stage(
             "scalar_array.toml",
-            "timestep_s = [0.001]\ncontrol_period_s = 0.005\n"
+            "timestep_s = [0.001]\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
@@ -585,7 +585,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         discard(cfg::load_physics(stage(
             "legacy.toml",
             "physics_mode = \"legacy\"\ntimestep_s = 0.00125\n"
-            "control_period_s = 0.005\n"
+            "control_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n" + std::string(kResearchSection))));
     });
@@ -619,7 +619,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         return path;
     };
     const std::string_view seated_head =
-        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = true\n";
     const std::string_view seated_tail =
@@ -698,7 +698,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         const auto disabled = cfg::load_physics(stage(
             "disabled_seated.toml",
             "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-            "closure_time_constant_s = 0.0025\n"
+            "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
             "[seated_climb]\nenabled = false\n"
             "period_s = 0.002\nreaction_delay_s = 0.151\n"
@@ -732,7 +732,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     };
     const std::string_view repo_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "closure_time_constant_s = 0.0025\n"
+        "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -776,7 +776,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // timing rejects a non-multiple of timestep_s.
     const std::string_view engaged_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "closure_time_constant_s = 0.0025\n"
+        "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -914,7 +914,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     };
     const std::string_view research_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "closure_time_constant_s = 0.0025\n"
+        "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -938,7 +938,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         [&] {
             discard(cfg::load_physics(stage(
                 "missing_research.toml",
-                "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.00125\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
                 "contact_dropout_s = 0.0125\n")));
         });
@@ -1024,7 +1024,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     };
     const std::string_view head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "closure_time_constant_s = 0.0025\n"
+        "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -1140,7 +1140,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             discard(cfg::load_physics(stage(
                 "assist_resolved_tau.toml",
                 "timestep_s = 0.03\ncontrol_period_s = 0.03\n"
-                "closure_time_constant_s = 0.06\n"
+                "closure_time_constant_s = 0.06\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.3\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.06\nhand_lag_s = 0.06\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.12\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.03\n"
                 "contact_dropout_s = 0.03\n"
                 "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
@@ -1177,7 +1177,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const std::string_view climb_head =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
         "closure_time_constant_s = 0.0025\n"
-        "drive_mode = \"articulated_effort\"\n"
+        "drive_mode = \"articulated_effort\"\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[drive]\nmotor_clutch = true\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
@@ -1215,7 +1215,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         const auto disabled = cfg::load_physics(stage(
             "disabled_climb_timings.toml",
             "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-            "closure_time_constant_s = 0.0025\n"
+            "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
             "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\n"
             "contact_dropout_s = 0.0125\n"
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
@@ -1279,7 +1279,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     };
     const std::string full =
         "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
-        "closure_time_constant_s = 0.0025\n"
+        "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
@@ -1476,6 +1476,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.articulated.joint_kp_nm_rad = 600.;
         unresolved_base.articulated.joint_kd_nms_rad = 15.;
         unresolved_base.articulated.leg_active_damping_nms_rad = 35.;
+        unresolved_base.equilibrium_crank_hold_kp_nm_rad = 20000.;
+        unresolved_base.equilibrium_crank_hold_kd_nms_rad = 88.;
         // [rider_launch]
         unresolved_base.rider_launch = {.start_cog_grade_breaks = {},
                                         .start_cog_teeth = {24},
@@ -1725,7 +1727,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // then fail in the typed domain as a foreign kind.
     bt::invalid([&] {
         discard(cfg::detail::construct_config(cfg::detail::parse_toml(
-            "timestep_s = 1979-05-27\n", "mem.toml")));
+            "timestep_s = 1979-05-27\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n", "mem.toml")));
     });
 }
 NATIVE_DIAG_POP

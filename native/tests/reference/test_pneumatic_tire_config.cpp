@@ -101,6 +101,13 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
         if (!io::find_member(*obj, "control_period_s"))
             obj->emplace_back("control_period_s",
                               io::Value{io::Number{"0.005"}});
+        // Launch part 4b's required settle-hold gains.
+        if (!io::find_member(*obj, "equilibrium_crank_hold_kp_nm_rad"))
+            obj->emplace_back("equilibrium_crank_hold_kp_nm_rad",
+                              io::Value{io::Number{"20000.0"}});
+        if (!io::find_member(*obj, "equilibrium_crank_hold_kd_nms_rad"))
+            obj->emplace_back("equilibrium_crank_hold_kd_nms_rad",
+                              io::Value{io::Number{"88.0"}});
         if (!io::find_member(*obj, "monitors")) {
             const auto hold = cfg::detail::repr_double(10. * dt);
             obj->emplace_back("monitors", io::Value{io::Value::Object{

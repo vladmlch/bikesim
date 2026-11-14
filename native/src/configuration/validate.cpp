@@ -1270,6 +1270,10 @@ void post_init(SimulationPhysicsConfig &config) {
            "equilibrium_refine_after_s", std::nullopt, true);
     scalar(config.equilibrium_refine_period_s,
            "equilibrium_refine_period_s", std::nullopt, true);
+    scalar(config.equilibrium_crank_hold_kp_nm_rad,
+           "equilibrium_crank_hold_kp_nm_rad", std::nullopt, true);
+    scalar(config.equilibrium_crank_hold_kd_nms_rad,
+           "equilibrium_crank_hold_kd_nms_rad", std::nullopt, true);
     scalar(config.closure_time_constant_s, "closure time constant",
            std::nullopt, true);
     if (config.closure_time_constant_s < 2.0 * config.timestep_s)
@@ -1417,6 +1421,10 @@ SimulationPhysicsConfig default_physics() {
     config.articulated.joint_kp_nm_rad = 600.;
     config.articulated.joint_kd_nms_rad = 15.;
     config.articulated.leg_active_damping_nms_rad = 35.;
+    // Launch part 4b — the settle's PD crank hold at the table angle; kd
+    // is the critical damping of kp at the step (model_config.hpp).
+    config.equilibrium_crank_hold_kp_nm_rad = 20000.;
+    config.equilibrium_crank_hold_kd_nms_rad = 88.;
     config.drive.pedaling.reposition_on_stall = false;
     config.drive.pedaling.reposition_min_effort_nm = 20.;
     config.drive.pedaling.reposition_stall_window_s = 1.;

@@ -429,6 +429,96 @@ struct Settled {
     return out;
 }
 
+// Launch part 4b: the settle holds the crank at the table's pedal angle
+// (spec 2026-11-11-rider-launch-plan-design.md:38). A free crank drifted
+// to about 34 degrees from every forward seed; held, the settled crank
+// stays within 5 mrad of the seed — a hold torque under 100 N·m at the
+// 20000 N·m/rad hold stiffness — for a forward and a backward start.
+[[gnu::noinline]] void test_settle_holds_the_crank_at_the_table_angle() {
+    for (const double angle : {1.12, -.8}) {
+        auto request = settle_request(.04);
+        stepwise_cog(*request);
+        request->model.physics->rider_launch.start_pedal_angle_rad = angle; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+        auto owner = init::make_setup(*request);
+        const auto result = init::settle(*owner);
+        bt::require(result.initial_crank_phase_rad == angle, "the settle starts from the table angle");
+        bt::require(std::abs(result.settled_crank_phase_rad - angle) < 5e-3,
+                    "the settle holds the crank at the table angle: " +
+                        std::to_string(result.settled_crank_phase_rad) + " for " + std::to_string(angle));
+    }
+}
+
+// The crank hold shapes the rest pose, so its gains are part of every
+// reuse key: an explicit state file settled with another hold stiffness or
+// hold damping is refused, and so is a transfer into such a start.
+[[gnu::noinline]] void test_crank_hold_binds_cache_and_contract() {
+    const bt::TemporaryDirectory cache("launch-hold-cache");
+    auto request = settle_request(0.);
+    request->model.physics->equilibrium_cache_enabled = true; // NOLINT(bugprone-unchecked-optional-access) set by settle_request
+    request->cache_directory = cache.path();
+    const auto miss = settle_once(*request);
+    const auto entries = cache_entries(cache.path());
+    bt::require(!miss.result.cache_hit && entries.size() == 1, "a cache miss settles one entry");
+    auto pinned = std::make_unique<init::SetupRequest>(*request);
+    pinned->model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->equilibrium_state_file = entries.front().string(); // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->equilibrium_crank_hold_kp_nm_rad = 10000.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    rejects([&] { (void)settle_once(*pinned); }, "fingerprint", "a state file settled with another hold stiffness");
+    pinned->model.physics->equilibrium_crank_hold_kp_nm_rad = 20000.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    pinned->model.physics->equilibrium_crank_hold_kd_nms_rad = 60.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    rejects([&] { (void)settle_once(*pinned); }, "fingerprint", "a state file settled with another hold damping");
+    auto plain = std::make_unique<init::SetupRequest>(*request);
+    plain->model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto source = init::make_setup(*plain);
+    (void)init::settle(*source);
+    auto other = std::make_unique<init::SetupRequest>(*plain);
+    other->initial_state = source->capture_initial_state();
+    other->model.physics->equilibrium_crank_hold_kp_nm_rad = 10000.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto refused = init::make_setup(*other);
+    rejects([&] { (void)init::settle(*refused); }, "contract differs", "a transfer into a start with another hold stiffness");
+}
+
+// Every setup settles with the crank at the table angle (plan review I3).
+// With the feet welded to the pedals (spindle: the distributed and
+// pneumatic profiles, a rolling-start request) the settle holds it. A lumped
+// rider loads no pedal and is not held — the explicit hold would ring its
+// light crank — so its free, balanced crank keeps its world angle while the
+// frame pitches: the frame-relative drift stays within the settled pitch.
+// An articulated rider on flat pedals is not held either (the same light
+// crank); it must still settle.
+[[gnu::noinline]] void test_every_setup_keeps_the_crank_at_the_table_angle() {
+    const auto distributed = launch_ride::repo_file("examples/research/viewer_physics_distributed.toml").string();
+    const auto pneumatic = launch_ride::repo_file("examples/research/viewer_physics_pneumatic.toml").string();
+    const auto welded = launch_ride::repo_file("examples/research/viewer_physics_welded.toml").string();
+    const std::vector<std::vector<std::string_view>> held{
+        {"--physics-config", distributed, "--track", "flat", "--initial-speed", "0"},
+        {"--physics-config", pneumatic, "--track", "flat", "--initial-speed", "0"},
+        {"--physics-config", welded, "--track", "flat", "--initial-speed", "15"},
+    };
+    const auto settle_cli = [](const std::vector<std::string_view> &args) {
+        auto ride = bike::cli::resolve_ride(bike::cli::parse_arguments("bike-ride", args));
+        ride->setup.model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) resolve_ride sets physics
+        auto owner = init::make_setup(ride->setup);
+        return init::settle(*owner);
+    };
+    for (const auto &args : held) {
+        const auto result = settle_cli(args);
+        bt::require(std::abs(result.settled_crank_phase_rad - result.initial_crank_phase_rad) < 5e-3,
+                    "a welded-feet setup holds the crank at the table angle: " + std::string(args[1]) + " settled " +
+                        std::to_string(result.settled_crank_phase_rad) + " from " +
+                        std::to_string(result.initial_crank_phase_rad));
+    }
+    const auto lumped = settle_cli({"--physics", "physical", "--rider", "lumped", "--track", "flat"});
+    bt::require(std::abs(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) <=
+                    std::abs(lumped.pitch_rad) + 1e-3,
+                "a lumped rider's free crank keeps its world angle: drift " +
+                    std::to_string(lumped.settled_crank_phase_rad - lumped.initial_crank_phase_rad) + ", pitch " +
+                    std::to_string(lumped.pitch_rad));
+    const auto flat = settle_cli({"--physics", "physical", "--drive", "articulated_effort", "--track", "flat"});
+    bt::require(std::isfinite(flat.settled_crank_phase_rad) && std::isfinite(flat.pitch_rad),
+                "an articulated rider on flat pedals settles without the hold");
+}
+
 // The prepared lean is part of every way a settled start is reused. A
 // cache miss settles holding it; a cache hit and an explicit state file
 // restore the very same coordinates and lean; an explicit file settled
@@ -532,6 +622,9 @@ int main() {
         test_plan_fields_name_the_field();
         test_start_grade_looks_ahead_of_the_start();
         test_setup_prepares_cog_and_angle_for_the_start_grade();
+        test_settle_holds_the_crank_at_the_table_angle();
+        test_crank_hold_binds_cache_and_contract();
+        test_every_setup_keeps_the_crank_at_the_table_angle();
         test_setup_prepares_before_validating();
         test_research_records_the_prepared_cog();
         test_validation_capture_matches_the_prepared_start();

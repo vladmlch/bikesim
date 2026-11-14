@@ -233,7 +233,7 @@ namespace cfg = bike::configuration;
     {
         std::ofstream file(path);
         file << "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
-                "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
+                "timestep_s = 0.0005\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[drive]\nmotor_clutch = true\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\nrelease_hold_s = 0.3\n"
                 "[drive.pedaling]\nreposition_on_stall = false\n"

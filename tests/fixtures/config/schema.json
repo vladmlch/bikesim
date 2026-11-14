@@ -1675,6 +1675,18 @@
       "type": "<class 'float'>"
     },
     {
+      "default": null,
+      "default_factory": null,
+      "name": "equilibrium_crank_hold_kp_nm_rad",
+      "type": "<class 'float'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "name": "equilibrium_crank_hold_kd_nms_rad",
+      "type": "<class 'float'>"
+    },
+    {
       "default": false,
       "default_factory": null,
       "name": "equilibrium_cache_enabled",

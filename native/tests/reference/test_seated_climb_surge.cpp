@@ -19,9 +19,11 @@
 #include "configuration/model_config.hpp"
 #include "initialization/setup_owner.hpp"
 #include "model/rider_geometry.hpp"
+#include "launch_ride_support.hpp"
 #include "rider/intent.hpp"
 #include "runtime/control.hpp"
 #include "runtime/runtime.hpp"
+#include "runtime/samples.hpp"
 #include "research/environment.hpp"
 #include "terrain/trackfile.hpp"
 #include "validation/runtime_access.hpp"
@@ -36,6 +38,7 @@ namespace {
 namespace rider = ::rider;
 namespace research = bike::research;
 namespace cfg = bike::configuration;
+namespace sw = runtime::sample_wire;
 
 // The live example document — bt::oracle::root() is
 // <repo>/tests/fixtures/golden. The batch's welded physics loads the
@@ -57,9 +60,6 @@ void test_surge_budget_depletes_and_recovers() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
-    config.launch_effort_ramp_s = 1.5;
-    config.launch_min_grade = .03;
-    config.launch_standstill_crank_rate_rad_s = 1.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);
@@ -88,9 +88,6 @@ void test_below_threshold_uses_sustained_power() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
-    config.launch_effort_ramp_s = 1.5;
-    config.launch_min_grade = .03;
-    config.launch_standstill_crank_rate_rad_s = 1.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);
@@ -174,150 +171,47 @@ void test_front_share_is_posture_only_and_unavailable_when_unloaded() {
                 "unloaded tires report no posture share");
 }
 
-// launch_config(): every required field set like the other configs in this
-// file; the launch trio takes the values the 2026-11-10 experiment decided
-// (1.5 s ramp, 3% grade, 1 rad/s standstill crank).
-rider::IntentConfig launch_config() {
-    rider::IntentConfig config;
-    config.enabled = true;
-    config.target_crank_power_w = 250.;
-    config.period_s = .01;
-    config.reaction_delay_s = .15;
-    config.lean_rate_rad_s = .5;
-    config.orientation_tau_s = .5;
-    config.min_elbow_flexion_deg = 15.;
-    config.launch_effort_ramp_s = 1.5;
-    config.launch_min_grade = .03;
-    config.launch_standstill_crank_rate_rad_s = 1.;
-    config.surge_budget_s = 15.;
-    config.trim_dead_time_s = .2;
-    return config;
-}
-
-// The delayed crank rate decides the arm: standstill is a held sample, so
-// the signal the policy sees at the decision tick is this value.
-rider::IntentSignals standstill_signals(double crank_rate_rad_s = 0.) {
-    rider::IntentSignals signals;
-    signals.specific_force_body_mps2 = {0., 0., 9.81};
-    signals.crank_rate_rad_s = crank_rate_rad_s;
-    signals.front_load_share = .2;
-    return signals;
-}
-
-// test_launch_ramp_arms_on_uphill_standstill_and_rises_linearly — what the
-// mechanism must do: at the first tick a delayed signal exists (the rider's
-// .15 s reaction delay), preview grade .15 >= .03 with a still crank arms
-// the ramp; the effort ceiling is effort_nm * elapsed/1.5 s while it
-// climbs, and sits at full effort once elapsed reaches 1.5 s.
-void test_launch_ramp_arms_on_uphill_standstill_and_rises_linearly() {
-    constexpr double kRampS = 1.5;
-    rider::SeatedClimbPolicy policy(launch_config());
-    const rider::IntentSignals signals = standstill_signals();
-    constexpr double dt = .01;
-    double expected_ramp = -1.;
-    for (int tick = 0; tick < 200; ++tick) {
-        const rider::Intent intent =
-            policy.update(signals, dt, /*road_grade=*/0.,
-                          /*preview_grade=*/.15, std::nullopt, std::nullopt);
-        const auto state = policy.state();
-        if (tick < 15) {
-            // reaction_delay_s = .15 at dt = .01: the delayed signal first
-            // exists on tick 15, so nothing is decided or armed before it.
-            bt::require(!state.launch_decided && state.launch_ramp_s == -1.,
-                        "the decision waits for the first delayed signal");
-        } else {
-            bt::require(state.launch_decided,
-                        "the decision latches on the first delayed signal");
-            if (expected_ramp < 0.) expected_ramp = 0.;
-            expected_ramp += dt;
-            bt::require(state.launch_ramp_s == expected_ramp,
-                        "the ramp clock advances by dt each armed tick");
+// test_launch_plan_sets_standstill_effort_ceiling — the soft start is gone
+// and replaced by the launch plan: on a 15 % standstill climb with
+// viewer_physics_welded.toml, the rider_intent effort_ceiling_nm on every
+// interval where rider_launch.weight == 1 equals rider_launch.effort_nm
+// rather than a t / 1.5 soft-start fraction of the policy limit.
+void test_launch_plan_sets_standstill_effort_ceiling() {
+    auto env = launch_ride::environment(
+        bike::terrain::load_track(
+            repo_file("tests/fixtures/tracks/climb_15pct_standstill.toml")),
+        1.5, [](auto &) {}, 1, runtime::ResearchCaptureMode::full);
+    const runtime::RideControl control{};
+    std::size_t weight_one_rows = 0;
+    std::int64_t last_id = -1;
+    for (std::int64_t step = env.control_steps; step <= env.max_steps;
+         step += env.control_steps) {
+        const auto result =
+            env.runtime->advance(step, control, 0., 0., std::nullopt);
+        for (const auto &sample : env.runtime->recorded_intervals()) {
+            if (sample->interval_id <= last_id) continue;
+            last_id = sample->interval_id;
+            const auto *intent_wire = sw::find(sample->channels, "rider_intent");
+            const auto *launch_wire = sw::find(sample->channels, "rider_launch");
+            if (intent_wire == nullptr || launch_wire == nullptr) continue;
+            const auto &intent_obj = sw::object(*intent_wire);
+            const auto &launch_obj = sw::object(*launch_wire);
+            const double weight =
+                sw::number(sw::required(launch_obj, "weight"));
+            if (weight != 1.) continue;
+            ++weight_one_rows;
+            const double ceiling_nm =
+                sw::number(sw::required(intent_obj, "effort_ceiling_nm"));
+            const double launch_effort_nm =
+                sw::number(sw::required(launch_obj, "effort_nm"));
+            bt::require(ceiling_nm == launch_effort_nm,
+                        "rider_intent.effort_ceiling_nm equals "
+                        "rider_launch.effort_nm while rider_launch.weight == 1");
         }
-        const double factor =
-            expected_ramp < 0. ? 1. : std::min(1., expected_ramp / kRampS);
-        bt::require(intent.effort_ceiling_nm == state.effort_nm * factor,
-                    "the ceiling is effort_nm * elapsed/ramp while armed");
+        if (result.outcome.has_value()) break;
     }
-    bt::require(expected_ramp > kRampS,
-                "the horizon covers the full ramp");
-    bt::require(policy.state().effort_nm ==
-                    policy.update(signals, dt, 0., .15, std::nullopt,
-                                  std::nullopt)
-                        .effort_ceiling_nm,
-                "the ramp ends at full effort");
-}
-
-// test_launch_ramp_does_not_arm_on_flat — the ramp is gated by the previewed
-// grade: a flat standstill start (preview < .03) decides once and never
-// arms, so the returned ceiling equals effort_nm bit-identically, exactly
-// the pre-mechanism behaviour.
-void test_launch_ramp_does_not_arm_on_flat() {
-    rider::SeatedClimbPolicy policy(launch_config());
-    const rider::IntentSignals signals = standstill_signals();
-    for (int tick = 0; tick < 60; ++tick) {
-        const rider::Intent intent =
-            policy.update(signals, .01, 0., /*preview_grade=*/0.,
-                          std::nullopt, std::nullopt);
-        bt::require(intent.effort_ceiling_nm == policy.state().effort_nm,
-                    "a flat start returns the unramped ceiling");
-        bt::require(policy.state().launch_ramp_s == -1.,
-                    "a flat start never arms the ramp");
-    }
-    bt::require(policy.state().launch_decided,
-                "the one-time decision still latches on flat ground");
-}
-
-// test_launch_ramp_does_not_arm_with_crank_turning — a start that already
-// rolls (delayed crank rate above the 1 rad/s standstill bound) does not
-// arm the ramp even on a steep preview: rolling entries are unchanged.
-void test_launch_ramp_does_not_arm_with_crank_turning() {
-    rider::SeatedClimbPolicy policy(launch_config());
-    const rider::IntentSignals signals = standstill_signals(5.);
-    for (int tick = 0; tick < 60; ++tick) {
-        const rider::Intent intent =
-            policy.update(signals, .01, 0., /*preview_grade=*/.15,
-                          std::nullopt, std::nullopt);
-        bt::require(intent.effort_ceiling_nm == policy.state().effort_nm,
-                    "a rolling start returns the unramped ceiling");
-        bt::require(policy.state().launch_ramp_s == -1.,
-                    "a turning crank never arms the ramp");
-    }
-    bt::require(policy.state().launch_decided,
-                "the one-time decision still latches when rolling");
-}
-
-// test_launch_ramp_state_roundtrip_continues_mid_ramp — the launch fields
-// live in State so a mid-ramp snapshot restores into a second policy and
-// both produce bitwise-identical ceilings while the ramp finishes.
-void test_launch_ramp_state_roundtrip_continues_mid_ramp() {
-    const rider::IntentSignals signals = standstill_signals();
-    rider::SeatedClimbPolicy original(launch_config());
-    for (int tick = 0; tick < 80; ++tick)
-        (void)original.update(signals, .01, 0., .15, std::nullopt,
-                              std::nullopt);
-    const auto snapshot = original.state();
-    bt::require(snapshot.launch_decided && snapshot.launch_ramp_s > 0. &&
-                    snapshot.launch_ramp_s < 1.5,
-                "the snapshot lands mid-ramp");
-    rider::SeatedClimbPolicy restored(launch_config());
-    restored.restore(snapshot);
-    for (int tick = 0; tick < 120; ++tick) {
-        const rider::Intent a =
-            original.update(signals, .01, 0., .15, std::nullopt,
-                            std::nullopt);
-        const rider::Intent b =
-            restored.update(signals, .01, 0., .15, std::nullopt,
-                            std::nullopt);
-        bt::require(a.effort_ceiling_nm == b.effort_ceiling_nm,
-                    "the restored policy continues the same ramp");
-        bt::require(original.state().launch_ramp_s ==
-                        restored.state().launch_ramp_s,
-                    "the restored ramp clock advances identically");
-    }
-    const rider::Intent last =
-        original.update(signals, .01, 0., .15, std::nullopt, std::nullopt);
-    bt::require(last.effort_ceiling_nm == original.state().effort_nm,
-                "the ramp ends at full effort");
+    bt::require(weight_one_rows > 0,
+                "1.5 s on 15 % standstill visits intervals with launch weight == 1");
 }
 
 // test_surge_reset_restores_budget_and_rejects_nonfinite_inputs
@@ -329,9 +223,6 @@ void test_surge_reset_restores_budget_and_rejects_nonfinite_inputs() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
-    config.launch_effort_ramp_s = 1.5;
-    config.launch_min_grade = .03;
-    config.launch_standstill_crank_rate_rad_s = 1.;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);
@@ -358,9 +249,6 @@ int main() {
         test_below_threshold_uses_sustained_power();
         test_front_share_is_posture_only_and_unavailable_when_unloaded();
         test_surge_reset_restores_budget_and_rejects_nonfinite_inputs();
-        test_launch_ramp_arms_on_uphill_standstill_and_rises_linearly();
-        test_launch_ramp_does_not_arm_on_flat();
-        test_launch_ramp_does_not_arm_with_crank_turning();
-        test_launch_ramp_state_roundtrip_continues_mid_ramp();
+        test_launch_plan_sets_standstill_effort_ceiling();
     });
 }

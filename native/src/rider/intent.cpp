@@ -246,25 +246,6 @@ SeatedClimbPolicy::SeatedClimbPolicy(const IntentConfig &config)
         throw std::invalid_argument(
             "min_elbow_flexion_deg must be finite and lie in (0, 90]");
     }
-    // Required launch fields carry the -1 sentinel without a profile load:
-    // reject them here the same bounds the wire decode enforces, so an
-    // unset config fails loudly instead of arming on every grade.
-    if (!std::isfinite(config_.launch_effort_ramp_s) ||
-        config_.launch_effort_ramp_s <= 0.) {
-        throw std::invalid_argument(
-            "launch_effort_ramp_s must be finite and positive");
-    }
-    if (!std::isfinite(config_.launch_min_grade) ||
-        config_.launch_min_grade < 0.) {
-        throw std::invalid_argument(
-            "launch_min_grade must be finite and nonnegative");
-    }
-    if (!std::isfinite(config_.launch_standstill_crank_rate_rad_s) ||
-        config_.launch_standstill_crank_rate_rad_s < 0.) {
-        throw std::invalid_argument(
-            "launch_standstill_crank_rate_rad_s must be finite and "
-            "nonnegative");
-    }
     reset();
 }
 
@@ -276,8 +257,6 @@ void SeatedClimbPolicy::reset() {
     samples_.clear();
     delayed_.reset();
     surge_budget_s_left_ = config_.surge_budget_s;
-    launch_ramp_s_ = -1.;
-    launch_decided_ = false;
     program_.reset();
 }
 
@@ -353,20 +332,6 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
             power_target, config_.max_crank_torque_nm,
             delayed.crank_rate_rad_s);
         effort_nm_ = target_effort;
-        // Uphill standstill launch (2026-11-10 experiment, user decision):
-        // a real rider does not mash full effort at once on a grade. The
-        // decision is taken once, at the first tick the delayed signal
-        // exists (the rider's reaction delay): preview grade at or above
-        // launch_min_grade while the delayed crank rate is still at
-        // standstill arms the ramp; while armed its clock advances by dt.
-        if (!launch_decided_) {
-            launch_decided_ = true;
-            if (preview >= config_.launch_min_grade &&
-                delayed.crank_rate_rad_s <=
-                    config_.launch_standstill_crank_rate_rad_s)
-                launch_ramp_s_ = 0.;
-        }
-        if (launch_ramp_s_ >= 0.) launch_ramp_s_ += dt;
     }
     lean_rad_ = program_.update(time_s_, preview, dt,
                                 signals.front_load_share, lean_limit_rad,
@@ -377,15 +342,7 @@ Intent SeatedClimbPolicy::update(const IntentSignals &signals, double dt_s,
     posture.torso_lean_rad = lean_rad_;
     posture.use_saddle = true;
     validate_posture(posture);
-    // Armed launch: the effort ceiling rises linearly from 0 to full over
-    // launch_effort_ramp_s; unarmed (sentinel -1) the factor is 1 exactly,
-    // so flat and rolling starts keep the pre-mechanism values bitwise.
-    const double launch_factor =
-        launch_ramp_s_ < 0.
-            ? 1.
-            : std::min(1., launch_ramp_s_ / config_.launch_effort_ramp_s);
-    return {.posture = posture,
-            .effort_ceiling_nm = effort_nm_ * launch_factor};
+    return {.posture = posture, .effort_ceiling_nm = effort_nm_};
 }
 
 SeatedClimbPolicy::State SeatedClimbPolicy::state() const {
@@ -395,9 +352,7 @@ SeatedClimbPolicy::State SeatedClimbPolicy::state() const {
             .effort_nm = effort_nm_,
             .samples = samples_,
             .delayed = delayed_,
-            .surge_budget_s_left = surge_budget_s_left_,
-            .launch_ramp_s = launch_ramp_s_,
-            .launch_decided = launch_decided_};
+            .surge_budget_s_left = surge_budget_s_left_};
 }
 
 void SeatedClimbPolicy::restore(const State &state) {
@@ -408,8 +363,6 @@ void SeatedClimbPolicy::restore(const State &state) {
     samples_ = state.samples;
     delayed_ = state.delayed;
     surge_budget_s_left_ = state.surge_budget_s_left;
-    launch_ramp_s_ = state.launch_ramp_s;
-    launch_decided_ = state.launch_decided;
 }
 
 // ---- RiderIntentResolver (rider_intent.py) --------------------------------

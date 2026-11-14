@@ -178,36 +178,7 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
     bt::require(threw, message);
 }
 
-// The launch fields are required like min_elbow_flexion_deg — no code
-// default, no legacy reader: a document that drops one fails to load and
-// the rejection names the key.
-// NOLINTBEGIN(bugprone-easily-swappable-parameters)
-[[gnu::noinline]] void assert_launch_field_required(
-    std::string_view launch_key_line,
-    std::string_view launch_key_name) {
-// NOLINTEND(bugprone-easily-swappable-parameters)
-    std::string missing_launch = bt::text(repo_file(
-        "examples/research/viewer_physics_welded.toml"));
-    const auto pos = missing_launch.find(launch_key_line);
-    bt::require(pos != std::string::npos,
-                "viewer_physics_welded.toml declares the launch field");
-    missing_launch.erase(pos, launch_key_line.size());
-    const bt::TemporaryDirectory dir("welded-missing-launch");
-    const auto path = dir.path() / "physics.toml";
-    { std::ofstream out(path); out << missing_launch; }
-    bool threw = false;
-    try {
-        (void)cfg::load_physics(path);
-    } catch (const std::invalid_argument &failure) {
-        threw = true;
-        bt::require(
-            std::string_view(failure.what()).find(launch_key_name) !=
-                std::string_view::npos,
-            "the load rejection names the missing launch field");
-    }
-    bt::require(threw,
-                "omitting a launch field from [seated_climb] fails");
-}
+// Checks that the profile loads every rider section cleanly.
 
 // test_rider_numbers
 [[gnu::noinline]] void test_rider_numbers() {
@@ -242,22 +213,26 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
                 "the surge power is 400 W");
     bt::require(climb.min_elbow_flexion_deg == 15.,
                 "the torso backward-lean stop is at 15 deg elbow flexion");
-    // The uphill-standstill launch ramp (2026-11-10 experiment, user
-    // decision): the values decided there are the profile values.
-    bt::require(climb.launch_effort_ramp_s == 1.5 &&
-                    climb.launch_min_grade == .03 &&
-                    climb.launch_standstill_crank_rate_rad_s == 1.,
-                "the launch ramp is 1.5 s from a 3% grade at <=1 rad/s");
     for (const char *rel : {"examples/research/viewer_physics_pneumatic.toml",
                             "examples/research/viewer_physics_distributed.toml"}) {
         const auto other = cfg::load_physics(repo_file(rel));
         bt::require(other.seated_climb.min_elbow_flexion_deg == 15.,
                     "all three profiles set min_elbow_flexion_deg = 15 deg");
-        bt::require(other.seated_climb.launch_effort_ramp_s == 1.5 &&
-                        other.seated_climb.launch_min_grade == .03 &&
-                        other.seated_climb.launch_standstill_crank_rate_rad_s ==
-                            1.,
-                    "all three profiles set the launch ramp fields");
+    }
+    // The soft-start keys are gone: any profile carrying any of them fails
+    // to load and names the removed field.
+    for (const auto &[dir_tag, key, line] : std::initializer_list<
+             std::tuple<std::string_view, std::string_view, std::string_view>>{
+             {"welded-legacy-launch-effort-ramp", "launch_effort_ramp_s",
+              "\nlaunch_effort_ramp_s = 1.5"},
+             {"welded-legacy-launch-min-grade", "launch_min_grade",
+              "\nlaunch_min_grade = 0.03"},
+             {"welded-legacy-launch-standstill-crank",
+              "launch_standstill_crank_rate_rad_s",
+              "\nlaunch_standstill_crank_rate_rad_s = 1.0"}}) {
+        assert_injected_key_rejected(
+            dir_tag, "[seated_climb]", line, key,
+            "the schema rejects the removed soft-start key");
     }
     // min_elbow_flexion_deg is a required profile field with no code default:
     // omitting it from [seated_climb] fails to load, and out-of-range values
@@ -286,13 +261,6 @@ void test_assist_is_bosch_turbo_with_the_declared_envelope() {
         bt::require(threw,
                     "omitting min_elbow_flexion_deg from [seated_climb] fails");
     }
-    for (const auto &[line, name] : std::initializer_list<
-             std::pair<std::string_view, std::string_view>>{
-             {"launch_effort_ramp_s = 1.5", "launch_effort_ramp_s"},
-             {"launch_min_grade = 0.03", "launch_min_grade"},
-             {"launch_standstill_crank_rate_rad_s = 1.0",
-              "launch_standstill_crank_rate_rad_s"}})
-        assert_launch_field_required(line, name);
     for (const double bad_deg : {0., -5., 95.}) {
         auto mutated = profile();
         mutated.seated_climb.min_elbow_flexion_deg = bad_deg;

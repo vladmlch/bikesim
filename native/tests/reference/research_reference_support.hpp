@@ -97,9 +97,6 @@ struct Knobs {
     physics.seated_climb.surge_budget_s = 15.;
     physics.seated_climb.trim_dead_time_s = .2;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
-    physics.seated_climb.launch_effort_ramp_s = 1.5;
-    physics.seated_climb.launch_min_grade = .03;
-    physics.seated_climb.launch_standstill_crank_rate_rad_s = 1.;
     physics.rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {24},
                             .start_pedal_angle_rad = 0., .start_lean_grades = {0.},
                             .start_lean_rad = {0.},

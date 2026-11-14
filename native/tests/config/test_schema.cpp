@@ -291,9 +291,6 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_rate_rad_s = .5;
     climb.orientation_tau_s = .5;
     climb.min_elbow_flexion_deg = 15.0;
-    climb.launch_effort_ramp_s = 1.5;
-    climb.launch_min_grade = 0.03;
-    climb.launch_standstill_crank_rate_rad_s = 1.0;
     c.rider_launch = {.start_cog_grade_breaks = {},
                       .start_cog_teeth = {51},
                       .start_pedal_angle_rad = 0.0,

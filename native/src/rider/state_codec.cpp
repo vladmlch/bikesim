@@ -1029,8 +1029,7 @@ namespace {
         ncd::exact(policy,
                    keys("time_s", "inclination_rad", "lean_rad",
                         "effort_nm", "samples", "delayed",
-                        "surge_budget_s_left", "launch_ramp_s",
-                        "launch_decided"));
+                        "surge_budget_s_left"));
         SeatedClimbPolicy::State out;
         out.time_s = policy["time_s"].finite_real(policy_path);
         out.inclination_rad =
@@ -1048,10 +1047,6 @@ namespace {
                 decode_signals(delayed, policy_path + ".delayed");
         out.surge_budget_s_left =
             policy["surge_budget_s_left"].finite_real(policy_path);
-        out.launch_ramp_s =
-            policy["launch_ramp_s"].finite_real(policy_path);
-        out.launch_decided =
-            policy["launch_decided"].boolean(policy_path);
         return out;
     }
 
@@ -2147,9 +2142,7 @@ IntentConfig decode_intent_config(const bio::Value &value,
                        "surge_power_w", "surge_grade", "surge_budget_s",
                        "surge_recovery_rate", "front_load_share_target",
                        "lean_trim_gain_rad_s", "lean_trim_limit_rad",
-                       "trim_dead_time_s", "min_elbow_flexion_deg",
-                       "launch_effort_ramp_s", "launch_min_grade",
-                       "launch_standstill_crank_rate_rad_s"),
+                       "trim_dead_time_s", "min_elbow_flexion_deg"),
                   keys());
     IntentConfig config;
     // SeatedClimbConfig.__post_init__ order: enabled, positive fields,
@@ -2160,7 +2153,7 @@ IntentConfig decode_intent_config(const bio::Value &value,
         double IntentConfig::*field;
         bool positive;
     };
-    const std::array<Bound, 20> bounds{{
+    const std::array<Bound, 17> bounds{{
         {.key = "period_s", .field = &IntentConfig::period_s,
          .positive = true},
         {.key = "target_crank_power_w",
@@ -2195,13 +2188,6 @@ IntentConfig decode_intent_config(const bio::Value &value,
         {.key = "lean_trim_limit_rad",
          .field = &IntentConfig::lean_trim_limit_rad, .positive = false},
         {.key = "trim_dead_time_s", .field = &IntentConfig::trim_dead_time_s,
-         .positive = false},
-        {.key = "launch_effort_ramp_s",
-         .field = &IntentConfig::launch_effort_ramp_s, .positive = true},
-        {.key = "launch_min_grade",
-         .field = &IntentConfig::launch_min_grade, .positive = false},
-        {.key = "launch_standstill_crank_rate_rad_s",
-         .field = &IntentConfig::launch_standstill_crank_rate_rad_s,
          .positive = false},
     }};
     for (const auto &[key, field, positive]: bounds) {
@@ -2373,10 +2359,6 @@ bio::Value encode_intent_state(const RiderIntent::State &state) {
                                 : bio::Value{});
         policy.emplace_back("surge_budget_s_left",
                             real_value(state.policy.surge_budget_s_left));
-        policy.emplace_back("launch_ramp_s",
-                            real_value(state.policy.launch_ramp_s));
-        policy.emplace_back("launch_decided",
-                            bio::Value{state.policy.launch_decided});
         out.emplace_back("policy", bio::Value{std::move(policy)});
     }
     {

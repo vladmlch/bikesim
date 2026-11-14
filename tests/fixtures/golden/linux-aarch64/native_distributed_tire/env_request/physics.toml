@@ -157,13 +157,6 @@ lean_trim_gain_rad_s = 0.3
 lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
 min_elbow_flexion_deg = 15.0
-# Uphill standstill start (2026-11-10 experiment, user decision): the rider
-# effort ceiling ramps from 0 to full over 1.5 s instead of mashing at once.
-# Flat starts (preview grade < 3 %) and starts with the crank already
-# turning never arm the ramp, so they are unchanged.
-launch_effort_ramp_s = 1.5
-launch_min_grade = 0.03
-launch_standstill_crank_rate_rad_s = 1.0
 
 # Rider launch experience table (launch plan, part 2): start cog by grade,
 # working pedal angle, torso lean by grade. Preliminary values that keep

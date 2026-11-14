@@ -55,14 +55,6 @@ struct IntentConfig {
     double lean_trim_limit_rad = .15;
     double trim_dead_time_s = -1.;
     double min_elbow_flexion_deg = 0.;
-    // Uphill standstill launch (2026-11-10 experiment, user decision): a
-    // real rider does not mash full effort at once on a grade — the effort
-    // ceiling ramps from 0 to full over launch_effort_ramp_s when the
-    // previewed grade is at least launch_min_grade and the delayed crank
-    // rate is still at standstill (<= launch_standstill_crank_rate_rad_s).
-    double launch_effort_ramp_s = -1.;
-    double launch_min_grade = -1.;
-    double launch_standstill_crank_rate_rad_s = -1.;
 };
 
 // seated_climb.py SeatedClimbIntent.
@@ -182,10 +174,6 @@ public:
         std::deque<std::pair<double, IntentSignals>> samples;
         std::optional<IntentSignals> delayed;
         double surge_budget_s_left = 0.;
-        // Uphill standstill launch: ramp elapsed while armed (-1 = the
-        // ramp never armed), plus the one-time arming decision latch.
-        double launch_ramp_s = -1.;
-        bool launch_decided = false;
     };
 
     explicit SeatedClimbPolicy(const IntentConfig &config);
@@ -222,10 +210,6 @@ private:
     std::deque<std::pair<double, IntentSignals>> samples_;
     std::optional<IntentSignals> delayed_;
     double surge_budget_s_left_ = 0.;
-    // Uphill standstill launch (2026-11-10 experiment, user decision):
-    // elapsed ramp time while armed, -1 while the launch ramp is inactive.
-    double launch_ramp_s_ = -1.;
-    bool launch_decided_ = false;
 };
 
 // rider_intent.py RiderIntentResolver — the physics-clock owner.

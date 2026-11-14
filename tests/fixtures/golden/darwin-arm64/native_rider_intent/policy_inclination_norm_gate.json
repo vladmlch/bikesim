@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 3944,
   "node": "native_rider_intent/policy_inclination_norm_gate",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   493
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.update.0",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 4448,
+  "offset": 3944,
   "rtol": null,
   "shape": [
    228
@@ -35,7 +35,7 @@
   "label": "output.intent.0",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 6272,
+  "offset": 5768,
   "rtol": null,
   "shape": [
    124
@@ -49,7 +49,7 @@
   "label": "input.update.1",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 6396,
+  "offset": 5892,
   "rtol": null,
   "shape": [
    228
@@ -63,7 +63,7 @@
   "label": "output.intent.1",
   "nbytes": 123,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 8220,
+  "offset": 7716,
   "rtol": null,
   "shape": [
    123
@@ -77,7 +77,7 @@
   "label": "input.update.2",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 8343,
+  "offset": 7839,
   "rtol": null,
   "shape": [
    228
@@ -91,7 +91,7 @@
   "label": "output.intent.2",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 10167,
+  "offset": 9663,
   "rtol": null,
   "shape": [
    124
@@ -105,7 +105,7 @@
   "label": "input.update.3",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 10291,
+  "offset": 9787,
   "rtol": null,
   "shape": [
    228
@@ -119,7 +119,7 @@
   "label": "output.intent.3",
   "nbytes": 123,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 12115,
+  "offset": 11611,
   "rtol": null,
   "shape": [
    123
@@ -133,7 +133,7 @@
   "label": "input.update.4",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 12238,
+  "offset": 11734,
   "rtol": null,
   "shape": [
    228
@@ -147,7 +147,7 @@
   "label": "output.intent.4",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 14062,
+  "offset": 13558,
   "rtol": null,
   "shape": [
    124
@@ -161,7 +161,7 @@
   "label": "input.update.5",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 14186,
+  "offset": 13682,
   "rtol": null,
   "shape": [
    228
@@ -175,7 +175,7 @@
   "label": "output.intent.5",
   "nbytes": 139,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 16010,
+  "offset": 15506,
   "rtol": null,
   "shape": [
    139
@@ -189,7 +189,7 @@
   "label": "input.update.6",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 16149,
+  "offset": 15645,
   "rtol": null,
   "shape": [
    228
@@ -203,7 +203,7 @@
   "label": "output.intent.6",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 17973,
+  "offset": 17469,
   "rtol": null,
   "shape": [
    124
@@ -217,7 +217,7 @@
   "label": "input.update.7",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 18097,
+  "offset": 17593,
   "rtol": null,
   "shape": [
    228
@@ -231,7 +231,7 @@
   "label": "output.intent.7",
   "nbytes": 123,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 19921,
+  "offset": 19417,
   "rtol": null,
   "shape": [
    123
@@ -245,7 +245,7 @@
   "label": "input.update.8",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 20044,
+  "offset": 19540,
   "rtol": null,
   "shape": [
    228
@@ -259,7 +259,7 @@
   "label": "output.intent.8",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 21868,
+  "offset": 21364,
   "rtol": null,
   "shape": [
    124
@@ -273,7 +273,7 @@
   "label": "input.update.9",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 21992,
+  "offset": 21488,
   "rtol": null,
   "shape": [
    228
@@ -287,7 +287,7 @@
   "label": "output.intent.9",
   "nbytes": 139,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 23816,
+  "offset": 23312,
   "rtol": null,
   "shape": [
    139
@@ -301,7 +301,7 @@
   "label": "input.update.10",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 23955,
+  "offset": 23451,
   "rtol": null,
   "shape": [
    228
@@ -315,7 +315,7 @@
   "label": "output.intent.10",
   "nbytes": 138,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 25779,
+  "offset": 25275,
   "rtol": null,
   "shape": [
    138
@@ -329,7 +329,7 @@
   "label": "input.update.11",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 25917,
+  "offset": 25413,
   "rtol": null,
   "shape": [
    228
@@ -343,7 +343,7 @@
   "label": "output.intent.11",
   "nbytes": 138,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 27741,
+  "offset": 27237,
   "rtol": null,
   "shape": [
    138
@@ -357,7 +357,7 @@
   "label": "input.update.12",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 27879,
+  "offset": 27375,
   "rtol": null,
   "shape": [
    228
@@ -371,7 +371,7 @@
   "label": "output.intent.12",
   "nbytes": 138,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 29703,
+  "offset": 29199,
   "rtol": null,
   "shape": [
    138
@@ -385,7 +385,7 @@
   "label": "input.update.13",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 29841,
+  "offset": 29337,
   "rtol": null,
   "shape": [
    228
@@ -399,7 +399,7 @@
   "label": "output.intent.13",
   "nbytes": 138,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 31665,
+  "offset": 31161,
   "rtol": null,
   "shape": [
    138
@@ -413,7 +413,7 @@
   "label": "input.update.14",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 31803,
+  "offset": 31299,
   "rtol": null,
   "shape": [
    228
@@ -427,7 +427,7 @@
   "label": "output.intent.14",
   "nbytes": 124,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 33627,
+  "offset": 33123,
   "rtol": null,
   "shape": [
    124
@@ -441,7 +441,7 @@
   "label": "input.update.15",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 33751,
+  "offset": 33247,
   "rtol": null,
   "shape": [
    228
@@ -453,12 +453,12 @@
   "index": 32,
   "kind": "bitwise",
   "label": "output.intent.15",
-  "nbytes": 123,
+  "nbytes": 126,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 35575,
+  "offset": 35071,
   "rtol": null,
   "shape": [
-   123
+   126
   ]
  },
  {
@@ -469,7 +469,7 @@
   "label": "input.update.16",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 35698,
+  "offset": 35197,
   "rtol": null,
   "shape": [
    228
@@ -481,12 +481,12 @@
   "index": 34,
   "kind": "bitwise",
   "label": "output.intent.16",
-  "nbytes": 124,
+  "nbytes": 127,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 37522,
+  "offset": 37021,
   "rtol": null,
   "shape": [
-   124
+   127
   ]
  },
  {
@@ -497,7 +497,7 @@
   "label": "input.update.17",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 37646,
+  "offset": 37148,
   "rtol": null,
   "shape": [
    228
@@ -509,12 +509,12 @@
   "index": 36,
   "kind": "bitwise",
   "label": "output.intent.17",
-  "nbytes": 138,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 39470,
+  "offset": 38972,
   "rtol": null,
   "shape": [
-   138
+   141
   ]
  },
  {
@@ -525,7 +525,7 @@
   "label": "input.update.18",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 39608,
+  "offset": 39113,
   "rtol": null,
   "shape": [
    228
@@ -537,12 +537,12 @@
   "index": 38,
   "kind": "bitwise",
   "label": "output.intent.18",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 41432,
+  "offset": 40937,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -553,7 +553,7 @@
   "label": "input.update.19",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 41571,
+  "offset": 41078,
   "rtol": null,
   "shape": [
    228
@@ -565,12 +565,12 @@
   "index": 40,
   "kind": "bitwise",
   "label": "output.intent.19",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 43395,
+  "offset": 42902,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -581,7 +581,7 @@
   "label": "input.update.20",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 43534,
+  "offset": 43043,
   "rtol": null,
   "shape": [
    228
@@ -593,12 +593,12 @@
   "index": 42,
   "kind": "bitwise",
   "label": "output.intent.20",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 45358,
+  "offset": 44867,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -609,7 +609,7 @@
   "label": "input.update.21",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 45497,
+  "offset": 45008,
   "rtol": null,
   "shape": [
    228
@@ -621,12 +621,12 @@
   "index": 44,
   "kind": "bitwise",
   "label": "output.intent.21",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 47321,
+  "offset": 46832,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -637,7 +637,7 @@
   "label": "input.update.22",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 47460,
+  "offset": 46973,
   "rtol": null,
   "shape": [
    228
@@ -649,12 +649,12 @@
   "index": 46,
   "kind": "bitwise",
   "label": "output.intent.22",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 49284,
+  "offset": 48797,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -665,7 +665,7 @@
   "label": "input.update.23",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 49423,
+  "offset": 48938,
   "rtol": null,
   "shape": [
    228
@@ -677,12 +677,12 @@
   "index": 48,
   "kind": "bitwise",
   "label": "output.intent.23",
-  "nbytes": 139,
+  "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 51247,
+  "offset": 50762,
   "rtol": null,
   "shape": [
-   139
+   141
   ]
  },
  {
@@ -693,7 +693,7 @@
   "label": "input.update.24",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 51386,
+  "offset": 50903,
   "rtol": null,
   "shape": [
    228
@@ -707,7 +707,7 @@
   "label": "output.intent.24",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 53210,
+  "offset": 52727,
   "rtol": null,
   "shape": [
    141
@@ -721,7 +721,7 @@
   "label": "input.update.25",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 53351,
+  "offset": 52868,
   "rtol": null,
   "shape": [
    228
@@ -735,7 +735,7 @@
   "label": "output.intent.25",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 55175,
+  "offset": 54692,
   "rtol": null,
   "shape": [
    141
@@ -749,7 +749,7 @@
   "label": "input.update.26",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 55316,
+  "offset": 54833,
   "rtol": null,
   "shape": [
    228
@@ -763,7 +763,7 @@
   "label": "output.intent.26",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 57140,
+  "offset": 56657,
   "rtol": null,
   "shape": [
    141
@@ -777,7 +777,7 @@
   "label": "input.update.27",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 57281,
+  "offset": 56798,
   "rtol": null,
   "shape": [
    228
@@ -791,7 +791,7 @@
   "label": "output.intent.27",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 59105,
+  "offset": 58622,
   "rtol": null,
   "shape": [
    141
@@ -805,7 +805,7 @@
   "label": "input.update.28",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 59246,
+  "offset": 58763,
   "rtol": null,
   "shape": [
    228
@@ -819,7 +819,7 @@
   "label": "output.intent.28",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 61070,
+  "offset": 60587,
   "rtol": null,
   "shape": [
    141
@@ -833,7 +833,7 @@
   "label": "input.update.29",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 61211,
+  "offset": 60728,
   "rtol": null,
   "shape": [
    228
@@ -847,7 +847,7 @@
   "label": "output.intent.29",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 63035,
+  "offset": 62552,
   "rtol": null,
   "shape": [
    141
@@ -861,7 +861,7 @@
   "label": "input.update.30",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 63176,
+  "offset": 62693,
   "rtol": null,
   "shape": [
    228
@@ -875,7 +875,7 @@
   "label": "output.intent.30",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 65000,
+  "offset": 64517,
   "rtol": null,
   "shape": [
    141
@@ -889,7 +889,7 @@
   "label": "input.update.31",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 65141,
+  "offset": 64658,
   "rtol": null,
   "shape": [
    228
@@ -903,7 +903,7 @@
   "label": "output.intent.31",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 66965,
+  "offset": 66482,
   "rtol": null,
   "shape": [
    141
@@ -917,7 +917,7 @@
   "label": "input.update.32",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 67106,
+  "offset": 66623,
   "rtol": null,
   "shape": [
    228
@@ -931,7 +931,7 @@
   "label": "output.intent.32",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 68930,
+  "offset": 68447,
   "rtol": null,
   "shape": [
    141
@@ -945,7 +945,7 @@
   "label": "input.update.33",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 69071,
+  "offset": 68588,
   "rtol": null,
   "shape": [
    228
@@ -959,7 +959,7 @@
   "label": "output.intent.33",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 70895,
+  "offset": 70412,
   "rtol": null,
   "shape": [
    141
@@ -973,7 +973,7 @@
   "label": "input.update.34",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 71036,
+  "offset": 70553,
   "rtol": null,
   "shape": [
    228
@@ -987,7 +987,7 @@
   "label": "output.intent.34",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 72860,
+  "offset": 72377,
   "rtol": null,
   "shape": [
    141
@@ -1001,7 +1001,7 @@
   "label": "input.update.35",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 73001,
+  "offset": 72518,
   "rtol": null,
   "shape": [
    228
@@ -1015,7 +1015,7 @@
   "label": "output.intent.35",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 74825,
+  "offset": 74342,
   "rtol": null,
   "shape": [
    141
@@ -1029,7 +1029,7 @@
   "label": "input.update.36",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 74966,
+  "offset": 74483,
   "rtol": null,
   "shape": [
    228
@@ -1043,7 +1043,7 @@
   "label": "output.intent.36",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 76790,
+  "offset": 76307,
   "rtol": null,
   "shape": [
    141
@@ -1057,7 +1057,7 @@
   "label": "input.update.37",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 76931,
+  "offset": 76448,
   "rtol": null,
   "shape": [
    228
@@ -1071,7 +1071,7 @@
   "label": "output.intent.37",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 78755,
+  "offset": 78272,
   "rtol": null,
   "shape": [
    141
@@ -1085,7 +1085,7 @@
   "label": "input.update.38",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 78896,
+  "offset": 78413,
   "rtol": null,
   "shape": [
    228
@@ -1099,7 +1099,7 @@
   "label": "output.intent.38",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 80720,
+  "offset": 80237,
   "rtol": null,
   "shape": [
    141
@@ -1113,7 +1113,7 @@
   "label": "input.update.39",
   "nbytes": 1824,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 80861,
+  "offset": 80378,
   "rtol": null,
   "shape": [
    228
@@ -1127,7 +1127,7 @@
   "label": "output.intent.39",
   "nbytes": 141,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 82685,
+  "offset": 82202,
   "rtol": null,
   "shape": [
    141
@@ -1139,12 +1139,12 @@
   "index": 81,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 3611,
+  "nbytes": 4166,
   "node": "native_rider_intent/policy_inclination_norm_gate",
-  "offset": 82826,
+  "offset": 82343,
   "rtol": null,
   "shape": [
-   3611
+   4166
   ]
  }
 ]

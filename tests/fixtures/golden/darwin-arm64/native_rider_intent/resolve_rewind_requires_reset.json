@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 3944,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   493
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 4448,
+  "offset": 3944,
   "rtol": null,
   "shape": [
    402
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 7664,
+  "offset": 7160,
   "rtol": null,
   "shape": [
    219
@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 548,
+  "nbytes": 1396,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 7883,
+  "offset": 7379,
   "rtol": null,
   "shape": [
-   548
+   1396
   ]
  },
  {
@@ -63,7 +63,7 @@
   "label": "input.resolve.1",
   "nbytes": 3224,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 8431,
+  "offset": 8775,
   "rtol": null,
   "shape": [
    403
@@ -77,7 +77,7 @@
   "label": "output.control.1",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 11655,
+  "offset": 11999,
   "rtol": null,
   "shape": [
    218
@@ -89,12 +89,12 @@
   "index": 6,
   "kind": "bitwise",
   "label": "output.state.1",
-  "nbytes": 709,
+  "nbytes": 1851,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 11873,
+  "offset": 12217,
   "rtol": null,
   "shape": [
-   709
+   1851
   ]
  },
  {
@@ -105,7 +105,7 @@
   "label": "input.resolve.2",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 12582,
+  "offset": 14068,
   "rtol": null,
   "shape": [
    402
@@ -119,7 +119,7 @@
   "label": "error.resolve.0",
   "nbytes": 0,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 15798,
+  "offset": 17284,
   "rtol": null,
   "shape": [
    0
@@ -133,7 +133,7 @@
   "label": "input.resolve.3",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 15798,
+  "offset": 17284,
   "rtol": null,
   "shape": [
    402
@@ -147,7 +147,7 @@
   "label": "output.control.2",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 19014,
+  "offset": 20500,
   "rtol": null,
   "shape": [
    219
@@ -159,12 +159,12 @@
   "index": 11,
   "kind": "bitwise",
   "label": "output.state.2",
-  "nbytes": 548,
+  "nbytes": 1396,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 19233,
+  "offset": 20719,
   "rtol": null,
   "shape": [
-   548
+   1396
   ]
  }
 ]

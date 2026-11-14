@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4464,
+  "nbytes": 3960,
   "node": "native_rider_intent/period_must_be_integer_multiple",
   "offset": 0,
   "rtol": null,
   "shape": [
-   558
+   495
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "error.adapter.0",
   "nbytes": 0,
   "node": "native_rider_intent/period_must_be_integer_multiple",
-  "offset": 4464,
+  "offset": 3960,
   "rtol": null,
   "shape": [
    0
@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "input.adapter.1",
-  "nbytes": 4472,
+  "nbytes": 3968,
   "node": "native_rider_intent/period_must_be_integer_multiple",
-  "offset": 4464,
+  "offset": 3960,
   "rtol": null,
   "shape": [
-   559
+   496
   ]
  }
 ]

@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 3944,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   493
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 4448,
+  "offset": 3944,
   "rtol": null,
   "shape": [
    402
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 7664,
+  "offset": 7160,
   "rtol": null,
   "shape": [
    219
@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 7883,
+  "offset": 7379,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "bitwise",
   "label": "output.state.1",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 8433,
+  "offset": 8778,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "input.resolve.1",
   "nbytes": 3240,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 8983,
+  "offset": 10177,
   "rtol": null,
   "shape": [
    405
@@ -91,7 +91,7 @@
   "label": "output.control.1",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 12223,
+  "offset": 13417,
   "rtol": null,
   "shape": [
    219
@@ -103,12 +103,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "output.state.2",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 12442,
+  "offset": 13636,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "output.state.3",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 12992,
+  "offset": 15035,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "input.resolve.2",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 13542,
+  "offset": 16434,
   "rtol": null,
   "shape": [
    419
@@ -147,7 +147,7 @@
   "label": "output.control.2",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 16894,
+  "offset": 19786,
   "rtol": null,
   "shape": [
    219
@@ -159,12 +159,12 @@
   "index": 11,
   "kind": "bitwise",
   "label": "output.state.4",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 17113,
+  "offset": 20005,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -173,12 +173,12 @@
   "index": 12,
   "kind": "bitwise",
   "label": "output.state.5",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 17663,
+  "offset": 21404,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -189,7 +189,7 @@
   "label": "input.resolve.3",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 18213,
+  "offset": 22803,
   "rtol": null,
   "shape": [
    419
@@ -203,7 +203,7 @@
   "label": "output.control.3",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 21565,
+  "offset": 26155,
   "rtol": null,
   "shape": [
    219
@@ -215,12 +215,12 @@
   "index": 15,
   "kind": "bitwise",
   "label": "output.state.6",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 21784,
+  "offset": 26374,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -229,12 +229,12 @@
   "index": 16,
   "kind": "bitwise",
   "label": "output.state.7",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 22334,
+  "offset": 27773,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -245,7 +245,7 @@
   "label": "input.resolve.4",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 22884,
+  "offset": 29172,
   "rtol": null,
   "shape": [
    419
@@ -259,7 +259,7 @@
   "label": "output.control.4",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 26236,
+  "offset": 32524,
   "rtol": null,
   "shape": [
    219
@@ -271,12 +271,12 @@
   "index": 19,
   "kind": "bitwise",
   "label": "output.state.8",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 26455,
+  "offset": 32743,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -285,12 +285,12 @@
   "index": 20,
   "kind": "bitwise",
   "label": "output.state.9",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 27005,
+  "offset": 34142,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -301,7 +301,7 @@
   "label": "input.resolve.5",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 27555,
+  "offset": 35541,
   "rtol": null,
   "shape": [
    419
@@ -315,7 +315,7 @@
   "label": "output.control.5",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 30907,
+  "offset": 38893,
   "rtol": null,
   "shape": [
    219
@@ -327,12 +327,12 @@
   "index": 23,
   "kind": "bitwise",
   "label": "output.state.10",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 31126,
+  "offset": 39112,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -341,12 +341,12 @@
   "index": 24,
   "kind": "bitwise",
   "label": "output.state.11",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 31676,
+  "offset": 40511,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -357,7 +357,7 @@
   "label": "input.resolve.6",
   "nbytes": 3472,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 32226,
+  "offset": 41910,
   "rtol": null,
   "shape": [
    434
@@ -371,7 +371,7 @@
   "label": "output.control.6",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 35698,
+  "offset": 45382,
   "rtol": null,
   "shape": [
    219
@@ -383,12 +383,12 @@
   "index": 27,
   "kind": "bitwise",
   "label": "output.state.12",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 35917,
+  "offset": 45601,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -397,12 +397,12 @@
   "index": 28,
   "kind": "bitwise",
   "label": "output.state.13",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 36467,
+  "offset": 47000,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -413,7 +413,7 @@
   "label": "input.resolve.7",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 37017,
+  "offset": 48399,
   "rtol": null,
   "shape": [
    419
@@ -427,7 +427,7 @@
   "label": "output.control.7",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 40369,
+  "offset": 51751,
   "rtol": null,
   "shape": [
    219
@@ -439,12 +439,12 @@
   "index": 31,
   "kind": "bitwise",
   "label": "output.state.14",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 40588,
+  "offset": 51970,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -453,12 +453,12 @@
   "index": 32,
   "kind": "bitwise",
   "label": "output.state.15",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 41138,
+  "offset": 53369,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -469,7 +469,7 @@
   "label": "input.resolve.8",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 41688,
+  "offset": 54768,
   "rtol": null,
   "shape": [
    419
@@ -483,7 +483,7 @@
   "label": "output.control.8",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 45040,
+  "offset": 58120,
   "rtol": null,
   "shape": [
    219
@@ -495,12 +495,12 @@
   "index": 35,
   "kind": "bitwise",
   "label": "output.state.16",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 45259,
+  "offset": 58339,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -509,12 +509,12 @@
   "index": 36,
   "kind": "bitwise",
   "label": "output.state.17",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 45809,
+  "offset": 59738,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -525,7 +525,7 @@
   "label": "input.resolve.9",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 46359,
+  "offset": 61137,
   "rtol": null,
   "shape": [
    419
@@ -539,7 +539,7 @@
   "label": "output.control.9",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 49711,
+  "offset": 64489,
   "rtol": null,
   "shape": [
    219
@@ -551,12 +551,12 @@
   "index": 39,
   "kind": "bitwise",
   "label": "output.state.18",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 49930,
+  "offset": 64708,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -565,12 +565,12 @@
   "index": 40,
   "kind": "bitwise",
   "label": "output.state.19",
-  "nbytes": 550,
+  "nbytes": 1399,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 50480,
+  "offset": 66107,
   "rtol": null,
   "shape": [
-   550
+   1399
   ]
  },
  {
@@ -581,7 +581,7 @@
   "label": "input.resolve.10",
   "nbytes": 3344,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 51030,
+  "offset": 67506,
   "rtol": null,
   "shape": [
    418
@@ -595,7 +595,7 @@
   "label": "output.control.10",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 54374,
+  "offset": 70850,
   "rtol": null,
   "shape": [
    218
@@ -607,12 +607,12 @@
   "index": 43,
   "kind": "bitwise",
   "label": "output.state.20",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 54592,
+  "offset": 71068,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -621,12 +621,12 @@
   "index": 44,
   "kind": "bitwise",
   "label": "output.state.21",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 55335,
+  "offset": 72970,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -637,7 +637,7 @@
   "label": "input.resolve.11",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 56078,
+  "offset": 74872,
   "rtol": null,
   "shape": [
    420
@@ -651,7 +651,7 @@
   "label": "output.control.11",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 59438,
+  "offset": 78232,
   "rtol": null,
   "shape": [
    218
@@ -663,12 +663,12 @@
   "index": 47,
   "kind": "bitwise",
   "label": "output.state.22",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 59656,
+  "offset": 78450,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -677,12 +677,12 @@
   "index": 48,
   "kind": "bitwise",
   "label": "output.state.23",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 60399,
+  "offset": 80352,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -693,7 +693,7 @@
   "label": "input.resolve.12",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 61142,
+  "offset": 82254,
   "rtol": null,
   "shape": [
    420
@@ -707,7 +707,7 @@
   "label": "output.control.12",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 64502,
+  "offset": 85614,
   "rtol": null,
   "shape": [
    218
@@ -719,12 +719,12 @@
   "index": 51,
   "kind": "bitwise",
   "label": "output.state.24",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 64720,
+  "offset": 85832,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -733,12 +733,12 @@
   "index": 52,
   "kind": "bitwise",
   "label": "output.state.25",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 65463,
+  "offset": 87734,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -749,7 +749,7 @@
   "label": "input.resolve.13",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 66206,
+  "offset": 89636,
   "rtol": null,
   "shape": [
    420
@@ -763,7 +763,7 @@
   "label": "output.control.13",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 69566,
+  "offset": 92996,
   "rtol": null,
   "shape": [
    218
@@ -775,12 +775,12 @@
   "index": 55,
   "kind": "bitwise",
   "label": "output.state.26",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 69784,
+  "offset": 93214,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -789,12 +789,12 @@
   "index": 56,
   "kind": "bitwise",
   "label": "output.state.27",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 70527,
+  "offset": 95116,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -805,7 +805,7 @@
   "label": "input.resolve.14",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 71270,
+  "offset": 97018,
   "rtol": null,
   "shape": [
    420
@@ -819,7 +819,7 @@
   "label": "output.control.14",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 74630,
+  "offset": 100378,
   "rtol": null,
   "shape": [
    218
@@ -831,12 +831,12 @@
   "index": 59,
   "kind": "bitwise",
   "label": "output.state.28",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 74848,
+  "offset": 100596,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -845,12 +845,12 @@
   "index": 60,
   "kind": "bitwise",
   "label": "output.state.29",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 75591,
+  "offset": 102498,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -861,7 +861,7 @@
   "label": "input.resolve.15",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 76334,
+  "offset": 104400,
   "rtol": null,
   "shape": [
    420
@@ -875,7 +875,7 @@
   "label": "output.control.15",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 79694,
+  "offset": 107760,
   "rtol": null,
   "shape": [
    218
@@ -887,12 +887,12 @@
   "index": 63,
   "kind": "bitwise",
   "label": "output.state.30",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 79912,
+  "offset": 107978,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -901,12 +901,12 @@
   "index": 64,
   "kind": "bitwise",
   "label": "output.state.31",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 80655,
+  "offset": 109880,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -917,7 +917,7 @@
   "label": "input.resolve.16",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 81398,
+  "offset": 111782,
   "rtol": null,
   "shape": [
    435
@@ -931,7 +931,7 @@
   "label": "output.control.16",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 84878,
+  "offset": 115262,
   "rtol": null,
   "shape": [
    218
@@ -943,12 +943,12 @@
   "index": 67,
   "kind": "bitwise",
   "label": "output.state.32",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 85096,
+  "offset": 115480,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -957,12 +957,12 @@
   "index": 68,
   "kind": "bitwise",
   "label": "output.state.33",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 85839,
+  "offset": 117382,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -973,7 +973,7 @@
   "label": "input.resolve.17",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 86582,
+  "offset": 119284,
   "rtol": null,
   "shape": [
    435
@@ -987,7 +987,7 @@
   "label": "output.control.17",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 90062,
+  "offset": 122764,
   "rtol": null,
   "shape": [
    218
@@ -999,12 +999,12 @@
   "index": 71,
   "kind": "bitwise",
   "label": "output.state.34",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 90280,
+  "offset": 122982,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1013,12 +1013,12 @@
   "index": 72,
   "kind": "bitwise",
   "label": "output.state.35",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 91023,
+  "offset": 124884,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1029,7 +1029,7 @@
   "label": "input.resolve.18",
   "nbytes": 3480,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 91766,
+  "offset": 126786,
   "rtol": null,
   "shape": [
    435
@@ -1043,7 +1043,7 @@
   "label": "output.control.18",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 95246,
+  "offset": 130266,
   "rtol": null,
   "shape": [
    218
@@ -1055,12 +1055,12 @@
   "index": 75,
   "kind": "bitwise",
   "label": "output.state.36",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 95464,
+  "offset": 130484,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1069,12 +1069,12 @@
   "index": 76,
   "kind": "bitwise",
   "label": "output.state.37",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 96207,
+  "offset": 132386,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1085,7 +1085,7 @@
   "label": "input.resolve.19",
   "nbytes": 3360,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 96950,
+  "offset": 134288,
   "rtol": null,
   "shape": [
    420
@@ -1099,7 +1099,7 @@
   "label": "output.control.19",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 100310,
+  "offset": 137648,
   "rtol": null,
   "shape": [
    218
@@ -1111,12 +1111,12 @@
   "index": 79,
   "kind": "bitwise",
   "label": "output.state.38",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 100528,
+  "offset": 137866,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1125,12 +1125,12 @@
   "index": 80,
   "kind": "bitwise",
   "label": "output.state.39",
-  "nbytes": 743,
+  "nbytes": 1902,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 101271,
+  "offset": 139768,
   "rtol": null,
   "shape": [
-   743
+   1902
   ]
  },
  {
@@ -1141,7 +1141,7 @@
   "label": "input.resolve.20",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 102014,
+  "offset": 141670,
   "rtol": null,
   "shape": [
    419
@@ -1155,7 +1155,7 @@
   "label": "output.control.20",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 105366,
+  "offset": 145022,
   "rtol": null,
   "shape": [
    219
@@ -1167,12 +1167,12 @@
   "index": 83,
   "kind": "bitwise",
   "label": "output.state.40",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 105585,
+  "offset": 145241,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1181,12 +1181,12 @@
   "index": 84,
   "kind": "bitwise",
   "label": "output.state.41",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 106527,
+  "offset": 147653,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1197,7 +1197,7 @@
   "label": "input.resolve.21",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 107469,
+  "offset": 150065,
   "rtol": null,
   "shape": [
    421
@@ -1211,7 +1211,7 @@
   "label": "output.control.21",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 110837,
+  "offset": 153433,
   "rtol": null,
   "shape": [
    219
@@ -1223,12 +1223,12 @@
   "index": 87,
   "kind": "bitwise",
   "label": "output.state.42",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 111056,
+  "offset": 153652,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1237,12 +1237,12 @@
   "index": 88,
   "kind": "bitwise",
   "label": "output.state.43",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 111998,
+  "offset": 156064,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1253,7 +1253,7 @@
   "label": "input.resolve.22",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 112940,
+  "offset": 158476,
   "rtol": null,
   "shape": [
    436
@@ -1267,7 +1267,7 @@
   "label": "output.control.22",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 116428,
+  "offset": 161964,
   "rtol": null,
   "shape": [
    219
@@ -1279,12 +1279,12 @@
   "index": 91,
   "kind": "bitwise",
   "label": "output.state.44",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 116647,
+  "offset": 162183,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1293,12 +1293,12 @@
   "index": 92,
   "kind": "bitwise",
   "label": "output.state.45",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 117589,
+  "offset": 164595,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1309,7 +1309,7 @@
   "label": "input.resolve.23",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 118531,
+  "offset": 167007,
   "rtol": null,
   "shape": [
    421
@@ -1323,7 +1323,7 @@
   "label": "output.control.23",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 121899,
+  "offset": 170375,
   "rtol": null,
   "shape": [
    219
@@ -1335,12 +1335,12 @@
   "index": 95,
   "kind": "bitwise",
   "label": "output.state.46",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 122118,
+  "offset": 170594,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1349,12 +1349,12 @@
   "index": 96,
   "kind": "bitwise",
   "label": "output.state.47",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 123060,
+  "offset": 173006,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1365,7 +1365,7 @@
   "label": "input.resolve.24",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 124002,
+  "offset": 175418,
   "rtol": null,
   "shape": [
    421
@@ -1379,7 +1379,7 @@
   "label": "output.control.24",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 127370,
+  "offset": 178786,
   "rtol": null,
   "shape": [
    219
@@ -1391,12 +1391,12 @@
   "index": 99,
   "kind": "bitwise",
   "label": "output.state.48",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 127589,
+  "offset": 179005,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1405,12 +1405,12 @@
   "index": 100,
   "kind": "bitwise",
   "label": "output.state.49",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 128531,
+  "offset": 181417,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1421,7 +1421,7 @@
   "label": "input.resolve.25",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 129473,
+  "offset": 183829,
   "rtol": null,
   "shape": [
    421
@@ -1435,7 +1435,7 @@
   "label": "output.control.25",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 132841,
+  "offset": 187197,
   "rtol": null,
   "shape": [
    219
@@ -1447,12 +1447,12 @@
   "index": 103,
   "kind": "bitwise",
   "label": "output.state.50",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 133060,
+  "offset": 187416,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1461,12 +1461,12 @@
   "index": 104,
   "kind": "bitwise",
   "label": "output.state.51",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 134002,
+  "offset": 189828,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1477,7 +1477,7 @@
   "label": "input.resolve.26",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 134944,
+  "offset": 192240,
   "rtol": null,
   "shape": [
    421
@@ -1491,7 +1491,7 @@
   "label": "output.control.26",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 138312,
+  "offset": 195608,
   "rtol": null,
   "shape": [
    219
@@ -1503,12 +1503,12 @@
   "index": 107,
   "kind": "bitwise",
   "label": "output.state.52",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 138531,
+  "offset": 195827,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1517,12 +1517,12 @@
   "index": 108,
   "kind": "bitwise",
   "label": "output.state.53",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 139473,
+  "offset": 198239,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1533,7 +1533,7 @@
   "label": "input.resolve.27",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 140415,
+  "offset": 200651,
   "rtol": null,
   "shape": [
    421
@@ -1547,7 +1547,7 @@
   "label": "output.control.27",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 143783,
+  "offset": 204019,
   "rtol": null,
   "shape": [
    219
@@ -1559,12 +1559,12 @@
   "index": 111,
   "kind": "bitwise",
   "label": "output.state.54",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 144002,
+  "offset": 204238,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1573,12 +1573,12 @@
   "index": 112,
   "kind": "bitwise",
   "label": "output.state.55",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 144944,
+  "offset": 206650,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1589,7 +1589,7 @@
   "label": "input.resolve.28",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 145886,
+  "offset": 209062,
   "rtol": null,
   "shape": [
    421
@@ -1603,7 +1603,7 @@
   "label": "output.control.28",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 149254,
+  "offset": 212430,
   "rtol": null,
   "shape": [
    219
@@ -1615,12 +1615,12 @@
   "index": 115,
   "kind": "bitwise",
   "label": "output.state.56",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 149473,
+  "offset": 212649,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1629,12 +1629,12 @@
   "index": 116,
   "kind": "bitwise",
   "label": "output.state.57",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 150415,
+  "offset": 215061,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1645,7 +1645,7 @@
   "label": "input.resolve.29",
   "nbytes": 3368,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 151357,
+  "offset": 217473,
   "rtol": null,
   "shape": [
    421
@@ -1659,7 +1659,7 @@
   "label": "output.control.29",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 154725,
+  "offset": 220841,
   "rtol": null,
   "shape": [
    219
@@ -1671,12 +1671,12 @@
   "index": 119,
   "kind": "bitwise",
   "label": "output.state.58",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 154944,
+  "offset": 221060,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1685,12 +1685,12 @@
   "index": 120,
   "kind": "bitwise",
   "label": "output.state.59",
-  "nbytes": 942,
+  "nbytes": 2412,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 155886,
+  "offset": 223472,
   "rtol": null,
   "shape": [
-   942
+   2412
   ]
  },
  {
@@ -1701,7 +1701,7 @@
   "label": "input.resolve.30",
   "nbytes": 3352,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 156828,
+  "offset": 225884,
   "rtol": null,
   "shape": [
    419
@@ -1715,7 +1715,7 @@
   "label": "output.control.30",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 160180,
+  "offset": 229236,
   "rtol": null,
   "shape": [
    218
@@ -1727,12 +1727,12 @@
   "index": 123,
   "kind": "bitwise",
   "label": "output.state.60",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 160398,
+  "offset": 229454,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1741,12 +1741,12 @@
   "index": 124,
   "kind": "bitwise",
   "label": "output.state.61",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 161533,
+  "offset": 232370,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1757,7 +1757,7 @@
   "label": "input.resolve.31",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 162668,
+  "offset": 235286,
   "rtol": null,
   "shape": [
    436
@@ -1771,7 +1771,7 @@
   "label": "output.control.31",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 166156,
+  "offset": 238774,
   "rtol": null,
   "shape": [
    218
@@ -1783,12 +1783,12 @@
   "index": 127,
   "kind": "bitwise",
   "label": "output.state.62",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 166374,
+  "offset": 238992,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1797,12 +1797,12 @@
   "index": 128,
   "kind": "bitwise",
   "label": "output.state.63",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 167509,
+  "offset": 241908,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1813,7 +1813,7 @@
   "label": "input.resolve.32",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 168644,
+  "offset": 244824,
   "rtol": null,
   "shape": [
    436
@@ -1827,7 +1827,7 @@
   "label": "output.control.32",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 172132,
+  "offset": 248312,
   "rtol": null,
   "shape": [
    218
@@ -1839,12 +1839,12 @@
   "index": 131,
   "kind": "bitwise",
   "label": "output.state.64",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 172350,
+  "offset": 248530,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1853,12 +1853,12 @@
   "index": 132,
   "kind": "bitwise",
   "label": "output.state.65",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 173485,
+  "offset": 251446,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1869,7 +1869,7 @@
   "label": "input.resolve.33",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 174620,
+  "offset": 254362,
   "rtol": null,
   "shape": [
    436
@@ -1883,7 +1883,7 @@
   "label": "output.control.33",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 178108,
+  "offset": 257850,
   "rtol": null,
   "shape": [
    218
@@ -1895,12 +1895,12 @@
   "index": 135,
   "kind": "bitwise",
   "label": "output.state.66",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 178326,
+  "offset": 258068,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1909,12 +1909,12 @@
   "index": 136,
   "kind": "bitwise",
   "label": "output.state.67",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 179461,
+  "offset": 260984,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1925,7 +1925,7 @@
   "label": "input.resolve.34",
   "nbytes": 3488,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 180596,
+  "offset": 263900,
   "rtol": null,
   "shape": [
    436
@@ -1939,7 +1939,7 @@
   "label": "output.control.34",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 184084,
+  "offset": 267388,
   "rtol": null,
   "shape": [
    218
@@ -1951,12 +1951,12 @@
   "index": 139,
   "kind": "bitwise",
   "label": "output.state.68",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 184302,
+  "offset": 267606,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  },
  {
@@ -1965,12 +1965,12 @@
   "index": 140,
   "kind": "bitwise",
   "label": "output.state.69",
-  "nbytes": 1135,
+  "nbytes": 2916,
   "node": "native_rider_intent/resolve_matches_oracle_over_mixed_steps",
-  "offset": 185437,
+  "offset": 270522,
   "rtol": null,
   "shape": [
-   1135
+   2916
   ]
  }
 ]

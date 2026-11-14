@@ -1563,6 +1563,274 @@
         {
           "default": null,
           "default_factory": null,
+          "name": "start_cog_grade_breaks",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "start_cog_teeth",
+          "type": "tuple[int, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "start_pedal_angle_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "start_lean_grades",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "start_lean_rad",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "plan_enabled",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "standstill_speed_mps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "standstill_crank_rpm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_rate_nm_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_asphalt_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_hardpack_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_loose_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_wet_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_scree_nm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_grades",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_cap_grade_nm",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "effort_rise_speed_mps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "release_torque_grades",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "release_torque_nm",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "brake_release_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "max_hold_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "upshift_crank_rpm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "shift_retry_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "end_speed_mps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "end_crank_rpm",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "end_hold_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "max_launch_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "handover_s",
+          "type": "<class 'float'>"
+        }
+      ],
+      "name": "rider_launch",
+      "type": "<class 'bike_sim.physics.rider_launch.RiderLaunchConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "fields": [
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "hand_window_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "hand_lag_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "hand_drop_ratio",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "pitch_rate_up_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "pitch_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "decision_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "ease_enabled",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "lean_enabled",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "rear_brake_tap_enabled",
+          "type": "<class 'bool'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "ease_fraction",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "ease_rate_per_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "lean_add_rad",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "lean_rate_rad_s",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "clear_s",
+          "type": "<class 'float'>"
+        }
+      ],
+      "name": "front_lift_reaction",
+      "type": "<class 'bike_sim.physics.front_lift_reaction.FrontLiftReactionConfig'>"
+    },
+    {
+      "default": null,
+      "default_factory": null,
+      "fields": [
+        {
+          "default": null,
+          "default_factory": null,
           "name": "grounded_hold_s",
           "type": "<class 'float'>"
         },

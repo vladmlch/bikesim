@@ -194,11 +194,39 @@
   "equilibrium_refine_period_s": 3.0,
   "equilibrium_relaxation": "cycle",
   "equilibrium_state_file": null,
+  "front_lift_reaction": {
+    "clear_s": 0.3,
+    "decision_s": 0.1,
+    "ease_enabled": false,
+    "ease_fraction": 0.7,
+    "ease_rate_per_s": 5.0,
+    "hand_drop_ratio": 0.7,
+    "hand_lag_s": 0.5,
+    "hand_window_s": 0.5,
+    "lean_add_rad": 0.1,
+    "lean_enabled": false,
+    "lean_rate_rad_s": 0.5,
+    "pitch_rad": 0.17,
+    "pitch_rate_up_rad_s": 0.5,
+    "rear_brake_tap_enabled": false
+  },
   "initial_front_brake": 1.0,
   "initial_rear_brake": 1.0,
   "initial_speed_mps": 0.0,
+  "monitors": {
+    "contact_dropout_s": 0.0125,
+    "grounded_hold_s": 0.005
+  },
   "physics_mode": "physical",
   "pitch_assist": false,
+  "research": {
+    "actuator_delay_s": 0.005,
+    "control_period_s": 0.01,
+    "record_decimation": 80,
+    "sample_period_s": 0.005,
+    "sensor_latency_s": 0.01,
+    "sensor_maximum_age_s": 0.1
+  },
   "resistance": {
     "cda_m2": 0.5,
     "crr": 0.015,
@@ -219,6 +247,68 @@
       ]
     }
   },
+  "rider_launch": {
+    "brake_release_s": 0.15,
+    "effort_cap_asphalt_nm": 60.0,
+    "effort_cap_grade_nm": {
+      "$tuple": [
+        1000.0
+      ]
+    },
+    "effort_cap_grades": {
+      "$tuple": [
+        0.0
+      ]
+    },
+    "effort_cap_hardpack_nm": 60.0,
+    "effort_cap_loose_nm": 60.0,
+    "effort_cap_scree_nm": 60.0,
+    "effort_cap_wet_nm": 60.0,
+    "effort_rate_nm_s": 40.0,
+    "effort_rise_speed_mps": 2.5,
+    "end_crank_rpm": 60.0,
+    "end_hold_s": 0.3,
+    "end_speed_mps": 3.0,
+    "handover_s": 0.9,
+    "max_hold_s": 1.5,
+    "max_launch_s": 6.0,
+    "plan_enabled": false,
+    "release_torque_grades": {
+      "$tuple": [
+        0.0,
+        0.2
+      ]
+    },
+    "release_torque_nm": {
+      "$tuple": [
+        0.0,
+        30.0
+      ]
+    },
+    "shift_retry_s": 0.25,
+    "standstill_crank_rpm": 5.0,
+    "standstill_speed_mps": 0.1,
+    "start_cog_grade_breaks": {
+      "$tuple": []
+    },
+    "start_cog_teeth": {
+      "$tuple": [
+        51
+      ]
+    },
+    "start_lean_grades": {
+      "$tuple": [
+        0.0
+      ]
+    },
+    "start_lean_rad": {
+      "$tuple": [
+        0.0
+      ]
+    },
+    "start_pedal_angle_rad": 0.0,
+    "upshift_crank_rpm": 82.0
+  },
   "seated_climb": {
     "enabled": true,
     "front_load_share_target": 0.3,
@@ -238,7 +328,6 @@
     "surge_power_w": 400.0,
     "surge_recovery_rate": 0.3333333333333333,
     "target_crank_power_w": 250.0,
-    "torque_slew_nm_s": 300.0,
     "trim_dead_time_s": 0.2
   },
   "timestep_s": 0.00125,
@@ -284,10 +373,10 @@
     },
     "front": {
       "material": {
-        "pressure_pa_gauge": 200000.0,
-        "provenance": "synthetic",
         "hysteresis_rate_eps_mps": 0.01,
         "loss_factor": 0.07,
+        "pressure_pa_gauge": 200000.0,
+        "provenance": "synthetic",
         "radial_k_n_m": 130000.0,
         "valid_load_range_n": {
           "$tuple": [
@@ -346,10 +435,10 @@
     },
     "rear": {
       "material": {
-        "pressure_pa_gauge": 200000.0,
-        "provenance": "synthetic",
         "hysteresis_rate_eps_mps": 0.01,
         "loss_factor": 0.07,
+        "pressure_pa_gauge": 200000.0,
+        "provenance": "synthetic",
         "radial_k_n_m": 130000.0,
         "valid_load_range_n": {
           "$tuple": [

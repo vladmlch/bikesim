@@ -2,20 +2,27 @@
 // The solved-effort physical-step test is ported through the frozen
 // env_request bundle (<platform>/control_clock/env_request/) and the
 // golden capture seam: the monkeypatched compute-call counting has no
-// native analog, but the observable contract — the ctrl vector held
-// byte-identical on non-tick physics steps, the per-step solved-effort
-// telemetry channel, the interval cadence and the reset semantics — is
-// asserted on the episode artifact the native runtime produces.
+// native analog, but the observable contract — the ctrl channels held
+// byte-identical on non-tick physics steps wherever the writer
+// reproduces the tick value, the every-step rider channels observed
+// to update between ticks, the per-step solved-effort telemetry
+// channel, the interval cadence and the reset semantics — is asserted
+// on the episode artifact the native runtime produces.
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "support/record_initial_state.hpp"
 #include "runtime/control.hpp"
 #include "configuration/model_config.hpp"
+#include "engine_call.hpp"
 #include "golden/episode.hpp"
+#include "model/builder.hpp"
 #include "research/environment.hpp"
 #include "runtime/research.hpp"
+#include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <type_traits>
@@ -106,9 +113,10 @@ void test_clock_rejects_invalid_durations() {
 // 403 physics steps over the flat-track welded env: ticks at steps
 // 0,10,...,400 (41 advancing control windows — the oracle's monkeypatch
 // counting of ArticulatedRiderController.compute has no native seam; the
-// cadence is observed through the applied command count), ctrl held
-// bitwise on non-tick steps, a solved-effort channel row per physics
-// step, and reset returning the runtime to step 0.
+// cadence is observed through the applied command count), the tick-held
+// ctrl channels bitwise on non-tick steps while the every-step rider
+// channels update between ticks, a solved-effort channel row per
+// physics step, and reset returning the runtime to step 0.
 [[gnu::noinline]] void
 test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
     bt::record_initial_state(
@@ -135,18 +143,65 @@ test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
                             bike::io::as_double(*motor, "motor_torque_nm") == 0.,
                     "held zero command applied every step");
     }
-    // The ctrl vector is written only on control ticks: for every
-    // non-tick step the captured post-step ctrl row is byte-identical to
-    // the previous step's.
+    // PhysicalStep clears d->ctrl every step and every writer
+    // republishes its channels, but the ctrl values still split by
+    // update cadence: the brake and drive channels track the held
+    // RideControl demands (writers/brake.cpp apply, writers/
+    // drivetrain.cpp commit) and the rider entries whose held command
+    // stays inside the per-step clip reproduce the tick value
+    // verbatim, so on a non-tick step those channels are
+    // byte-identical to the previous step's. Since 7019cd11 (leg
+    // controller every step) and 8e8b0b0d (rider intent every step)
+    // the rider write re-derives clip(held, directional_limit(qvel))
+    // each step (runtime/step.cpp write site -> rider/
+    // spindle_controller.cpp); the rider channels whose cap binds —
+    // act_rider_elbow_left/right and act_rider_hip_rear — update on
+    // non-tick steps instead of holding.
     const auto ctrl = episode.ctrl_written.doubles(true);
     const std::size_t nu = episode.ctrl_written.shape.at(1);
+    const bike::model::ModelOwner model{
+        engine::load_model_image(env->model_image().mjb)};
+    bt::require(model->nu == static_cast<int>(nu),
+                "ctrl row width is the model actuator count");
+    constexpr std::array<const char *, 3> every_step_actuators{
+        "act_rider_elbow_left", "act_rider_elbow_right",
+        "act_rider_hip_rear"};
+    std::array<std::size_t, every_step_actuators.size()> every_step{};
+    for (std::size_t k = 0; k < every_step_actuators.size(); ++k) {
+        const int id =
+            mj_name2id(model.get(), mjOBJ_ACTUATOR, every_step_actuators[k]);
+        bt::require(id >= 0,
+                    "every-step rider actuator present in the ctrl row");
+        every_step[k] = static_cast<std::size_t>(id);
+    }
+    const auto is_every_step = [&](const std::size_t channel) {
+        return std::ranges::find(every_step, channel) != every_step.end();
+    };
     for (std::size_t i = 1; i < episode.controls.size(); ++i) {
         if (i % 10 == 0) continue;
         const auto now = std::span(ctrl).subspan(i * nu, nu);
         const auto prev = std::span(ctrl).subspan((i - 1) * nu, nu);
-        bt::require(std::ranges::equal(std::as_bytes(now),
-                                       std::as_bytes(prev)),
-                    "ctrl held byte-identical on a non-tick step");
+        for (std::size_t channel = 0; channel < nu; ++channel) {
+            if (is_every_step(channel)) continue;
+            bt::require(std::ranges::equal(
+                            std::as_bytes(now.subspan(channel, 1)),
+                            std::as_bytes(prev.subspan(channel, 1))),
+                        "ctrl held byte-identical on a non-tick step");
+        }
+    }
+    const auto bits = [](const double value) {
+        return std::bit_cast<std::uint64_t>(value);
+    };
+    for (const std::size_t channel : every_step) {
+        bool updated = false;
+        for (std::size_t i = 1; i < episode.controls.size(); ++i) {
+            if (i % 10 == 0) continue;
+            updated = updated || bits(ctrl[i * nu + channel]) !=
+                                    bits(ctrl[(i - 1) * nu + channel]);
+        }
+        bt::require(updated,
+                    "every-step rider ctrl channel updates on a "
+                    "non-tick step");
     }
     // Solved-effort telemetry: every published sample row carries the
     // solved_actuator_force_at_incoming_interval marker and a finite

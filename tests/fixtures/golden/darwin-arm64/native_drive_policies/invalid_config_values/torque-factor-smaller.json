@@ -1,0 +1,826 @@
+[
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 0,
+  "kind": "bitwise",
+  "label": "$#keys",
+  "nbytes": 42,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 0,
+  "rtol": null,
+  "shape": [
+   42
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 1,
+  "kind": "bitwise",
+  "label": "$.assist#keys",
+  "nbytes": 145,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 42,
+  "rtol": null,
+  "shape": [
+   145
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 2,
+  "kind": "bitwise",
+  "label": "$.assist.cutoff_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 187,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 3,
+  "kind": "bitwise",
+  "label": "$.assist.engage_torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 195,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 4,
+  "kind": "bitwise",
+  "label": "$.assist.gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 203,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 5,
+  "kind": "bitwise",
+  "label": "$.assist.max_power",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 211,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 6,
+  "kind": "bitwise",
+  "label": "$.assist.max_torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 219,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$.assist.mode",
+  "nbytes": 7,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 227,
+  "rtol": null,
+  "shape": [
+   7
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 8,
+  "kind": "bitwise",
+  "label": "$.assist.profile",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 234,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.assist.release_hold_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 238,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.assist.slew",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 246,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.assist.taper_width_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 254,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.assist.tau",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 262,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.assist.torque_curve",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 270,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.gearing#keys",
+  "nbytes": 44,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 274,
+  "rtol": null,
+  "shape": [
+   44
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.gearing.chain_pitch_m",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 318,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.gearing.front_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 326,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.gearing.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 328,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 459,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 330,
+  "rtol": null,
+  "shape": [
+   459
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.pedaling.coast_above_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 789,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 20,
+  "kind": "bitwise",
+  "label": "$.pedaling.coast_cadence_tau_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 797,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.pedaling.effort_slew_nm_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 805,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "$.pedaling.enabled",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 813,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "$.pedaling.mash_cadence_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 817,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 24,
+  "kind": "bitwise",
+  "label": "$.pedaling.mash_torque_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 825,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 25,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_back_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 833,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 26,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 841,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 27,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_min_effort_nm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 849,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_noop_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 857,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 29,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_on_stall",
+  "nbytes": 5,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 865,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 30,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_phase_tolerance_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 870,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 31,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_stall_progress_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 878,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 32,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_stall_window_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 886,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 33,
+  "kind": "bitwise",
+  "label": "$.pedaling.reposition_timeout_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 894,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 34,
+  "kind": "bitwise",
+  "label": "$.pedaling.resume_below_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 902,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 35,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_brake",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 910,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 36,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_demand",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 914,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 37,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_engage_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 922,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 38,
+  "kind": "bitwise",
+  "label": "$.pedaling.rollback_release_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 930,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 39,
+  "kind": "bitwise",
+  "label": "$.pedaling.stop_time_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 938,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 40,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 240,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 946,
+  "rtol": null,
+  "shape": [
+   240
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 41,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_smoothing_tau_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1186,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 42,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette#length",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1194,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[0]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1196,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 44,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[1]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1198,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 45,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[2]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1200,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 46,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[3]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1202,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 47,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[4]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1204,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 48,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[5]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1206,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[6]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1208,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 50,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[7]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1210,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 51,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[8]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1212,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[9]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1214,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[10]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1216,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[11]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1218,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 55,
+  "kind": "bitwise",
+  "label": "$.shifting.enabled",
+  "nbytes": 4,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1220,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 56,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1224,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 57,
+  "kind": "bitwise",
+  "label": "$.shifting.shift_cut_duration_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1232,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 58,
+  "kind": "bitwise",
+  "label": "$.shifting.target_cadence_max_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1240,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 59,
+  "kind": "bitwise",
+  "label": "$.shifting.target_cadence_min_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1248,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.shifting.torque_factor_larger_cog",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1256,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 61,
+  "kind": "bitwise",
+  "label": "$.shifting.torque_factor_smaller_cog",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1264,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 62,
+  "kind": "bitwise",
+  "label": "$.shifting.upshift_slip_limit_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1272,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 63,
+  "kind": "bitwise",
+  "label": "$.shifting.upshift_slip_mode",
+  "nbytes": 15,
+  "node": "native_drive_policies/invalid_config_values/torque-factor-smaller",
+  "offset": 1280,
+  "rtol": null,
+  "shape": [
+   15
+  ]
+ }
+]

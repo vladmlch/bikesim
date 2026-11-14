@@ -97,12 +97,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
   "offset": 131,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -111,12 +111,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 169,
+  "offset": 163,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -124,36 +124,34 @@
   "dtype": "<f8",
   "index": 9,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 202,
+  "offset": 250,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 10,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 210,
+  "offset": 258,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 11,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 215,
+  "offset": 266,
   "rtol": null,
   "shape": []
  },
@@ -162,100 +160,10 @@
   "dtype": "|u1",
   "index": 12,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 223,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 13,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 258,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 14,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 262,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 15,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 270,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 16,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 278,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 17,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 376,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 18,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 384,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 19,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
+  "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 392,
+  "offset": 274,
   "rtol": null,
   "shape": [
    5
@@ -264,24 +172,100 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 20,
+  "index": 13,
   "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
+  "label": "$.assist.release_hold_left_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 397,
+  "offset": 279,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 287,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 21,
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 295,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 16,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 393,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 401,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 18,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 409,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 19,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 414,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 20,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 405,
+  "offset": 422,
   "rtol": null,
   "shape": [
    4
@@ -290,38 +274,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 22,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 409,
+  "offset": 426,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 22,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 130,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 434,
+  "rtol": null,
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 417,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 24,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 530,
+  "offset": 564,
   "rtol": null,
   "shape": [
    4
@@ -330,36 +314,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 25,
+  "index": 24,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 534,
+  "offset": 568,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 26,
+  "index": 25,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 542,
+  "offset": 576,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 27,
+  "index": 26,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 550,
+  "offset": 584,
   "rtol": null,
   "shape": [
    6
@@ -368,12 +352,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 28,
+  "index": 27,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 556,
+  "offset": 590,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 28,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 592,
   "rtol": null,
   "shape": [
    2
@@ -384,13 +382,13 @@
   "dtype": "|u1",
   "index": 29,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 558,
+  "offset": 594,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -398,13 +396,13 @@
   "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 560,
+  "offset": 598,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -415,7 +413,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 564,
+  "offset": 604,
   "rtol": null,
   "shape": [
    1
@@ -429,7 +427,7 @@
   "label": "$#keys",
   "nbytes": 91,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 565,
+  "offset": 605,
   "rtol": null,
   "shape": [
    91
@@ -443,7 +441,7 @@
   "label": "$.effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 656,
+  "offset": 696,
   "rtol": null,
   "shape": []
  },
@@ -455,7 +453,7 @@
   "label": "$.mode",
   "nbytes": 10,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 664,
+  "offset": 704,
   "rtol": null,
   "shape": [
    10
@@ -469,7 +467,7 @@
   "label": "$.reason",
   "nbytes": 9,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 674,
+  "offset": 714,
   "rtol": null,
   "shape": [
    9
@@ -483,7 +481,7 @@
   "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 683,
+  "offset": 723,
   "rtol": null,
   "shape": []
  },
@@ -495,7 +493,7 @@
   "label": "$.target_phase_rad",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 691,
+  "offset": 731,
   "rtol": null,
   "shape": []
  },
@@ -507,7 +505,7 @@
   "label": "$.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 699,
+  "offset": 739,
   "rtol": null,
   "shape": []
  },
@@ -517,12 +515,12 @@
   "index": 39,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 707,
+  "offset": 747,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -531,12 +529,12 @@
   "index": 40,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 745,
+  "offset": 779,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -544,36 +542,34 @@
   "dtype": "<f8",
   "index": 41,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 778,
+  "offset": 866,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 42,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 786,
+  "offset": 874,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 791,
+  "offset": 882,
   "rtol": null,
   "shape": []
  },
@@ -582,62 +578,48 @@
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 799,
+  "offset": 890,
   "rtol": null,
   "shape": [
-   35
+   5
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 45,
   "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
+  "label": "$.assist.release_hold_left_s",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 834,
+  "offset": 895,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 46,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 838,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 47,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 846,
+  "offset": 903,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 854,
+  "offset": 911,
   "rtol": null,
   "shape": [
    98
@@ -646,36 +628,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 49,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 952,
+  "offset": 1009,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 50,
+  "index": 49,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 960,
+  "offset": 1017,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 50,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 968,
+  "offset": 1025,
   "rtol": null,
   "shape": [
    4
@@ -684,12 +666,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 52,
+  "index": 51,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 972,
+  "offset": 1029,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 1037,
   "rtol": null,
   "shape": []
  },
@@ -698,48 +692,36 @@
   "dtype": "<f8",
   "index": 53,
   "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 980,
+  "offset": 1045,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 54,
   "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
+  "label": "$.shifting#keys",
+  "nbytes": 130,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 988,
+  "offset": 1053,
   "rtol": null,
-  "shape": []
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 55,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 996,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 56,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1109,
+  "offset": 1183,
   "rtol": null,
   "shape": [
    4
@@ -748,36 +730,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 57,
+  "index": 56,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1113,
+  "offset": 1187,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 58,
+  "index": 57,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1121,
+  "offset": 1195,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 59,
+  "index": 58,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1129,
+  "offset": 1203,
   "rtol": null,
   "shape": [
    6
@@ -786,12 +768,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 60,
+  "index": 59,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1135,
+  "offset": 1209,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 60,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 1211,
   "rtol": null,
   "shape": [
    2
@@ -802,13 +798,13 @@
   "dtype": "|u1",
   "index": 61,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1137,
+  "offset": 1213,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -816,13 +812,13 @@
   "dtype": "|u1",
   "index": 62,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1139,
+  "offset": 1217,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -833,7 +829,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1143,
+  "offset": 1223,
   "rtol": null,
   "shape": [
    1
@@ -847,7 +843,7 @@
   "label": "$#keys",
   "nbytes": 91,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1144,
+  "offset": 1224,
   "rtol": null,
   "shape": [
    91
@@ -861,7 +857,7 @@
   "label": "$.effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1235,
+  "offset": 1315,
   "rtol": null,
   "shape": []
  },
@@ -873,7 +869,7 @@
   "label": "$.mode",
   "nbytes": 10,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1243,
+  "offset": 1323,
   "rtol": null,
   "shape": [
    10
@@ -887,7 +883,7 @@
   "label": "$.reason",
   "nbytes": 9,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1253,
+  "offset": 1333,
   "rtol": null,
   "shape": [
    9
@@ -901,7 +897,7 @@
   "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1262,
+  "offset": 1342,
   "rtol": null,
   "shape": []
  },
@@ -913,7 +909,7 @@
   "label": "$.target_phase_rad",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1270,
+  "offset": 1350,
   "rtol": null,
   "shape": []
  },
@@ -925,7 +921,7 @@
   "label": "$.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1278,
+  "offset": 1358,
   "rtol": null,
   "shape": []
  },
@@ -935,12 +931,12 @@
   "index": 71,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1286,
+  "offset": 1366,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -949,12 +945,12 @@
   "index": 72,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1324,
+  "offset": 1398,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -962,36 +958,34 @@
   "dtype": "<f8",
   "index": 73,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1357,
+  "offset": 1485,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 74,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1365,
+  "offset": 1493,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 75,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1370,
+  "offset": 1501,
   "rtol": null,
   "shape": []
  },
@@ -1000,62 +994,48 @@
   "dtype": "|u1",
   "index": 76,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1378,
+  "offset": 1509,
   "rtol": null,
   "shape": [
-   35
+   5
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 77,
   "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
+  "label": "$.assist.release_hold_left_s",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1413,
+  "offset": 1514,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 78,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1417,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 79,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1425,
+  "offset": 1522,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1433,
+  "offset": 1530,
   "rtol": null,
   "shape": [
    98
@@ -1064,36 +1044,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 81,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1531,
+  "offset": 1628,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 82,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1539,
+  "offset": 1636,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 83,
+  "index": 82,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1547,
+  "offset": 1644,
   "rtol": null,
   "shape": [
    4
@@ -1102,12 +1082,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 84,
+  "index": 83,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1551,
+  "offset": 1648,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 84,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 1656,
   "rtol": null,
   "shape": []
  },
@@ -1116,48 +1108,36 @@
   "dtype": "<f8",
   "index": 85,
   "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1559,
+  "offset": 1664,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 86,
   "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
+  "label": "$.shifting#keys",
+  "nbytes": 130,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1567,
+  "offset": 1672,
   "rtol": null,
-  "shape": []
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 87,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1575,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 88,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1688,
+  "offset": 1802,
   "rtol": null,
   "shape": [
    4
@@ -1166,36 +1146,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 89,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1692,
+  "offset": 1806,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 90,
+  "index": 89,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1700,
+  "offset": 1814,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 91,
+  "index": 90,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1708,
+  "offset": 1822,
   "rtol": null,
   "shape": [
    6
@@ -1204,12 +1184,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 92,
+  "index": 91,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1714,
+  "offset": 1828,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 92,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 1830,
   "rtol": null,
   "shape": [
    2
@@ -1220,13 +1214,13 @@
   "dtype": "|u1",
   "index": 93,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1716,
+  "offset": 1832,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -1234,13 +1228,13 @@
   "dtype": "|u1",
   "index": 94,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1718,
+  "offset": 1836,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -1251,7 +1245,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1722,
+  "offset": 1842,
   "rtol": null,
   "shape": [
    1
@@ -1265,7 +1259,7 @@
   "label": "$#keys",
   "nbytes": 91,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1723,
+  "offset": 1843,
   "rtol": null,
   "shape": [
    91
@@ -1279,7 +1273,7 @@
   "label": "$.effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1814,
+  "offset": 1934,
   "rtol": null,
   "shape": []
  },
@@ -1291,7 +1285,7 @@
   "label": "$.mode",
   "nbytes": 10,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1822,
+  "offset": 1942,
   "rtol": null,
   "shape": [
    10
@@ -1305,7 +1299,7 @@
   "label": "$.reason",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1832,
+  "offset": 1952,
   "rtol": null,
   "shape": [
    2
@@ -1319,7 +1313,7 @@
   "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1834,
+  "offset": 1954,
   "rtol": null,
   "shape": []
  },
@@ -1331,7 +1325,7 @@
   "label": "$.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1842,
+  "offset": 1962,
   "rtol": null,
   "shape": [
    4
@@ -1345,7 +1339,7 @@
   "label": "$.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1846,
+  "offset": 1966,
   "rtol": null,
   "shape": []
  },
@@ -1355,12 +1349,12 @@
   "index": 103,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1854,
+  "offset": 1974,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -1369,12 +1363,12 @@
   "index": 104,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1892,
+  "offset": 2006,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -1382,36 +1376,34 @@
   "dtype": "<f8",
   "index": 105,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1925,
+  "offset": 2093,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 106,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1933,
+  "offset": 2101,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 107,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1938,
+  "offset": 2109,
   "rtol": null,
   "shape": []
  },
@@ -1420,100 +1412,10 @@
   "dtype": "|u1",
   "index": 108,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1946,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 109,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1981,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 110,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1985,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 111,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 1993,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 112,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2001,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 113,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2099,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 114,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2107,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 115,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
+  "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2115,
+  "offset": 2117,
   "rtol": null,
   "shape": [
    5
@@ -1522,75 +1424,85 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 116,
+  "index": 109,
+  "kind": "bitwise",
+  "label": "$.assist.release_hold_left_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2122,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 110,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2130,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 111,
+  "kind": "bitwise",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2138,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 112,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2236,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 113,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2244,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 114,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2252,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 115,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2120,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 117,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
-  "nbytes": 4,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2128,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 118,
-  "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2132,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 119,
-  "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2140,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 120,
-  "kind": "bitwise",
-  "label": "$.shifting.cadence_ema",
-  "nbytes": 4,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2253,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 121,
-  "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
   "offset": 2257,
@@ -1599,25 +1511,91 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
-  "index": 122,
+  "dtype": "|u1",
+  "index": 116,
   "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
-  "nbytes": 8,
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
   "offset": 2265,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 117,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_rate_rad_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2269,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 123,
+  "index": 118,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 130,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2277,
+  "rtol": null,
+  "shape": [
+   130
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 119,
+  "kind": "bitwise",
+  "label": "$.shifting.cadence_ema",
+  "nbytes": 4,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2407,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 120,
+  "kind": "bitwise",
+  "label": "$.shifting.cooldown_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2411,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 121,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2419,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 122,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2273,
+  "offset": 2427,
   "rtol": null,
   "shape": [
    6
@@ -1626,12 +1604,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 124,
+  "index": 123,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2279,
+  "offset": 2433,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 124,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2435,
   "rtol": null,
   "shape": [
    2
@@ -1642,13 +1634,13 @@
   "dtype": "|u1",
   "index": 125,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2281,
+  "offset": 2437,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -1656,13 +1648,13 @@
   "dtype": "|u1",
   "index": 126,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2283,
+  "offset": 2441,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -1673,7 +1665,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2287,
+  "offset": 2447,
   "rtol": null,
   "shape": [
    1
@@ -1687,7 +1679,7 @@
   "label": "$#keys",
   "nbytes": 91,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2288,
+  "offset": 2448,
   "rtol": null,
   "shape": [
    91
@@ -1701,7 +1693,7 @@
   "label": "$.effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2379,
+  "offset": 2539,
   "rtol": null,
   "shape": []
  },
@@ -1713,7 +1705,7 @@
   "label": "$.mode",
   "nbytes": 10,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2387,
+  "offset": 2547,
   "rtol": null,
   "shape": [
    10
@@ -1727,7 +1719,7 @@
   "label": "$.reason",
   "nbytes": 9,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2397,
+  "offset": 2557,
   "rtol": null,
   "shape": [
    9
@@ -1741,7 +1733,7 @@
   "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2406,
+  "offset": 2566,
   "rtol": null,
   "shape": []
  },
@@ -1753,7 +1745,7 @@
   "label": "$.target_phase_rad",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2414,
+  "offset": 2574,
   "rtol": null,
   "shape": []
  },
@@ -1765,7 +1757,7 @@
   "label": "$.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2422,
+  "offset": 2582,
   "rtol": null,
   "shape": []
  },
@@ -1775,12 +1767,12 @@
   "index": 135,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2430,
+  "offset": 2590,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -1789,12 +1781,12 @@
   "index": 136,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2468,
+  "offset": 2622,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -1802,36 +1794,34 @@
   "dtype": "<f8",
   "index": 137,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2501,
+  "offset": 2709,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 138,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2509,
+  "offset": 2717,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 139,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2514,
+  "offset": 2725,
   "rtol": null,
   "shape": []
  },
@@ -1840,62 +1830,48 @@
   "dtype": "|u1",
   "index": 140,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2522,
+  "offset": 2733,
   "rtol": null,
   "shape": [
-   35
+   5
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 141,
   "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
+  "label": "$.assist.release_hold_left_s",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2557,
+  "offset": 2738,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 142,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2561,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 143,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2569,
+  "offset": 2746,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 144,
+  "index": 143,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2577,
+  "offset": 2754,
   "rtol": null,
   "shape": [
    98
@@ -1904,36 +1880,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 145,
+  "index": 144,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2675,
+  "offset": 2852,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 146,
+  "index": 145,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2683,
+  "offset": 2860,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 147,
+  "index": 146,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2691,
+  "offset": 2868,
   "rtol": null,
   "shape": [
    4
@@ -1942,12 +1918,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 148,
+  "index": 147,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2695,
+  "offset": 2872,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 148,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 2880,
   "rtol": null,
   "shape": []
  },
@@ -1956,48 +1944,36 @@
   "dtype": "<f8",
   "index": 149,
   "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2703,
+  "offset": 2888,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 150,
   "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
+  "label": "$.shifting#keys",
+  "nbytes": 130,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2711,
+  "offset": 2896,
   "rtol": null,
-  "shape": []
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 151,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2719,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 152,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2832,
+  "offset": 3026,
   "rtol": null,
   "shape": [
    4
@@ -2006,36 +1982,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 153,
+  "index": 152,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2836,
+  "offset": 3030,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 154,
+  "index": 153,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2844,
+  "offset": 3038,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 155,
+  "index": 154,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2852,
+  "offset": 3046,
   "rtol": null,
   "shape": [
    6
@@ -2044,12 +2020,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 156,
+  "index": 155,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2858,
+  "offset": 3052,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 156,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 3054,
   "rtol": null,
   "shape": [
    2
@@ -2060,13 +2050,13 @@
   "dtype": "|u1",
   "index": 157,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2860,
+  "offset": 3056,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -2074,13 +2064,13 @@
   "dtype": "|u1",
   "index": 158,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2862,
+  "offset": 3060,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -2091,7 +2081,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2866,
+  "offset": 3066,
   "rtol": null,
   "shape": [
    1
@@ -2105,7 +2095,7 @@
   "label": "$#keys",
   "nbytes": 91,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2867,
+  "offset": 3067,
   "rtol": null,
   "shape": [
    91
@@ -2119,7 +2109,7 @@
   "label": "$.effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2958,
+  "offset": 3158,
   "rtol": null,
   "shape": []
  },
@@ -2131,7 +2121,7 @@
   "label": "$.mode",
   "nbytes": 10,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2966,
+  "offset": 3166,
   "rtol": null,
   "shape": [
    10
@@ -2145,7 +2135,7 @@
   "label": "$.reason",
   "nbytes": 11,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2976,
+  "offset": 3176,
   "rtol": null,
   "shape": [
    11
@@ -2159,7 +2149,7 @@
   "label": "$.required_cadence_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2987,
+  "offset": 3187,
   "rtol": null,
   "shape": []
  },
@@ -2171,7 +2161,7 @@
   "label": "$.target_phase_rad",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 2995,
+  "offset": 3195,
   "rtol": null,
   "shape": []
  },
@@ -2183,7 +2173,7 @@
   "label": "$.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3003,
+  "offset": 3203,
   "rtol": null,
   "shape": []
  },
@@ -2193,12 +2183,12 @@
   "index": 167,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3011,
+  "offset": 3211,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -2207,12 +2197,12 @@
   "index": 168,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3049,
+  "offset": 3243,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -2220,36 +2210,34 @@
   "dtype": "<f8",
   "index": 169,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3082,
+  "offset": 3330,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 170,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3090,
+  "offset": 3338,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 171,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3095,
+  "offset": 3346,
   "rtol": null,
   "shape": []
  },
@@ -2258,62 +2246,48 @@
   "dtype": "|u1",
   "index": 172,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
+  "label": "$.assist.pedaling",
+  "nbytes": 5,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3103,
+  "offset": 3354,
   "rtol": null,
   "shape": [
-   35
+   5
   ]
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 173,
   "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
+  "label": "$.assist.release_hold_left_s",
+  "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3138,
+  "offset": 3359,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 174,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3142,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 175,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3150,
+  "offset": 3367,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 176,
+  "index": 175,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3158,
+  "offset": 3375,
   "rtol": null,
   "shape": [
    98
@@ -2322,36 +2296,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 177,
+  "index": 176,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3256,
+  "offset": 3473,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 178,
+  "index": 177,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3264,
+  "offset": 3481,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 179,
+  "index": 178,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3272,
+  "offset": 3489,
   "rtol": null,
   "shape": [
    4
@@ -2360,12 +2334,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 180,
+  "index": 179,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3276,
+  "offset": 3493,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 180,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 8,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 3501,
   "rtol": null,
   "shape": []
  },
@@ -2374,48 +2360,36 @@
   "dtype": "<f8",
   "index": 181,
   "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
+  "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3284,
+  "offset": 3509,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 182,
   "kind": "bitwise",
-  "label": "$.pedaling.target_rate_rad_s",
-  "nbytes": 8,
+  "label": "$.shifting#keys",
+  "nbytes": 130,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3292,
+  "offset": 3517,
   "rtol": null,
-  "shape": []
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 183,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3300,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 184,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3413,
+  "offset": 3647,
   "rtol": null,
   "shape": [
    4
@@ -2424,36 +2398,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 185,
+  "index": 184,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3417,
+  "offset": 3651,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 186,
+  "index": 185,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3425,
+  "offset": 3659,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 187,
+  "index": 186,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3433,
+  "offset": 3667,
   "rtol": null,
   "shape": [
    6
@@ -2462,12 +2436,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 188,
+  "index": 187,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3439,
+  "offset": 3673,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 188,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/pedaling_parameter_branches/filtered",
+  "offset": 3675,
   "rtol": null,
   "shape": [
    2
@@ -2478,13 +2466,13 @@
   "dtype": "|u1",
   "index": 189,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3441,
+  "offset": 3677,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -2492,13 +2480,13 @@
   "dtype": "|u1",
   "index": 190,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3443,
+  "offset": 3681,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -2509,7 +2497,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/pedaling_parameter_branches/filtered",
-  "offset": 3447,
+  "offset": 3687,
   "rtol": null,
   "shape": [
    1

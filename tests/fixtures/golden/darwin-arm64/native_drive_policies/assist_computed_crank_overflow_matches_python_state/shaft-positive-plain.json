@@ -29,12 +29,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
   "offset": 16,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -43,12 +43,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 54,
+  "offset": 48,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -56,36 +56,34 @@
   "dtype": "<f8",
   "index": 4,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 87,
+  "offset": 135,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 5,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 4,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 95,
+  "offset": 143,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 6,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 99,
+  "offset": 151,
   "rtol": null,
   "shape": []
  },
@@ -94,24 +92,10 @@
   "dtype": "|u1",
   "index": 7,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 107,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 8,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
+  "label": "$.assist.pedaling",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 142,
+  "offset": 159,
   "rtol": null,
   "shape": [
    4
@@ -120,36 +104,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 9,
+  "index": 8,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.release_hold_left_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 146,
+  "offset": 163,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 10,
+  "index": 9,
   "kind": "bitwise",
-  "label": "$.hub.torque_nm",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 154,
+  "offset": 171,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 11,
+  "index": 10,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 162,
+  "offset": 179,
   "rtol": null,
   "shape": [
    98
@@ -158,12 +142,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 12,
+  "index": 11,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 260,
+  "offset": 277,
   "rtol": null,
   "shape": [
    4
@@ -172,24 +156,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 13,
+  "index": 12,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 264,
+  "offset": 281,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 14,
+  "index": 13,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 272,
+  "offset": 289,
   "rtol": null,
   "shape": [
    5
@@ -198,24 +182,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 15,
+  "index": 14,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 277,
+  "offset": 294,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 16,
+  "index": 15,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 285,
+  "offset": 302,
   "rtol": null,
   "shape": [
    4
@@ -224,38 +208,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 17,
+  "index": 16,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 289,
+  "offset": 306,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 17,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 130,
+  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
+  "offset": 314,
+  "rtol": null,
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 18,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 297,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 19,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 410,
+  "offset": 444,
   "rtol": null,
   "shape": [
    4
@@ -264,36 +248,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 20,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 414,
+  "offset": 448,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 21,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 422,
+  "offset": 456,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 22,
+  "index": 21,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 430,
+  "offset": 464,
   "rtol": null,
   "shape": [
    6
@@ -302,12 +286,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 23,
+  "index": 22,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 436,
+  "offset": 470,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 23,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
+  "offset": 472,
   "rtol": null,
   "shape": [
    2
@@ -318,13 +316,13 @@
   "dtype": "|u1",
   "index": 24,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 438,
+  "offset": 474,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -332,13 +330,13 @@
   "dtype": "|u1",
   "index": 25,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 440,
+  "offset": 478,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -349,7 +347,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 444,
+  "offset": 484,
   "rtol": null,
   "shape": [
    1
@@ -363,7 +361,7 @@
   "label": "",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 445,
+  "offset": 485,
   "rtol": null,
   "shape": []
  },
@@ -373,12 +371,12 @@
   "index": 28,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 453,
+  "offset": 493,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -387,12 +385,12 @@
   "index": 29,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 491,
+  "offset": 525,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -400,36 +398,34 @@
   "dtype": "<f8",
   "index": 30,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 524,
+  "offset": 612,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 31,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 4,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 532,
+  "offset": 620,
   "rtol": null,
-  "shape": [
-   4
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 32,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 536,
+  "offset": 628,
   "rtol": null,
   "shape": []
  },
@@ -438,24 +434,10 @@
   "dtype": "|u1",
   "index": 33,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 544,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 34,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
+  "label": "$.assist.pedaling",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 579,
+  "offset": 636,
   "rtol": null,
   "shape": [
    4
@@ -464,36 +446,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 35,
+  "index": 34,
   "kind": "bitwise",
-  "label": "$.hub.energy_j",
+  "label": "$.assist.release_hold_left_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 583,
+  "offset": 640,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 36,
+  "index": 35,
   "kind": "bitwise",
-  "label": "$.hub.torque_nm",
+  "label": "$.assist.torque",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 591,
+  "offset": 648,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 37,
+  "index": 36,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 599,
+  "offset": 656,
   "rtol": null,
   "shape": [
    98
@@ -502,12 +484,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 38,
+  "index": 37,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 697,
+  "offset": 754,
   "rtol": null,
   "shape": [
    4
@@ -516,24 +498,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 39,
+  "index": 38,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 701,
+  "offset": 758,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 40,
+  "index": 39,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 709,
+  "offset": 766,
   "rtol": null,
   "shape": [
    5
@@ -542,24 +524,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 40,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 714,
+  "offset": 771,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
+  "index": 41,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 722,
+  "offset": 779,
   "rtol": null,
   "shape": [
    4
@@ -568,38 +550,38 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 43,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 726,
+  "offset": 783,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 43,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 130,
+  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
+  "offset": 791,
+  "rtol": null,
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 44,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 734,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 847,
+  "offset": 921,
   "rtol": null,
   "shape": [
    4
@@ -608,36 +590,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 46,
+  "index": 45,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 851,
+  "offset": 925,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 47,
+  "index": 46,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 859,
+  "offset": 933,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
+  "index": 47,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 867,
+  "offset": 941,
   "rtol": null,
   "shape": [
    6
@@ -646,12 +628,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
+  "index": 48,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 873,
+  "offset": 947,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 49,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
+  "offset": 949,
   "rtol": null,
   "shape": [
    2
@@ -662,13 +658,13 @@
   "dtype": "|u1",
   "index": 50,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 875,
+  "offset": 951,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -676,13 +672,13 @@
   "dtype": "|u1",
   "index": 51,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 877,
+  "offset": 955,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -693,7 +689,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/assist_computed_crank_overflow_matches_python_state/shaft-positive-plain",
-  "offset": 881,
+  "offset": 961,
   "rtol": null,
   "shape": [
    1

@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "$#keys",
-  "nbytes": 38,
+  "nbytes": 32,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
   "offset": 0,
   "rtol": null,
   "shape": [
-   38
+   32
   ]
  },
  {
@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "$.assist#keys",
-  "nbytes": 33,
+  "nbytes": 87,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 38,
+  "offset": 32,
   "rtol": null,
   "shape": [
-   33
+   87
   ]
  },
  {
@@ -32,36 +32,34 @@
   "dtype": "<f8",
   "index": 2,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 71,
+  "offset": 119,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 3,
   "kind": "bitwise",
-  "label": "$.assist.pedaling",
-  "nbytes": 5,
+  "label": "$.assist.hold_torque_nm",
+  "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 79,
+  "offset": 127,
   "rtol": null,
-  "shape": [
-   5
-  ]
+  "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
   "index": 4,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.last_gain",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 84,
+  "offset": 135,
   "rtol": null,
   "shape": []
  },
@@ -70,102 +68,10 @@
   "dtype": "|u1",
   "index": 5,
   "kind": "bitwise",
-  "label": "$.hub#keys",
-  "nbytes": 35,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 92,
-  "rtol": null,
-  "shape": [
-   35
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 6,
-  "kind": "bitwise",
-  "label": "$.hub.boundary",
-  "nbytes": 4,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 127,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 7,
-  "kind": "bitwise",
-  "label": "$.hub.energy_j",
-  "nbytes": 8,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 131,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 8,
-  "kind": "bitwise",
-  "label": "$.hub.torque_nm",
-  "nbytes": 8,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 139,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 9,
-  "kind": "bitwise",
-  "label": "$.pedaling#keys",
-  "nbytes": 98,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 147,
-  "rtol": null,
-  "shape": [
-   98
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 10,
-  "kind": "bitwise",
-  "label": "$.pedaling._cadence_ema",
-  "nbytes": 4,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 245,
-  "rtol": null,
-  "shape": [
-   4
-  ]
- },
- {
-  "atol": null,
-  "dtype": "<f8",
-  "index": 11,
-  "kind": "bitwise",
-  "label": "$.pedaling._effort",
-  "nbytes": 8,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 249,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 12,
-  "kind": "bitwise",
-  "label": "$.pedaling.coasting",
+  "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 257,
+  "offset": 143,
   "rtol": null,
   "shape": [
    5
@@ -174,24 +80,50 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 13,
+  "index": 6,
   "kind": "bitwise",
-  "label": "$.pedaling.deceleration_rad_s2",
+  "label": "$.assist.release_hold_left_s",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 262,
+  "offset": 148,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 7,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 156,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 14,
+  "index": 8,
   "kind": "bitwise",
-  "label": "$.pedaling.target_phase_rad",
+  "label": "$.pedaling#keys",
+  "nbytes": 98,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 164,
+  "rtol": null,
+  "shape": [
+   98
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 9,
+  "kind": "bitwise",
+  "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 270,
+  "offset": 262,
   "rtol": null,
   "shape": [
    4
@@ -200,38 +132,90 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 15,
+  "index": 10,
+  "kind": "bitwise",
+  "label": "$.pedaling._effort",
+  "nbytes": 8,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 266,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 11,
+  "kind": "bitwise",
+  "label": "$.pedaling.coasting",
+  "nbytes": 5,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 274,
+  "rtol": null,
+  "shape": [
+   5
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 12,
+  "kind": "bitwise",
+  "label": "$.pedaling.deceleration_rad_s2",
+  "nbytes": 8,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 279,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 13,
+  "kind": "bitwise",
+  "label": "$.pedaling.target_phase_rad",
+  "nbytes": 4,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 287,
+  "rtol": null,
+  "shape": [
+   4
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "<f8",
+  "index": 14,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 274,
+  "offset": 291,
   "rtol": null,
   "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 15,
+  "kind": "bitwise",
+  "label": "$.shifting#keys",
+  "nbytes": 130,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 299,
+  "rtol": null,
+  "shape": [
+   130
+  ]
  },
  {
   "atol": null,
   "dtype": "|u1",
   "index": 16,
   "kind": "bitwise",
-  "label": "$.shifting#keys",
-  "nbytes": 113,
-  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 282,
-  "rtol": null,
-  "shape": [
-   113
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 17,
-  "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 395,
+  "offset": 429,
   "rtol": null,
   "shape": [
    4
@@ -240,36 +224,36 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 18,
+  "index": 17,
   "kind": "bitwise",
   "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 399,
+  "offset": 433,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 19,
+  "index": 18,
   "kind": "bitwise",
   "label": "$.shifting.cut_remaining_s",
   "nbytes": 8,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 407,
+  "offset": 441,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 20,
+  "index": 19,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 415,
+  "offset": 449,
   "rtol": null,
   "shape": [
    6
@@ -278,12 +262,26 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 21,
+  "index": 20,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 421,
+  "offset": 455,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 21,
+  "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
+  "offset": 457,
   "rtol": null,
   "shape": [
    2
@@ -294,13 +292,13 @@
   "dtype": "|u1",
   "index": 22,
   "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
+  "label": "$.shifting.required_ema",
+  "nbytes": 4,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 423,
+  "offset": 459,
   "rtol": null,
   "shape": [
-   2
+   4
   ]
  },
  {
@@ -308,13 +306,13 @@
   "dtype": "|u1",
   "index": 23,
   "kind": "bitwise",
-  "label": "$.shifting.required_ema",
-  "nbytes": 4,
+  "label": "$.shifting.rider_response",
+  "nbytes": 6,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 425,
+  "offset": 463,
   "rtol": null,
   "shape": [
-   4
+   6
   ]
  },
  {
@@ -325,7 +323,7 @@
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/disabled_shifter_initial_teeth_outside_cassette",
-  "offset": 429,
+  "offset": 469,
   "rtol": null,
   "shape": [
    1

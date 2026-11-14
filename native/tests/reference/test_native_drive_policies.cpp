@@ -160,7 +160,7 @@ Value freehub_state(const drivetrain::Freehub& hub) {
 
 // native_drive_policies/invalid_restore_is_atomic/section
 [[gnu::noinline]] void test_invalid_restore_is_atomic(const Value& baseline) {
-    for (auto section : {"pedaling", "shifting", "assist", "hub"}) {
+    for (auto section : {"pedaling", "shifting", "assist"}) {
         auto golden = node("test_invalid_restore_is_atomic", section); tree(golden, baseline);
         auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
         for (const auto& key : sorted_keys(field(old, section))) {
@@ -186,7 +186,6 @@ struct Mutation { std::string_view id, section, key, json; };
 // native_drive_policies/invalid_restore_values/case
 [[gnu::noinline]] void test_invalid_restore_values(const Value& baseline) {
     constexpr std::array cases{
-        Mutation{.id="hub-negative", .section="hub", .key="energy_j", .json="-1.0"},
         Mutation{.id="cooldown-negative", .section="shifting", .key="cooldown_s", .json="-1.0"}, Mutation{.id="teeth-small", .section="shifting", .key="rear_teeth", .json="2"},
         Mutation{.id="count-negative", .section="shifting", .key="shift_count", .json="-1"}, Mutation{.id="teeth-fractional", .section="shifting", .key="rear_teeth", .json="3.5"},
         Mutation{.id="coasting-integer", .section="pedaling", .key="coasting", .json="1"}, Mutation{.id="ema-unpaired", .section="shifting", .key="cadence_ema", .json="10.0"}};
@@ -265,8 +264,9 @@ struct Mutation { std::string_view id, section, key, json; };
     (void)policy.assist.step(30., 80., 0., false, .01);
     auto bad = state(policy); const auto before = state_text(policy);
     put(bad, "pedaling", "_effort", real(17.)); put(bad, "shifting", "rear_teeth", integer(33));
+    put(bad, "assist", "torque", Value{bike::io::Number{"inf"}});
     bt::invalid([&] { restore(policy, bad); });
-    bt::require(state_text(policy) == before, "late invalid hub value cannot commit earlier policy fields");
+    bt::require(state_text(policy) == before, "late invalid assist value cannot commit earlier policy fields");
     tree(golden, state(policy)); policy.reset(); tree(golden, state(policy)); golden.done();
 }
 
@@ -279,7 +279,6 @@ struct Mutation { std::string_view id, section, key, json; };
     put(document, "shifting", "rear_teeth", integer(51)); put(document, "shifting", "from_teeth", integer(45));
     put(document, "shifting", "cadence_ema", real(-3.)); put(document, "shifting", "required_ema", real(-5.));
     put(document, "assist", "torque", real(1e8)); put(document, "assist", "last_gain", real(1e9));
-    put(document, "hub", "boundary", real(-1e9)); put(document, "hub", "torque_nm", real(1e9));
     restore(policy, document); tree(golden, state(policy));
     bt::require(std::bit_cast<std::uint64_t>(policy.pedaling.state().target_rate_rad_s) == UINT64_C(0x8000000000000000),
                 "restoration preserves negative-zero target rate");
@@ -381,7 +380,7 @@ struct Mutation { std::string_view id, section, key, json; };
     auto golden = node("test_extra_and_missing_state_sections"); tree(golden, baseline);
     auto policy = policies(baseline); const auto old = state(policy); const auto before = state_text(policy);
     std::array<Value, 3> candidates{old, old, old};
-    set(candidates[0], "extra", Value{Value::Object{}}); erase(candidates[1], "hub"); put(candidates[2], "pedaling", "extra", real(0.));
+    set(candidates[0], "extra", Value{Value::Object{}}); erase(candidates[1], "pedaling"); put(candidates[2], "pedaling", "extra", real(0.));
     for (const auto& value : candidates) {
         bt::invalid([&] { restore(policy, value); });
         bt::require(state_text(policy) == before, "state schema rejects extra or missing members atomically"); tree(golden, state(policy));
@@ -450,7 +449,7 @@ struct Mutation { std::string_view id, section, key, json; };
         auto restored = policy.snapshot(); restored.assist.last_gain = 123.; policy.restore(restored);
         const auto before = state_text(policy);
         overflow([&] { (void)policy.assist.step(11., cadence, 0., false, .01, std::nullopt,
-            shaft_override ? std::optional<double>(80.) : std::nullopt); });
+            shaft_override ? std::optional<double>(cadence) : std::nullopt); });
         bt::require(state_text(policy) == before, "crank-derived overflow cannot publish gain or torque");
         // The source records the Python torque-vs-previous assertion before
         // comparing the native whole snapshot; consume both in that order.

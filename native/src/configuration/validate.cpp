@@ -758,11 +758,13 @@ void post_init(ArticulatedConfig &config) {
           {"link_max_gap_m", &ArticulatedConfig::link_max_gap_m},
           {"balance_floor_kmh", &ArticulatedConfig::balance_floor_kmh},
           {"balance_dwell_s", &ArticulatedConfig::balance_dwell_s},
+          // Tightened from the kArticulatedConfigFields table loop's >= 0.
+          // check above to strictly positive; leg_active_damping_nms_rad
+          // keeps >= 0. from that loop.
           {"joint_kp_nm_rad", &ArticulatedConfig::joint_kp_nm_rad},
           {"joint_kd_nms_rad",
            &ArticulatedConfig::joint_kd_nms_rad}})
         scalar(config.*member, name, std::nullopt, true);
-    scalar(config.leg_active_damping_nms_rad, "leg_active_damping_nms_rad", 0.);
     if (config.saddle_reserve_weight_fraction > 1.)
         fail("saddle reserve fraction must not exceed one");
     // Weld normal bounds may be negative (tension retention), matching the

@@ -294,41 +294,81 @@ void test_balance_grace_must_be_finite_and_nonnegative() {
 }
 
 // Launch part 4b: the posture PD gains come from the profile — an unset
-// gain is not a silent 600 / 15, it fails validation and names the field.
-void test_posture_gains_are_required() {
-    for (const auto field : {&ArticulatedConfig::joint_kp_nm_rad, &ArticulatedConfig::joint_kd_nms_rad}) {
+// gain is not a silent 600 / 15, it fails validation and names the field,
+// and neither 0 nor non-finite values are accepted.
+[[gnu::noinline]] void test_posture_gains_are_required() {
+    const auto without_gain = [](double ArticulatedConfig::*field) {
         ArticulatedConfig config;
-        config.balance_dwell_s = .5; config.balance_grace_s = 3.; config.joint_kp_nm_rad = 600.; config.joint_kd_nms_rad = 15.; config.leg_active_damping_nms_rad = 35.;
-        config.*field = -1.;
-        bool rejected = false;
-        try {
-            post_init(config);
-        } catch (const std::invalid_argument &error) {
-            const std::string what = error.what();
-            rejected = what.find(field == &ArticulatedConfig::joint_kp_nm_rad ? "joint_kp_nm_rad"
-                                                                               : "joint_kd_nms_rad") !=
-                       std::string::npos;
+        config.balance_dwell_s = .5;
+        config.balance_grace_s = 3.;
+        config.leg_active_damping_nms_rad = 35.;
+        if (field == &ArticulatedConfig::joint_kp_nm_rad) {
+            config.joint_kd_nms_rad = 15.;
+        } else {
+            config.joint_kp_nm_rad = 600.;
         }
-        bt::require(rejected, "an unset posture gain fails validation and names the field");
+        return config;
+    };
+    for (const auto &[field, name] : {
+             std::pair{&ArticulatedConfig::joint_kp_nm_rad, "joint_kp_nm_rad"},
+             std::pair{&ArticulatedConfig::joint_kd_nms_rad, "joint_kd_nms_rad"}}) {
+        const auto expect_rejected = [&](ArticulatedConfig config, std::string_view reason) {
+            bool rejected = false;
+            try {
+                post_init(config);
+            } catch (const std::invalid_argument &error) {
+                rejected = std::string_view(error.what()).find(name) != std::string_view::npos;
+            }
+            bt::require(rejected, std::string(name) + " " + std::string(reason));
+        };
+        expect_rejected(without_gain(field), "unset default fails validation and names the field");
+        for (const double bad : {-1., 0., kNan, kInf}) {
+            ArticulatedConfig config = without_gain(field);
+            config.*field = bad;
+            expect_rejected(config, "non-positive or non-finite gain fails validation and names the field");
+        }
     }
 }
 
 // Launch part 4b: the active leg damping comes from the profile and is
-// never negative — a negative gain would pump the 18-24 Hz leg mode.
-void test_leg_damping_is_required_and_nonnegative() {
-    ArticulatedConfig config;
-    config.balance_dwell_s = .5; config.balance_grace_s = 3.;
-    config.joint_kp_nm_rad = 600.; config.joint_kd_nms_rad = 15.;
-    config.leg_active_damping_nms_rad = 0.;
-    post_init(config);   // zero is a valid gain
-    config.leg_active_damping_nms_rad = -1.;
-    bool rejected = false;
-    try {
-        post_init(config);
-    } catch (const std::invalid_argument &error) {
-        rejected = std::string(error.what()).find("leg_active_damping_nms_rad") != std::string::npos;
+// never negative — a negative gain would pump the 18-24 Hz leg mode, while
+// zero and positive finite gains are valid and an unset default is rejected.
+[[gnu::noinline]] void test_leg_damping_is_required_and_nonnegative() {
+    const auto with_other_required = [] {
+        ArticulatedConfig config;
+        config.balance_dwell_s = .5;
+        config.balance_grace_s = 3.;
+        config.joint_kp_nm_rad = 600.;
+        config.joint_kd_nms_rad = 15.;
+        return config;
+    };
+    const auto expect_rejected = [](ArticulatedConfig config, std::string_view reason) {
+        bool rejected = false;
+        try {
+            post_init(config);
+        } catch (const std::invalid_argument &error) {
+            rejected = std::string(error.what()).find("leg_active_damping_nms_rad") != std::string::npos;
+        }
+        bt::require(rejected, reason);
+    };
+    {
+        ArticulatedConfig config = with_other_required();
+        config.leg_active_damping_nms_rad = 0.;
+        post_init(config);   // zero is a valid gain
+        config.leg_active_damping_nms_rad = -1.;
+        expect_rejected(config, "a negative leg damping fails validation and names the field");
     }
-    bt::require(rejected, "a negative leg damping fails validation and names the field");
+    expect_rejected(with_other_required(), "an unset leg damping fails validation and names the field");
+    for (const double bad : {-0.1, kNan, kInf}) {
+        ArticulatedConfig config = with_other_required();
+        config.leg_active_damping_nms_rad = bad;
+        expect_rejected(config, "an out-of-range or non-finite leg damping fails validation and names the field");
+    }
+    {
+        ArticulatedConfig config = with_other_required();
+        config.leg_active_damping_nms_rad = 35.;
+        post_init(config);   // nominal profile value is accepted
+    }
 }
 
 } // namespace

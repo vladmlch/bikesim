@@ -476,6 +476,11 @@ struct Settled {
     other->model.physics->equilibrium_crank_hold_kp_nm_rad = 10000.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
     auto refused = init::make_setup(*other);
     rejects([&] { (void)init::settle(*refused); }, "contract differs", "a transfer into a start with another hold stiffness");
+    auto other_kd = std::make_unique<init::SetupRequest>(*plain);
+    other_kd->initial_state = source->capture_initial_state();
+    other_kd->model.physics->equilibrium_crank_hold_kd_nms_rad = 50.; // NOLINT(bugprone-unchecked-optional-access) copied request carries physics
+    auto refused_kd = init::make_setup(*other_kd);
+    rejects([&] { (void)init::settle(*refused_kd); }, "contract differs", "a transfer into a start with another hold damping");
 }
 
 // Every setup settles with the crank at the table angle (plan review I3).

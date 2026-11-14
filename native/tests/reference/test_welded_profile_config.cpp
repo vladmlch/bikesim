@@ -15,6 +15,8 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <limits>
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -966,6 +968,36 @@ template <typename Edit>
             "a recorded document from before the launch table");
 }
 
+// Launch part 4b: both settle crank-hold gains are required profile keys
+// (omitting either fails load_physics and names the key) and strictly
+// positive finite scalars (the unset -1 sentinel, 0, negative, NaN, and Inf
+// all fail post_init naming the field).
+[[gnu::noinline]] void test_crank_hold_gains_are_required_and_positive() {
+    for (const char *line : {"equilibrium_crank_hold_kp_nm_rad = 20000.0\n",
+                             "equilibrium_crank_hold_kd_nms_rad = 88.0\n"}) {
+        const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
+        rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
+                key, "a profile without " + key);
+    }
+    constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double kInf = std::numeric_limits<double>::infinity();
+    const auto fresh = std::make_unique<cfg::SimulationPhysicsConfig>();
+    for (const auto &[field, name] : {
+             std::pair{&cfg::SimulationPhysicsConfig::equilibrium_crank_hold_kp_nm_rad,
+                       "equilibrium_crank_hold_kp_nm_rad"},
+             std::pair{&cfg::SimulationPhysicsConfig::equilibrium_crank_hold_kd_nms_rad,
+                       "equilibrium_crank_hold_kd_nms_rad"}}) {
+        for (const double bad : {fresh.get()->*field, 0., -10., kNan, kInf}) {
+            const auto mutated = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+            mutated.get()->*field = bad;
+            rejects([&] { cfg::post_init(*mutated); }, name,
+                    std::string("out-of-range ") + name);
+        }
+    }
+    const auto valid = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+    cfg::post_init(*valid);
+}
+
 } // namespace
 
 int main() {
@@ -987,5 +1019,6 @@ int main() {
         test_load_resolves_a_flat_start();
         test_written_profile_authors_only_the_table();
         test_recorded_document_keeps_the_prepared_start();
+        test_crank_hold_gains_are_required_and_positive();
     });
 }

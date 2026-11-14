@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "close",
   "label": "fold.0.components.values",
-  "nbytes": 3536,
+  "nbytes": 3328,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
   "offset": 0,
   "rtol": 1e-09,
   "shape": [
-   442
+   416
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "fold.0.components.other",
   "nbytes": 2,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 3536,
+  "offset": 3328,
   "rtol": null,
   "shape": [
    2
@@ -35,7 +35,7 @@
   "label": "fold.0.ctrl",
   "nbytes": 96,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 3538,
+  "offset": 3330,
   "rtol": 1e-09,
   "shape": [
    12
@@ -49,7 +49,7 @@
   "label": "fold.0.brake_bounds",
   "nbytes": 16,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 3634,
+  "offset": 3426,
   "rtol": 0.0,
   "shape": [
    2
@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "close",
   "label": "fold.1.components.values",
-  "nbytes": 3536,
+  "nbytes": 3328,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 3650,
+  "offset": 3442,
   "rtol": 1e-09,
   "shape": [
-   442
+   416
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "fold.1.components.other",
   "nbytes": 2,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 7186,
+  "offset": 6770,
   "rtol": null,
   "shape": [
    2
@@ -91,7 +91,7 @@
   "label": "fold.1.ctrl",
   "nbytes": 96,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 7188,
+  "offset": 6772,
   "rtol": 1e-09,
   "shape": [
    12
@@ -105,7 +105,7 @@
   "label": "fold.1.brake_bounds",
   "nbytes": 16,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 7284,
+  "offset": 6868,
   "rtol": 0.0,
   "shape": [
    2
@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "close",
   "label": "fold.2.components.values",
-  "nbytes": 3536,
+  "nbytes": 3328,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 7300,
+  "offset": 6884,
   "rtol": 1e-09,
   "shape": [
-   442
+   416
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "fold.2.components.other",
   "nbytes": 2,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 10836,
+  "offset": 10212,
   "rtol": null,
   "shape": [
    2
@@ -147,7 +147,7 @@
   "label": "fold.2.ctrl",
   "nbytes": 96,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 10838,
+  "offset": 10214,
   "rtol": 1e-09,
   "shape": [
    12
@@ -161,7 +161,7 @@
   "label": "fold.2.brake_bounds",
   "nbytes": 16,
   "node": "native_runtime_step/native_force_fold_matches_python_recorded_inputs",
-  "offset": 10934,
+  "offset": 10310,
   "rtol": 0.0,
   "shape": [
    2

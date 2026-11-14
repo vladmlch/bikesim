@@ -103,12 +103,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "preview.1.row.other",
-  "nbytes": 423,
+  "nbytes": 266,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
   "offset": 1686,
   "rtol": null,
   "shape": [
-   423
+   266
   ]
  },
  {
@@ -119,7 +119,7 @@
   "label": "preview.1.endpoint.values",
   "nbytes": 152,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 2109,
+  "offset": 1952,
   "rtol": 1e-09,
   "shape": [
    19
@@ -133,7 +133,7 @@
   "label": "preview.1.endpoint.other",
   "nbytes": 27,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 2261,
+  "offset": 2104,
   "rtol": null,
   "shape": [
    27
@@ -147,7 +147,7 @@
   "label": "preview.1.transition.values",
   "nbytes": 224,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 2288,
+  "offset": 2131,
   "rtol": 1e-09,
   "shape": [
    28
@@ -161,7 +161,7 @@
   "label": "preview.1.transition.other",
   "nbytes": 175,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 2512,
+  "offset": 2355,
   "rtol": null,
   "shape": [
    175
@@ -175,7 +175,7 @@
   "label": "preview.2.row.values",
   "nbytes": 416,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 2687,
+  "offset": 2530,
   "rtol": 1e-09,
   "shape": [
    52
@@ -187,12 +187,12 @@
   "index": 13,
   "kind": "bitwise",
   "label": "preview.2.row.other",
-  "nbytes": 423,
+  "nbytes": 266,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 3103,
+  "offset": 2946,
   "rtol": null,
   "shape": [
-   423
+   266
   ]
  },
  {
@@ -203,7 +203,7 @@
   "label": "preview.2.endpoint.values",
   "nbytes": 152,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 3526,
+  "offset": 3212,
   "rtol": 1e-09,
   "shape": [
    19
@@ -217,7 +217,7 @@
   "label": "preview.2.endpoint.other",
   "nbytes": 27,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 3678,
+  "offset": 3364,
   "rtol": null,
   "shape": [
    27
@@ -231,7 +231,7 @@
   "label": "preview.2.transition.values",
   "nbytes": 224,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 3705,
+  "offset": 3391,
   "rtol": 1e-09,
   "shape": [
    28
@@ -245,7 +245,7 @@
   "label": "preview.2.transition.other",
   "nbytes": 175,
   "node": "native_viewer_snapshot/native_preview_matches_reference_and_is_owned",
-  "offset": 3929,
+  "offset": 3615,
   "rtol": null,
   "shape": [
    175

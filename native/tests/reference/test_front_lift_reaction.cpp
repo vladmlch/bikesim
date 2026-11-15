@@ -428,7 +428,7 @@ void test_table_rules() {
         t.decision_s = 1e-12;
         t.clear_s = 1e-12;
     }), kPeriod, .35);
-    auto one_tick = with([](auto &t) {
+    const auto one_tick = with([](auto &t) {
         t.hand_window_s = kPeriod;
         t.hand_lag_s = kPeriod;
         t.decision_s = 0.;

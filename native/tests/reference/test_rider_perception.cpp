@@ -331,7 +331,8 @@ void test_output_overflow_rejects_atomically() {
         const auto good = reference.update(sample(1));
         bt::require(retry.has_value() && good.has_value(),
                     "the corrected retry delivers");
-        require_same(*retry, *good, "the retry equals one clean update");
+        if (retry.has_value() && good.has_value())
+            require_same(*retry, *good, "the retry equals one clean update");
         bt::require(state_json(p.state()) == state_json(reference.state()),
                     "the retried state equals one clean update");
     }

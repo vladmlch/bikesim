@@ -2777,11 +2777,17 @@ WireObject
 PhysicalStep::balance_channel(const BrakeResolution &brakes) {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
+    const double speed_mps =
+        buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)];
+    const bool stopped =
+        brakes.motor_braking &&
+        std::abs(speed_mps) <= config_.launch.standstill_speed_mps;
     balance_monitor_.update(
         d->time,
         buf(d->qpos, m->nq)[static_cast<std::size_t>(root_x_qposadr_)],
-        buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
-        brakes.riding);
+        speed_mps,
+        brakes.riding,
+        stopped);
     return balance_monitor_.observation();
 }
 

@@ -158,6 +158,45 @@ void test_braking_pauses_dwell_without_restarting_grace() {
                 "the event time is the latching sample's time");
 }
 
+// balance_monitor/full_stop_rearms_grace_after_brake_release
+void test_full_stop_rearms_grace_after_brake_release() {
+    runtime::BalanceMonitor monitor(4. / 3.6, .5, 3.);
+    monitor.update(0., 0., 5. * KMH, true);
+    monitor.update(4., 5., 5. * KMH, true);
+    bt::require(monitor.grace_left_s == 0.,
+                "initial grace expires after 3 s of riding");
+    // Brief rolling brake pauses without re-arming grace.
+    monitor.update(4.5, 5.5, 3. * KMH, false, false);
+    bt::require(monitor.grace_left_s == 0.,
+                "rolling brake does not re-arm grace");
+    // Full braked stop restores the full 3 s grace for the next launch.
+    bt::require(!monitor.update(5., 6., 0., false, true).has_value(),
+                "full braked stop emits no balance event");
+    bt::require(monitor.grace_left_s == 3.,
+                "full braked stop restores full 3 s grace");
+    bt::require(!monitor.update(5.1, 6., 0., true, false).has_value(),
+                "brake release starts fresh 3 s grace");
+    bt::require(std::abs(monitor.grace_left_s - 3.) < 1e-9,
+                "first riding sample after release holds full grace");
+    bt::require(!monitor.update(7.9, 7., 2. * KMH, true).has_value(),
+                "slow acceleration inside re-armed 3 s grace never latches");
+    bt::require(!monitor.update(8.1, 7.5, 2. * KMH, true).has_value(),
+                "dwell starts once re-armed grace expires at 8.1 s");
+    bt::require(!monitor.update(8.5, 8., 2. * KMH, true).has_value(),
+                "0.4 s dwell after re-armed grace still holds");
+    const auto latched = monitor.update(8.6, 8.2, 2. * KMH, true);
+    bt::require(latched.has_value() && same_event(latched, monitor.event),
+                "sustained crawl past re-armed grace + 0.5 s dwell latches");
+    const auto first_event = monitor.event;
+    // Subsequent braked stop clears the active event but preserves first record.
+    bt::require(!monitor.update(9., 8.5, 0., false, true).has_value(),
+                "subsequent braked stop clears active event");
+    bt::require(!monitor.current_event.has_value(),
+                "subsequent braked stop clears current_event");
+    bt::require(same_event(monitor.event, first_event),
+                "earlier latched event survives a subsequent braked stop");
+}
+
 // balance_monitor/reset_clears_event_and_restarts_first_ride_grace
 void test_reset_clears_event_and_restarts_grace() {
     runtime::BalanceMonitor monitor = run(std::vector<double>(37, 0.));
@@ -302,6 +341,7 @@ int main() {
         test_brief_dip_recovers_and_resets_dwell();
         test_grace_starts_only_when_riding();
         test_braking_pauses_dwell_without_restarting_grace();
+        test_full_stop_rearms_grace_after_brake_release();
         test_reset_clears_event_and_restarts_grace();
         test_floor_boundary_and_time_validation();
         test_summary_and_metrics_keep_latched_event_position_metrics();

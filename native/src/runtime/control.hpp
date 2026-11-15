@@ -304,7 +304,8 @@ public:
     // update() returns the active event (nullopt while upright); `event`
     // keeps the run's first latched record for summaries and metrics.
     std::optional<BalanceLostEvent> update(double time_s, double position_m,
-                                         double speed_mps, bool riding);
+                                         double speed_mps, bool riding,
+                                         bool stopped = false);
     // observation() — the rider_balance channel dict; reports the active
     // `current_event` so the HUD recovers when the dwell timer resets.
     [[nodiscard]] WireObject observation() const;

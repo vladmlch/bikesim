@@ -23,6 +23,8 @@ int main() {
             "careful", "examples/research/rider_type_careful.toml",
             careful_rule);
         launch_ride::verify_restart_25_percent(
-            "careful", "examples/research/rider_type_careful.toml", 39);
+            {.label = "careful",
+             .profile = "examples/research/rider_type_careful.toml",
+             .expected_cog = 39});
     });
 }

@@ -122,8 +122,8 @@ double body_pulse(double time_s, double start_s, double duration_s,
 
 // ---- SeatedPostureProgram (rider_program.py) ------------------------------
 
-SeatedPostureProgram::SeatedPostureProgram(const IntentConfig &config)
-    : config_(config) {
+SeatedPostureProgram::SeatedPostureProgram(IntentConfig config)
+    : config_(std::move(config)) {
     if (!std::isfinite(config_.min_elbow_flexion_deg) ||
         config_.min_elbow_flexion_deg <= 0. ||
         config_.min_elbow_flexion_deg > 90.) {
@@ -422,7 +422,7 @@ RiderCommands commands_of(const LaunchCommand &c,
 
 RiderIntent::RiderIntent(IntentConfig config, FrontLiftReactionConfig reaction,
                          const LaunchConfig &launch, double dt_s)
-    : config_(config),
+    : config_(std::move(config)),
       dt_s_(validation::positive(dt_s, "rider physics timestep")),
       period_steps_(python_round_steps(config_.period_s / dt_s_)),
       core_(std::make_unique<Core>(config_)),

@@ -38,15 +38,20 @@ void validate_strictly_ascending(std::span<const double> values,
     }
 }
 
+struct KnotTableLabels {
+    std::string_view section;
+    std::string_view knots_field;
+    std::string_view values_field;
+    std::string_view mismatch_why;
+};
+
 void validate_knot_table_shape(std::span<const double> knots,
                                std::span<const double> values,
-                               std::string_view section,
-                               std::string_view knots_field,
-                               std::string_view values_field,
-                               std::string_view mismatch_why) {
-    if (knots.empty()) reject_section(section, knots_field, "needs at least one knot");
-    if (values.size() != knots.size()) reject_section(section, values_field, mismatch_why);
-    validate_strictly_ascending(knots, section, knots_field);
+                               const KnotTableLabels &labels) {
+    if (knots.empty()) reject_section(labels.section, labels.knots_field, "needs at least one knot");
+    if (values.size() != knots.size())
+        reject_section(labels.section, labels.values_field, labels.mismatch_why);
+    validate_strictly_ascending(knots, labels.section, labels.knots_field);
 }
 
 void validate_grade_cap_table(std::span<const double> grades,
@@ -54,9 +59,13 @@ void validate_grade_cap_table(std::span<const double> grades,
                               std::string_view section,
                               std::string_view grades_field,
                               std::string_view caps_field) {
-    validate_knot_table_shape(
-        grades, caps_nm, section, grades_field, caps_field,
-        "needs one cap per " + std::string(grades_field) + " knot");
+    const std::string mismatch =
+        "needs one cap per " + std::string(grades_field) + " knot";
+    validate_knot_table_shape(grades, caps_nm,
+                              {.section = section,
+                               .knots_field = grades_field,
+                               .values_field = caps_field,
+                               .mismatch_why = mismatch});
     for (const double cap : caps_nm) {
         if (!(std::isfinite(cap) && cap > 0.))
             reject_section(section, caps_field, "must be finite and positive");
@@ -74,8 +83,11 @@ void validate_launch_table(const LaunchConfig &table) {
     validate_strictly_ascending(table.start_cog_grade_breaks, "rider_launch", "start_cog_grade_breaks");
     if (!std::isfinite(table.start_pedal_angle_rad)) reject("start_pedal_angle_rad", "must be finite");
     validate_knot_table_shape(
-        table.start_lean_grades, table.start_lean_rad, "rider_launch",
-        "start_lean_grades", "start_lean_rad", "needs one lean per start_lean_grades knot");
+        table.start_lean_grades, table.start_lean_rad,
+        {.section = "rider_launch",
+         .knots_field = "start_lean_grades",
+         .values_field = "start_lean_rad",
+         .mismatch_why = "needs one lean per start_lean_grades knot"});
     for (const double lean : table.start_lean_rad)
         if (!std::isfinite(lean)) reject("start_lean_rad", "values must be finite");
     const auto nonnegative = [](double v, std::string_view field) {
@@ -97,9 +109,11 @@ void validate_launch_table(const LaunchConfig &table) {
         "rider_launch", "effort_cap_grades", "effort_cap_grade_nm");
     positive(table.effort_rise_speed_mps, "effort_rise_speed_mps");
     validate_knot_table_shape(
-        table.release_torque_grades, table.release_torque_nm, "rider_launch",
-        "release_torque_grades", "release_torque_nm",
-        "needs one torque per release_torque_grades knot");
+        table.release_torque_grades, table.release_torque_nm,
+        {.section = "rider_launch",
+         .knots_field = "release_torque_grades",
+         .values_field = "release_torque_nm",
+         .mismatch_why = "needs one torque per release_torque_grades knot"});
     for (const double torque : table.release_torque_nm) nonnegative(torque, "release_torque_nm");
     nonnegative(table.brake_release_s, "brake_release_s");
     positive(table.max_hold_s, "max_hold_s");

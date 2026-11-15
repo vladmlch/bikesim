@@ -1067,25 +1067,29 @@ template <typename Edit>
         rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
                 key, "a profile without " + key);
     }
-    const auto check_bad = [](auto mutate, std::string_view needle, std::string_view label) {
+    struct InvalidProfileCase {
+        std::string_view needle;
+        std::string_view label;
+    };
+    const auto check_bad = [](auto mutate, const InvalidProfileCase &spec) {
         const auto mutated = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
         mutate(*mutated);
-        rejects([&] { cfg::post_init(*mutated); }, needle, label);
+        rejects([&] { cfg::post_init(*mutated); }, spec.needle, spec.label);
     };
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_cap_grades = {0.1, 0.05};
         c.seated_climb.climb_effort_cap_grade_nm = {30., 35.};
-    }, "climb_effort_cap_grades", "non-ascending climb_effort_cap_grades");
+    }, {"climb_effort_cap_grades", "non-ascending climb_effort_cap_grades"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_cap_grade_nm[0] = 0.;
-    }, "climb_effort_cap_grade_nm", "non-positive climb_effort_cap_grade_nm");
+    }, {"climb_effort_cap_grade_nm", "non-positive climb_effort_cap_grade_nm"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_rise_speed_mps = -0.1;
-    }, "climb_effort_rise_speed_mps", "negative climb_effort_rise_speed_mps");
+    }, {"climb_effort_rise_speed_mps", "negative climb_effort_rise_speed_mps"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_full_speed_mps =
             c.seated_climb.climb_effort_rise_speed_mps - 0.1;
-    }, "climb_effort_full_speed_mps", "climb_effort_full_speed_mps < rise");
+    }, {"climb_effort_full_speed_mps", "climb_effort_full_speed_mps < rise"});
 }
 
 } // namespace

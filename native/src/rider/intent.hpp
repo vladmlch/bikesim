@@ -144,7 +144,7 @@ public:
         std::vector<std::array<double, 3>> pulses;
     };
 
-    explicit SeatedPostureProgram(const IntentConfig &config);
+    explicit SeatedPostureProgram(IntentConfig config);
 
     void reset();
     void seed_lean(double lean_rad);

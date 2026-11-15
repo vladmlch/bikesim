@@ -33,6 +33,14 @@ std::int64_t ticks(double seconds, double period_s, std::string_view field) {
     return static_cast<std::int64_t>(n);
 }
 
+// A duration the table requires positive additionally counts at least one
+// tick — a sub-tick value must not round to an empty interval.
+std::int64_t positive_ticks(double seconds, double period_s, std::string_view field) {
+    const std::int64_t n = ticks(seconds, period_s, field);
+    if (n == 0) reject(field, "a positive time must count at least one intention period tick");
+    return n;
+}
+
 double step_toward(double value, double target, double step) {
     if (std::abs(target - value) <= step) return target;
     return value + (target > value ? step : -step);
@@ -62,8 +70,8 @@ void validate_reaction_context(const FrontLiftReactionConfig &t, double period_s
     validate_reaction_table(t);
     if (!std::isfinite(period_s) || period_s <= 0.)
         throw std::invalid_argument("front-lift reaction needs a positive intention period");
-    (void)ticks(t.hand_window_s, period_s, "hand_window_s");
-    (void)ticks(t.hand_lag_s, period_s, "hand_lag_s");
+    (void)positive_ticks(t.hand_window_s, period_s, "hand_window_s");
+    (void)positive_ticks(t.hand_lag_s, period_s, "hand_lag_s");
     (void)ticks(t.decision_s, period_s, "decision_s");
     (void)ticks(t.clear_s, period_s, "clear_s");
     if (t.lean_add_rad > max_forward_lean_rad) reject("lean_add_rad", "beyond the seated forward lean bound");
@@ -92,8 +100,8 @@ FrontLiftReaction::FrontLiftReaction(const FrontLiftReactionConfig &config, doub
     validate_reaction_table(config_);
     if (!std::isfinite(period_s_) || period_s_ <= 0.)
         throw std::invalid_argument("front-lift reaction needs a positive intention period");
-    window_ticks_ = ticks(config_.hand_window_s, period_s_, "hand_window_s");
-    lag_ticks_ = ticks(config_.hand_lag_s, period_s_, "hand_lag_s");
+    window_ticks_ = positive_ticks(config_.hand_window_s, period_s_, "hand_window_s");
+    lag_ticks_ = positive_ticks(config_.hand_lag_s, period_s_, "hand_lag_s");
     decision_ticks_ = ticks(config_.decision_s, period_s_, "decision_s");
     clear_ticks_ = ticks(config_.clear_s, period_s_, "clear_s");
 }

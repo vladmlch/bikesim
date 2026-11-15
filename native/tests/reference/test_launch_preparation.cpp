@@ -16,6 +16,7 @@
 #include "validation/scenarios.hpp"
 #include "cli/application.hpp"
 #include "io/value.hpp"
+#include "runtime/setup_values.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -28,6 +29,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -199,6 +201,22 @@ void test_plan_fields_name_the_field() {
             "max_launch_s", "a launch limit beyond 2^31 ticks");
     rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.shift_retry_s = .0011; }), .00125); },
             "shift_retry_s", "a retry time off the grid");
+    // A positive time shorter than one tick must not round to zero ticks.
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.max_hold_s = 1e-12; }), .00125); },
+            "max_hold_s", "a hold limit below one tick");
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.max_launch_s = 1e-12; }), .00125); },
+            "max_launch_s", "a launch limit below one tick");
+    rejects([&] { rider::validate_launch_plan_context(with([](auto &t) { t.shift_retry_s = 1e-12; }), .00125); },
+            "shift_retry_s", "a retry time below one tick");
+    // The nonnegative release, end-hold and handover times keep their zero
+    // semantics — a sub-tick value still rounds to zero ticks.
+    rider::validate_launch_plan_context(with([](auto &t) {
+        t.brake_release_s = 1e-12; t.end_hold_s = 1e-12; t.handover_s = 1e-12; }), .00125);
+    // One tick is the shortest valid positive time; the zero release, end
+    // hold and handover times stay allowed.
+    rider::validate_launch_plan_context(with([](auto &t) {
+        t.brake_release_s = 0.; t.max_hold_s = .00125; t.shift_retry_s = .00125;
+        t.end_hold_s = 0.; t.max_launch_s = .00125; t.handover_s = 0.; }), .00125);
     rider::validate_launch_plan_context(ramp_table(), .00125);   // control
     bt::require(rider::release_torque_nm(ramp_table(), -.1) == 0. &&
                     rider::release_torque_nm(ramp_table(), .1) == 15. &&
@@ -360,6 +378,68 @@ void test_start_grade_looks_ahead_of_the_start() {
     rejects([&] { (void)bike::research::resolve_research_physics(
                 cfg::default_physics(), path, bike::io::Value{bike::io::Value::Object{}}); },
             "start_cog_teeth", "a research profile that authors the rear cog");
+}
+
+// A physics file handed to the research CLI is a complete profile, not a
+// patch over the built-in one: it must satisfy the same strict
+// construction load_physics applies before any defaults fill in.
+[[gnu::noinline]] void test_research_physics_file_must_be_complete() {
+    namespace sv = runtime::setupvalue;
+    const auto defaults = cfg::default_physics();
+    const bike::io::Value empty{bike::io::Value::Object{}};
+    const bt::TemporaryDirectory dir("research-strict-file");
+    const auto write = [&dir](std::string_view name, std::string_view body) {
+        const auto file = dir.path() / std::string(name);
+        { std::ofstream out(file); out << body; }
+        return file;
+    };
+    // The review's partial profile: one scalar over nothing.
+    const auto partial = write("partial.toml", "timestep_s = 0.00125\n");
+    rejects([&] { (void)bike::research::resolve_research_physics(defaults, partial, empty); },
+            "rider_launch", "a file of overrides is not a profile");
+    const std::string complete = cfg::write_physics_toml(defaults);
+    // A full document minus one required field.
+    const auto max_hold = complete.find("max_hold_s = ");
+    bt::require(max_hold != std::string::npos, "the written profile carries max_hold_s");
+    std::string missing_field = complete;
+    missing_field.erase(max_hold, missing_field.find('\n', max_hold) - max_hold);
+    const auto field_path = write("missing-field.toml", missing_field);
+    rejects([&] { (void)bike::research::resolve_research_physics(defaults, field_path, empty); },
+            "max_hold_s", "a file missing one required field");
+    // A full document minus a required section.
+    const auto section = complete.find("\n[rider_launch]\n");
+    bt::require(section != std::string::npos, "the written profile carries [rider_launch]");
+    std::string missing_section = complete;
+    const auto next = missing_section.find("\n[", section + 1);
+    missing_section.erase(section, next == std::string::npos ? next : next - section + 1);
+    const auto section_path = write("missing-section.toml", missing_section);
+    rejects([&] { (void)bike::research::resolve_research_physics(defaults, section_path, empty); },
+            "rider_launch", "a file missing a required section");
+    // Control: the complete file resolves and its own values win.
+    auto changed = defaults;
+    changed.initial_speed_mps = 7.;
+    const auto full_path = write("full.toml", cfg::write_physics_toml(changed));
+    bt::require(bike::research::resolve_research_physics(defaults, full_path, empty).initial_speed_mps == 7.,
+                "the file's own values resolve");
+    // Explicit overrides still win over the file, and a partial explicit
+    // patch over the no-file built-in stays valid.
+    bike::io::Value explicit_overrides{bike::io::Value::Object{}};
+    sv::set(explicit_overrides, "initial_speed_mps", sv::real(3.));
+    bt::require(bike::research::resolve_research_physics(defaults, full_path, explicit_overrides).initial_speed_mps == 3.,
+                "an explicit override wins over the file");
+    bt::require(bike::research::resolve_research_physics(defaults, std::nullopt, explicit_overrides).initial_speed_mps == 3.,
+                "a partial explicit patch over the built-in stays valid");
+    bt::require(bike::research::resolve_research_physics(defaults, std::nullopt, empty).initial_speed_mps ==
+                    defaults.initial_speed_mps,
+                "the no-file built-in profile resolves");
+    // A missing file fails at the read, as before.
+    bool refused = false;
+    try {
+        (void)bike::research::resolve_research_physics(defaults, dir.path() / "absent.toml", empty);
+    } catch (const std::system_error &) {
+        refused = true;
+    }
+    bt::require(refused, "a missing physics file fails at the read");
 }
 
 // After reset the intent starts from the seeded lean and slews from it at
@@ -631,6 +711,7 @@ int main() {
         test_research_records_the_prepared_cog();
         test_validation_capture_matches_the_prepared_start();
         test_research_profile_cannot_author_the_cog();
+        test_research_physics_file_must_be_complete();
         test_intent_slews_from_the_seeded_lean();
         test_prepared_lean_survives_cache_and_state_file();
         test_transfer_contract_binds_the_prepared_lean();

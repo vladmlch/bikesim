@@ -428,6 +428,44 @@ void test_inputs_are_validated() {
     rejects([&] { (void)rider::shift_response("maybe"); }, "rider_response", "an unknown shifter label");
 }
 
+// A restored rise counter at the int64 top stays inside the declared
+// domain, but the next update must refuse to count it — checked, not
+// wrapping — and must leave the plan untouched. The retry deadline
+// comparison in restore must not overflow on a huge launch clock either.
+void test_counter_domains_are_checked() {
+    rider::LaunchPlan plan(table(), kPeriod);
+    for (int i = 0; i < 3; ++i) (void)plan.update(in(standing()));
+    auto state = plan.state();
+    state.rise_ticks = std::numeric_limits<std::int64_t>::max();
+    plan.restore(state);
+    const std::string top = text(plan);
+    rejects([&] { (void)plan.update(in(standing())); }, "rise",
+            "the rise clock cannot be counted past the int64 top");
+    bt::require(text(plan) == top, "the refused tick changes nothing");
+    // One tick below the top still counts.
+    state.rise_ticks = std::numeric_limits<std::int64_t>::max() - 1;
+    plan.restore(state);
+    (void)plan.update(in(standing()));
+    bt::require(plan.state().rise_ticks == std::numeric_limits<std::int64_t>::max(),
+                "the tick below the top counts once");
+    // A retry deadline after an enormous launch clock compares, not wraps.
+    rider::LaunchPlan::State handover;
+    handover.phase = rider::LaunchPhase::handover;
+    handover.launch_ticks = std::numeric_limits<std::int64_t>::max();
+    handover.blocked_teeth = 51;
+    handover.retry_tick = 310;
+    plan.restore(handover);
+    bt::require(plan.state().retry_tick == 310,
+                "a retry inside its deadline restores without wrapping");
+    handover.retry_tick = std::numeric_limits<std::int64_t>::max();
+    plan.restore(handover);
+    bt::require(plan.state().retry_tick == std::numeric_limits<std::int64_t>::max(),
+                "the deadline top itself restores without wrapping");
+    handover.retry_tick = 5;   // below retry_ticks_
+    rejects([&] { plan.restore(handover); }, "retry_tick",
+            "a retry before its deadline stays rejected");
+}
+
 } // namespace
 
 int main() {
@@ -444,5 +482,6 @@ int main() {
         test_ineligible_ticks_cancel_and_the_switch_keeps_idle();
         test_codec_round_trip_continuation_and_rejected_restores();
         test_inputs_are_validated();
+        test_counter_domains_are_checked();
     });
 }

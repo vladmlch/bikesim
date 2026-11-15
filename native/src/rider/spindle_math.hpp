@@ -117,7 +117,7 @@ namespace spindle {
 
     template<typename Capacity>
     [[nodiscard]] Vec2 downstroke_joint_torques(double tau_leg_nm, Vec2 jac,
-                                                Capacity &&capacity);
+                                                const Capacity &capacity);
 
     // scale_to_power_budget on parallel arrays (dict order preserved by the
     // caller's iteration order).

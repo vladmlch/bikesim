@@ -84,30 +84,48 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
     if (s_.tick == std::numeric_limits<std::int64_t>::max())
         throw std::invalid_argument("perception tick counter overflowed");
     check_sample(sample, "perception sample");
-    s_.samples.emplace_back(s_.tick, sample);
+    // The delivery is selected and its derived outputs validated before
+    // live state moves, so a rejected update leaves a retry-clean state.
     // A stamp k is due at the tick n with k <= n - delay_ticks — the
     // integer form of the intent queue's `<= ready + 1e-12` (exact, no
     // accumulated rounding can slip it).
+    const SenseSample *delayed = s_.delayed ? &*s_.delayed : nullptr;
+    for (auto it = s_.samples.crbegin(); it != s_.samples.crend(); ++it) {
+        if (it->first <= s_.tick - delay_ticks_) {
+            delayed = &it->second;
+            break;
+        }
+    }
+    if (delay_ticks_ == 0) delayed = &sample;
+    double pitch = s_.pitch_rad;
+    std::optional<Percepts> out;
+    if (delayed) {
+        pitch = s_.pitch_rad +
+                delayed->signals.pitch_rate_up_rad_s * period_s_;
+        if (!std::isfinite(pitch))
+            throw std::invalid_argument("perception pitch overflowed");
+        const double crank_rpm =
+            std::abs(delayed->signals.crank_rate_rad_s) * 60. /
+            (2. * std::numbers::pi);
+        if (!std::isfinite(crank_rpm))
+            throw std::invalid_argument("perception crank rate overflowed");
+        out = Percepts{.senses = delayed->senses,
+                       .crank_rpm = crank_rpm,
+                       .human_crank_torque_nm =
+                           delayed->signals.human_crank_torque_nm,
+                       .pitch_rate_up_rad_s =
+                           delayed->signals.pitch_rate_up_rad_s,
+                       .pitch_rad = pitch};
+    }
+    s_.samples.emplace_back(s_.tick, sample);
     while (!s_.samples.empty() &&
            s_.samples.front().first <= s_.tick - delay_ticks_) {
         s_.delayed = s_.samples.front().second;
         s_.samples.pop_front();
     }
     ++s_.tick;
-    if (!s_.delayed) return std::nullopt;
-    const SenseSample &d = *s_.delayed;
-    const double pitch =
-        s_.pitch_rad + d.signals.pitch_rate_up_rad_s * period_s_;
-    if (!std::isfinite(pitch))
-        throw std::invalid_argument("perception pitch overflowed");
     s_.pitch_rad = pitch;
-    return Percepts{.senses = d.senses,
-                    .crank_rpm = std::abs(d.signals.crank_rate_rad_s) *
-                                     60. / (2. * std::numbers::pi),
-                    .human_crank_torque_nm =
-                        d.signals.human_crank_torque_nm,
-                    .pitch_rate_up_rad_s = d.signals.pitch_rate_up_rad_s,
-                    .pitch_rad = s_.pitch_rad};
+    return out;
 }
 
 Perception::State Perception::state() const { return s_; }

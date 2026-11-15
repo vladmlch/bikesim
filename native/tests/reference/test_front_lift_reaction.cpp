@@ -416,6 +416,32 @@ void test_table_rules() {
             "clear_s", "a clear time beyond 2^31 ticks");
     rejects([&] { rider::validate_reaction_context(table(), kPeriod, .05); },
             "lean_add_rad", "a lean add beyond the forward bound");
+    // A positive time shorter than one tick must not round to zero ticks.
+    rejects([&] { rider::validate_reaction_context(with([](auto &t) { t.hand_window_s = 1e-12; }), kPeriod, .35); },
+            "hand_window_s", "a sub-tick hand window");
+    rejects([&] { rider::validate_reaction_context(with([](auto &t) { t.hand_lag_s = 1e-12; }), kPeriod, .35); },
+            "hand_lag_s", "a sub-tick hand lag");
+    rejects([&] { (void)rider::FrontLiftReaction(with([](auto &t) { t.hand_window_s = 1e-12; }), kPeriod); },
+            "hand_window_s", "the constructor rejects a sub-tick window");
+    // The nonnegative decision and clear times keep their zero semantics —
+    // a sub-tick value still rounds to zero ticks.
+    rider::validate_reaction_context(with([](auto &t) {
+        t.decision_s = 1e-12;
+        t.clear_s = 1e-12;
+    }), kPeriod, .35);
+    // One tick is the shortest valid window and lag; the zero decision and
+    // clear times stay allowed.
+    auto one_tick = with([](auto &t) {
+        t.hand_window_s = kPeriod;
+        t.hand_lag_s = kPeriod;
+        t.decision_s = 0.;
+        t.clear_s = 0.;
+    });
+    rider::validate_reaction_context(one_tick, kPeriod, .35);
+    rider::FrontLiftReaction minimal(one_tick, kPeriod);
+    (void)minimal.update(percept(100., 0., 0.));
+    bt::require(minimal.update(percept(50., 1., 0.)).predicate,
+                "a one-tick window and lag evaluate the hand drop");
 }
 
 // ---- RiderIntent: perception and the reaction inside the resolver -----------

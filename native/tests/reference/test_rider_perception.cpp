@@ -310,6 +310,70 @@ void test_update_rejects_bad_input_without_mutation() {
                 "a poisoned sample mutates nothing");
 }
 
+// A delivery whose integrated pitch or scaled cadence leaves the finite
+// domain is rejected before the queue, the delayed slot, the clock or the
+// integrator move — the same atomicity a poisoned input gets. A corrected
+// retry then advances exactly one tick.
+void test_output_overflow_rejects_atomically() {
+    // Zero delay: the fresh sample itself is the delivery.
+    {
+        rider::Perception p(0., .01);
+        rider::Perception::State seeded;
+        seeded.tick = 1;
+        seeded.delayed = sample(0);
+        seeded.pitch_rad = std::numeric_limits<double>::max();
+        p.restore(seeded);
+        const std::string before = state_json(p.state());
+        auto boom = sample(1);
+        boom.signals.pitch_rate_up_rad_s = 1e308;
+        bt::invalid([&] { (void)p.update(boom); });
+        bt::require(state_json(p.state()) == before,
+                    "the pitch overflow changes nothing");
+        rider::Perception reference(0., .01);
+        reference.restore(seeded);
+        const auto retry = p.update(sample(1));
+        const auto good = reference.update(sample(1));
+        bt::require(retry.has_value() && good.has_value(),
+                    "the corrected retry delivers");
+        require_same(*retry, *good, "the retry equals one clean update");
+        bt::require(state_json(p.state()) == state_json(reference.state()),
+                    "the retried state equals one clean update");
+    }
+    // One tick of delay: the delivery comes out of the queue.
+    {
+        rider::Perception p(.01, .01);
+        rider::Perception::State seeded;
+        seeded.tick = 2;
+        seeded.delayed = sample(0);
+        seeded.pitch_rad = std::numeric_limits<double>::max();
+        auto queued = sample(7);
+        queued.signals.pitch_rate_up_rad_s = 1e308;
+        seeded.samples.emplace_back(1, queued);
+        p.restore(seeded);
+        const std::string before = state_json(p.state());
+        bt::invalid([&] { (void)p.update(sample(2)); });
+        bt::require(state_json(p.state()) == before,
+                    "a queued overflowing sample changes nothing either");
+    }
+    // The cadence channel is checked the same way.
+    {
+        rider::Perception p(0., .01);
+        rider::Perception::State seeded;
+        seeded.tick = 1;
+        seeded.delayed = sample(0);
+        p.restore(seeded);
+        const std::string before = state_json(p.state());
+        auto boom = sample(1);
+        boom.signals.crank_rate_rad_s = std::numeric_limits<double>::max();
+        bt::invalid([&] { (void)p.update(boom); });
+        bt::require(state_json(p.state()) == before,
+                    "a crank-rate overflow changes nothing");
+        const auto retry = p.update(sample(1));
+        bt::require(retry.has_value() && p.state().tick == 2,
+                    "the corrected retry advances one tick");
+    }
+}
+
 // Zero delay delivers each acquisition in the period it was taken.
 void test_zero_delay_delivers_immediately() {
     rider::Perception p(0., .01);
@@ -510,6 +574,7 @@ int main() {
         test_unreachable_queue_is_rejected_atomically();
         test_invalid_sample_contents_are_rejected();
         test_update_rejects_bad_input_without_mutation();
+        test_output_overflow_rejects_atomically();
         test_zero_delay_delivers_immediately();
         test_reset_returns_to_constructed_state();
         test_perception_state_codec_is_exact_and_bitwise();

@@ -202,6 +202,16 @@ test_downstroke_allocation_is_continuous_and_has_no_wrong_sign_hip_after_tdc() {
     }
 }
 
+[[gnu::noinline]] void test_downstroke_accepts_a_temporary_capacity() {
+    // The declared signature is the defined one: a temporary callback binds
+    // the same const& overload the named callbacks above use.
+    const auto [th, tk] = spindle::downstroke_joint_torques(
+        40., {1., -1.}, [](int, double) { return 100.; });
+    bt::require(approx(th, 20.) && approx(tk, -20.) &&
+                    approx(th * 1. + tk * -1., 40.),
+                "a temporary capacity computes the same downstroke split");
+}
+
 [[gnu::noinline]] void test_power_budget_scales_positive_work_only() {
     // crank_split/power_budget_scales_positive_work_only
     // Dict order {'a','b','eccentric','still'} is the array order here.
@@ -231,6 +241,7 @@ int main() {
         test_handover_splits_without_preload();
         test_shares_and_targets_are_continuous_across_dead_centers();
         test_downstroke_allocation_is_continuous_and_has_no_wrong_sign_hip_after_tdc();
+        test_downstroke_accepts_a_temporary_capacity();
         test_power_budget_scales_positive_work_only();
     });
 }

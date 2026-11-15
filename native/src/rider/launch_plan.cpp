@@ -161,7 +161,11 @@ LaunchCommand LaunchPlan::update(const LaunchInputs &in) {
     }
     State n = s_;
     // The rise clock counts every eligible tick once started (probe: Rise.now).
-    if (n.rise_ticks >= 0) ++n.rise_ticks;
+    if (n.rise_ticks >= 0) {
+        if (n.rise_ticks == std::numeric_limits<std::int64_t>::max())
+            throw std::invalid_argument("launch plan rise tick counter overflowed");
+        ++n.rise_ticks;
+    }
     const std::optional<Percepts> &p = in.percepts;
     switch (n.phase) {
     case LaunchPhase::idle:
@@ -263,7 +267,7 @@ void LaunchPlan::restore(const State &s) {
     if (s.rise_ticks < -1) bad_state("rise_ticks", "below -1");
     if (s.retry_tick < -1) bad_state("retry_tick", "below -1");
     if (s.retry_tick >= 0 &&
-        (s.shift_up || s.blocked_teeth < 3 || s.retry_tick < retry_ticks_ || s.retry_tick > s.launch_ticks + retry_ticks_))
+        (s.shift_up || s.blocked_teeth < 3 || s.retry_tick < retry_ticks_ || s.retry_tick - retry_ticks_ > s.launch_ticks))
         bad_state("retry_tick", "a retry without the rejected request it follows");
     switch (s.phase) {
     case LaunchPhase::idle:

@@ -176,7 +176,13 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
     const configuration::SimulationPhysicsConfig& defaults,
     const std::optional<std::filesystem::path>& file, const io::Value& explicit_overrides) {
     auto overrides = file ? configuration::detail::parse_toml_file(*file) : Value{Object{}};
-    if (file) configuration::detail::resolve_config_paths(overrides, std::filesystem::absolute(*file).parent_path());
+    if (file) {
+        configuration::detail::resolve_config_paths(overrides, std::filesystem::absolute(*file).parent_path());
+        // An explicitly supplied physics file is itself a complete profile:
+        // it must construct on its own before defaults can fill it in.
+        configuration::detail::reject_computed_members(overrides);
+        (void)configuration::detail::construct_config(configuration::detail::with_flat_start(overrides));
+    }
     auto base = configuration::detail::plain_document(configuration::to_value(defaults));
     // A material table selects its complete type. Carrying the old TireSpec
     // fields into a TabulatedTireSpec would reject a valid source document.

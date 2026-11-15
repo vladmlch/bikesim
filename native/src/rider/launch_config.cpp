@@ -137,13 +137,20 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
         const double ticks = std::rint(seconds / period_s);
         if (std::abs(ticks * period_s - seconds) > 1e-9) reject(field, "must be a whole number of intention periods");
         if (ticks > 0x1p31) reject(field, "must be at most 2^31 intention periods");
+        return static_cast<std::int64_t>(ticks);
+    };
+    // A duration the table requires positive additionally counts at least
+    // one tick — a sub-tick value must not round to an empty interval.
+    const auto positive_on_grid = [&on_grid](double seconds, std::string_view field) {
+        if (on_grid(seconds, field) == 0)
+            reject(field, "a positive time must count at least one intention period tick");
     };
     on_grid(table.brake_release_s, "brake_release_s");
-    on_grid(table.max_hold_s, "max_hold_s");
+    positive_on_grid(table.max_hold_s, "max_hold_s");
     on_grid(table.end_hold_s, "end_hold_s");
-    on_grid(table.max_launch_s, "max_launch_s");
+    positive_on_grid(table.max_launch_s, "max_launch_s");
     on_grid(table.handover_s, "handover_s");
-    on_grid(table.shift_retry_s, "shift_retry_s");
+    positive_on_grid(table.shift_retry_s, "shift_retry_s");
 }
 
 } // namespace rider

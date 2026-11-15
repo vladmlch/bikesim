@@ -270,13 +270,16 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
 5. **Потери шин на `distributed`**: ровный старт до 20 км/ч за 7,3 с.
 6. **Восстановление шины `pneumatic`**: `savage_pneumatic.npz` даёт невязку загрузки 0,083 при пороге 0,05 —
    материал и гистерезис шины после `b6c42f71` не сохраняются. **Выполнено на ветке `queue-2026-11-15`**
-   (`d5abc831`): `SetupOwner::settle` сохраняет `settled_state_file`/`settled_initial_state` до
+   (`d5abc831`, правки ревизии `7f193e55`): `SetupOwner::settle` сохраняет `settled_state_file` до
    `finalize_initial_state` — файл несёт материал каркаса, на котором измерялась невязка, а не состояние
-   после опережающего `compute_into`; нормализация до той формы, что ставит `install_material`
-   (`d->time=0`, рестарт часов привода и контактов райдера), сохраняет побайтовую идентичность подачи
-   из кэша. `savage_pneumatic.npz` пересобран `bike-settle` на текущем исходном отпечатке
-   (steps=3536, residual=0,0492147), регрессия `test_savage_pneumatic_fixture_restores` в
-   `reference.equilibrium_state_file`; `check_change.sh HEAD` — 194/194, cppcheck/frontends/tidy чисто.
+   после опережающего `compute_into`; `capture_initial_state()` отдаёт финализированный контекст, чтобы
+   перенос сохранял `qvel` старта с хода (`initial_speed_mps > 0`), и стражи завершения восстановлены.
+   Нормализация до той формы, что ставит `install_material` (`d->time=0`, рестарт часов привода и
+   контактов райдера), сохраняет побайтовую идентичность подачи из кэша. `savage_pneumatic.npz` пересобран
+   `bike-settle` на текущем исходном отпечатке (steps=3536, residual=0,0492147); регрессии в
+   `reference.equilibrium_state_file`: `test_savage_pneumatic_fixture_restores` со стражем тождества
+   сборки, свежий круг settle→capture→restore и страж `qvel` переноса; `check_change.sh 85c0c18b` —
+   194/194, cppcheck/frontends/tidy чисто.
 7. **`model_valid` в `one_second_pair`** после правил тяги опоры (`9525ce1f`, `abaff36d`).
 8. **Читатели старых форматов** в `native/src/replay/` (`drop_removed_battery`, `inert_rider`) — убрать, если
    задача 2 покажет, что они мертвы. **Выполнено на ветке `queue-2026-11-15`** (`3d52cd06`, `b99382d3`):

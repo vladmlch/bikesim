@@ -64,6 +64,13 @@ struct LaunchMetrics {
     std::optional<double> t20_s;
     std::optional<double> t20_from_release_s; // printed only (spec: second basis)
     std::optional<double> hold_s, release_s, accelerate_s, handover_s;
+    // Post-handover & whole-ride 20 s uphill climbing checks (Queue Item 2):
+    std::vector<std::pair<double, double>> post_lifts;
+    double post_end_speed_mps = 0.;
+    double whole_ride_saddle_min_n = 0.;
+    double whole_ride_front_foot_min_n = 0.;
+    double whole_ride_rear_foot_min_n = 0.;
+    bool whole_ride_balance_lost = false;
 };
 
 struct RestartMetrics {
@@ -450,6 +457,37 @@ inline void populate_controller_window(
     }
 }
 
+inline void populate_post_handover_metrics(
+    std::span<const IntervalMetricsRow> all_rows,
+    std::size_t i_start,
+    std::size_t clip_end,
+    LaunchMetrics &m) {
+    if (all_rows.empty()) return;
+    m.post_end_speed_mps = all_rows.back().speed_mps;
+    m.whole_ride_saddle_min_n = window_col_min(
+        all_rows, i_start, [](const auto &r) { return r.saddle_normal_n; });
+    m.whole_ride_front_foot_min_n = window_col_min(
+        all_rows, i_start, [](const auto &r) { return r.front_pedal_normal_n; });
+    m.whole_ride_rear_foot_min_n = window_col_min(
+        all_rows, i_start, [](const auto &r) { return r.rear_pedal_normal_n; });
+    for (std::size_t i = i_start; i < all_rows.size(); ++i) {
+        if (all_rows[i].balance_lost > .5) {
+            m.whole_ride_balance_lost = true;
+            break;
+        }
+    }
+    if (m.handover_s.has_value() && clip_end < all_rows.size()) {
+        const auto post_eps = find_episodes(
+            all_rows.subspan(clip_end),
+            [](const auto &r) { return r.front_normal_n <= 50.; });
+        for (const auto &ep : post_eps) {
+            if (ep.end_s - ep.start_s > 0.05) {
+                m.post_lifts.emplace_back(ep.start_s, ep.end_s - ep.start_s);
+            }
+        }
+    }
+}
+
 } // namespace detail
 
 // Rides `profile` on a 150 m constant-grade track of `c` for 20 s, the
@@ -517,6 +555,7 @@ inline void populate_controller_window(
          .t_search_from = t_hold,
          .snap_time_s = run.snap_time_s},
         m);
+    detail::populate_post_handover_metrics(all_rows, i0, clip_end, m);
 
     // Whole-ride t20 from t = 0 (unclipped) and second printed basis from accelerate entry.
     for (std::size_t i = i0; i < all_rows.size(); ++i) {
@@ -644,6 +683,7 @@ inline void populate_controller_window(
          .t_search_from = *release_or_accel_s,
          .snap_time_s = run.snap_time_s},
         rm.launch);
+    detail::populate_post_handover_metrics(all_rows, i_release, clip_end, rm.launch);
 
     return rm;
 }
@@ -710,12 +750,44 @@ inline void populate_controller_window(
     return out;
 }
 
+// 22% / 25% 20 s uphill acceptance (Queue Item 2): seated limits over the
+// full 20 s horizon (no crash, no violation, whole-ride supports >= -6 N, no
+// whole-ride balance loss), zero post-handover lifts, handover within 7 s,
+// and steady 20 s climb speed >= 2.8 m/s.
+[[nodiscard]] inline std::vector<std::string> steep_20s_failures(
+    const LaunchCase &c, const LaunchMetrics &m) {
+    std::vector<std::string> out = seated_limit_failures(c, m);
+    if (std::isnan(m.whole_ride_saddle_min_n) ||
+        std::isnan(m.whole_ride_front_foot_min_n) ||
+        std::isnan(m.whole_ride_rear_foot_min_n) ||
+        m.whole_ride_saddle_min_n < -6. ||
+        m.whole_ride_front_foot_min_n < -6. ||
+        m.whole_ride_rear_foot_min_n < -6.) {
+        out.push_back(c.name + ": whole-ride saddle or pedal support below -6 N");
+    }
+    if (m.whole_ride_balance_lost) {
+        out.push_back(c.name + ": whole-ride balance lost");
+    }
+    if (!m.post_lifts.empty()) {
+        out.push_back(c.name + ": post-handover front lift");
+    }
+    if (!m.handover_s.has_value() || *m.handover_s > 7.0) {
+        out.push_back(c.name + ": handover missing or > 7.0 s");
+    }
+    if (!(m.post_end_speed_mps >= 2.8)) {
+        out.push_back(std::format("{}: 20 s end speed {:.3f} < 2.8 m/s",
+                                  c.name, m.post_end_speed_mps));
+    }
+    return out;
+}
+
 enum class LaunchRule : std::uint8_t {
     clean,
     clean_with_t20,
     short_lift,
     controller_window,
     seated_only,
+    steep_20s,
     info,
 };
 
@@ -726,6 +798,7 @@ enum class LaunchRule : std::uint8_t {
     case LaunchRule::short_lift: return "short_lift";
     case LaunchRule::controller_window: return "ctrl_win";
     case LaunchRule::seated_only: return "seated";
+    case LaunchRule::steep_20s: return "steep_20s";
     case LaunchRule::info: return "info";
     }
     return "?";
@@ -751,6 +824,8 @@ enum class LaunchRule : std::uint8_t {
         return controller_window_failures(c, m);
     case LaunchRule::seated_only:
         return seated_limit_failures(c, m);
+    case LaunchRule::steep_20s:
+        return steep_20s_failures(c, m);
     case LaunchRule::info:
         return {};
     }
@@ -778,6 +853,7 @@ enum class LaunchRule : std::uint8_t {
     }
     cases.push_back({.name = "g22", .grade = .22, .surface = "asphalt"});
     cases.push_back({.name = "g25", .grade = .25, .surface = "asphalt"});
+    cases.push_back({.name = "loose25", .grade = .25, .surface = "loose"});
     return cases;
 }
 

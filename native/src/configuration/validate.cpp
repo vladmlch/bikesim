@@ -854,6 +854,7 @@ void post_init(const SeatedClimbConfig &config) {
            std::nullopt, true);
     if (config.min_elbow_flexion_deg > 90.)
         fail("min_elbow_flexion_deg must not exceed 90 degrees");
+    ::rider::validate_climb_effort_cap(config);
     // The delay counts whole intent ticks and the orientation smoothing
     // spans at least two — meaningful only while the intent ticks, so the
     // whole-tick rules engage with `enabled` like the runtime gate does.
@@ -1364,6 +1365,10 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.surge_budget_s = 15.;
     config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
+    config.seated_climb.climb_effort_cap_grades = {0.};
+    config.seated_climb.climb_effort_cap_grade_nm = {1000.};
+    config.seated_climb.climb_effort_rise_speed_mps = 2.5;
+    config.seated_climb.climb_effort_full_speed_mps = 4.0;
     // Launch part 2 — the built-in profile starts on its own 34/24
     // drivetrain at angle 0 without lean (today's start).
     config.rider_launch = {.start_cog_grade_breaks = {},

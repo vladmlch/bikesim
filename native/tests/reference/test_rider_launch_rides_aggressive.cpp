@@ -11,7 +11,9 @@ namespace {
         c.name == "wet17" || c.name == "loose17") {
         return launch_ride::LaunchRule::controller_window;
     }
-    if (c.name == "g22" || c.name == "g25") return launch_ride::LaunchRule::info;
+    if (c.name == "g22" || c.name == "g25" || c.name == "loose25") {
+        return launch_ride::LaunchRule::steep_20s;
+    }
     return launch_ride::LaunchRule::seated_only;
 }
 

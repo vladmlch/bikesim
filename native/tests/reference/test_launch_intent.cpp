@@ -5,6 +5,7 @@
 // and within the lean rate, surge is not spent while the plan owns,
 // ownership follows the caller, and the joint state restores.
 #include "support/fixture_test.hpp"
+#include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "io/json.hpp"
 #include "rider/front_lift_reaction.hpp"
@@ -15,12 +16,15 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <functional>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 namespace {
 
@@ -393,6 +397,173 @@ std::string encoded(const rider::RiderIntent &intent) {
     }
 }
 
+// Queue Item 2: speed+grade seated-climb effort cap interpolation, speed ramp,
+// saturation at max_crank_torque_nm, and inert 1000.0 bitwise equivalence.
+[[gnu::noinline]] rider::IntentResolution resolve_climb_cap_at(
+    const rider::IntentConfig &cfg, double grade_ahead,
+    double speed_mps, double crank_rate_rad_s) {
+    auto intent = std::make_unique<rider::RiderIntent>(
+        cfg, switched_off_reaction(), launch_table(false), kDt);
+    const std::int64_t delay =
+        std::llround(cfg.reaction_delay_s / cfg.period_s);
+    rider::IntentResolution out{};
+    for (std::int64_t k = 0; k <= delay + 2; ++k) {
+        rider::IntentSignals signals{};
+        signals.human_crank_torque_nm = 60.;
+        signals.crank_rate_rad_s = crank_rate_rad_s;
+        signals.specific_force_body_mps2 = {0., 0., 9.81};
+        rider::RiderSenses senses{};
+        senses.speed_mps = speed_mps;
+        senses.rear_teeth = 39;
+        senses.surface_front = rider::SurfaceLabel::hardpack;
+        senses.surface_ahead = rider::SurfaceLabel::hardpack;
+        senses.grade_ahead = grade_ahead;
+        out = intent->resolve_full(automatic(), signals, senses, k,
+                                   grade_ahead, grade_ahead, std::nullopt,
+                                   true, true, std::nullopt, kEffort);
+    }
+    return out;
+}
+
+[[gnu::noinline]] bike::io::Value to_seated_doc(const rider::IntentConfig &c) {
+    auto phys = std::make_unique<bike::configuration::SimulationPhysicsConfig>(
+        bike::configuration::default_physics());
+    phys->seated_climb = c;
+    const auto doc = bike::configuration::detail::plain_document(
+        bike::configuration::to_value(*phys));
+    for (const auto &[k, v] : std::get<bike::io::Value::Object>(doc.data))
+        if (k == "seated_climb") return v;
+    throw std::runtime_error("missing seated_climb in serialized config");
+}
+
+[[gnu::noinline]] void test_seated_climb_effort_cap() {
+    auto cfg = intent_config();
+    cfg.max_crank_torque_nm = 60.;
+    cfg.target_crank_power_w = 250.;
+    cfg.climb_effort_cap_grades = {0., .10, .20};
+    cfg.climb_effort_cap_grade_nm = {45., 30., 35.};
+    cfg.climb_effort_rise_speed_mps = 2.5;
+    cfg.climb_effort_full_speed_mps = 4.;
+
+    // 1) Piecewise-linear grade interpolation and endpoint clamping at v <= rise.
+    // Use crank_rate = 3.0 rad/s -> power/rate = 83.3 Nm -> unconstrained 60 Nm.
+    for (const auto &[grade, speed, expected_nm, label] : {
+             std::tuple{-.05, 1., 45., "grade below first knot clamps"},
+             std::tuple{0., 0., 45., "first grade knot"},
+             std::tuple{.05, 2.5, 37.5, "midpoint interpolation at rise speed"},
+             std::tuple{.10, 2.0, 30., "interior grade knot below rise"},
+             std::tuple{.15, 2.5, 32.5, "second segment midpoint"},
+             std::tuple{.20, 1.5, 35., "last grade knot"},
+             std::tuple{.30, 1.5, 35., "grade above last knot clamps"},
+             // 2) Linear speed ramp across [2.5, 4.0] toward max_crank_torque_nm (60).
+             std::tuple{.10, 3.25, 45., "halfway speed ramp 30 -> 60 = 45"},
+             std::tuple{.10, 3.7, 54., "80% speed ramp 30 -> 60 = 54"},
+             // 3) Saturation at and above full_speed_mps.
+             std::tuple{.10, 4.0, 60., "at full_speed_mps reaches max_crank_torque_nm"},
+             std::tuple{.10, 6.0, 60., "above full_speed_mps saturates at max_crank_torque_nm"},
+         }) {
+        const auto res = resolve_climb_cap_at(cfg, grade, speed, 3.);
+        bt::require(res.control.human_torque_nm.has_value() &&
+                        std::abs(*res.control.human_torque_nm - expected_nm) < 1e-12,
+                    std::string(label) + ": got " +
+                        std::to_string(res.control.human_torque_nm.value_or(-1.)));
+        bt::require(!res.effort_limited,
+                    std::string(label) + ": climb cap leaves effort_limited false");
+    }
+
+    // Degenerate full_speed == rise_speed steps at speed > rise_speed.
+    auto step_cfg = cfg;
+    step_cfg.climb_effort_full_speed_mps = step_cfg.climb_effort_rise_speed_mps;
+    bt::require(std::abs(*resolve_climb_cap_at(step_cfg, .10, 2.5, 3.).control.human_torque_nm - 30.) < 1e-12,
+                "degenerate rise==full holds base cap at rise speed");
+    bt::require(std::abs(*resolve_climb_cap_at(step_cfg, .10, 2.51, 3.).control.human_torque_nm - 60.) < 1e-12,
+                "degenerate rise==full unlocks max_crank_torque_nm above rise speed");
+
+    // 4) Inert [1000.0] cap leaves effort_ceiling_nm bitwise identical to unconstrained policy.
+    const auto inert_a = intent_config();
+    auto inert_b = inert_a;
+    inert_b.climb_effort_cap_grades = {0., .25};
+    inert_b.climb_effort_cap_grade_nm = {900., 1200.};
+    for (const auto &[grade, speed, rate] : {
+             std::tuple{.10, 1., 3.},
+             std::tuple{.10, 3., 6.},
+             std::tuple{.20, 4.5, 4.5},
+         }) {
+        const auto ra = resolve_climb_cap_at(inert_a, grade, speed, rate);
+        const auto rb = resolve_climb_cap_at(inert_b, grade, speed, rate);
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) enabled intent fills human_torque_nm
+        const double ea = *ra.control.human_torque_nm;
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access) enabled intent fills human_torque_nm
+        const double eb = *rb.control.human_torque_nm;
+        bt::require(std::bit_cast<std::uint64_t>(ea) == std::bit_cast<std::uint64_t>(eb) &&
+                        ra.effort_limited == rb.effort_limited,
+                    "inert climb cap is bitwise identical");
+    }
+}
+
+[[gnu::noinline]] void check_invalid_climb_cap(
+    const rider::IntentConfig &base,
+    const std::function<void(rider::IntentConfig &)> &mutate,
+    std::string_view needle, std::string_view label) {
+    auto bad = base;
+    mutate(bad);
+    rejects([&] {
+        (void)rider::RiderIntent(bad, switched_off_reaction(), launch_table(false), kDt);
+    }, needle, std::string("RiderIntent rejects ") + std::string(label));
+    const auto doc = to_seated_doc(bad);
+    rejects([&] { (void)rider::decode_intent_config(doc, "seated_climb"); },
+            needle, std::string("decode_intent_config rejects ") + std::string(label));
+}
+
+[[gnu::noinline]] void test_seated_climb_effort_cap_validation() {
+    auto cfg = intent_config();
+    cfg.climb_effort_cap_grades = {0., .10, .20};
+    cfg.climb_effort_cap_grade_nm = {45., 30., 35.};
+    cfg.climb_effort_rise_speed_mps = 2.5;
+    cfg.climb_effort_full_speed_mps = 4.;
+
+    // Validation errors (constructor and decode_intent_config) + round-trip.
+    const auto round_tripped =
+        rider::decode_intent_config(to_seated_doc(cfg), "seated_climb");
+    bt::require(round_tripped.climb_effort_cap_grades == cfg.climb_effort_cap_grades &&
+                    round_tripped.climb_effort_cap_grade_nm == cfg.climb_effort_cap_grade_nm &&
+                    round_tripped.climb_effort_rise_speed_mps == cfg.climb_effort_rise_speed_mps &&
+                    round_tripped.climb_effort_full_speed_mps == cfg.climb_effort_full_speed_mps,
+                "decode_intent_config round-trips climb_effort_cap fields");
+
+    const auto check_invalid = [&](const std::function<void(rider::IntentConfig &)> &mutate,
+                                   std::string_view needle, std::string_view label) {
+        check_invalid_climb_cap(cfg, mutate, needle, label);
+    };
+
+    constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
+    constexpr double kInf = std::numeric_limits<double>::infinity();
+    check_invalid([](auto &c) { c.climb_effort_cap_grades.clear(); c.climb_effort_cap_grade_nm.clear(); },
+                  "climb_effort_cap_grades", "empty table");
+    check_invalid([](auto &c) { c.climb_effort_cap_grade_nm.pop_back(); },
+                  "climb_effort_cap_grade_nm", "mismatched table length");
+    check_invalid([](auto &c) { c.climb_effort_cap_grades = {0., .10, .10}; },
+                  "climb_effort_cap_grades", "duplicate grade knots");
+    check_invalid([](auto &c) { c.climb_effort_cap_grades = {.20, .10, .30}; },
+                  "climb_effort_cap_grades", "descending grade knots");
+    check_invalid([&](auto &c) { c.climb_effort_cap_grades[1] = kNan; },
+                  "climb_effort_cap_grades", "NaN grade knot");
+    check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = 0.; },
+                  "climb_effort_cap_grade_nm", "zero torque cap");
+    check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = -10.; },
+                  "climb_effort_cap_grade_nm", "negative torque cap");
+    check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = kInf; },
+                  "climb_effort_cap_grade_nm", "infinite torque cap");
+    check_invalid([&](auto &c) { c.climb_effort_rise_speed_mps = -.1; },
+                  "climb_effort_rise_speed_mps", "negative rise speed");
+    check_invalid([&](auto &c) { c.climb_effort_rise_speed_mps = kNan; },
+                  "climb_effort_rise_speed_mps", "NaN rise speed");
+    check_invalid([&](auto &c) { c.climb_effort_full_speed_mps = c.climb_effort_rise_speed_mps - .01; },
+                  "climb_effort_full_speed_mps", "full speed below rise speed");
+    check_invalid([&](auto &c) { c.climb_effort_full_speed_mps = kInf; },
+                  "climb_effort_full_speed_mps", "infinite full speed");
+}
+
 } // namespace
 
 int main() {
@@ -404,5 +575,7 @@ int main() {
         test_ownership_follows_the_caller();
         test_state_round_trip_probe_and_joint_rule();
         test_stationary_launch_gear_selection_in_hold();
+        test_seated_climb_effort_cap();
+        test_seated_climb_effort_cap_validation();
     });
 }

@@ -511,6 +511,25 @@ void test_fifteen_percent_standstill_launch_rides_without_loop_out() {
                 "without crash:loop_out");
 }
 
+void test_twenty_five_percent_standstill_climb_20s_rides_cleanly() {
+    auto env = environment(
+        track("[[0.0, 0.25], [150.0, 0.25]]", 150.),
+        20.);
+    const RideResult result = ride(env);
+    const double v_last = result.rows.empty() ? 0. : result.rows.back().v;
+    const double x_last = result.rows.empty() ? 0. : result.rows.back().x;
+    std::println(stderr,
+                 "pedelec.climb25_standstill_20s: reason={} windows={} x_last={:.3f} v_last={:.3f}",
+                 result.reason, result.rows.size(), x_last, v_last);
+    bt::require(result.reason == "duration",
+                "the 25 % standstill climb completes the 20 s horizon cleanly");
+    bt::require(no_balance_loss(result),
+                "the 25 % standstill climb preserves balance across 20 s");
+    require_support_within_pull_tolerance(result);
+    bt::require(v_last >= 2.8,
+                "the 25 % standstill climb holds >= 2.8 m/s at 20 s");
+}
+
 // test_savage_is_ridden_to_the_end — parked (see main): pedelec_savage
 // pulls -107...-396 N in rider_support channels, which violates the -6 N
 // attachment pull limit («Действует» 34). Rough track attachment
@@ -576,6 +595,7 @@ int main() {
         test_motor_follows_the_rider_through_a_shift_without_an_extra_cut();
         test_fifteen_percent_climb_holds_12_kmh();
         test_fifteen_percent_standstill_launch_rides_without_loop_out();
+        test_twenty_five_percent_standstill_climb_20s_rides_cleanly();
         // test_savage_is_ridden_to_the_end — parked: pedelec_savage pulls
         // -107...-396 N in rider_support channels, which violates the -6 N
         // attachment pull limit («Действует» 34). Rough track attachment

@@ -291,6 +291,10 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.lean_rate_rad_s = .5;
     climb.orientation_tau_s = .5;
     climb.min_elbow_flexion_deg = 15.0;
+    climb.climb_effort_cap_grades = {0.0};
+    climb.climb_effort_cap_grade_nm = {1000.0};
+    climb.climb_effort_rise_speed_mps = 2.5;
+    climb.climb_effort_full_speed_mps = 4.0;
     c.rider_launch = {.start_cog_grade_breaks = {},
                       .start_cog_teeth = {51},
                       .start_pedal_angle_rad = 0.0,
@@ -806,7 +810,7 @@ void test_schema() {
     // plus leg_active_damping_nms_rad.
     bt::require(fields_named(fields[9], "articulated").size() == 65,
                 "articulated field count");
-    bt::require(fields_named(fields[10], "seated_climb").size() == 19,
+    bt::require(fields_named(fields[10], "seated_climb").size() == 23,
                 "seated_climb field count");
     // 28 = the 5 part-2 fields + the 19 launch plan fields of part 3b + the
     // 4 launch part 4 fields (the grade cap, its rise and the shift retry).

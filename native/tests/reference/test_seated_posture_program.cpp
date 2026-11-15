@@ -90,6 +90,10 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.0;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     config.lean_rate_rad_s = lean_rate != 0. ? lean_rate : .5;
@@ -285,6 +289,10 @@ void test_posture_program_rate_limits_and_bounds_the_pulse() {
     config.reaction_delay_s = .15;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.0;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     config.lean_gain = 0.;

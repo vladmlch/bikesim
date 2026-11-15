@@ -33,7 +33,11 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"orientation_tau_s", io::Value{io::Number{"0.5"}}},
                 {"surge_budget_s", io::Value{io::Number{"15"}}},
                 {"trim_dead_time_s", io::Value{io::Number{"0.2"}}},
-                {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}}}});
+                {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}},
+                {"climb_effort_cap_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
+                {"climb_effort_cap_grade_nm", io::Value{io::Value::Array{io::Value{io::Number{"1000.0"}}}}},
+                {"climb_effort_rise_speed_mps", io::Value{io::Number{"2.5"}}},
+                {"climb_effort_full_speed_mps", io::Value{io::Number{"4.0"}}}}});
         }
         if (!io::find_member(*obj, "rider_launch")) {
             obj->emplace_back("rider_launch", io::Value{io::Value::Object{

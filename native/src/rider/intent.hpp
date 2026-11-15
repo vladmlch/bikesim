@@ -55,7 +55,17 @@ struct IntentConfig {
     double lean_trim_limit_rad = .15;
     double trim_dead_time_s = -1.;
     double min_elbow_flexion_deg = 0.;
+    // Low-speed seated climb ceiling by delayed grade_ahead, linearly blended
+    // from climb_effort_cap_grade_nm at <= climb_effort_rise_speed_mps up to
+    // max_crank_torque_nm at >= climb_effort_full_speed_mps.
+    std::vector<double> climb_effort_cap_grades;
+    std::vector<double> climb_effort_cap_grade_nm;
+    double climb_effort_rise_speed_mps = std::numeric_limits<double>::quiet_NaN();
+    double climb_effort_full_speed_mps = std::numeric_limits<double>::quiet_NaN();
 };
+
+// Validates the speed+grade climb effort cap fields on IntentConfig.
+void validate_climb_effort_cap(const IntentConfig &config);
 
 // seated_climb.py SeatedClimbIntent.
 struct Intent {

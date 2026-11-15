@@ -228,6 +228,14 @@ inline constexpr auto kSeatedClimbConfigFields = std::to_array<FieldDecl>({
     {.name="min_elbow_flexion_deg", .type="<class 'float'>", .kind=FieldKind::Real,
      .offset=offsetof(SeatedClimbConfig, min_elbow_flexion_deg), .required=true, .factory="", .nested=nullptr,
      .nested2=nullptr},
+    {.name="climb_effort_cap_grades", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(SeatedClimbConfig, climb_effort_cap_grades), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    {.name="climb_effort_cap_grade_nm", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
+     .offset=offsetof(SeatedClimbConfig, climb_effort_cap_grade_nm), .required=true, .factory="", .nested=nullptr,
+     .nested2=nullptr},
+    SC_REAL_REQ(climb_effort_rise_speed_mps),
+    SC_REAL_REQ(climb_effort_full_speed_mps),
 #undef SC_REAL
 #undef SC_REAL_REQ
 });

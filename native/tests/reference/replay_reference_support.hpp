@@ -119,6 +119,10 @@ inline void write_json(const std::filesystem::path& path, const io::Value& value
     physics.seated_climb.surge_budget_s = 15.;
     physics.seated_climb.trim_dead_time_s = .2;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
+    physics.seated_climb.climb_effort_cap_grades = {0.};
+    physics.seated_climb.climb_effort_cap_grade_nm = {1000.};
+    physics.seated_climb.climb_effort_rise_speed_mps = 2.5;
+    physics.seated_climb.climb_effort_full_speed_mps = 4.0;
     physics.rider_launch = {.start_cog_grade_breaks = {}, .start_cog_teeth = {24},
                             .start_pedal_angle_rad = 0., .start_lean_grades = {0.},
                             .start_lean_rad = {0.},

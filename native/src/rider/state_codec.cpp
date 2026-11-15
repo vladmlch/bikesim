@@ -2142,7 +2142,11 @@ IntentConfig decode_intent_config(const bio::Value &value,
                        "surge_power_w", "surge_grade", "surge_budget_s",
                        "surge_recovery_rate", "front_load_share_target",
                        "lean_trim_gain_rad_s", "lean_trim_limit_rad",
-                       "trim_dead_time_s", "min_elbow_flexion_deg"),
+                       "trim_dead_time_s", "min_elbow_flexion_deg",
+                       "climb_effort_cap_grades",
+                       "climb_effort_cap_grade_nm",
+                       "climb_effort_rise_speed_mps",
+                       "climb_effort_full_speed_mps"),
                   keys());
     IntentConfig config;
     // SeatedClimbConfig.__post_init__ order: enabled, positive fields,
@@ -2207,6 +2211,24 @@ IntentConfig decode_intent_config(const bio::Value &value,
         invalid(std::string(path) + ".min_elbow_flexion_deg",
                 "invalid value or out of range");
     config.min_elbow_flexion_deg = min_elbow_deg;
+    const auto real_list = [&](std::string_view key) {
+        const std::string item_path = std::string(path) + "." + std::string(key);
+        const auto seq = d[key].sequence(item_path);
+        std::vector<double> out;
+        out.reserve(seq.size());
+        for (std::size_t i = 0; i < seq.size(); ++i)
+            out.push_back(seq.at(i).finite_real(item_path));
+        return out;
+    };
+    config.climb_effort_cap_grades = real_list("climb_effort_cap_grades");
+    config.climb_effort_cap_grade_nm = real_list("climb_effort_cap_grade_nm");
+    config.climb_effort_rise_speed_mps =
+        d["climb_effort_rise_speed_mps"].finite_real(
+            std::string(path) + ".climb_effort_rise_speed_mps");
+    config.climb_effort_full_speed_mps =
+        d["climb_effort_full_speed_mps"].finite_real(
+            std::string(path) + ".climb_effort_full_speed_mps");
+    validate_climb_effort_cap(config);
     return config;
 }
 

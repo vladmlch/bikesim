@@ -349,9 +349,17 @@ void replace_once(std::string &text, std::string_view from, std::string_view to)
 // The launch part 4 decision-5 table of one rider type: the calibrated
 // probe profile's [rider_launch] and [front_lift_reaction] blocks plus the
 // part-1/2 fields (grade cap knots, rise speed, shift retry, criterion B).
+struct ClimbCapTable {
+    std::vector<double> climb_effort_cap_grades;
+    std::vector<double> climb_effort_cap_grade_nm;
+    double climb_effort_rise_speed_mps{};
+    double climb_effort_full_speed_mps{};
+};
+
 struct RiderTable {
     cfg::RiderLaunchConfig launch;
     cfg::FrontLiftReactionConfig reaction;
+    ClimbCapTable climb_cap;
 };
 
 const RiderTable &careful_rider_table() {
@@ -371,8 +379,8 @@ const RiderTable &careful_rider_table() {
             .effort_cap_loose_nm = 35.,
             .effort_cap_wet_nm = 11.,
             .effort_cap_scree_nm = 30.,
-            .effort_cap_grades = {0., .05, .08, .12, .13, .15, .2},
-            .effort_cap_grade_nm = {26., 14., 11.5, 13., 14., 13., 14.},
+            .effort_cap_grades = {0., .05, .08, .12, .13, .15, .2, .22, .25},
+            .effort_cap_grade_nm = {26., 14., 11.5, 13., 14., 13., 14., 18., 21.},
             .effort_rise_speed_mps = 2.5,
             .release_torque_grades = {0., .05, .1, .15, .2},
             .release_torque_nm = {0., 7., 7., 7., 7.},
@@ -402,6 +410,12 @@ const RiderTable &careful_rider_table() {
             .lean_rate_rad_s = .5,
             .clear_s = .65,
         },
+        .climb_cap{
+            .climb_effort_cap_grades = {0., .05, .10, .15, .20, .22, .25},
+            .climb_effort_cap_grade_nm = {38., 25., 22., 25., 30., 30., 32.},
+            .climb_effort_rise_speed_mps = 2.5,
+            .climb_effort_full_speed_mps = 4.,
+        },
     };
     return table;
 }
@@ -423,8 +437,8 @@ const RiderTable &normal_rider_table() {
             .effort_cap_loose_nm = 45.,
             .effort_cap_wet_nm = 13.,
             .effort_cap_scree_nm = 40.,
-            .effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2},
-            .effort_cap_grade_nm = {38.5, 15., 14.5, 13.2, 14., 15.5, 19.5, 18.5},
+            .effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2, .22, .25},
+            .effort_cap_grade_nm = {38.5, 15., 14.5, 13.2, 14., 15.5, 19.5, 18.5, 21., 22.5},
             .effort_rise_speed_mps = 2.5,
             .release_torque_grades = {0., .05, .1, .15, .2},
             .release_torque_nm = {0., 9., 9., 9., 8.},
@@ -453,6 +467,12 @@ const RiderTable &normal_rider_table() {
             .lean_add_rad = .15,
             .lean_rate_rad_s = 1.,
             .clear_s = .4,
+        },
+        .climb_cap{
+            .climb_effort_cap_grades = {0., .05, .10, .15, .20, .22, .25},
+            .climb_effort_cap_grade_nm = {45., 35., 30., 30., 34., 34., 35.},
+            .climb_effort_rise_speed_mps = 2.5,
+            .climb_effort_full_speed_mps = 4.,
         },
     };
     return table;
@@ -505,6 +525,12 @@ const RiderTable &aggressive_rider_table() {
             .lean_add_rad = .2,
             .lean_rate_rad_s = 1.5,
             .clear_s = .25,
+        },
+        .climb_cap{
+            .climb_effort_cap_grades = {0., .05, .10, .15, .20, .22, .25},
+            .climb_effort_cap_grade_nm = {50., 35., 32., 39.5, 35., 35., 35.},
+            .climb_effort_rise_speed_mps = 2.5,
+            .climb_effort_full_speed_mps = 4.,
         },
     };
     return table;
@@ -598,6 +624,26 @@ const RiderTable &aggressive_rider_table() {
     field(actual.clear_s == expected.clear_s, "clear_s");
 }
 
+[[gnu::noinline]] void require_seated_climb_cap(
+    const cfg::SeatedClimbConfig &actual, const ClimbCapTable &expected,
+    std::string_view who) {
+    const auto field = [&](bool equal, std::string_view name) {
+        bt::require(equal, std::string(who) + " [seated_climb]." +
+                               std::string(name) +
+                               " matches the calibrated table");
+    };
+    field(actual.climb_effort_cap_grades == expected.climb_effort_cap_grades,
+          "climb_effort_cap_grades");
+    field(actual.climb_effort_cap_grade_nm == expected.climb_effort_cap_grade_nm,
+          "climb_effort_cap_grade_nm");
+    field(actual.climb_effort_rise_speed_mps ==
+              expected.climb_effort_rise_speed_mps,
+          "climb_effort_rise_speed_mps");
+    field(actual.climb_effort_full_speed_mps ==
+              expected.climb_effort_full_speed_mps,
+          "climb_effort_full_speed_mps");
+}
+
 // The welded profile carries the calibrated normal rider's launch table
 // (launch part 4, decision 5; launch part 4b, decision 6): the start cog steps
 // down by grade, the pedal leads at -0.8 rad and the torso leans up to .35
@@ -634,16 +680,25 @@ const RiderTable &aggressive_rider_table() {
         require_launch_table(loaded.rider_launch, expected->launch, file);
         require_reaction_table(loaded.front_lift_reaction, expected->reaction,
                                file);
+        require_seated_climb_cap(loaded.seated_climb, expected->climb_cap, file);
     }
 }
 
-// Profile text without comments and blank lines, the [rider_launch] and
-// [front_lift_reaction] section bodies dropped — the "everything except
-// the two sections" text of step 1.
+bool is_climb_cap_key(std::string_view key) {
+    return key == "climb_effort_cap_grades" ||
+           key == "climb_effort_cap_grade_nm" ||
+           key == "climb_effort_rise_speed_mps" ||
+           key == "climb_effort_full_speed_mps";
+}
+
+// Profile text without comments and blank lines, dropping [rider_launch],
+// [front_lift_reaction], and the four climb_effort_cap_* keys in
+// [seated_climb].
 [[nodiscard]] std::vector<std::string>
 text_outside_rider_sections(std::string_view text) {
     std::vector<std::string> lines;
     bool in_rider_section = false;
+    bool in_seated_climb = false;
     std::size_t at = 0;
     while (at <= text.size()) {
         const auto eol = text.find('\n', at);
@@ -661,11 +716,26 @@ text_outside_rider_sections(std::string_view text) {
         }
         line.erase(0, first);
         line.erase(line.find_last_not_of(" \t\r") + 1);
-        if (line.front() == '[')
+        if (line.front() == '[') {
             in_rider_section = line == "[rider_launch]" ||
                                line == "[front_lift_reaction]";
-        else if (!in_rider_section)
-            lines.push_back(line);
+            in_seated_climb = line == "[seated_climb]";
+        } else if (!in_rider_section) {
+            bool skip_line = false;
+            if (in_seated_climb) {
+                const auto eq = line.find('=');
+                if (eq != std::string::npos) {
+                    auto key = std::string_view(line).substr(0, eq);
+                    while (!key.empty() &&
+                           (key.back() == ' ' || key.back() == '\t')) {
+                        key.remove_suffix(1);
+                    }
+                    skip_line = is_climb_cap_key(key);
+                }
+            }
+            if (!skip_line)
+                lines.push_back(line);
+        }
         if (eol == std::string_view::npos) break;
         at = eol + 1;
     }
@@ -673,11 +743,11 @@ text_outside_rider_sections(std::string_view text) {
 }
 
 // rider_type_{careful,aggressive}.toml are full copies of
-// viewer_physics_welded.toml that differ only in [rider_launch] and
-// [front_lift_reaction] (launch part 4, decision 5 and step 1): the parsed
-// SimulationPhysicsConfig is identical once the two sections and the two
-// members they compute are dropped, and the text outside the two sections
-// matches without comments and blank lines.
+// viewer_physics_welded.toml that differ only in [rider_launch],
+// [front_lift_reaction], and the four climb_effort_cap_* keys in
+// [seated_climb]: the parsed SimulationPhysicsConfig is identical once those
+// and the two computed members are dropped, and the remaining text matches
+// without comments and blank lines.
 [[gnu::noinline]] void test_rider_type_files_differ_only_in_the_two_sections() {
     const auto canonical_outside_sections = [](
         const cfg::SimulationPhysicsConfig &config) {
@@ -685,12 +755,22 @@ text_outside_rider_sections(std::string_view text) {
         // The launch table computes these two at load; the comparison
         // leaves them out along with the sections that produce them.
         cfg::detail::erase_computed_members(document);
+        auto &root = std::get<bike::io::Value::Object>(document.data);
         std::erase_if(
-            std::get<bike::io::Value::Object>(document.data),
+            root,
             [](const auto &member) {
                 return member.first == "rider_launch" ||
                        member.first == "front_lift_reaction";
             });
+        for (auto &member : root) {
+            if (member.first == "seated_climb") {
+                std::erase_if(
+                    std::get<bike::io::Value::Object>(member.second.data),
+                    [](const auto &field) {
+                        return is_climb_cap_key(field.first);
+                    });
+            }
+        }
         return bike::io::canonical_json(document);
     };
     const auto welded_lines = text_outside_rider_sections(
@@ -739,8 +819,8 @@ text_outside_rider_sections(std::string_view text) {
                              "effort_rate_nm_s = 80.0\n", "effort_cap_asphalt_nm = 45.0\n",
                              "effort_cap_hardpack_nm = 60.0\n", "effort_cap_loose_nm = 45.0\n",
                              "effort_cap_wet_nm = 13.0\n", "effort_cap_scree_nm = 40.0\n",
-                             "effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]\n",
-                             "effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]\n",
+                             "effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2, 0.22, 0.25]\n",
+                             "effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5, 21.0, 22.5]\n",
                              "effort_rise_speed_mps = 2.5\n",
                              "release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]\n",
                              "release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]\n",
@@ -749,8 +829,17 @@ text_outside_rider_sections(std::string_view text) {
                              "end_speed_mps = 3.0\n", "end_crank_rpm = 60.0\n", "end_hold_s = 0.3\n",
                              "max_launch_s = 6.0\n", "handover_s = 0.9\n"}) {
         const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
-        rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
-                key, "a profile without " + key);
+        rejects([&] {
+            (void)load_edited_profile([&](std::string &t) {
+                const auto from = t.find("[rider_launch]\n");
+                bt::require(from != std::string::npos, "the profile has the launch block");
+                const std::string needle = "\n" + std::string(line);
+                const auto at = t.find(needle, from);
+                bt::require(at != std::string::npos && t.find(needle, at + 1) == std::string::npos,
+                            "one " + key + " line inside the launch block");
+                t.erase(at + 1, needle.size() - 1);
+            });
+        }, key, "a profile without " + key);
     }
     rejects([] {
         (void)load_edited_profile([](std::string &t) {
@@ -966,6 +1055,39 @@ template <typename Edit>
     cfg::post_init(*valid);
 }
 
+// Queue Item 2: the four climb_effort_cap_* keys in [seated_climb] are
+// required profile keys with no code default and validated domains.
+[[gnu::noinline]] void test_seated_climb_cap_keys_and_domains() {
+    for (const char *line : {
+             "climb_effort_cap_grades = [0.0, 0.05, 0.10, 0.15, 0.20, 0.22, 0.25]\n",
+             "climb_effort_cap_grade_nm = [45.0, 35.0, 30.0, 30.0, 34.0, 34.0, 35.0]\n",
+             "climb_effort_rise_speed_mps = 2.5\n",
+             "climb_effort_full_speed_mps = 4.0\n"}) {
+        const std::string key(std::string_view(line).substr(0, std::string_view(line).find(' ')));
+        rejects([&] { (void)load_edited_profile([&](std::string &t) { replace_once(t, line, ""); }); },
+                key, "a profile without " + key);
+    }
+    const auto check_bad = [](auto mutate, std::string_view needle, std::string_view label) {
+        const auto mutated = std::make_unique<cfg::SimulationPhysicsConfig>(profile());
+        mutate(*mutated);
+        rejects([&] { cfg::post_init(*mutated); }, needle, label);
+    };
+    check_bad([](cfg::SimulationPhysicsConfig &c) {
+        c.seated_climb.climb_effort_cap_grades = {0.1, 0.05};
+        c.seated_climb.climb_effort_cap_grade_nm = {30., 35.};
+    }, "climb_effort_cap_grades", "non-ascending climb_effort_cap_grades");
+    check_bad([](cfg::SimulationPhysicsConfig &c) {
+        c.seated_climb.climb_effort_cap_grade_nm[0] = 0.;
+    }, "climb_effort_cap_grade_nm", "non-positive climb_effort_cap_grade_nm");
+    check_bad([](cfg::SimulationPhysicsConfig &c) {
+        c.seated_climb.climb_effort_rise_speed_mps = -0.1;
+    }, "climb_effort_rise_speed_mps", "negative climb_effort_rise_speed_mps");
+    check_bad([](cfg::SimulationPhysicsConfig &c) {
+        c.seated_climb.climb_effort_full_speed_mps =
+            c.seated_climb.climb_effort_rise_speed_mps - 0.1;
+    }, "climb_effort_full_speed_mps", "climb_effort_full_speed_mps < rise");
+}
+
 } // namespace
 
 int main() {
@@ -976,6 +1098,7 @@ int main() {
         test_relaxation_is_kinetic_for_the_rotor_drive();
         test_assist_is_bosch_turbo_with_the_declared_envelope();
         test_rider_numbers();
+        test_seated_climb_cap_keys_and_domains();
         test_launch_table_is_the_normal_rider();
         test_all_five_profiles_carry_the_calibrated_tables();
         test_rider_type_files_differ_only_in_the_two_sections();

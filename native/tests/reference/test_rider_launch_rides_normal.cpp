@@ -15,7 +15,9 @@ namespace {
 [[nodiscard]] launch_ride::LaunchRule normal_rule(const launch_ride::LaunchCase &c) {
     if (c.name == "g00") return launch_ride::LaunchRule::clean_with_t20;
     if (c.name == "g20") return launch_ride::LaunchRule::short_lift;
-    if (c.name == "g22" || c.name == "g25") return launch_ride::LaunchRule::info;
+    if (c.name == "g22" || c.name == "g25" || c.name == "loose25") {
+        return launch_ride::LaunchRule::steep_20s;
+    }
     return launch_ride::LaunchRule::clean;
 }
 

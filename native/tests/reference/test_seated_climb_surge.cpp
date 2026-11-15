@@ -60,6 +60,10 @@ void test_surge_budget_depletes_and_recovers() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.0;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);
@@ -88,6 +92,10 @@ void test_below_threshold_uses_sustained_power() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.0;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);
@@ -223,6 +231,10 @@ void test_surge_reset_restores_budget_and_rejects_nonfinite_inputs() {
     config.lean_rate_rad_s = .5;
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.0;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedClimbPolicy policy(config);

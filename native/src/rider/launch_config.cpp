@@ -11,6 +11,9 @@
 #include <string>
 #include <string_view>
 
+#include "intent.hpp"
+#include "table_lookup.hpp"
+
 namespace rider {
 namespace {
 
@@ -19,21 +22,13 @@ namespace {
 }
 
 void strictly_ascending(const std::vector<double> &values, std::string_view field) {
-    for (std::size_t i = 0; i < values.size(); ++i) {
-        if (!std::isfinite(values[i])) reject(field, "values must be finite");
-        if (i > 0 && !(values[i - 1] < values[i])) reject(field, "values must ascend strictly");
-    }
+    detail::validate_strictly_ascending(values, "rider_launch", field);
 }
 
 // Piecewise linear over strictly ascending knots, held at the end values —
 // the arithmetic release_torque_nm used since part 3b.
 double knot_value(const std::vector<double> &knots, const std::vector<double> &values, double grade) {
-    if (grade >= knots.back()) return values.back();
-    if (grade <= knots.front()) return values.front();
-    const auto upper = static_cast<std::size_t>(
-        std::distance(knots.begin(), std::ranges::upper_bound(knots, grade)));
-    const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
-    return values[upper - 1] + t * (values[upper] - values[upper - 1]);
+    return detail::piecewise_linear_knot(knots, values, grade);
 }
 
 } // namespace
@@ -66,11 +61,9 @@ void validate_launch_table(const LaunchConfig &table) {
     positive(table.effort_cap_loose_nm, "effort_cap_loose_nm");
     positive(table.effort_cap_wet_nm, "effort_cap_wet_nm");
     positive(table.effort_cap_scree_nm, "effort_cap_scree_nm");
-    if (table.effort_cap_grades.empty()) reject("effort_cap_grades", "needs at least one knot");
-    if (table.effort_cap_grade_nm.size() != table.effort_cap_grades.size())
-        reject("effort_cap_grade_nm", "needs one cap per effort_cap_grades knot");
-    strictly_ascending(table.effort_cap_grades, "effort_cap_grades");
-    for (const double cap : table.effort_cap_grade_nm) positive(cap, "effort_cap_grade_nm");
+    detail::validate_grade_cap_table(
+        table.effort_cap_grades, table.effort_cap_grade_nm,
+        "rider_launch", "effort_cap_grades", "effort_cap_grade_nm");
     positive(table.effort_rise_speed_mps, "effort_rise_speed_mps");
     if (table.release_torque_grades.empty()) reject("release_torque_grades", "needs at least one knot");
     if (table.release_torque_nm.size() != table.release_torque_grades.size())
@@ -91,17 +84,7 @@ void validate_launch_table(const LaunchConfig &table) {
 LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
     const int rear_teeth = detail::launch_teeth_unchecked(table, grade);
-    const auto &knots = table.start_lean_grades;
-    const auto &leans = table.start_lean_rad;
-    double lean = leans.front();
-    if (grade >= knots.back()) {
-        lean = leans.back();
-    } else if (grade > knots.front()) {
-        const auto upper = static_cast<std::size_t>(
-            std::distance(knots.begin(), std::ranges::upper_bound(knots, grade)));
-        const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
-        lean = leans[upper - 1] + t * (leans[upper] - leans[upper - 1]);
-    }
+    const double lean = knot_value(table.start_lean_grades, table.start_lean_rad, grade);
     return {.rear_teeth = rear_teeth,
             .crank_phase_rad = table.start_pedal_angle_rad,
             .lean_rad = lean};
@@ -156,6 +139,25 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
     positive_on_grid(table.max_launch_s, "max_launch_s");
     on_grid(table.handover_s, "handover_s");
     positive_on_grid(table.shift_retry_s, "shift_retry_s");
+}
+
+void validate_climb_effort_cap(const IntentConfig &config) {
+    detail::validate_grade_cap_table(
+        config.climb_effort_cap_grades,
+        config.climb_effort_cap_grade_nm,
+        "seated_climb",
+        "climb_effort_cap_grades",
+        "climb_effort_cap_grade_nm");
+    if (!(std::isfinite(config.climb_effort_rise_speed_mps) &&
+          config.climb_effort_rise_speed_mps >= 0.)) {
+        throw std::invalid_argument(
+            "seated_climb.climb_effort_rise_speed_mps: must be finite and nonnegative");
+    }
+    if (!(std::isfinite(config.climb_effort_full_speed_mps) &&
+          config.climb_effort_full_speed_mps >= config.climb_effort_rise_speed_mps)) {
+        throw std::invalid_argument(
+            "seated_climb.climb_effort_full_speed_mps: must be finite and >= climb_effort_rise_speed_mps");
+    }
 }
 
 } // namespace rider

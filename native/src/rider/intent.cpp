@@ -12,9 +12,29 @@
 #include "../numeric_norm.hpp"
 #include "../validation.hpp"
 #include "spindle_math.hpp"
+#include "table_lookup.hpp"
 
 namespace rider {
 namespace {
+
+[[nodiscard]] double compute_climb_cap_nm(
+    const IntentConfig &config,
+    const Percepts &percepts) noexcept {
+    const double base_cap = detail::piecewise_linear_knot(
+        config.climb_effort_cap_grades,
+        config.climb_effort_cap_grade_nm,
+        percepts.senses.grade_ahead);
+    const double speed = percepts.senses.speed_mps;
+    if (!(speed > config.climb_effort_rise_speed_mps)) return base_cap;
+    if (speed >= config.climb_effort_full_speed_mps ||
+        config.climb_effort_full_speed_mps <= config.climb_effort_rise_speed_mps) {
+        return config.max_crank_torque_nm;
+    }
+    const double alpha =
+        (speed - config.climb_effort_rise_speed_mps) /
+        (config.climb_effort_full_speed_mps - config.climb_effort_rise_speed_mps);
+    return base_cap + alpha * (config.max_crank_torque_nm - base_cap);
+}
 
 // Python round() is ties-to-even (std::nearbyint in the default rounding
 // mode); round(huge finite) returns a big int rather than raising, so the
@@ -255,6 +275,7 @@ SeatedClimbPolicy::SeatedClimbPolicy(const IntentConfig &config)
         throw std::invalid_argument(
             "min_elbow_flexion_deg must be finite and lie in (0, 90]");
     }
+    validate_climb_effort_cap(config_);
     reset();
 }
 
@@ -534,6 +555,11 @@ void RiderIntent::tick(Core &core, const IntentControl &control,
         owns ? std::optional{LeanOverride{.target_rad = plan.lean_target_rad, .weight = plan.weight}} : std::nullopt;
     Intent intent = core.policy.update(signals, config_.period_s, road_grade, preview_grade, lean_limit_rad,
                                        min_lean_rad, lean_add, /*spend_surge=*/!owns, lean);
+    if (percepts.has_value()) {
+        const double ccap = compute_climb_cap_nm(config_, *percepts);
+        if (ccap < intent.effort_ceiling_nm)
+            intent.effort_ceiling_nm = ccap;
+    }
     if (owns)
         intent.effort_ceiling_nm = plan.weight == 1.
                                        ? plan.effort_nm

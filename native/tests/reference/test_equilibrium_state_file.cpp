@@ -33,6 +33,8 @@
 #include "model/rider_geometry.hpp"
 #include "runtime/control.hpp"
 #include "runtime/runtime.hpp"
+#include "terrain/trackfile.hpp"
+#include "terrain/types.hpp"
 #include "support/fixture_test.hpp"
 #include "support/temporary_directory.hpp"
 
@@ -464,6 +466,38 @@ void test_post_episode_lifecycle_writes_no_cache_entry() {
                 "a fresh consumer loads the canonical entry, never episode state");
 }
 
+// ---------------------------------------------------------------------------
+// Queue item 6 (2026-11-15): the checked-in pneumatic pose
+// tests/fixtures/config/poses/savage_pneumatic.npz — the file
+// viewer_physics_pneumatic.toml pins through equilibrium_state_file — must
+// restore through the explicit path and pass the residual recheck. Its
+// material has to carry the pre-finalize carcass memory: a pose captured
+// after finalize commits delta_prev := delta(qpos), so the restore probe
+// sees delta - delta_prev == 0, the hysteresis term collapses and the
+// measured residual jumps above the 0.05 contract.
+// ---------------------------------------------------------------------------
+void test_savage_pneumatic_fixture_restores() {
+    auto request = init::read_setup_request(
+        bt::fixture("requests/pneumatic_flat.toml"));
+    request.track = bike::terrain::load_track(
+        bt::fixture("tracks/rough_uphill_savage.toml"));
+    request.model.field =
+        bike::terrain::HeightFieldSpec::for_track(request.track);
+    auto owner = init::make_setup(request);
+    const auto eq = init::settle(*owner);
+    bt::require(eq.cache_hit, "the pinned fixture serves without settling");
+    const auto &pose_path =
+        *request.model.physics->equilibrium_state_file; // NOLINT(bugprone-unchecked-optional-access) load_physics resolves the pinned path
+    bt::require(eq.state_file && *eq.state_file == pose_path,
+                "the served pose is the checked-in savage fixture");
+    const auto stored = init::read_state_file(pose_path);
+    bt::require(
+        init::state_array(stored, "residual_qacc").doubles().front() <= .05,
+        "the stored residual honors the contract");
+    bt::require(eq.residual_qacc <= .05,
+                "the restored pneumatic pose passes the residual recheck");
+}
+
 void check() {
     test_state_file_round_trip();
     test_state_file_wins_over_the_auto_cache();
@@ -475,6 +509,7 @@ void check() {
     test_toml_state_file_resolves_relative_to_the_config();
     test_equilibrium_override_kwargs_reach_the_solve();
     test_post_episode_lifecycle_writes_no_cache_entry();
+    test_savage_pneumatic_fixture_restores();
 }
 
 NATIVE_DIAG_POP

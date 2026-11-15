@@ -2,7 +2,6 @@
 #include "session.hpp"
 #include "input_detail.hpp"
 #include "../configuration/load.hpp"
-#include "../configuration/legacy_battery.hpp"
 #include "../configuration/legacy_rider.hpp"
 #include "../engine_identity.hpp"
 #include "../platform/files.hpp"
@@ -80,31 +79,13 @@ Value inert_rider(Value rider) {
     configuration::legacy::erase_removed_rider_fields(rider);
     return rider;
 }
-// legacy recordings: the removed [drive.battery] section is tolerated only
-// when it was disabled (configuration/legacy_battery.hpp). An enabled
-// battery could have clamped assist torque, so the run is not replayable.
-void drop_removed_battery(Value& physics) {
-    auto drive = field(physics, "drive");
-    auto& object = std::get<Object>(drive.data);
-    const auto* section = find(object, configuration::legacy::kBatteryKey);
-    if (section == nullptr) return;
-    if (!configuration::legacy::battery_inert(*section))
-        throw IncompatibleExecution(
-            "resolved_config.physics.drive.battery: an enabled battery cannot be "
-            "replayed — the battery energy model no longer exists");
-    (void)pop(object, configuration::legacy::kBatteryKey);
-    set(physics, "drive", std::move(drive));
-}
 // Semantic-equality form: the recorded-form digest document (shared with
 // the write side via research::configuration_digest_document) with the
-// removed inert knobs stripped — the battery section and the seated-only
-// rider members. Each strip throws on a non-inert recorded value before
-// any equality comparison can run.
+// removed inert knobs stripped — the seated-only rider members. Each
+// strip throws on a non-inert recorded value before any equality
+// comparison can run.
 Value configuration_hashable(const Value& resolved) {
     auto hashable = research::configuration_digest_document(resolved);
-    auto physics = field(hashable, "physics");
-    drop_removed_battery(physics);
-    set(hashable, "physics", std::move(physics));
     set(hashable, "rider", inert_rider(field(hashable, "rider")));
     return hashable;
 }
@@ -133,7 +114,6 @@ std::unique_ptr<research::ResearchRequest> request_from_input(const ReplayInput&
         set(articulated, std::string(key) + "_path", bundled ? text((assets.path() / name).string()) : Value{});
     }
     set(physics, "articulated", std::move(articulated));
-    drop_removed_battery(physics);
     if (const auto* initial_file = find(physics, "equilibrium_state_file"); initial_file && !io::is_null(*initial_file))
         throw IncompatibleExecution("recording startup depends on an unbundled initial-state file; recorded paths are never followed");
     // Fresh deterministic setup: neither a recorded external cache pathname

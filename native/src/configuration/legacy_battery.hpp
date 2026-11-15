@@ -20,15 +20,6 @@ namespace bike::configuration::legacy {
 
 inline constexpr std::string_view kBatteryKey = "battery";
 
-// True when a recorded `drive.battery` section is the inert disabled one.
-// Only `enabled` decides: with the battery disabled the remaining members
-// (capacity, loss coefficients) fed nothing but telemetry.
-[[nodiscard]] inline bool battery_inert(const io::Value& section) {
-    const auto& object = io::as_object(section, "drive.battery");
-    const auto* enabled = io::find_member(object, "enabled");
-    return enabled != nullptr && !io::as_bool(*enabled, "drive.battery.enabled");
-}
-
 // The section exactly as pre-removal configs serialized a disabled battery
 // with the shipped defaults, in declaration order. Legacy digests (the
 // initial-state physical contract) are recomputed over it.

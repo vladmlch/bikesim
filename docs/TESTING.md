@@ -430,9 +430,12 @@ on this platform. A successful shift at the count maximum raises `OverflowError`
 without changing policy state.
 
 Legacy documents written before the battery energy model was removed still
-carry `physics.drive.battery`. Replay and initial-state transfer accept that
-section only when it is disabled (`configuration/legacy_battery.hpp`); a
-recorded enabled battery is rejected as an incompatible execution.
+carry `physics.drive.battery`. Initial-state transfer accepts that section
+only when it is disabled (`configuration/legacy_battery.hpp`); a recorded
+enabled battery is rejected as an incompatible execution. Replay refuses
+every such recording through the removed-member contract — every document
+old enough to carry the section also carries drive fields removed later, so
+the dedicated replay strip was unreachable and has been dropped.
 
 Documents written before the seated-only rider fields left `RiderSpecs`
 (`legs`, the three load shares, the three resonances, `damping_ratio`, the

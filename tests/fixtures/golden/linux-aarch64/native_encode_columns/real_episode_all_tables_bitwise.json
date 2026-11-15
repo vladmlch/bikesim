@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "ride.file::config.json",
-  "nbytes": 26104,
+  "nbytes": 26288,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
   "offset": 5809704,
   "rtol": null,
   "shape": [
-   3263
+   3286
   ]
  },
  {
@@ -49,7 +49,7 @@
   "label": "ride.file::state.json",
   "nbytes": 32416,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5835808,
+  "offset": 5835992,
   "rtol": null,
   "shape": [
    4052
@@ -63,7 +63,7 @@
   "label": "ride.file::state.arrays/a000.f64",
   "nbytes": 2336,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5868224,
+  "offset": 5868408,
   "rtol": null,
   "shape": [
    292
@@ -77,7 +77,7 @@
   "label": "ride.file::state.arrays/a001.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870560,
+  "offset": 5870744,
   "rtol": null,
   "shape": [
    3
@@ -91,7 +91,7 @@
   "label": "ride.file::state.arrays/a002.f64",
   "nbytes": 176,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870584,
+  "offset": 5870768,
   "rtol": null,
   "shape": [
    22
@@ -105,7 +105,7 @@
   "label": "ride.file::state.arrays/a003.f64",
   "nbytes": 16,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870760,
+  "offset": 5870944,
   "rtol": null,
   "shape": [
    2
@@ -119,7 +119,7 @@
   "label": "ride.file::state.arrays/a004.f64",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870776,
+  "offset": 5870960,
   "rtol": null,
   "shape": [
    1
@@ -133,7 +133,7 @@
   "label": "ride.file::state.arrays/a005.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870784,
+  "offset": 5870968,
   "rtol": null,
   "shape": [
    3
@@ -147,7 +147,7 @@
   "label": "ride.file::state.arrays/a006.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870808,
+  "offset": 5870992,
   "rtol": null,
   "shape": [
    3
@@ -161,7 +161,7 @@
   "label": "ride.file::state.arrays/a007.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870832,
+  "offset": 5871016,
   "rtol": null,
   "shape": [
    3
@@ -175,7 +175,7 @@
   "label": "ride.file::state.arrays/a008.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870856,
+  "offset": 5871040,
   "rtol": null,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "ride.file::state.arrays/a009.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870880,
+  "offset": 5871064,
   "rtol": null,
   "shape": [
    3
@@ -203,7 +203,7 @@
   "label": "ride.file::state.arrays/a010.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870904,
+  "offset": 5871088,
   "rtol": null,
   "shape": [
    3
@@ -217,7 +217,7 @@
   "label": "ride.file::state.arrays/a011.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870928,
+  "offset": 5871112,
   "rtol": null,
   "shape": [
    3
@@ -231,7 +231,7 @@
   "label": "ride.file::state.arrays/a012.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870952,
+  "offset": 5871136,
   "rtol": null,
   "shape": [
    3
@@ -245,7 +245,7 @@
   "label": "ride.file::state.arrays/a013.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5870976,
+  "offset": 5871160,
   "rtol": null,
   "shape": [
    3
@@ -259,7 +259,7 @@
   "label": "ride.file::state.arrays/a014.f64",
   "nbytes": 24,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871000,
+  "offset": 5871184,
   "rtol": null,
   "shape": [
    3
@@ -273,7 +273,7 @@
   "label": "ride.file::state.arrays/a015.f64",
   "nbytes": 72,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871024,
+  "offset": 5871208,
   "rtol": null,
   "shape": [
    9
@@ -287,7 +287,7 @@
   "label": "ride.file::state.arrays/a016.f64",
   "nbytes": 72,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871096,
+  "offset": 5871280,
   "rtol": null,
   "shape": [
    9
@@ -301,7 +301,7 @@
   "label": "physics/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871168,
+  "offset": 5871352,
   "rtol": null,
   "shape": [
    1
@@ -315,7 +315,7 @@
   "label": "physics/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871176,
+  "offset": 5871360,
   "rtol": null,
   "shape": [
    520
@@ -329,7 +329,7 @@
   "label": "physics/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5871696,
+  "offset": 5871880,
   "rtol": null,
   "shape": [
    520
@@ -343,7 +343,7 @@
   "label": "physics/bits/time_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5872216,
+  "offset": 5872400,
   "rtol": null,
   "shape": [
    520
@@ -357,7 +357,7 @@
   "label": "physics/bits/interval_end_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5872736,
+  "offset": 5872920,
   "rtol": null,
   "shape": [
    520
@@ -371,7 +371,7 @@
   "label": "physics/bits/dt_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5873256,
+  "offset": 5873440,
   "rtol": null,
   "shape": [
    520
@@ -385,7 +385,7 @@
   "label": "physics/bits/qpos",
   "nbytes": 13785,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5873776,
+  "offset": 5873960,
   "rtol": null,
   "shape": [
    13785
@@ -399,7 +399,7 @@
   "label": "physics/bits/qvel",
   "nbytes": 13785,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5887561,
+  "offset": 5887745,
   "rtol": null,
   "shape": [
    13785
@@ -413,7 +413,7 @@
   "label": "forces/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5901346,
+  "offset": 5901530,
   "rtol": null,
   "shape": [
    1
@@ -427,7 +427,7 @@
   "label": "forces/bits/episode_id",
   "nbytes": 19240,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5901354,
+  "offset": 5901538,
   "rtol": null,
   "shape": [
    19240
@@ -441,7 +441,7 @@
   "label": "forces/bits/interval_id",
   "nbytes": 19240,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5920594,
+  "offset": 5920778,
   "rtol": null,
   "shape": [
    19240
@@ -455,7 +455,7 @@
   "label": "forces/bits/component",
   "nbytes": 37375,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5939834,
+  "offset": 5940018,
   "rtol": null,
   "shape": [
    37375
@@ -469,7 +469,7 @@
   "label": "forces/bits/qfrc",
   "nbytes": 509865,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 5977209,
+  "offset": 5977393,
   "rtol": null,
   "shape": [
    509865
@@ -483,7 +483,7 @@
   "label": "forces/bits/power_w",
   "nbytes": 19240,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6487074,
+  "offset": 6487258,
   "rtol": null,
   "shape": [
    19240
@@ -497,7 +497,7 @@
   "label": "channel_mass/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6506314,
+  "offset": 6506498,
   "rtol": null,
   "shape": [
    1
@@ -511,7 +511,7 @@
   "label": "channel_mass/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6506322,
+  "offset": 6506506,
   "rtol": null,
   "shape": [
    520
@@ -525,7 +525,7 @@
   "label": "channel_mass/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6506842,
+  "offset": 6507026,
   "rtol": null,
   "shape": [
    520
@@ -539,7 +539,7 @@
   "label": "channel_mass/bits/mass_kg",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6507362,
+  "offset": 6507546,
   "rtol": null,
   "shape": [
    520
@@ -553,7 +553,7 @@
   "label": "channel_mass/bits/com_m",
   "nbytes": 1825,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6507882,
+  "offset": 6508066,
   "rtol": null,
   "shape": [
    1825
@@ -567,7 +567,7 @@
   "label": "channel_mass/bits/com_velocity_mps",
   "nbytes": 683,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6509707,
+  "offset": 6509891,
   "rtol": null,
   "shape": [
    683
@@ -581,7 +581,7 @@
   "label": "channel_mass/bits/com_velocity_mps_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6510390,
+  "offset": 6510574,
   "rtol": null,
   "shape": [
    65
@@ -595,7 +595,7 @@
   "label": "channel_mass/bits/linear_momentum_kg_mps",
   "nbytes": 683,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6510455,
+  "offset": 6510639,
   "rtol": null,
   "shape": [
    683
@@ -609,7 +609,7 @@
   "label": "channel_mass/bits/linear_momentum_kg_mps_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6511138,
+  "offset": 6511322,
   "rtol": null,
   "shape": [
    65
@@ -623,7 +623,7 @@
   "label": "channel_mass/bits/angular_momentum_kg_m2_s",
   "nbytes": 683,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6511203,
+  "offset": 6511387,
   "rtol": null,
   "shape": [
    683
@@ -637,7 +637,7 @@
   "label": "channel_mass/bits/angular_momentum_kg_m2_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6511886,
+  "offset": 6512070,
   "rtol": null,
   "shape": [
    65
@@ -651,7 +651,7 @@
   "label": "channel_mass/bits/kinetic_energy_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6511951,
+  "offset": 6512135,
   "rtol": null,
   "shape": [
    530
@@ -665,7 +665,7 @@
   "label": "channel_mass/bits/kinetic_energy_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6512481,
+  "offset": 6512665,
   "rtol": null,
   "shape": [
    65
@@ -679,7 +679,7 @@
   "label": "channel_mass/bits/gravitational_energy_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6512546,
+  "offset": 6512730,
   "rtol": null,
   "shape": [
    530
@@ -693,7 +693,7 @@
   "label": "channel_mass/bits/gravitational_energy_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6513076,
+  "offset": 6513260,
   "rtol": null,
   "shape": [
    65
@@ -707,7 +707,7 @@
   "label": "channel_mass/bits/endpoint_mass",
   "nbytes": 4694,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6513141,
+  "offset": 6513325,
   "rtol": null,
   "shape": [
    4694
@@ -721,7 +721,7 @@
   "label": "channel_mass/bits/endpoint_mass_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6517835,
+  "offset": 6518019,
   "rtol": null,
   "shape": [
    65
@@ -735,7 +735,7 @@
   "label": "channel_mass/bits/measurement_scope",
   "nbytes": 75,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6517900,
+  "offset": 6518084,
   "rtol": null,
   "shape": [
    75
@@ -749,7 +749,7 @@
   "label": "channel_mass/bits/measurement_scope_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6517975,
+  "offset": 6518159,
   "rtol": null,
   "shape": [
    65
@@ -763,7 +763,7 @@
   "label": "channel_mass/bits/__endpoint_mass_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518040,
+  "offset": 6518224,
   "rtol": null,
   "shape": [
    65
@@ -777,7 +777,7 @@
   "label": "channel_mass/bits/__endpoint_mass_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518105,
+  "offset": 6518289,
   "rtol": null,
   "shape": [
    65
@@ -791,7 +791,7 @@
   "label": "channel_mass/bits/__mass_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518170,
+  "offset": 6518354,
   "rtol": null,
   "shape": [
    65
@@ -805,7 +805,7 @@
   "label": "channel_mass/bits/__mass_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518235,
+  "offset": 6518419,
   "rtol": null,
   "shape": [
    65
@@ -819,7 +819,7 @@
   "label": "channel_energy/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518300,
+  "offset": 6518484,
   "rtol": null,
   "shape": [
    1
@@ -833,7 +833,7 @@
   "label": "channel_energy/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518308,
+  "offset": 6518492,
   "rtol": null,
   "shape": [
    520
@@ -847,7 +847,7 @@
   "label": "channel_energy/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6518828,
+  "offset": 6519012,
   "rtol": null,
   "shape": [
    520
@@ -861,7 +861,7 @@
   "label": "channel_energy/bits/mechanical_energy_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6519348,
+  "offset": 6519532,
   "rtol": null,
   "shape": [
    520
@@ -875,7 +875,7 @@
   "label": "channel_energy/bits/elastic_energy_j",
   "nbytes": 11446,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6519868,
+  "offset": 6520052,
   "rtol": null,
   "shape": [
    11446
@@ -889,7 +889,7 @@
   "label": "channel_energy/bits/elastic_energy_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6531314,
+  "offset": 6531498,
   "rtol": null,
   "shape": [
    65
@@ -903,7 +903,7 @@
   "label": "channel_energy/bits/active_work_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6531379,
+  "offset": 6531563,
   "rtol": null,
   "shape": [
    520
@@ -917,7 +917,7 @@
   "label": "channel_energy/bits/external_work_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6531899,
+  "offset": 6532083,
   "rtol": null,
   "shape": [
    520
@@ -931,7 +931,7 @@
   "label": "channel_energy/bits/loss_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6532419,
+  "offset": 6532603,
   "rtol": null,
   "shape": [
    520
@@ -945,7 +945,7 @@
   "label": "channel_energy/bits/loss_step_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6532939,
+  "offset": 6533123,
   "rtol": null,
   "shape": [
    520
@@ -959,7 +959,7 @@
   "label": "channel_energy/bits/solver_constraint_work_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6533459,
+  "offset": 6533643,
   "rtol": null,
   "shape": [
    520
@@ -973,7 +973,7 @@
   "label": "channel_energy/bits/energy_scale_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6533979,
+  "offset": 6534163,
   "rtol": null,
   "shape": [
    520
@@ -987,7 +987,7 @@
   "label": "channel_energy/bits/muscle_signed_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6534499,
+  "offset": 6534683,
   "rtol": null,
   "shape": [
    520
@@ -1001,7 +1001,7 @@
   "label": "channel_energy/bits/muscle_positive_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6535019,
+  "offset": 6535203,
   "rtol": null,
   "shape": [
    520
@@ -1015,7 +1015,7 @@
   "label": "channel_energy/bits/motor_signed_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6535539,
+  "offset": 6535723,
   "rtol": null,
   "shape": [
    520
@@ -1029,7 +1029,7 @@
   "label": "channel_energy/bits/motor_positive_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6536059,
+  "offset": 6536243,
   "rtol": null,
   "shape": [
    520
@@ -1043,7 +1043,7 @@
   "label": "channel_energy/bits/source_positive_work_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6536579,
+  "offset": 6536763,
   "rtol": null,
   "shape": [
    520
@@ -1057,7 +1057,7 @@
   "label": "channel_energy/bits/constraint_signed_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6537099,
+  "offset": 6537283,
   "rtol": null,
   "shape": [
    520
@@ -1071,7 +1071,7 @@
   "label": "channel_energy/bits/constraint_absolute_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6537619,
+  "offset": 6537803,
   "rtol": null,
   "shape": [
    520
@@ -1085,7 +1085,7 @@
   "label": "channel_energy/bits/closure_signed_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6538139,
+  "offset": 6538323,
   "rtol": null,
   "shape": [
    520
@@ -1099,7 +1099,7 @@
   "label": "channel_energy/bits/closure_absolute_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6538659,
+  "offset": 6538843,
   "rtol": null,
   "shape": [
    520
@@ -1113,7 +1113,7 @@
   "label": "channel_energy/bits/constraint_work_ratio",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6539179,
+  "offset": 6539363,
   "rtol": null,
   "shape": [
    530
@@ -1127,7 +1127,7 @@
   "label": "channel_energy/bits/constraint_work_ratio_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6539709,
+  "offset": 6539893,
   "rtol": null,
   "shape": [
    65
@@ -1141,7 +1141,7 @@
   "label": "channel_energy/bits/constraint_work_ok",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6539774,
+  "offset": 6539958,
   "rtol": null,
   "shape": [
    65
@@ -1155,7 +1155,7 @@
   "label": "channel_energy/bits/residual_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6539839,
+  "offset": 6540023,
   "rtol": null,
   "shape": [
    520
@@ -1169,7 +1169,7 @@
   "label": "channel_energy/bits/residual_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6540359,
+  "offset": 6540543,
   "rtol": null,
   "shape": [
    65
@@ -1183,7 +1183,7 @@
   "label": "channel_energy/bits/measured",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6540424,
+  "offset": 6540608,
   "rtol": null,
   "shape": [
    65
@@ -1197,7 +1197,7 @@
   "label": "channel_energy/bits/source_interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6540489,
+  "offset": 6540673,
   "rtol": null,
   "shape": [
    520
@@ -1211,7 +1211,7 @@
   "label": "channel_energy/bits/source_interval_id_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6541009,
+  "offset": 6541193,
   "rtol": null,
   "shape": [
    65
@@ -1225,7 +1225,7 @@
   "label": "channel_energy/bits/source_time_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6541074,
+  "offset": 6541258,
   "rtol": null,
   "shape": [
    520
@@ -1239,7 +1239,7 @@
   "label": "channel_energy/bits/source_time_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6541594,
+  "offset": 6541778,
   "rtol": null,
   "shape": [
    65
@@ -1253,7 +1253,7 @@
   "label": "channel_energy/bits/component_work_j",
   "nbytes": 15954,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6541659,
+  "offset": 6541843,
   "rtol": null,
   "shape": [
    15954
@@ -1267,7 +1267,7 @@
   "label": "channel_energy/bits/component_work_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557613,
+  "offset": 6557797,
   "rtol": null,
   "shape": [
    65
@@ -1281,7 +1281,7 @@
   "label": "channel_energy/bits/__component_work_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557678,
+  "offset": 6557862,
   "rtol": null,
   "shape": [
    65
@@ -1295,7 +1295,7 @@
   "label": "channel_energy/bits/__component_work_j_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557743,
+  "offset": 6557927,
   "rtol": null,
   "shape": [
    65
@@ -1309,7 +1309,7 @@
   "label": "channel_energy/bits/__energy_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557808,
+  "offset": 6557992,
   "rtol": null,
   "shape": [
    65
@@ -1323,7 +1323,7 @@
   "label": "channel_energy/bits/__energy_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557873,
+  "offset": 6558057,
   "rtol": null,
   "shape": [
    65
@@ -1337,7 +1337,7 @@
   "label": "channel_sensors/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557938,
+  "offset": 6558122,
   "rtol": null,
   "shape": [
    1
@@ -1351,7 +1351,7 @@
   "label": "channel_sensors/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6557946,
+  "offset": 6558130,
   "rtol": null,
   "shape": [
    520
@@ -1365,7 +1365,7 @@
   "label": "channel_sensors/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6558466,
+  "offset": 6558650,
   "rtol": null,
   "shape": [
    520
@@ -1379,7 +1379,7 @@
   "label": "channel_sensors/bits/frame_specific_force_body_mps2",
   "nbytes": 1825,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6558986,
+  "offset": 6559170,
   "rtol": null,
   "shape": [
    1825
@@ -1393,7 +1393,7 @@
   "label": "channel_sensors/bits/frame_gyro_body_rad_s",
   "nbytes": 1825,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6560811,
+  "offset": 6560995,
   "rtol": null,
   "shape": [
    1825
@@ -1407,7 +1407,7 @@
   "label": "channel_sensors/bits/encoder_front_wheel_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6562636,
+  "offset": 6562820,
   "rtol": null,
   "shape": [
    520
@@ -1421,7 +1421,7 @@
   "label": "channel_sensors/bits/encoder_rear_wheel_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6563156,
+  "offset": 6563340,
   "rtol": null,
   "shape": [
    520
@@ -1435,7 +1435,7 @@
   "label": "channel_sensors/bits/encoder_crank_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6563676,
+  "offset": 6563860,
   "rtol": null,
   "shape": [
    520
@@ -1449,7 +1449,7 @@
   "label": "channel_sensors/bits/motor_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6564196,
+  "offset": 6564380,
   "rtol": null,
   "shape": [
    520
@@ -1463,7 +1463,7 @@
   "label": "channel_sensors/bits/human_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6564716,
+  "offset": 6564900,
   "rtol": null,
   "shape": [
    520
@@ -1477,7 +1477,7 @@
   "label": "channel_sensors/bits/__sensors_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565236,
+  "offset": 6565420,
   "rtol": null,
   "shape": [
    65
@@ -1491,7 +1491,7 @@
   "label": "channel_sensors/bits/__sensors_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565301,
+  "offset": 6565485,
   "rtol": null,
   "shape": [
    65
@@ -1505,7 +1505,7 @@
   "label": "channel_sensors/bits/__sensors.encoders_rad_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565366,
+  "offset": 6565550,
   "rtol": null,
   "shape": [
    65
@@ -1519,7 +1519,7 @@
   "label": "channel_sensors/bits/__sensors.encoders_rad_s_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565431,
+  "offset": 6565615,
   "rtol": null,
   "shape": [
    65
@@ -1533,7 +1533,7 @@
   "label": "channel_drive/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565496,
+  "offset": 6565680,
   "rtol": null,
   "shape": [
    1
@@ -1547,7 +1547,7 @@
   "label": "channel_drive/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6565504,
+  "offset": 6565688,
   "rtol": null,
   "shape": [
    520
@@ -1561,7 +1561,7 @@
   "label": "channel_drive/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6566024,
+  "offset": 6566208,
   "rtol": null,
   "shape": [
    520
@@ -1575,7 +1575,7 @@
   "label": "channel_drive/bits/transmission_model",
   "nbytes": 1040,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6566544,
+  "offset": 6566728,
   "rtol": null,
   "shape": [
    1040
@@ -1589,7 +1589,7 @@
   "label": "channel_drive/bits/omits_suspension_coupling",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6567584,
+  "offset": 6567768,
   "rtol": null,
   "shape": [
    65
@@ -1603,7 +1603,7 @@
   "label": "channel_drive/bits/chain_extension_m",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6567649,
+  "offset": 6567833,
   "rtol": null,
   "shape": [
    520
@@ -1617,7 +1617,7 @@
   "label": "channel_drive/bits/chain_extension_rate_mps",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6568169,
+  "offset": 6568353,
   "rtol": null,
   "shape": [
    520
@@ -1631,7 +1631,7 @@
   "label": "channel_drive/bits/chain_tension_n",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6568689,
+  "offset": 6568873,
   "rtol": null,
   "shape": [
    520
@@ -1645,7 +1645,7 @@
   "label": "channel_drive/bits/chain_energy_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6569209,
+  "offset": 6569393,
   "rtol": null,
   "shape": [
    520
@@ -1659,7 +1659,7 @@
   "label": "channel_drive/bits/chain_dissipation_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6569729,
+  "offset": 6569913,
   "rtol": null,
   "shape": [
    520
@@ -1673,7 +1673,7 @@
   "label": "channel_drive/bits/chain_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6570249,
+  "offset": 6570433,
   "rtol": null,
   "shape": [
    520
@@ -1687,7 +1687,7 @@
   "label": "channel_drive/bits/freehub_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6570769,
+  "offset": 6570953,
   "rtol": null,
   "shape": [
    520
@@ -1701,7 +1701,7 @@
   "label": "channel_drive/bits/freehub_energy_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6571289,
+  "offset": 6571473,
   "rtol": null,
   "shape": [
    520
@@ -1715,7 +1715,7 @@
   "label": "channel_drive/bits/freehub_engaged",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6571809,
+  "offset": 6571993,
   "rtol": null,
   "shape": [
    65
@@ -1729,7 +1729,7 @@
   "label": "channel_drive/bits/freehub_deflection_rad",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6571874,
+  "offset": 6572058,
   "rtol": null,
   "shape": [
    520
@@ -1743,7 +1743,7 @@
   "label": "channel_drive/bits/freehub_dissipation_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6572394,
+  "offset": 6572578,
   "rtol": null,
   "shape": [
    520
@@ -1757,7 +1757,7 @@
   "label": "channel_drive/bits/freehub_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6572914,
+  "offset": 6573098,
   "rtol": null,
   "shape": [
    520
@@ -1771,7 +1771,7 @@
   "label": "channel_drive/bits/cadence_rpm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6573434,
+  "offset": 6573618,
   "rtol": null,
   "shape": [
    520
@@ -1785,7 +1785,7 @@
   "label": "channel_drive/bits/crank_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6573954,
+  "offset": 6574138,
   "rtol": null,
   "shape": [
    520
@@ -1799,7 +1799,7 @@
   "label": "channel_drive/bits/drive_shaft_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6574474,
+  "offset": 6574658,
   "rtol": null,
   "shape": [
    520
@@ -1813,7 +1813,7 @@
   "label": "channel_drive/bits/crank_phase_rad",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6574994,
+  "offset": 6575178,
   "rtol": null,
   "shape": [
    520
@@ -1827,7 +1827,7 @@
   "label": "channel_drive/bits/human_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6575514,
+  "offset": 6575698,
   "rtol": null,
   "shape": [
    520
@@ -1841,7 +1841,7 @@
   "label": "channel_drive/bits/human_sensor_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6576034,
+  "offset": 6576218,
   "rtol": null,
   "shape": [
    520
@@ -1855,7 +1855,7 @@
   "label": "channel_drive/bits/human_setpoint_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6576554,
+  "offset": 6576738,
   "rtol": null,
   "shape": [
    520
@@ -1869,7 +1869,7 @@
   "label": "channel_drive/bits/human_setpoint_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6577074,
+  "offset": 6577258,
   "rtol": null,
   "shape": [
    65
@@ -1883,7 +1883,7 @@
   "label": "channel_drive/bits/human_command_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6577139,
+  "offset": 6577323,
   "rtol": null,
   "shape": [
    520
@@ -1897,7 +1897,7 @@
   "label": "channel_drive/bits/human_active_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6577659,
+  "offset": 6577843,
   "rtol": null,
   "shape": [
    520
@@ -1911,7 +1911,7 @@
   "label": "channel_drive/bits/human_joint_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6578179,
+  "offset": 6578363,
   "rtol": null,
   "shape": [
    520
@@ -1925,7 +1925,7 @@
   "label": "channel_drive/bits/assist_demand_gated",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6578699,
+  "offset": 6578883,
   "rtol": null,
   "shape": [
    65
@@ -1939,7 +1939,7 @@
   "label": "channel_drive/bits/assist_sensor_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6578764,
+  "offset": 6578948,
   "rtol": null,
   "shape": [
    520
@@ -1953,7 +1953,7 @@
   "label": "channel_drive/bits/assist_mode",
   "nbytes": 390,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6579284,
+  "offset": 6579468,
   "rtol": null,
   "shape": [
    390
@@ -1967,7 +1967,7 @@
   "label": "channel_drive/bits/assist_gain",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6579674,
+  "offset": 6579858,
   "rtol": null,
   "shape": [
    520
@@ -1981,7 +1981,7 @@
   "label": "channel_drive/bits/assist_gain_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6580194,
+  "offset": 6580378,
   "rtol": null,
   "shape": [
    65
@@ -1995,7 +1995,7 @@
   "label": "channel_drive/bits/rider_mode",
   "nbytes": 585,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6580259,
+  "offset": 6580443,
   "rtol": null,
   "shape": [
    585
@@ -2009,7 +2009,7 @@
   "label": "channel_drive/bits/coasting_reason",
   "nbytes": 650,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6580844,
+  "offset": 6581028,
   "rtol": null,
   "shape": [
    650
@@ -2023,7 +2023,7 @@
   "label": "channel_drive/bits/coasting_reason_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6581494,
+  "offset": 6581678,
   "rtol": null,
   "shape": [
    65
@@ -2037,7 +2037,7 @@
   "label": "channel_drive/bits/required_cadence_rpm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6581559,
+  "offset": 6581743,
   "rtol": null,
   "shape": [
    520
@@ -2051,7 +2051,7 @@
   "label": "channel_drive/bits/crank_target_phase_rad",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6582079,
+  "offset": 6582263,
   "rtol": null,
   "shape": [
    520
@@ -2065,7 +2065,7 @@
   "label": "channel_drive/bits/crank_target_phase_rad_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6582599,
+  "offset": 6582783,
   "rtol": null,
   "shape": [
    65
@@ -2079,7 +2079,7 @@
   "label": "channel_drive/bits/crank_target_rate_rad_s",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6582664,
+  "offset": 6582848,
   "rtol": null,
   "shape": [
    520
@@ -2093,7 +2093,7 @@
   "label": "channel_drive/bits/crank_target_rate_rad_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6583184,
+  "offset": 6583368,
   "rtol": null,
   "shape": [
    65
@@ -2107,7 +2107,7 @@
   "label": "channel_drive/bits/motor_request_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6583249,
+  "offset": 6583433,
   "rtol": null,
   "shape": [
    520
@@ -2121,7 +2121,7 @@
   "label": "channel_drive/bits/motor_setpoint_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6583769,
+  "offset": 6583953,
   "rtol": null,
   "shape": [
    530
@@ -2135,7 +2135,7 @@
   "label": "channel_drive/bits/motor_setpoint_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6584299,
+  "offset": 6584483,
   "rtol": null,
   "shape": [
    65
@@ -2149,7 +2149,7 @@
   "label": "channel_drive/bits/motor_limit_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6584364,
+  "offset": 6584548,
   "rtol": null,
   "shape": [
    530
@@ -2163,7 +2163,7 @@
   "label": "channel_drive/bits/motor_limit_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6584894,
+  "offset": 6585078,
   "rtol": null,
   "shape": [
    65
@@ -2177,7 +2177,7 @@
   "label": "channel_drive/bits/motor_limited_request_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6584959,
+  "offset": 6585143,
   "rtol": null,
   "shape": [
    520
@@ -2191,7 +2191,7 @@
   "label": "channel_drive/bits/motor_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6585479,
+  "offset": 6585663,
   "rtol": null,
   "shape": [
    520
@@ -2205,7 +2205,7 @@
   "label": "channel_drive/bits/motor_control_source",
   "nbytes": 455,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6585999,
+  "offset": 6586183,
   "rtol": null,
   "shape": [
    455
@@ -2219,7 +2219,7 @@
   "label": "channel_drive/bits/safety_limited",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6586454,
+  "offset": 6586638,
   "rtol": null,
   "shape": [
    65
@@ -2233,7 +2233,7 @@
   "label": "channel_drive/bits/motor_enabled",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6586519,
+  "offset": 6586703,
   "rtol": null,
   "shape": [
    65
@@ -2247,7 +2247,7 @@
   "label": "channel_drive/bits/motor_shaft_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6586584,
+  "offset": 6586768,
   "rtol": null,
   "shape": [
    520
@@ -2261,7 +2261,7 @@
   "label": "channel_drive/bits/motor_shaft_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6587104,
+  "offset": 6587288,
   "rtol": null,
   "shape": [
    65
@@ -2275,7 +2275,7 @@
   "label": "channel_drive/bits/motor_freewheel_engaged",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6587169,
+  "offset": 6587353,
   "rtol": null,
   "shape": [
    65
@@ -2289,7 +2289,7 @@
   "label": "channel_drive/bits/motor_freewheel_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6587234,
+  "offset": 6587418,
   "rtol": null,
   "shape": [
    520
@@ -2303,7 +2303,7 @@
   "label": "channel_drive/bits/motor_freewheel_dissipation_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6587754,
+  "offset": 6587938,
   "rtol": null,
   "shape": [
    520
@@ -2317,7 +2317,7 @@
   "label": "channel_drive/bits/crank_clutch_torque_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6588274,
+  "offset": 6588458,
   "rtol": null,
   "shape": [
    530
@@ -2331,7 +2331,7 @@
   "label": "channel_drive/bits/crank_clutch_torque_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6588804,
+  "offset": 6588988,
   "rtol": null,
   "shape": [
    65
@@ -2345,7 +2345,7 @@
   "label": "channel_drive/bits/crank_clutch_engaged",
   "nbytes": 75,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6588869,
+  "offset": 6589053,
   "rtol": null,
   "shape": [
    75
@@ -2359,7 +2359,7 @@
   "label": "channel_drive/bits/crank_clutch_engaged_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6588944,
+  "offset": 6589128,
   "rtol": null,
   "shape": [
    65
@@ -2373,7 +2373,7 @@
   "label": "channel_drive/bits/crank_clutch_dissipation_power_w",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6589009,
+  "offset": 6589193,
   "rtol": null,
   "shape": [
    530
@@ -2387,7 +2387,7 @@
   "label": "channel_drive/bits/crank_clutch_dissipation_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6589539,
+  "offset": 6589723,
   "rtol": null,
   "shape": [
    65
@@ -2401,7 +2401,7 @@
   "label": "channel_drive/bits/gear_front_teeth",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6589604,
+  "offset": 6589788,
   "rtol": null,
   "shape": [
    520
@@ -2415,7 +2415,7 @@
   "label": "channel_drive/bits/gear_rear_teeth",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6590124,
+  "offset": 6590308,
   "rtol": null,
   "shape": [
    520
@@ -2429,7 +2429,7 @@
   "label": "channel_drive/bits/gear_ratio",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6590644,
+  "offset": 6590828,
   "rtol": null,
   "shape": [
    520
@@ -2443,7 +2443,7 @@
   "label": "channel_drive/bits/shift_active",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6591164,
+  "offset": 6591348,
   "rtol": null,
   "shape": [
    65
@@ -2457,7 +2457,7 @@
   "label": "channel_drive/bits/shift_direction",
   "nbytes": 325,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6591229,
+  "offset": 6591413,
   "rtol": null,
   "shape": [
    325
@@ -2471,7 +2471,7 @@
   "label": "channel_drive/bits/shift_from_teeth",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6591554,
+  "offset": 6591738,
   "rtol": null,
   "shape": [
    520
@@ -2485,7 +2485,7 @@
   "label": "channel_drive/bits/shift_count",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6592074,
+  "offset": 6592258,
   "rtol": null,
   "shape": [
    520
@@ -2499,7 +2499,7 @@
   "label": "channel_drive/bits/shift_time_s",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6592594,
+  "offset": 6592778,
   "rtol": null,
   "shape": [
    530
@@ -2513,7 +2513,7 @@
   "label": "channel_drive/bits/shift_time_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6593124,
+  "offset": 6593308,
   "rtol": null,
   "shape": [
    65
@@ -2527,7 +2527,7 @@
   "label": "channel_drive/bits/shift_torque_factor",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6593189,
+  "offset": 6593373,
   "rtol": null,
   "shape": [
    520
@@ -2541,7 +2541,7 @@
   "label": "channel_drive/bits/front_brake_demand",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6593709,
+  "offset": 6593893,
   "rtol": null,
   "shape": [
    520
@@ -2555,7 +2555,7 @@
   "label": "channel_drive/bits/rear_brake_demand",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6594229,
+  "offset": 6594413,
   "rtol": null,
   "shape": [
    520
@@ -2569,7 +2569,7 @@
   "label": "channel_drive/bits/rollback_brake_demand",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6594749,
+  "offset": 6594933,
   "rtol": null,
   "shape": [
    520
@@ -2583,7 +2583,7 @@
   "label": "channel_drive/bits/front_brake_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6595269,
+  "offset": 6595453,
   "rtol": null,
   "shape": [
    520
@@ -2597,7 +2597,7 @@
   "label": "channel_drive/bits/rear_brake_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6595789,
+  "offset": 6595973,
   "rtol": null,
   "shape": [
    520
@@ -2611,7 +2611,7 @@
   "label": "channel_drive/bits/front_brake_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6596309,
+  "offset": 6596493,
   "rtol": null,
   "shape": [
    520
@@ -2625,7 +2625,7 @@
   "label": "channel_drive/bits/rear_brake_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6596829,
+  "offset": 6597013,
   "rtol": null,
   "shape": [
    520
@@ -2639,7 +2639,7 @@
   "label": "channel_drive/bits/transmission_phi_m",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6597349,
+  "offset": 6597533,
   "rtol": null,
   "shape": [
    530
@@ -2653,7 +2653,7 @@
   "label": "channel_drive/bits/transmission_phi_m_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6597879,
+  "offset": 6598063,
   "rtol": null,
   "shape": [
    65
@@ -2667,7 +2667,7 @@
   "label": "channel_drive/bits/transmission_boundary_m",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6597944,
+  "offset": 6598128,
   "rtol": null,
   "shape": [
    530
@@ -2681,7 +2681,7 @@
   "label": "channel_drive/bits/transmission_boundary_m_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6598474,
+  "offset": 6598658,
   "rtol": null,
   "shape": [
    65
@@ -2695,7 +2695,7 @@
   "label": "channel_drive/bits/transmission_gap_m",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6598539,
+  "offset": 6598723,
   "rtol": null,
   "shape": [
    530
@@ -2709,7 +2709,7 @@
   "label": "channel_drive/bits/transmission_gap_m_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6599069,
+  "offset": 6599253,
   "rtol": null,
   "shape": [
    65
@@ -2723,7 +2723,7 @@
   "label": "channel_drive/bits/transmission_tension_n",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6599134,
+  "offset": 6599318,
   "rtol": null,
   "shape": [
    530
@@ -2737,7 +2737,7 @@
   "label": "channel_drive/bits/transmission_tension_n_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6599664,
+  "offset": 6599848,
   "rtol": null,
   "shape": [
    65
@@ -2751,7 +2751,7 @@
   "label": "channel_drive/bits/transmission_constraint_defect_m",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6599729,
+  "offset": 6599913,
   "rtol": null,
   "shape": [
    530
@@ -2765,7 +2765,7 @@
   "label": "channel_drive/bits/transmission_constraint_defect_m_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6600259,
+  "offset": 6600443,
   "rtol": null,
   "shape": [
    65
@@ -2779,7 +2779,7 @@
   "label": "channel_drive/bits/transmission_interval_work_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6600324,
+  "offset": 6600508,
   "rtol": null,
   "shape": [
    530
@@ -2793,7 +2793,7 @@
   "label": "channel_drive/bits/transmission_interval_work_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6600854,
+  "offset": 6601038,
   "rtol": null,
   "shape": [
    65
@@ -2807,7 +2807,7 @@
   "label": "channel_drive/bits/transmission_reaction_error_n",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6600919,
+  "offset": 6601103,
   "rtol": null,
   "shape": [
    530
@@ -2821,7 +2821,7 @@
   "label": "channel_drive/bits/transmission_reaction_error_n_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6601449,
+  "offset": 6601633,
   "rtol": null,
   "shape": [
    65
@@ -2835,7 +2835,7 @@
   "label": "channel_drive/bits/transmission_reference_status",
   "nbytes": 75,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6601514,
+  "offset": 6601698,
   "rtol": null,
   "shape": [
    75
@@ -2849,7 +2849,7 @@
   "label": "channel_drive/bits/transmission_reference_status_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6601589,
+  "offset": 6601773,
   "rtol": null,
   "shape": [
    65
@@ -2863,7 +2863,7 @@
   "label": "channel_drive/bits/shift_parameter_work_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6601654,
+  "offset": 6601838,
   "rtol": null,
   "shape": [
    530
@@ -2877,7 +2877,7 @@
   "label": "channel_drive/bits/shift_parameter_work_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6602184,
+  "offset": 6602368,
   "rtol": null,
   "shape": [
    65
@@ -2891,7 +2891,7 @@
   "label": "channel_drive/bits/shift_interval_constraint_work_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6602249,
+  "offset": 6602433,
   "rtol": null,
   "shape": [
    530
@@ -2905,7 +2905,7 @@
   "label": "channel_drive/bits/shift_interval_constraint_work_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6602779,
+  "offset": 6602963,
   "rtol": null,
   "shape": [
    65
@@ -2919,7 +2919,7 @@
   "label": "channel_drive/bits/shift_constraint_work_cumulative_j",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6602844,
+  "offset": 6603028,
   "rtol": null,
   "shape": [
    530
@@ -2933,7 +2933,7 @@
   "label": "channel_drive/bits/shift_constraint_work_cumulative_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6603374,
+  "offset": 6603558,
   "rtol": null,
   "shape": [
    65
@@ -2947,7 +2947,7 @@
   "label": "channel_drive/bits/__drive_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6603439,
+  "offset": 6603623,
   "rtol": null,
   "shape": [
    65
@@ -2961,7 +2961,7 @@
   "label": "channel_drive/bits/__drive_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6603504,
+  "offset": 6603688,
   "rtol": null,
   "shape": [
    65
@@ -2975,7 +2975,7 @@
   "label": "channel_tires/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6603569,
+  "offset": 6603753,
   "rtol": null,
   "shape": [
    1
@@ -2989,7 +2989,7 @@
   "label": "channel_tires/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6603577,
+  "offset": 6603761,
   "rtol": null,
   "shape": [
    520
@@ -3003,7 +3003,7 @@
   "label": "channel_tires/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6604097,
+  "offset": 6604281,
   "rtol": null,
   "shape": [
    520
@@ -3017,7 +3017,7 @@
   "label": "channel_tires/bits/front",
   "nbytes": 28350,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6604617,
+  "offset": 6604801,
   "rtol": null,
   "shape": [
    28350
@@ -3031,7 +3031,7 @@
   "label": "channel_tires/bits/rear",
   "nbytes": 28350,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6632967,
+  "offset": 6633151,
   "rtol": null,
   "shape": [
    28350
@@ -3045,7 +3045,7 @@
   "label": "channel_tires/bits/__tires_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6661317,
+  "offset": 6661501,
   "rtol": null,
   "shape": [
    65
@@ -3059,7 +3059,7 @@
   "label": "channel_tires/bits/__tires_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6661382,
+  "offset": 6661566,
   "rtol": null,
   "shape": [
    65
@@ -3073,7 +3073,7 @@
   "label": "channel_suspension/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6661447,
+  "offset": 6661631,
   "rtol": null,
   "shape": [
    1
@@ -3087,7 +3087,7 @@
   "label": "channel_suspension/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6661455,
+  "offset": 6661639,
   "rtol": null,
   "shape": [
    520
@@ -3101,7 +3101,7 @@
   "label": "channel_suspension/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6661975,
+  "offset": 6662159,
   "rtol": null,
   "shape": [
    520
@@ -3115,7 +3115,7 @@
   "label": "channel_suspension/bits/fork_travel_m",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6662495,
+  "offset": 6662679,
   "rtol": null,
   "shape": [
    520
@@ -3129,7 +3129,7 @@
   "label": "channel_suspension/bits/shock_stroke_m",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6663015,
+  "offset": 6663199,
   "rtol": null,
   "shape": [
    520
@@ -3143,7 +3143,7 @@
   "label": "channel_suspension/bits/fork_velocity_mps",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6663535,
+  "offset": 6663719,
   "rtol": null,
   "shape": [
    520
@@ -3157,7 +3157,7 @@
   "label": "channel_suspension/bits/shock_velocity_mps",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6664055,
+  "offset": 6664239,
   "rtol": null,
   "shape": [
    520
@@ -3171,7 +3171,7 @@
   "label": "channel_suspension/bits/shock_solver_limit_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6664575,
+  "offset": 6664759,
   "rtol": null,
   "shape": [
    520
@@ -3185,7 +3185,7 @@
   "label": "channel_suspension/bits/linkage_closure_max_m",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6665095,
+  "offset": 6665279,
   "rtol": null,
   "shape": [
    520
@@ -3199,7 +3199,7 @@
   "label": "channel_suspension/bits/generalized_force_components_n",
   "nbytes": 12811,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6665615,
+  "offset": 6665799,
   "rtol": null,
   "shape": [
    12811
@@ -3213,7 +3213,7 @@
   "label": "channel_suspension/bits/__suspension_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6678426,
+  "offset": 6678610,
   "rtol": null,
   "shape": [
    65
@@ -3227,7 +3227,7 @@
   "label": "channel_suspension/bits/__suspension_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6678491,
+  "offset": 6678675,
   "rtol": null,
   "shape": [
    65
@@ -3241,7 +3241,7 @@
   "label": "channel_control/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6678556,
+  "offset": 6678740,
   "rtol": null,
   "shape": [
    1
@@ -3255,7 +3255,7 @@
   "label": "channel_control/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6678564,
+  "offset": 6678748,
   "rtol": null,
   "shape": [
    520
@@ -3269,7 +3269,7 @@
   "label": "channel_control/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6679084,
+  "offset": 6679268,
   "rtol": null,
   "shape": [
    520
@@ -3283,7 +3283,7 @@
   "label": "channel_control/bits/motor_torque_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6679604,
+  "offset": 6679788,
   "rtol": null,
   "shape": [
    530
@@ -3297,7 +3297,7 @@
   "label": "channel_control/bits/motor_torque_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6680134,
+  "offset": 6680318,
   "rtol": null,
   "shape": [
    65
@@ -3311,7 +3311,7 @@
   "label": "channel_control/bits/motor_limit_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6680199,
+  "offset": 6680383,
   "rtol": null,
   "shape": [
    530
@@ -3325,7 +3325,7 @@
   "label": "channel_control/bits/motor_limit_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6680729,
+  "offset": 6680913,
   "rtol": null,
   "shape": [
    65
@@ -3339,7 +3339,7 @@
   "label": "channel_control/bits/human_torque_nm",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6680794,
+  "offset": 6680978,
   "rtol": null,
   "shape": [
    520
@@ -3353,7 +3353,7 @@
   "label": "channel_control/bits/human_torque_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6681314,
+  "offset": 6681498,
   "rtol": null,
   "shape": [
    65
@@ -3367,7 +3367,7 @@
   "label": "channel_control/bits/crank_target_rate_rad_s",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6681379,
+  "offset": 6681563,
   "rtol": null,
   "shape": [
    530
@@ -3381,7 +3381,7 @@
   "label": "channel_control/bits/crank_target_rate_rad_s_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6681909,
+  "offset": 6682093,
   "rtol": null,
   "shape": [
    65
@@ -3395,7 +3395,7 @@
   "label": "channel_control/bits/posture",
   "nbytes": 1450,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6681974,
+  "offset": 6682158,
   "rtol": null,
   "shape": [
    1450
@@ -3409,7 +3409,7 @@
   "label": "channel_control/bits/posture_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683424,
+  "offset": 6683608,
   "rtol": null,
   "shape": [
    65
@@ -3423,7 +3423,7 @@
   "label": "channel_control/bits/rider_enabled",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683489,
+  "offset": 6683673,
   "rtol": null,
   "shape": [
    65
@@ -3437,7 +3437,7 @@
   "label": "channel_control/bits/__control_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683554,
+  "offset": 6683738,
   "rtol": null,
   "shape": [
    65
@@ -3451,7 +3451,7 @@
   "label": "channel_control/bits/__control_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683619,
+  "offset": 6683803,
   "rtol": null,
   "shape": [
    65
@@ -3465,7 +3465,7 @@
   "label": "channel_rider/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683684,
+  "offset": 6683868,
   "rtol": null,
   "shape": [
    1
@@ -3479,7 +3479,7 @@
   "label": "channel_rider/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6683692,
+  "offset": 6683876,
   "rtol": null,
   "shape": [
    520
@@ -3493,7 +3493,7 @@
   "label": "channel_rider/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6684212,
+  "offset": 6684396,
   "rtol": null,
   "shape": [
    520
@@ -3507,7 +3507,7 @@
   "label": "channel_rider/bits/rider",
   "nbytes": 28512,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6684732,
+  "offset": 6684916,
   "rtol": null,
   "shape": [
    28512
@@ -3521,7 +3521,7 @@
   "label": "channel_rider/bits/rider_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6713244,
+  "offset": 6713428,
   "rtol": null,
   "shape": [
    65
@@ -3535,7 +3535,7 @@
   "label": "channel_rider/bits/rider_welds",
   "nbytes": 5760,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6713309,
+  "offset": 6713493,
   "rtol": null,
   "shape": [
    5760
@@ -3549,7 +3549,7 @@
   "label": "channel_rider/bits/rider_welds_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6719069,
+  "offset": 6719253,
   "rtol": null,
   "shape": [
    65
@@ -3563,7 +3563,7 @@
   "label": "channel_rider/bits/weld_crank_torque_nm",
   "nbytes": 530,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6719134,
+  "offset": 6719318,
   "rtol": null,
   "shape": [
    530
@@ -3577,7 +3577,7 @@
   "label": "channel_rider/bits/weld_crank_torque_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6719664,
+  "offset": 6719848,
   "rtol": null,
   "shape": [
    65
@@ -3591,7 +3591,7 @@
   "label": "channel_rider/bits/rider_control",
   "nbytes": 22492,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6719729,
+  "offset": 6719913,
   "rtol": null,
   "shape": [
    22492
@@ -3605,7 +3605,7 @@
   "label": "channel_rider/bits/rider_control_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6742221,
+  "offset": 6742405,
   "rtol": null,
   "shape": [
    65
@@ -3619,7 +3619,7 @@
   "label": "channel_rider/bits/rider_allocation",
   "nbytes": 2054,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6742286,
+  "offset": 6742470,
   "rtol": null,
   "shape": [
    2054
@@ -3633,7 +3633,7 @@
   "label": "channel_rider/bits/rider_allocation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6744340,
+  "offset": 6744524,
   "rtol": null,
   "shape": [
    65
@@ -3647,7 +3647,7 @@
   "label": "channel_rider/bits/rider_ik_saturation",
   "nbytes": 510,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6744405,
+  "offset": 6744589,
   "rtol": null,
   "shape": [
    510
@@ -3661,7 +3661,7 @@
   "label": "channel_rider/bits/rider_ik_saturation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6744915,
+  "offset": 6745099,
   "rtol": null,
   "shape": [
    65
@@ -3675,7 +3675,7 @@
   "label": "channel_rider/bits/rider_support_targets",
   "nbytes": 7016,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6744980,
+  "offset": 6745164,
   "rtol": null,
   "shape": [
    7016
@@ -3689,7 +3689,7 @@
   "label": "channel_rider/bits/rider_support_targets_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6751996,
+  "offset": 6752180,
   "rtol": null,
   "shape": [
    65
@@ -3703,7 +3703,7 @@
   "label": "channel_rider/bits/rider_intent",
   "nbytes": 2700,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6752061,
+  "offset": 6752245,
   "rtol": null,
   "shape": [
    2700
@@ -3717,7 +3717,7 @@
   "label": "channel_rider/bits/rider_intent_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6754761,
+  "offset": 6754945,
   "rtol": null,
   "shape": [
    65
@@ -3731,7 +3731,7 @@
   "label": "channel_rider/bits/rider_joint_torques",
   "nbytes": 15216,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6754826,
+  "offset": 6755010,
   "rtol": null,
   "shape": [
    15216
@@ -3745,7 +3745,7 @@
   "label": "channel_rider/bits/rider_joint_torques_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6770042,
+  "offset": 6770226,
   "rtol": null,
   "shape": [
    65
@@ -3759,7 +3759,7 @@
   "label": "channel_rider/bits/rider_joint_capacity_nm",
   "nbytes": 15216,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6770107,
+  "offset": 6770291,
   "rtol": null,
   "shape": [
    15216
@@ -3773,7 +3773,7 @@
   "label": "channel_rider/bits/rider_joint_capacity_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6785323,
+  "offset": 6785507,
   "rtol": null,
   "shape": [
    65
@@ -3787,7 +3787,7 @@
   "label": "channel_rider/bits/rider_lean_limit_rad",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6785388,
+  "offset": 6785572,
   "rtol": null,
   "shape": [
    520
@@ -3801,7 +3801,7 @@
   "label": "channel_rider/bits/rider_lean_limit_rad_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6785908,
+  "offset": 6786092,
   "rtol": null,
   "shape": [
    65
@@ -3815,7 +3815,7 @@
   "label": "channel_rider/bits/rider_balance",
   "nbytes": 2302,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6785973,
+  "offset": 6786157,
   "rtol": null,
   "shape": [
    2302
@@ -3829,7 +3829,7 @@
   "label": "channel_rider/bits/rider_balance_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6788275,
+  "offset": 6788459,
   "rtol": null,
   "shape": [
    65
@@ -3843,7 +3843,7 @@
   "label": "channel_rider/bits/attachment_samples",
   "nbytes": 5971,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6788340,
+  "offset": 6788524,
   "rtol": null,
   "shape": [
    5971
@@ -3857,7 +3857,7 @@
   "label": "channel_rider/bits/attachment_samples_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6794311,
+  "offset": 6794495,
   "rtol": null,
   "shape": [
    65
@@ -3871,7 +3871,7 @@
   "label": "channel_rider/bits/rider_active_request_nm",
   "nbytes": 15216,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6794376,
+  "offset": 6794560,
   "rtol": null,
   "shape": [
    15216
@@ -3885,7 +3885,7 @@
   "label": "channel_rider/bits/rider_active_request_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6809592,
+  "offset": 6809776,
   "rtol": null,
   "shape": [
    65
@@ -3899,7 +3899,7 @@
   "label": "channel_rider/bits/rider_active_delivered_nm",
   "nbytes": 15216,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6809657,
+  "offset": 6809841,
   "rtol": null,
   "shape": [
    15216
@@ -3913,7 +3913,7 @@
   "label": "channel_rider/bits/rider_active_delivered_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6824873,
+  "offset": 6825057,
   "rtol": null,
   "shape": [
    65
@@ -3927,7 +3927,7 @@
   "label": "channel_rider/bits/rider_joint_positive_power_w",
   "nbytes": 15216,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6824938,
+  "offset": 6825122,
   "rtol": null,
   "shape": [
    15216
@@ -3941,7 +3941,7 @@
   "label": "channel_rider/bits/rider_joint_positive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6840154,
+  "offset": 6840338,
   "rtol": null,
   "shape": [
    65
@@ -3955,7 +3955,7 @@
   "label": "channel_rider/bits/rider_positive_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6840219,
+  "offset": 6840403,
   "rtol": null,
   "shape": [
    520
@@ -3969,7 +3969,7 @@
   "label": "channel_rider/bits/rider_positive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6840739,
+  "offset": 6840923,
   "rtol": null,
   "shape": [
    65
@@ -3983,7 +3983,7 @@
   "label": "channel_rider/bits/rider_passive_power_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6840804,
+  "offset": 6840988,
   "rtol": null,
   "shape": [
    520
@@ -3997,7 +3997,7 @@
   "label": "channel_rider/bits/rider_passive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6841324,
+  "offset": 6841508,
   "rtol": null,
   "shape": [
    65
@@ -4011,7 +4011,7 @@
   "label": "channel_rider/bits/rider_positive_work_step_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6841389,
+  "offset": 6841573,
   "rtol": null,
   "shape": [
    520
@@ -4025,7 +4025,7 @@
   "label": "channel_rider/bits/rider_positive_work_step_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6841909,
+  "offset": 6842093,
   "rtol": null,
   "shape": [
    65
@@ -4039,7 +4039,7 @@
   "label": "channel_rider/bits/rider_passive_work_step_j",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6841974,
+  "offset": 6842158,
   "rtol": null,
   "shape": [
    520
@@ -4053,7 +4053,7 @@
   "label": "channel_rider/bits/rider_passive_work_step_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6842494,
+  "offset": 6842678,
   "rtol": null,
   "shape": [
    65
@@ -4067,7 +4067,7 @@
   "label": "channel_rider/bits/rider_activation_saturated",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6842559,
+  "offset": 6842743,
   "rtol": null,
   "shape": [
    65
@@ -4081,7 +4081,7 @@
   "label": "channel_rider/bits/rider_activation_saturated_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6842624,
+  "offset": 6842808,
   "rtol": null,
   "shape": [
    65
@@ -4095,7 +4095,7 @@
   "label": "channel_rider/bits/rider_strength_limited",
   "nbytes": 265,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6842689,
+  "offset": 6842873,
   "rtol": null,
   "shape": [
    265
@@ -4109,7 +4109,7 @@
   "label": "channel_rider/bits/rider_strength_limited_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6842954,
+  "offset": 6843138,
   "rtol": null,
   "shape": [
    65
@@ -4123,7 +4123,7 @@
   "label": "channel_rider/bits/rider_strength_violations",
   "nbytes": 265,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843019,
+  "offset": 6843203,
   "rtol": null,
   "shape": [
    265
@@ -4137,7 +4137,7 @@
   "label": "channel_rider/bits/rider_strength_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843284,
+  "offset": 6843468,
   "rtol": null,
   "shape": [
    65
@@ -4151,7 +4151,7 @@
   "label": "channel_rider/bits/rider_joint_power_violations",
   "nbytes": 265,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843349,
+  "offset": 6843533,
   "rtol": null,
   "shape": [
    265
@@ -4165,7 +4165,7 @@
   "label": "channel_rider/bits/rider_joint_power_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843614,
+  "offset": 6843798,
   "rtol": null,
   "shape": [
    65
@@ -4179,7 +4179,7 @@
   "label": "channel_rider/bits/rider_joint_speed_violations",
   "nbytes": 265,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843679,
+  "offset": 6843863,
   "rtol": null,
   "shape": [
    265
@@ -4193,7 +4193,7 @@
   "label": "channel_rider/bits/rider_joint_speed_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6843944,
+  "offset": 6844128,
   "rtol": null,
   "shape": [
    65
@@ -4207,7 +4207,7 @@
   "label": "channel_rider/bits/rider_effort_budget_exceeded",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6844009,
+  "offset": 6844193,
   "rtol": null,
   "shape": [
    65
@@ -4221,7 +4221,7 @@
   "label": "channel_rider/bits/rider_effort_budget_exceeded_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6844074,
+  "offset": 6844258,
   "rtol": null,
   "shape": [
    65
@@ -4235,7 +4235,7 @@
   "label": "channel_rider/bits/rider_active_positive_power_limit_w",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6844139,
+  "offset": 6844323,
   "rtol": null,
   "shape": [
    520
@@ -4249,7 +4249,7 @@
   "label": "channel_rider/bits/rider_active_positive_power_limit_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6844659,
+  "offset": 6844843,
   "rtol": null,
   "shape": [
    65
@@ -4263,7 +4263,7 @@
   "label": "channel_rider/bits/rider_effort_observation",
   "nbytes": 2795,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6844724,
+  "offset": 6844908,
   "rtol": null,
   "shape": [
    2795
@@ -4277,7 +4277,7 @@
   "label": "channel_rider/bits/rider_effort_observation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847519,
+  "offset": 6847703,
   "rtol": null,
   "shape": [
    65
@@ -4291,7 +4291,7 @@
   "label": "channel_rider/bits/__attachment_samples_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847584,
+  "offset": 6847768,
   "rtol": null,
   "shape": [
    65
@@ -4305,7 +4305,7 @@
   "label": "channel_rider/bits/__attachment_samples_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847649,
+  "offset": 6847833,
   "rtol": null,
   "shape": [
    65
@@ -4319,7 +4319,7 @@
   "label": "channel_rider/bits/__rider_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847714,
+  "offset": 6847898,
   "rtol": null,
   "shape": [
    65
@@ -4333,7 +4333,7 @@
   "label": "channel_rider/bits/__rider_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847779,
+  "offset": 6847963,
   "rtol": null,
   "shape": [
    65
@@ -4347,7 +4347,7 @@
   "label": "channel_rider/bits/__rider_activation_saturated_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847844,
+  "offset": 6848028,
   "rtol": null,
   "shape": [
    65
@@ -4361,7 +4361,7 @@
   "label": "channel_rider/bits/__rider_activation_saturated_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847909,
+  "offset": 6848093,
   "rtol": null,
   "shape": [
    65
@@ -4375,7 +4375,7 @@
   "label": "channel_rider/bits/__rider_active_delivered_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6847974,
+  "offset": 6848158,
   "rtol": null,
   "shape": [
    65
@@ -4389,7 +4389,7 @@
   "label": "channel_rider/bits/__rider_active_delivered_nm_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848039,
+  "offset": 6848223,
   "rtol": null,
   "shape": [
    65
@@ -4403,7 +4403,7 @@
   "label": "channel_rider/bits/__rider_active_positive_power_limit_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848104,
+  "offset": 6848288,
   "rtol": null,
   "shape": [
    65
@@ -4417,7 +4417,7 @@
   "label": "channel_rider/bits/__rider_active_positive_power_limit_w_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848169,
+  "offset": 6848353,
   "rtol": null,
   "shape": [
    65
@@ -4431,7 +4431,7 @@
   "label": "channel_rider/bits/__rider_active_request_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848234,
+  "offset": 6848418,
   "rtol": null,
   "shape": [
    65
@@ -4445,7 +4445,7 @@
   "label": "channel_rider/bits/__rider_active_request_nm_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848299,
+  "offset": 6848483,
   "rtol": null,
   "shape": [
    65
@@ -4459,7 +4459,7 @@
   "label": "channel_rider/bits/__rider_allocation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848364,
+  "offset": 6848548,
   "rtol": null,
   "shape": [
    65
@@ -4473,7 +4473,7 @@
   "label": "channel_rider/bits/__rider_allocation_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848429,
+  "offset": 6848613,
   "rtol": null,
   "shape": [
    65
@@ -4487,7 +4487,7 @@
   "label": "channel_rider/bits/__rider_balance_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848494,
+  "offset": 6848678,
   "rtol": null,
   "shape": [
    65
@@ -4501,7 +4501,7 @@
   "label": "channel_rider/bits/__rider_balance_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848559,
+  "offset": 6848743,
   "rtol": null,
   "shape": [
    65
@@ -4515,7 +4515,7 @@
   "label": "channel_rider/bits/__rider_control_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848624,
+  "offset": 6848808,
   "rtol": null,
   "shape": [
    65
@@ -4529,7 +4529,7 @@
   "label": "channel_rider/bits/__rider_control_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848689,
+  "offset": 6848873,
   "rtol": null,
   "shape": [
    65
@@ -4543,7 +4543,7 @@
   "label": "channel_rider/bits/__rider_effort_budget_exceeded_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848754,
+  "offset": 6848938,
   "rtol": null,
   "shape": [
    65
@@ -4557,7 +4557,7 @@
   "label": "channel_rider/bits/__rider_effort_budget_exceeded_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848819,
+  "offset": 6849003,
   "rtol": null,
   "shape": [
    65
@@ -4571,7 +4571,7 @@
   "label": "channel_rider/bits/__rider_effort_observation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848884,
+  "offset": 6849068,
   "rtol": null,
   "shape": [
    65
@@ -4585,7 +4585,7 @@
   "label": "channel_rider/bits/__rider_effort_observation_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6848949,
+  "offset": 6849133,
   "rtol": null,
   "shape": [
    65
@@ -4599,7 +4599,7 @@
   "label": "channel_rider/bits/__rider_ik_saturation_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849014,
+  "offset": 6849198,
   "rtol": null,
   "shape": [
    65
@@ -4613,7 +4613,7 @@
   "label": "channel_rider/bits/__rider_ik_saturation_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849079,
+  "offset": 6849263,
   "rtol": null,
   "shape": [
    65
@@ -4627,7 +4627,7 @@
   "label": "channel_rider/bits/__rider_intent_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849144,
+  "offset": 6849328,
   "rtol": null,
   "shape": [
    65
@@ -4641,7 +4641,7 @@
   "label": "channel_rider/bits/__rider_intent_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849209,
+  "offset": 6849393,
   "rtol": null,
   "shape": [
    65
@@ -4655,7 +4655,7 @@
   "label": "channel_rider/bits/__rider_joint_capacity_nm_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849274,
+  "offset": 6849458,
   "rtol": null,
   "shape": [
    65
@@ -4669,7 +4669,7 @@
   "label": "channel_rider/bits/__rider_joint_capacity_nm_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849339,
+  "offset": 6849523,
   "rtol": null,
   "shape": [
    65
@@ -4683,7 +4683,7 @@
   "label": "channel_rider/bits/__rider_joint_positive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849404,
+  "offset": 6849588,
   "rtol": null,
   "shape": [
    65
@@ -4697,7 +4697,7 @@
   "label": "channel_rider/bits/__rider_joint_positive_power_w_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849469,
+  "offset": 6849653,
   "rtol": null,
   "shape": [
    65
@@ -4711,7 +4711,7 @@
   "label": "channel_rider/bits/__rider_joint_power_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849534,
+  "offset": 6849718,
   "rtol": null,
   "shape": [
    65
@@ -4725,7 +4725,7 @@
   "label": "channel_rider/bits/__rider_joint_power_violations_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849599,
+  "offset": 6849783,
   "rtol": null,
   "shape": [
    65
@@ -4739,7 +4739,7 @@
   "label": "channel_rider/bits/__rider_joint_speed_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849664,
+  "offset": 6849848,
   "rtol": null,
   "shape": [
    65
@@ -4753,7 +4753,7 @@
   "label": "channel_rider/bits/__rider_joint_speed_violations_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849729,
+  "offset": 6849913,
   "rtol": null,
   "shape": [
    65
@@ -4767,7 +4767,7 @@
   "label": "channel_rider/bits/__rider_joint_torques_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849794,
+  "offset": 6849978,
   "rtol": null,
   "shape": [
    65
@@ -4781,7 +4781,7 @@
   "label": "channel_rider/bits/__rider_joint_torques_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849859,
+  "offset": 6850043,
   "rtol": null,
   "shape": [
    65
@@ -4795,7 +4795,7 @@
   "label": "channel_rider/bits/__rider_lean_limit_rad_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849924,
+  "offset": 6850108,
   "rtol": null,
   "shape": [
    65
@@ -4809,7 +4809,7 @@
   "label": "channel_rider/bits/__rider_lean_limit_rad_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6849989,
+  "offset": 6850173,
   "rtol": null,
   "shape": [
    65
@@ -4823,7 +4823,7 @@
   "label": "channel_rider/bits/__rider_passive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850054,
+  "offset": 6850238,
   "rtol": null,
   "shape": [
    65
@@ -4837,7 +4837,7 @@
   "label": "channel_rider/bits/__rider_passive_power_w_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850119,
+  "offset": 6850303,
   "rtol": null,
   "shape": [
    65
@@ -4851,7 +4851,7 @@
   "label": "channel_rider/bits/__rider_passive_work_step_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850184,
+  "offset": 6850368,
   "rtol": null,
   "shape": [
    65
@@ -4865,7 +4865,7 @@
   "label": "channel_rider/bits/__rider_passive_work_step_j_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850249,
+  "offset": 6850433,
   "rtol": null,
   "shape": [
    65
@@ -4879,7 +4879,7 @@
   "label": "channel_rider/bits/__rider_positive_power_w_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850314,
+  "offset": 6850498,
   "rtol": null,
   "shape": [
    65
@@ -4893,7 +4893,7 @@
   "label": "channel_rider/bits/__rider_positive_power_w_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850379,
+  "offset": 6850563,
   "rtol": null,
   "shape": [
    65
@@ -4907,7 +4907,7 @@
   "label": "channel_rider/bits/__rider_positive_work_step_j_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850444,
+  "offset": 6850628,
   "rtol": null,
   "shape": [
    65
@@ -4921,7 +4921,7 @@
   "label": "channel_rider/bits/__rider_positive_work_step_j_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850509,
+  "offset": 6850693,
   "rtol": null,
   "shape": [
    65
@@ -4935,7 +4935,7 @@
   "label": "channel_rider/bits/__rider_strength_limited_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850574,
+  "offset": 6850758,
   "rtol": null,
   "shape": [
    65
@@ -4949,7 +4949,7 @@
   "label": "channel_rider/bits/__rider_strength_limited_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850639,
+  "offset": 6850823,
   "rtol": null,
   "shape": [
    65
@@ -4963,7 +4963,7 @@
   "label": "channel_rider/bits/__rider_strength_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850704,
+  "offset": 6850888,
   "rtol": null,
   "shape": [
    65
@@ -4977,7 +4977,7 @@
   "label": "channel_rider/bits/__rider_strength_violations_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850769,
+  "offset": 6850953,
   "rtol": null,
   "shape": [
    65
@@ -4991,7 +4991,7 @@
   "label": "channel_rider/bits/__rider_support_targets_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850834,
+  "offset": 6851018,
   "rtol": null,
   "shape": [
    65
@@ -5005,7 +5005,7 @@
   "label": "channel_rider/bits/__rider_support_targets_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850899,
+  "offset": 6851083,
   "rtol": null,
   "shape": [
    65
@@ -5019,7 +5019,7 @@
   "label": "channel_rider/bits/__rider_welds_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6850964,
+  "offset": 6851148,
   "rtol": null,
   "shape": [
    65
@@ -5033,7 +5033,7 @@
   "label": "channel_rider/bits/__rider_welds_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6851029,
+  "offset": 6851213,
   "rtol": null,
   "shape": [
    65
@@ -5047,7 +5047,7 @@
   "label": "channel_model_status/rows",
   "nbytes": 8,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6851094,
+  "offset": 6851278,
   "rtol": null,
   "shape": [
    1
@@ -5061,7 +5061,7 @@
   "label": "channel_model_status/bits/episode_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6851102,
+  "offset": 6851286,
   "rtol": null,
   "shape": [
    520
@@ -5075,7 +5075,7 @@
   "label": "channel_model_status/bits/interval_id",
   "nbytes": 520,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6851622,
+  "offset": 6851806,
   "rtol": null,
   "shape": [
    520
@@ -5089,7 +5089,7 @@
   "label": "channel_model_status/bits/model_status",
   "nbytes": 3734,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6852142,
+  "offset": 6852326,
   "rtol": null,
   "shape": [
    3734
@@ -5103,7 +5103,7 @@
   "label": "channel_model_status/bits/contact_crash_cause",
   "nbytes": 75,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6855876,
+  "offset": 6856060,
   "rtol": null,
   "shape": [
    75
@@ -5117,7 +5117,7 @@
   "label": "channel_model_status/bits/contact_crash_cause_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6855951,
+  "offset": 6856135,
   "rtol": null,
   "shape": [
    65
@@ -5131,7 +5131,7 @@
   "label": "channel_model_status/bits/attachment_violations",
   "nbytes": 265,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856016,
+  "offset": 6856200,
   "rtol": null,
   "shape": [
    265
@@ -5145,7 +5145,7 @@
   "label": "channel_model_status/bits/attachment_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856281,
+  "offset": 6856465,
   "rtol": null,
   "shape": [
    65
@@ -5159,7 +5159,7 @@
   "label": "channel_model_status/bits/__attachment_violations_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856346,
+  "offset": 6856530,
   "rtol": null,
   "shape": [
    65
@@ -5173,7 +5173,7 @@
   "label": "channel_model_status/bits/__attachment_violations_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856411,
+  "offset": 6856595,
   "rtol": null,
   "shape": [
    65
@@ -5187,7 +5187,7 @@
   "label": "channel_model_status/bits/__contact_crash_cause_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856476,
+  "offset": 6856660,
   "rtol": null,
   "shape": [
    65
@@ -5201,7 +5201,7 @@
   "label": "channel_model_status/bits/__contact_crash_cause_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856541,
+  "offset": 6856725,
   "rtol": null,
   "shape": [
    65
@@ -5215,7 +5215,7 @@
   "label": "channel_model_status/bits/__model_status_present",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856606,
+  "offset": 6856790,
   "rtol": null,
   "shape": [
    65
@@ -5229,7 +5229,7 @@
   "label": "channel_model_status/bits/__model_status_valid",
   "nbytes": 65,
   "node": "native_encode_columns/real_episode_all_tables_bitwise",
-  "offset": 6856671,
+  "offset": 6856855,
   "rtol": null,
   "shape": [
    65

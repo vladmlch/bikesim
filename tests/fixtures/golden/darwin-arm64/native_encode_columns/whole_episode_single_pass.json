@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "ride.file::config.json",
-  "nbytes": 27848,
+  "nbytes": 28032,
   "node": "native_encode_columns/whole_episode_single_pass",
   "offset": 5809704,
   "rtol": null,
   "shape": [
-   3481
+   3504
   ]
  },
  {
@@ -49,7 +49,7 @@
   "label": "ride.file::state.json",
   "nbytes": 32392,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5837552,
+  "offset": 5837736,
   "rtol": null,
   "shape": [
    4049
@@ -63,7 +63,7 @@
   "label": "ride.file::state.arrays/a000.f64",
   "nbytes": 2336,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5869944,
+  "offset": 5870128,
   "rtol": null,
   "shape": [
    292
@@ -77,7 +77,7 @@
   "label": "ride.file::state.arrays/a001.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872280,
+  "offset": 5872464,
   "rtol": null,
   "shape": [
    3
@@ -91,7 +91,7 @@
   "label": "ride.file::state.arrays/a002.f64",
   "nbytes": 176,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872304,
+  "offset": 5872488,
   "rtol": null,
   "shape": [
    22
@@ -105,7 +105,7 @@
   "label": "ride.file::state.arrays/a003.f64",
   "nbytes": 16,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872480,
+  "offset": 5872664,
   "rtol": null,
   "shape": [
    2
@@ -119,7 +119,7 @@
   "label": "ride.file::state.arrays/a004.f64",
   "nbytes": 8,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872496,
+  "offset": 5872680,
   "rtol": null,
   "shape": [
    1
@@ -133,7 +133,7 @@
   "label": "ride.file::state.arrays/a005.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872504,
+  "offset": 5872688,
   "rtol": null,
   "shape": [
    3
@@ -147,7 +147,7 @@
   "label": "ride.file::state.arrays/a006.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872528,
+  "offset": 5872712,
   "rtol": null,
   "shape": [
    3
@@ -161,7 +161,7 @@
   "label": "ride.file::state.arrays/a007.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872552,
+  "offset": 5872736,
   "rtol": null,
   "shape": [
    3
@@ -175,7 +175,7 @@
   "label": "ride.file::state.arrays/a008.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872576,
+  "offset": 5872760,
   "rtol": null,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "ride.file::state.arrays/a009.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872600,
+  "offset": 5872784,
   "rtol": null,
   "shape": [
    3
@@ -203,7 +203,7 @@
   "label": "ride.file::state.arrays/a010.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872624,
+  "offset": 5872808,
   "rtol": null,
   "shape": [
    3
@@ -217,7 +217,7 @@
   "label": "ride.file::state.arrays/a011.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872648,
+  "offset": 5872832,
   "rtol": null,
   "shape": [
    3
@@ -231,7 +231,7 @@
   "label": "ride.file::state.arrays/a012.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872672,
+  "offset": 5872856,
   "rtol": null,
   "shape": [
    3
@@ -245,7 +245,7 @@
   "label": "ride.file::state.arrays/a013.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872696,
+  "offset": 5872880,
   "rtol": null,
   "shape": [
    3
@@ -259,7 +259,7 @@
   "label": "ride.file::state.arrays/a014.f64",
   "nbytes": 24,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872720,
+  "offset": 5872904,
   "rtol": null,
   "shape": [
    3
@@ -273,7 +273,7 @@
   "label": "ride.file::state.arrays/a015.f64",
   "nbytes": 72,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872744,
+  "offset": 5872928,
   "rtol": null,
   "shape": [
    9
@@ -287,7 +287,7 @@
   "label": "ride.file::state.arrays/a016.f64",
   "nbytes": 72,
   "node": "native_encode_columns/whole_episode_single_pass",
-  "offset": 5872816,
+  "offset": 5873000,
   "rtol": null,
   "shape": [
    9

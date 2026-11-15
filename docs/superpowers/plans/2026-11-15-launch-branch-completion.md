@@ -269,7 +269,14 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
 4. **Старт с угла педали круче −0,8 рад** (стена −0,9 рад, вероятно, была неустойчивостью удержания).
 5. **Потери шин на `distributed`**: ровный старт до 20 км/ч за 7,3 с.
 6. **Восстановление шины `pneumatic`**: `savage_pneumatic.npz` даёт невязку загрузки 0,083 при пороге 0,05 —
-   материал и гистерезис шины после `b6c42f71` не сохраняются.
+   материал и гистерезис шины после `b6c42f71` не сохраняются. **Выполнено на ветке `queue-2026-11-15`**
+   (`d5abc831`): `SetupOwner::settle` сохраняет `settled_state_file`/`settled_initial_state` до
+   `finalize_initial_state` — файл несёт материал каркаса, на котором измерялась невязка, а не состояние
+   после опережающего `compute_into`; нормализация до той формы, что ставит `install_material`
+   (`d->time=0`, рестарт часов привода и контактов райдера), сохраняет побайтовую идентичность подачи
+   из кэша. `savage_pneumatic.npz` пересобран `bike-settle` на текущем исходном отпечатке
+   (steps=3536, residual=0,0492147), регрессия `test_savage_pneumatic_fixture_restores` в
+   `reference.equilibrium_state_file`; `check_change.sh HEAD` — 194/194, cppcheck/frontends/tidy чисто.
 7. **`model_valid` в `one_second_pair`** после правил тяги опоры (`9525ce1f`, `abaff36d`).
 8. **Читатели старых форматов** в `native/src/replay/` (`drop_removed_battery`, `inert_rider`) — убрать, если
    задача 2 покажет, что они мертвы. **Выполнено на ветке `queue-2026-11-15`** (`3d52cd06`, `b99382d3`):

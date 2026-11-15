@@ -28,6 +28,7 @@
 #include "initialization/state_file.hpp"
 #include "io/json.hpp"
 #include "io/npy.hpp"
+#include "io/value.hpp"
 #include "model/builder.hpp"
 #include "model/mapping.hpp"
 #include "model/rider_geometry.hpp"
@@ -41,6 +42,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -79,6 +81,46 @@ welded_request(const std::filesystem::path &cache_directory,
     request.initial_state.reset();
     request.cache_directory = cache_directory;
     return request;
+}
+
+// The pneumatic request on the Savage climb — the configuration the
+// checked-in savage_pneumatic.npz certifies — with cache and pose pins
+// under each test's control.
+[[nodiscard]] init::SetupRequest
+pneumatic_savage_request(const std::filesystem::path &cache_directory) {
+    auto request = init::read_setup_request(
+        bt::fixture("requests/pneumatic_flat.toml"));
+    request.track = bike::terrain::load_track(
+        bt::fixture("tracks/rough_uphill_savage.toml"));
+    request.model.field =
+        bike::terrain::HeightFieldSpec::for_track(request.track);
+    request.model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) the fixture request always decodes a physics file
+    request.model.physics->equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) same
+    request.cache_directory = cache_directory;
+    return request;
+}
+
+// A checked-in pose file binds the build that authored it: provider
+// identity, the native source digest and the compiled-model hash all feed
+// its fingerprint, so on another platform or after source edits the file
+// is legitimately foreign. Compare the digests its metadata records
+// against the ones make_setup resolved — the fresh-settle round trip
+// covers every build this predicate excludes.
+[[nodiscard]] bool
+same_build_identity(const init::SetupOwner &owner,
+                    const io::Value &metadata) {
+    const auto &stored = io::as_object(metadata, "state metadata");
+    const auto setup_metadata = owner.metadata();
+    const auto &current = io::as_object(setup_metadata, "setup metadata");
+    for (const std::string_view key :
+         {"provider_identity", "source_identity", "model_sha256"}) {
+        const auto *want = io::find_member(stored, key);
+        const auto *have = io::find_member(current, key);
+        if (want == nullptr || have == nullptr ||
+            io::as_string(*want, key) != io::as_string(*have, key))
+            return false;
+    }
+    return true;
 }
 
 [[nodiscard]] std::vector<std::filesystem::path>
@@ -475,6 +517,11 @@ void test_post_episode_lifecycle_writes_no_cache_entry() {
 // after finalize commits delta_prev := delta(qpos), so the restore probe
 // sees delta - delta_prev == 0, the hysteresis term collapses and the
 // measured residual jumps above the 0.05 contract.
+//
+// The fixture's fingerprint binds the build that authored it; on a foreign
+// platform or after source edits the file is intentionally rejected, so
+// this test runs only where the recorded build identity matches — the
+// fresh round trip above covers capture->restore on every other build.
 // ---------------------------------------------------------------------------
 void test_savage_pneumatic_fixture_restores() {
     auto request = init::read_setup_request(
@@ -483,19 +530,74 @@ void test_savage_pneumatic_fixture_restores() {
         bt::fixture("tracks/rough_uphill_savage.toml"));
     request.model.field =
         bike::terrain::HeightFieldSpec::for_track(request.track);
-    auto owner = init::make_setup(request);
-    const auto eq = init::settle(*owner);
-    bt::require(eq.cache_hit, "the pinned fixture serves without settling");
     const auto &pose_path =
         *request.model.physics->equilibrium_state_file; // NOLINT(bugprone-unchecked-optional-access) load_physics resolves the pinned path
+    const auto stored = init::read_state_file(pose_path);
+    auto owner = init::make_setup(request);
+    if (!same_build_identity(*owner, stored.metadata))
+        return;
+    const auto eq = init::settle(*owner);
+    bt::require(eq.cache_hit, "the pinned fixture serves without settling");
     bt::require(eq.state_file && *eq.state_file == pose_path,
                 "the served pose is the checked-in savage fixture");
-    const auto stored = init::read_state_file(pose_path);
     bt::require(
         init::state_array(stored, "residual_qacc").doubles().front() <= .05,
         "the stored residual honors the contract");
     bt::require(eq.residual_qacc <= .05,
                 "the restored pneumatic pose passes the residual recheck");
+}
+
+// ---------------------------------------------------------------------------
+// Queue item 6 follow-up: the repaired capture -> restore path proven on a
+// fresh solve, with no build-bound checked-in file. Settle the pneumatic
+// Savage configuration, write the served pose and restore it through the
+// explicit path — the welded round trip's twin, through the carcass whose
+// pre-finalize hysteresis memory the writer now preserves.
+// ---------------------------------------------------------------------------
+void test_pneumatic_settle_restore_round_trip() {
+    const bt::TemporaryDirectory dir("eq_state_pneu");
+    const auto pose_path = dir.path() / "pose.npz";
+    const auto [steps, pose] =
+        write_pose(pneumatic_savage_request(dir.path() / "cache_a"),
+                   pose_path);
+
+    auto load_request = pneumatic_savage_request(dir.path() / "cache_b");
+    load_request.model.physics->equilibrium_state_file = // NOLINT(bugprone-unchecked-optional-access) fixture contract
+        pose_path.string();
+    auto loaded = init::make_setup(load_request);
+    const auto eq = init::settle(*loaded);
+    bt::require(eq.cache_hit && eq.steps == steps,
+                "the fresh pneumatic pose restores without settling");
+    bt::require(eq.residual_qacc <= .05,
+                "the restored pneumatic pose passes the residual recheck");
+    const auto reloaded = loaded->capture_state_file();
+    bt::require(init::state_array(reloaded, "qpos").bytes ==
+                    init::state_array(pose, "qpos").bytes,
+                "the restored qpos equals the settled pose bitwise");
+}
+
+// ---------------------------------------------------------------------------
+// Queue item 6 follow-up: capture_initial_state() serves the finalized
+// context — a PhysicalInitialState is a launch transfer, so a moving
+// initial_speed_mps start must carry the qvel finalize writes, not the
+// rest pose's qvel=0.
+// ---------------------------------------------------------------------------
+void test_capture_initial_state_keeps_launch_velocity() {
+    const bt::TemporaryDirectory dir("eq_state_speed");
+    auto request = welded_request(dir.path() / "cache", false);
+    request.model.physics->initial_speed_mps = 5.; // NOLINT(bugprone-unchecked-optional-access) fixture contract
+    auto owner = init::make_setup(request);
+    (void)init::settle(*owner);
+    const auto captured = owner->capture_initial_state();
+    const auto payload = captured.payload();
+    const auto &object = io::as_object(payload, "initial state");
+    const auto *qvel = io::find_member(object, "qvel");
+    bt::require(qvel != nullptr, "the transfer payload carries qvel");
+    bool moving = false;
+    for (const auto &entry : io::as_array(*qvel, "qvel"))
+        moving = moving || std::abs(io::as_double(entry, "qvel")) > 0.;
+    bt::require(moving,
+                "a moving start's initial-state transfer preserves qvel");
 }
 
 void check() {
@@ -510,6 +612,8 @@ void check() {
     test_equilibrium_override_kwargs_reach_the_solve();
     test_post_episode_lifecycle_writes_no_cache_entry();
     test_savage_pneumatic_fixture_restores();
+    test_pneumatic_settle_restore_round_trip();
+    test_capture_initial_state_keeps_launch_velocity();
 }
 
 NATIVE_DIAG_POP

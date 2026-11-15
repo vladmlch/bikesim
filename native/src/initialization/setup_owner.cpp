@@ -150,13 +150,14 @@ struct SetupOwner::Impl {
     std::unique_ptr<runtime::PhysicalStep> physical;
     std::unique_ptr<SetupContext> context;
     std::optional<EquilibriumResult> result;
-    // The certified equilibrium captures, taken between the solve and
+    // The certified equilibrium pose file, taken between the solve and
     // finalize: finalize restarts the material clocks and runs an advancing
     // tire compute that commits the carcass memory (delta_prev :=
-    // delta(qpos)), so state read from the live context afterwards would
+    // delta(qpos)), so a file read from the live context afterwards would
     // restore without the hysteresis the recorded residual was measured on.
+    // Only the state file needs the pre-finalize read — an initial-state
+    // transfer carries the finalized launch state instead.
     std::optional<StateFile> settled_state_file;
-    std::optional<PhysicalInitialState> settled_initial_state;
     std::optional<std::string> sealed_model_sha256;
     std::optional<ResearchStartup> research_startup;
     bool sealed = false;
@@ -253,8 +254,10 @@ EquilibriumResult settle(SetupOwner& owner, const EquilibriumOptions& options) {
     // the drive/rider contact clocks read as the values the restore leaves
     // behind (install_material restarts exactly these clocks after
     // committing the stored material), so a re-served capture is
-    // byte-identical. A PhysicalInitialState transfer is likewise only
-    // legal at t=0.
+    // byte-identical. capture_initial_state() deliberately keeps serving
+    // the finalized context: a transfer carries the launch state — the
+    // qvel a moving initial_speed_mps start writes inside finalize — not
+    // the rest certificate.
     state.context->stepper.data()->time = 0.;
     state.context->stepper.drive().restart_clock();
     if (state.context->stepper.has_rider_contacts())
@@ -262,7 +265,6 @@ EquilibriumResult settle(SetupOwner& owner, const EquilibriumOptions& options) {
     state.settled_state_file = capture_state(*state.context,
         state.context->equilibrium->steps,
         state.context->equilibrium->residual_qacc);
-    state.settled_initial_state = PhysicalInitialState::capture(*state.context);
     finalize_initial_state(*state.context, state.config);
     if (state.request.research_startup)
         state.research_startup = prepare_research_startup(*state.context);
@@ -273,13 +275,13 @@ EquilibriumResult settle(SetupOwner& owner, const EquilibriumOptions& options) {
 }
 
 PhysicalInitialState SetupOwner::capture_initial_state() const {
-    if (!impl_->settled_initial_state)
+    if (!impl_->result || !impl_->context->completed)
         throw std::invalid_argument("initial-state capture requires a completed native setup");
-    return *impl_->settled_initial_state;
+    return PhysicalInitialState::capture(*impl_->context);
 }
 
 StateFile SetupOwner::capture_state_file() const {
-    if (!impl_->settled_state_file)
+    if (!impl_->result || !impl_->context->completed || !impl_->settled_state_file)
         throw std::invalid_argument("state-file capture requires a completed native setup");
     return *impl_->settled_state_file;
 }

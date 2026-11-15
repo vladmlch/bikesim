@@ -1079,17 +1079,17 @@ template <typename Edit>
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_cap_grades = {0.1, 0.05};
         c.seated_climb.climb_effort_cap_grade_nm = {30., 35.};
-    }, {"climb_effort_cap_grades", "non-ascending climb_effort_cap_grades"});
+    }, {.needle = "climb_effort_cap_grades", .label = "non-ascending climb_effort_cap_grades"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_cap_grade_nm[0] = 0.;
-    }, {"climb_effort_cap_grade_nm", "non-positive climb_effort_cap_grade_nm"});
+    }, {.needle = "climb_effort_cap_grade_nm", .label = "non-positive climb_effort_cap_grade_nm"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_rise_speed_mps = -0.1;
-    }, {"climb_effort_rise_speed_mps", "negative climb_effort_rise_speed_mps"});
+    }, {.needle = "climb_effort_rise_speed_mps", .label = "negative climb_effort_rise_speed_mps"});
     check_bad([](cfg::SimulationPhysicsConfig &c) {
         c.seated_climb.climb_effort_full_speed_mps =
             c.seated_climb.climb_effort_rise_speed_mps - 0.1;
-    }, {"climb_effort_full_speed_mps", "climb_effort_full_speed_mps < rise"});
+    }, {.needle = "climb_effort_full_speed_mps", .label = "climb_effort_full_speed_mps < rise"});
 }
 
 } // namespace

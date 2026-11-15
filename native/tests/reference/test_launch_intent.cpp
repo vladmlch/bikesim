@@ -558,29 +558,29 @@ struct InvalidClimbCapSpec {
     constexpr double kNan = std::numeric_limits<double>::quiet_NaN();
     constexpr double kInf = std::numeric_limits<double>::infinity();
     check_invalid([](auto &c) { c.climb_effort_cap_grades.clear(); c.climb_effort_cap_grade_nm.clear(); },
-                  {"climb_effort_cap_grades", "empty table"});
+                  {.needle = "climb_effort_cap_grades", .label = "empty table"});
     check_invalid([](auto &c) { c.climb_effort_cap_grade_nm.pop_back(); },
-                  {"climb_effort_cap_grade_nm", "mismatched table length"});
+                  {.needle = "climb_effort_cap_grade_nm", .label = "mismatched table length"});
     check_invalid([](auto &c) { c.climb_effort_cap_grades = {0., .10, .10}; },
-                  {"climb_effort_cap_grades", "duplicate grade knots"});
+                  {.needle = "climb_effort_cap_grades", .label = "duplicate grade knots"});
     check_invalid([](auto &c) { c.climb_effort_cap_grades = {.20, .10, .30}; },
-                  {"climb_effort_cap_grades", "descending grade knots"});
+                  {.needle = "climb_effort_cap_grades", .label = "descending grade knots"});
     check_invalid([&](auto &c) { c.climb_effort_cap_grades[1] = kNan; },
-                  {"climb_effort_cap_grades", "NaN grade knot"});
+                  {.needle = "climb_effort_cap_grades", .label = "NaN grade knot"});
     check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = 0.; },
-                  {"climb_effort_cap_grade_nm", "zero torque cap"});
+                  {.needle = "climb_effort_cap_grade_nm", .label = "zero torque cap"});
     check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = -10.; },
-                  {"climb_effort_cap_grade_nm", "negative torque cap"});
+                  {.needle = "climb_effort_cap_grade_nm", .label = "negative torque cap"});
     check_invalid([&](auto &c) { c.climb_effort_cap_grade_nm[0] = kInf; },
-                  {"climb_effort_cap_grade_nm", "infinite torque cap"});
+                  {.needle = "climb_effort_cap_grade_nm", .label = "infinite torque cap"});
     check_invalid([&](auto &c) { c.climb_effort_rise_speed_mps = -.1; },
-                  {"climb_effort_rise_speed_mps", "negative rise speed"});
+                  {.needle = "climb_effort_rise_speed_mps", .label = "negative rise speed"});
     check_invalid([&](auto &c) { c.climb_effort_rise_speed_mps = kNan; },
-                  {"climb_effort_rise_speed_mps", "NaN rise speed"});
+                  {.needle = "climb_effort_rise_speed_mps", .label = "NaN rise speed"});
     check_invalid([&](auto &c) { c.climb_effort_full_speed_mps = c.climb_effort_rise_speed_mps - .01; },
-                  {"climb_effort_full_speed_mps", "full speed below rise speed"});
+                  {.needle = "climb_effort_full_speed_mps", .label = "full speed below rise speed"});
     check_invalid([&](auto &c) { c.climb_effort_full_speed_mps = kInf; },
-                  {"climb_effort_full_speed_mps", "infinite full speed"});
+                  {.needle = "climb_effort_full_speed_mps", .label = "infinite full speed"});
 }
 
 } // namespace

@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 5544,
   "node": "native_rider_intent/state_unknown_signals_keys_rejected",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   693
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3312,
   "node": "native_rider_intent/state_unknown_signals_keys_rejected",
-  "offset": 4448,
+  "offset": 5544,
   "rtol": null,
   "shape": [
    414
@@ -35,7 +35,7 @@
   "label": "error.resolve.0",
   "nbytes": 0,
   "node": "native_rider_intent/state_unknown_signals_keys_rejected",
-  "offset": 7760,
+  "offset": 8856,
   "rtol": null,
   "shape": [
    0

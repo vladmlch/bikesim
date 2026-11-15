@@ -218,6 +218,10 @@ lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
 # RU: корпус не отклоняется назад дальше сгиба локтя 15° (0° — прямая рука): у почти прямых рук обратная кинематика даёт скачок момента в плечах и локтях; 15° — инженерный запас от прямой руки (решение 2026-11-08).
 min_elbow_flexion_deg = 15.0
+climb_effort_cap_grades = [0.0, 0.05, 0.10, 0.15, 0.20, 0.22, 0.25]
+climb_effort_cap_grade_nm = [50.0, 35.0, 32.0, 39.5, 35.0, 35.0, 35.0]
+climb_effort_rise_speed_mps = 2.5
+climb_effort_full_speed_mps = 4.0
 
 # Rider launch experience table — launch part 4: the aggressive rider,
 # calibrated (gradecap §17, user rulings 2026-11-12). This file is a full

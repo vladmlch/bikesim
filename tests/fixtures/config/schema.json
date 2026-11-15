@@ -1551,6 +1551,30 @@
           "default_factory": null,
           "name": "min_elbow_flexion_deg",
           "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "climb_effort_cap_grades",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "climb_effort_cap_grade_nm",
+          "type": "tuple[float, ...]"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "climb_effort_rise_speed_mps",
+          "type": "<class 'float'>"
+        },
+        {
+          "default": null,
+          "default_factory": null,
+          "name": "climb_effort_full_speed_mps",
+          "type": "<class 'float'>"
         }
       ],
       "name": "seated_climb",

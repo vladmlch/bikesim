@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3920,
+  "nbytes": 5016,
   "node": "native_rider_intent/config_validation",
   "offset": 0,
   "rtol": null,
   "shape": [
-   490
+   627
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "error.adapter.0",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 3920,
+  "offset": 5016,
   "rtol": null,
   "shape": [
    0
@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "input.adapter.1",
-  "nbytes": 3936,
+  "nbytes": 5032,
   "node": "native_rider_intent/config_validation",
-  "offset": 3920,
+  "offset": 5016,
   "rtol": null,
   "shape": [
-   492
+   629
   ]
  },
  {
@@ -49,7 +49,7 @@
   "label": "error.adapter.1",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 7856,
+  "offset": 10048,
   "rtol": null,
   "shape": [
    0
@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "bitwise",
   "label": "input.adapter.2",
-  "nbytes": 3944,
+  "nbytes": 5040,
   "node": "native_rider_intent/config_validation",
-  "offset": 7856,
+  "offset": 10048,
   "rtol": null,
   "shape": [
-   493
+   630
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "error.adapter.2",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 11800,
+  "offset": 15088,
   "rtol": null,
   "shape": [
    0
@@ -89,12 +89,12 @@
   "index": 6,
   "kind": "bitwise",
   "label": "input.adapter.3",
-  "nbytes": 3952,
+  "nbytes": 5048,
   "node": "native_rider_intent/config_validation",
-  "offset": 11800,
+  "offset": 15088,
   "rtol": null,
   "shape": [
-   494
+   631
   ]
  },
  {
@@ -105,7 +105,7 @@
   "label": "error.adapter.3",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 15752,
+  "offset": 20136,
   "rtol": null,
   "shape": [
    0
@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "input.adapter.4",
-  "nbytes": 3944,
+  "nbytes": 5040,
   "node": "native_rider_intent/config_validation",
-  "offset": 15752,
+  "offset": 20136,
   "rtol": null,
   "shape": [
-   493
+   630
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "error.adapter.4",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 19696,
+  "offset": 25176,
   "rtol": null,
   "shape": [
    0
@@ -145,12 +145,12 @@
   "index": 10,
   "kind": "bitwise",
   "label": "input.adapter.5",
-  "nbytes": 3936,
+  "nbytes": 5032,
   "node": "native_rider_intent/config_validation",
-  "offset": 19696,
+  "offset": 25176,
   "rtol": null,
   "shape": [
-   492
+   629
   ]
  },
  {
@@ -161,7 +161,7 @@
   "label": "error.adapter.5",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 23632,
+  "offset": 30208,
   "rtol": null,
   "shape": [
    0
@@ -173,12 +173,12 @@
   "index": 12,
   "kind": "bitwise",
   "label": "input.adapter.6",
-  "nbytes": 3952,
+  "nbytes": 5048,
   "node": "native_rider_intent/config_validation",
-  "offset": 23632,
+  "offset": 30208,
   "rtol": null,
   "shape": [
-   494
+   631
   ]
  },
  {
@@ -189,7 +189,7 @@
   "label": "error.adapter.6",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 27584,
+  "offset": 35256,
   "rtol": null,
   "shape": [
    0
@@ -201,12 +201,12 @@
   "index": 14,
   "kind": "bitwise",
   "label": "input.adapter.7",
-  "nbytes": 4072,
+  "nbytes": 5168,
   "node": "native_rider_intent/config_validation",
-  "offset": 27584,
+  "offset": 35256,
   "rtol": null,
   "shape": [
-   509
+   646
   ]
  },
  {
@@ -217,7 +217,7 @@
   "label": "error.adapter.7",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 31656,
+  "offset": 40424,
   "rtol": null,
   "shape": [
    0
@@ -229,12 +229,12 @@
   "index": 16,
   "kind": "bitwise",
   "label": "input.adapter.8",
-  "nbytes": 4256,
+  "nbytes": 5352,
   "node": "native_rider_intent/config_validation",
-  "offset": 31656,
+  "offset": 40424,
   "rtol": null,
   "shape": [
-   532
+   669
   ]
  },
  {
@@ -245,7 +245,7 @@
   "label": "error.adapter.8",
   "nbytes": 0,
   "node": "native_rider_intent/config_validation",
-  "offset": 35912,
+  "offset": 45776,
   "rtol": null,
   "shape": [
    0

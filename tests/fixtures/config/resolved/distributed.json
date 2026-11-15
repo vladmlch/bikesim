@@ -310,6 +310,18 @@
     "upshift_crank_rpm": 82.0
   },
   "seated_climb": {
+    "climb_effort_cap_grade_nm": {
+      "$tuple": [
+        1000.0
+      ]
+    },
+    "climb_effort_cap_grades": {
+      "$tuple": [
+        0.0
+      ]
+    },
+    "climb_effort_full_speed_mps": 4.0,
+    "climb_effort_rise_speed_mps": 2.5,
     "enabled": true,
     "front_load_share_target": 0.3,
     "lean_gain": 1.0,

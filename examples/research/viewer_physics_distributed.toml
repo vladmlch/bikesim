@@ -199,6 +199,10 @@ lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
 # RU: корпус не отклоняется назад дальше сгиба локтя 15° (0° — прямая рука): у почти прямых рук обратная кинематика даёт скачок момента в плечах и локтях; 15° — инженерный запас от прямой руки (решение 2026-11-08).
 min_elbow_flexion_deg = 15.0
+climb_effort_cap_grades = [0.0, 0.05, 0.10, 0.15, 0.20, 0.22, 0.25]
+climb_effort_cap_grade_nm = [45.0, 35.0, 30.0, 30.0, 34.0, 34.0, 35.0]
+climb_effort_rise_speed_mps = 2.5
+climb_effort_full_speed_mps = 4.0
 
 # Rider launch experience table — launch part 4: the normal rider,
 # calibrated (gradecap §17, user rulings 2026-11-12). The launch plan and
@@ -220,9 +224,9 @@ effort_cap_loose_nm = 45.0
 # launch part 4b — the -0.8 rad start (Follow-up 10, user ruling 2026-11-13)
 effort_cap_wet_nm = 13.0
 effort_cap_scree_nm = 40.0
-effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2]
+effort_cap_grades = [0.0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.15, 0.2, 0.22, 0.25]
 # launch part 4b — the -0.8 rad start (Follow-up 10, user ruling 2026-11-13)
-effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5]
+effort_cap_grade_nm = [38.5, 15.0, 14.5, 13.2, 14.0, 15.5, 19.5, 18.5, 21.0, 22.5]
 effort_rise_speed_mps = 2.5
 release_torque_grades = [0.0, 0.05, 0.1, 0.15, 0.2]
 release_torque_nm = [0.0, 9.0, 9.0, 9.0, 8.0]

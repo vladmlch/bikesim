@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3952,
+  "nbytes": 5048,
   "node": "native_rider_intent/update_validates_before_enabled_check",
   "offset": 0,
   "rtol": null,
   "shape": [
-   494
+   631
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.update.0",
   "nbytes": 2144,
   "node": "native_rider_intent/update_validates_before_enabled_check",
-  "offset": 3952,
+  "offset": 5048,
   "rtol": null,
   "shape": [
    268
@@ -35,7 +35,7 @@
   "label": "error.update.0",
   "nbytes": 0,
   "node": "native_rider_intent/update_validates_before_enabled_check",
-  "offset": 6096,
+  "offset": 7192,
   "rtol": null,
   "shape": [
    0
@@ -49,7 +49,7 @@
   "label": "input.update.1",
   "nbytes": 2144,
   "node": "native_rider_intent/update_validates_before_enabled_check",
-  "offset": 6096,
+  "offset": 7192,
   "rtol": null,
   "shape": [
    268
@@ -63,7 +63,7 @@
   "label": "error.update.1",
   "nbytes": 0,
   "node": "native_rider_intent/update_validates_before_enabled_check",
-  "offset": 8240,
+  "offset": 9336,
   "rtol": null,
   "shape": [
    0

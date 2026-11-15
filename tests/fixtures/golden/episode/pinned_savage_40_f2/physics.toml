@@ -153,6 +153,10 @@ lean_trim_gain_rad_s = 0.3
 lean_trim_limit_rad = 0.15
 trim_dead_time_s = 0.2
 min_elbow_flexion_deg = 15.0
+climb_effort_cap_grades = [0.0]
+climb_effort_cap_grade_nm = [1000.0]
+climb_effort_rise_speed_mps = 2.5
+climb_effort_full_speed_mps = 4.0
 
 # Rider launch experience table (launch plan, part 2): start cog by grade,
 # working pedal angle, torso lean by grade. Preliminary values that keep

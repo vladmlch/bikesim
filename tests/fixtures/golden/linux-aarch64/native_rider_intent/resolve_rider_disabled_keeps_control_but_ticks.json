@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 5544,
   "node": "native_rider_intent/resolve_rider_disabled_keeps_control_but_ticks",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   693
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3224,
   "node": "native_rider_intent/resolve_rider_disabled_keeps_control_but_ticks",
-  "offset": 4448,
+  "offset": 5544,
   "rtol": null,
   "shape": [
    403
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 137,
   "node": "native_rider_intent/resolve_rider_disabled_keeps_control_but_ticks",
-  "offset": 7672,
+  "offset": 8768,
   "rtol": null,
   "shape": [
    137
@@ -49,7 +49,7 @@
   "label": "output.state.0",
   "nbytes": 548,
   "node": "native_rider_intent/resolve_rider_disabled_keeps_control_but_ticks",
-  "offset": 7809,
+  "offset": 8905,
   "rtol": null,
   "shape": [
    548
@@ -63,7 +63,7 @@
   "label": "output.state.1",
   "nbytes": 548,
   "node": "native_rider_intent/resolve_rider_disabled_keeps_control_but_ticks",
-  "offset": 8357,
+  "offset": 9453,
   "rtol": null,
   "shape": [
    548

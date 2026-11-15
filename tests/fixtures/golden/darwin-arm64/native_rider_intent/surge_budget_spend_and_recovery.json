@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3824,
+  "nbytes": 4920,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
   "offset": 0,
   "rtol": null,
   "shape": [
-   478
+   615
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.power.0",
   "nbytes": 264,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 3824,
+  "offset": 4920,
   "rtol": null,
   "shape": [
    33
@@ -35,7 +35,7 @@
   "label": "output.power.0",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4088,
+  "offset": 5184,
   "rtol": null,
   "shape": []
  },
@@ -47,7 +47,7 @@
   "label": "input.power.1",
   "nbytes": 264,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4096,
+  "offset": 5192,
   "rtol": null,
   "shape": [
    33
@@ -61,7 +61,7 @@
   "label": "output.power.1",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4360,
+  "offset": 5456,
   "rtol": null,
   "shape": []
  },
@@ -73,7 +73,7 @@
   "label": "input.power.2",
   "nbytes": 264,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4368,
+  "offset": 5464,
   "rtol": null,
   "shape": [
    33
@@ -87,7 +87,7 @@
   "label": "output.power.2",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4632,
+  "offset": 5728,
   "rtol": null,
   "shape": []
  },
@@ -99,7 +99,7 @@
   "label": "input.power.3",
   "nbytes": 264,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4640,
+  "offset": 5736,
   "rtol": null,
   "shape": [
    33
@@ -113,7 +113,7 @@
   "label": "output.power.3",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4904,
+  "offset": 6000,
   "rtol": null,
   "shape": []
  },
@@ -125,7 +125,7 @@
   "label": "input.power.4",
   "nbytes": 272,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 4912,
+  "offset": 6008,
   "rtol": null,
   "shape": [
    34
@@ -139,7 +139,7 @@
   "label": "output.power.4",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5184,
+  "offset": 6280,
   "rtol": null,
   "shape": []
  },
@@ -151,7 +151,7 @@
   "label": "input.power.5",
   "nbytes": 272,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5192,
+  "offset": 6288,
   "rtol": null,
   "shape": [
    34
@@ -165,7 +165,7 @@
   "label": "output.power.5",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5464,
+  "offset": 6560,
   "rtol": null,
   "shape": []
  },
@@ -177,7 +177,7 @@
   "label": "input.power.6",
   "nbytes": 272,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5472,
+  "offset": 6568,
   "rtol": null,
   "shape": [
    34
@@ -191,7 +191,7 @@
   "label": "output.power.6",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5744,
+  "offset": 6840,
   "rtol": null,
   "shape": []
  },
@@ -203,7 +203,7 @@
   "label": "input.power.7",
   "nbytes": 272,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 5752,
+  "offset": 6848,
   "rtol": null,
   "shape": [
    34
@@ -217,7 +217,7 @@
   "label": "output.power.7",
   "nbytes": 8,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 6024,
+  "offset": 7120,
   "rtol": null,
   "shape": []
  },
@@ -229,7 +229,7 @@
   "label": "output.state.0",
   "nbytes": 938,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
-  "offset": 6032,
+  "offset": 7128,
   "rtol": null,
   "shape": [
    938

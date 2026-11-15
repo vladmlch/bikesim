@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 4448,
+  "nbytes": 5544,
   "node": "native_rider_intent/schedule_pulse_and_reset",
   "offset": 0,
   "rtol": null,
   "shape": [
-   556
+   693
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3216,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 4448,
+  "offset": 5544,
   "rtol": null,
   "shape": [
    402
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 219,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 7664,
+  "offset": 8760,
   "rtol": null,
   "shape": [
    219
@@ -49,7 +49,7 @@
   "label": "output.state.0",
   "nbytes": 548,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 7883,
+  "offset": 8979,
   "rtol": null,
   "shape": [
    548
@@ -63,7 +63,7 @@
   "label": "input.pulse.0",
   "nbytes": 448,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 8431,
+  "offset": 9527,
   "rtol": null,
   "shape": [
    56
@@ -77,7 +77,7 @@
   "label": "input.resolve.1",
   "nbytes": 3224,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 8879,
+  "offset": 9975,
   "rtol": null,
   "shape": [
    403
@@ -91,7 +91,7 @@
   "label": "output.control.1",
   "nbytes": 218,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 12103,
+  "offset": 13199,
   "rtol": null,
   "shape": [
    218
@@ -105,7 +105,7 @@
   "label": "output.state.1",
   "nbytes": 726,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 12321,
+  "offset": 13417,
   "rtol": null,
   "shape": [
    726
@@ -119,7 +119,7 @@
   "label": "input.resolve.2",
   "nbytes": 3224,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 13047,
+  "offset": 14143,
   "rtol": null,
   "shape": [
    403
@@ -133,7 +133,7 @@
   "label": "output.control.2",
   "nbytes": 219,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 16271,
+  "offset": 17367,
   "rtol": null,
   "shape": [
    219
@@ -147,7 +147,7 @@
   "label": "output.state.2",
   "nbytes": 892,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 16490,
+  "offset": 17586,
   "rtol": null,
   "shape": [
    892
@@ -161,7 +161,7 @@
   "label": "input.resolve.3",
   "nbytes": 3224,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 17382,
+  "offset": 18478,
   "rtol": null,
   "shape": [
    403
@@ -175,7 +175,7 @@
   "label": "output.control.3",
   "nbytes": 218,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 20606,
+  "offset": 21702,
   "rtol": null,
   "shape": [
    218
@@ -189,7 +189,7 @@
   "label": "output.state.3",
   "nbytes": 1052,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 20824,
+  "offset": 21920,
   "rtol": null,
   "shape": [
    1052
@@ -203,7 +203,7 @@
   "label": "input.resolve.4",
   "nbytes": 3224,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 21876,
+  "offset": 22972,
   "rtol": null,
   "shape": [
    403
@@ -217,7 +217,7 @@
   "label": "output.control.4",
   "nbytes": 234,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 25100,
+  "offset": 26196,
   "rtol": null,
   "shape": [
    234
@@ -231,7 +231,7 @@
   "label": "output.state.4",
   "nbytes": 1263,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 25334,
+  "offset": 26430,
   "rtol": null,
   "shape": [
    1263
@@ -245,7 +245,7 @@
   "label": "output.state.5",
   "nbytes": 1263,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 26597,
+  "offset": 27693,
   "rtol": null,
   "shape": [
    1263
@@ -259,7 +259,7 @@
   "label": "output.state.6",
   "nbytes": 383,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 27860,
+  "offset": 28956,
   "rtol": null,
   "shape": [
    383
@@ -273,7 +273,7 @@
   "label": "input.pulse.1",
   "nbytes": 736,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 28243,
+  "offset": 29339,
   "rtol": null,
   "shape": [
    92
@@ -287,7 +287,7 @@
   "label": "error.pulse.0",
   "nbytes": 0,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 28979,
+  "offset": 30075,
   "rtol": null,
   "shape": [
    0
@@ -301,7 +301,7 @@
   "label": "input.pulse.2",
   "nbytes": 416,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 28979,
+  "offset": 30075,
   "rtol": null,
   "shape": [
    52
@@ -315,7 +315,7 @@
   "label": "error.pulse.1",
   "nbytes": 0,
   "node": "native_rider_intent/schedule_pulse_and_reset",
-  "offset": 29395,
+  "offset": 30491,
   "rtol": null,
   "shape": [
    0

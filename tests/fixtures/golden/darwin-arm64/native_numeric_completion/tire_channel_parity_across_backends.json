@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "compliant.files",
-  "nbytes": 824,
+  "nbytes": 864,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
   "offset": 0,
   "rtol": null,
   "shape": [
-   103
+   108
   ]
  },
  {
@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "compliant.file::config.json",
-  "nbytes": 27848,
+  "nbytes": 28032,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 824,
+  "offset": 864,
   "rtol": null,
   "shape": [
-   3481
+   3504
   ]
  },
  {
@@ -35,7 +35,7 @@
   "label": "compliant.file::state.json",
   "nbytes": 32392,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 28672,
+  "offset": 28896,
   "rtol": null,
   "shape": [
    4049
@@ -49,7 +49,7 @@
   "label": "compliant.file::state.arrays/a000.f64",
   "nbytes": 2336,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 61064,
+  "offset": 61288,
   "rtol": null,
   "shape": [
    292
@@ -63,7 +63,7 @@
   "label": "compliant.file::state.arrays/a001.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63400,
+  "offset": 63624,
   "rtol": null,
   "shape": [
    3
@@ -77,7 +77,7 @@
   "label": "compliant.file::state.arrays/a002.f64",
   "nbytes": 176,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63424,
+  "offset": 63648,
   "rtol": null,
   "shape": [
    22
@@ -91,7 +91,7 @@
   "label": "compliant.file::state.arrays/a003.f64",
   "nbytes": 16,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63600,
+  "offset": 63824,
   "rtol": null,
   "shape": [
    2
@@ -105,7 +105,7 @@
   "label": "compliant.file::state.arrays/a004.f64",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63616,
+  "offset": 63840,
   "rtol": null,
   "shape": [
    1
@@ -119,7 +119,7 @@
   "label": "compliant.file::state.arrays/a005.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63624,
+  "offset": 63848,
   "rtol": null,
   "shape": [
    3
@@ -133,7 +133,7 @@
   "label": "compliant.file::state.arrays/a006.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63648,
+  "offset": 63872,
   "rtol": null,
   "shape": [
    3
@@ -147,7 +147,7 @@
   "label": "compliant.file::state.arrays/a007.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63672,
+  "offset": 63896,
   "rtol": null,
   "shape": [
    3
@@ -161,7 +161,7 @@
   "label": "compliant.file::state.arrays/a008.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63696,
+  "offset": 63920,
   "rtol": null,
   "shape": [
    3
@@ -175,7 +175,7 @@
   "label": "compliant.file::state.arrays/a009.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63720,
+  "offset": 63944,
   "rtol": null,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "compliant.file::state.arrays/a010.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63744,
+  "offset": 63968,
   "rtol": null,
   "shape": [
    3
@@ -203,7 +203,7 @@
   "label": "compliant.file::state.arrays/a011.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63768,
+  "offset": 63992,
   "rtol": null,
   "shape": [
    3
@@ -217,7 +217,7 @@
   "label": "compliant.file::state.arrays/a012.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63792,
+  "offset": 64016,
   "rtol": null,
   "shape": [
    3
@@ -231,7 +231,7 @@
   "label": "compliant.file::state.arrays/a013.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63816,
+  "offset": 64040,
   "rtol": null,
   "shape": [
    3
@@ -245,7 +245,7 @@
   "label": "compliant.file::state.arrays/a014.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63840,
+  "offset": 64064,
   "rtol": null,
   "shape": [
    3
@@ -259,7 +259,7 @@
   "label": "compliant.file::state.arrays/a015.f64",
   "nbytes": 72,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63864,
+  "offset": 64088,
   "rtol": null,
   "shape": [
    9
@@ -273,7 +273,7 @@
   "label": "compliant.file::state.arrays/a016.f64",
   "nbytes": 72,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 63936,
+  "offset": 64160,
   "rtol": null,
   "shape": [
    9
@@ -287,7 +287,7 @@
   "label": "compliant#keys",
   "nbytes": 16,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64008,
+  "offset": 64232,
   "rtol": null,
   "shape": [
    16
@@ -301,7 +301,7 @@
   "label": "compliant.front#keys",
   "nbytes": 549,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64024,
+  "offset": 64248,
   "rtol": null,
   "shape": [
    549
@@ -315,7 +315,7 @@
   "label": "compliant.front.backend",
   "nbytes": 14,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64573,
+  "offset": 64797,
   "rtol": null,
   "shape": [
    14
@@ -329,7 +329,7 @@
   "label": "compliant.front.branch_release_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64587,
+  "offset": 64811,
   "rtol": 1e-09,
   "shape": []
  },
@@ -341,7 +341,7 @@
   "label": "compliant.front.brush_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64595,
+  "offset": 64819,
   "rtol": 1e-09,
   "shape": []
  },
@@ -353,7 +353,7 @@
   "label": "compliant.front.controller_grounded",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64603,
+  "offset": 64827,
   "rtol": null,
   "shape": [
    4
@@ -367,7 +367,7 @@
   "label": "compliant.front.effective_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64607,
+  "offset": 64831,
   "rtol": 1e-09,
   "shape": []
  },
@@ -379,7 +379,7 @@
   "label": "compliant.front.friction_coefficient",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64615,
+  "offset": 64839,
   "rtol": 1e-09,
   "shape": []
  },
@@ -391,7 +391,7 @@
   "label": "compliant.front.geometric_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64623,
+  "offset": 64847,
   "rtol": null,
   "shape": [
    4
@@ -405,7 +405,7 @@
   "label": "compliant.front.multi_support",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64627,
+  "offset": 64851,
   "rtol": null,
   "shape": [
    5
@@ -419,7 +419,7 @@
   "label": "compliant.front.normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64632,
+  "offset": 64856,
   "rtol": 1e-09,
   "shape": []
  },
@@ -431,7 +431,7 @@
   "label": "compliant.front.normal_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64640,
+  "offset": 64864,
   "rtol": 1e-09,
   "shape": []
  },
@@ -443,7 +443,7 @@
   "label": "compliant.front.normal_vertical_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64648,
+  "offset": 64872,
   "rtol": 1e-09,
   "shape": []
  },
@@ -455,7 +455,7 @@
   "label": "compliant.front.omega_abs_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64656,
+  "offset": 64880,
   "rtol": 1e-09,
   "shape": []
  },
@@ -467,7 +467,7 @@
   "label": "compliant.front.omega_rel_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64664,
+  "offset": 64888,
   "rtol": 1e-09,
   "shape": []
  },
@@ -479,7 +479,7 @@
   "label": "compliant.front.outside_material_load_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64672,
+  "offset": 64896,
   "rtol": null,
   "shape": [
    5
@@ -493,7 +493,7 @@
   "label": "compliant.front.patches#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64677,
+  "offset": 64901,
   "rtol": null,
   "shape": [
    1
@@ -507,7 +507,7 @@
   "label": "compliant.front.patches[0]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64678,
+  "offset": 64902,
   "rtol": null,
   "shape": [
    113
@@ -521,7 +521,7 @@
   "label": "compliant.front.patches[0].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64791,
+  "offset": 65015,
   "rtol": null,
   "shape": [
    1
@@ -535,7 +535,7 @@
   "label": "compliant.front.patches[0].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64792,
+  "offset": 65016,
   "rtol": 1e-09,
   "shape": []
  },
@@ -547,7 +547,7 @@
   "label": "compliant.front.patches[0].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64800,
+  "offset": 65024,
   "rtol": 1e-09,
   "shape": []
  },
@@ -559,7 +559,7 @@
   "label": "compliant.front.patches[0].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64808,
+  "offset": 65032,
   "rtol": 1e-09,
   "shape": []
  },
@@ -571,7 +571,7 @@
   "label": "compliant.front.patches[0].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64816,
+  "offset": 65040,
   "rtol": null,
   "shape": [
    1
@@ -585,7 +585,7 @@
   "label": "compliant.front.patches[0].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64817,
+  "offset": 65041,
   "rtol": 1e-09,
   "shape": []
  },
@@ -597,7 +597,7 @@
   "label": "compliant.front.patches[0].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64825,
+  "offset": 65049,
   "rtol": 1e-09,
   "shape": []
  },
@@ -609,7 +609,7 @@
   "label": "compliant.front.patches[0].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64833,
+  "offset": 65057,
   "rtol": 1e-09,
   "shape": []
  },
@@ -621,7 +621,7 @@
   "label": "compliant.front.patches[0].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64841,
+  "offset": 65065,
   "rtol": 1e-09,
   "shape": []
  },
@@ -633,7 +633,7 @@
   "label": "compliant.front.patches[0].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64849,
+  "offset": 65073,
   "rtol": null,
   "shape": [
    1
@@ -647,7 +647,7 @@
   "label": "compliant.front.patches[0].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64850,
+  "offset": 65074,
   "rtol": 1e-09,
   "shape": []
  },
@@ -659,7 +659,7 @@
   "label": "compliant.front.patches[0].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64858,
+  "offset": 65082,
   "rtol": 1e-09,
   "shape": []
  },
@@ -671,7 +671,7 @@
   "label": "compliant.front.patches[0].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64866,
+  "offset": 65090,
   "rtol": 1e-09,
   "shape": []
  },
@@ -683,7 +683,7 @@
   "label": "compliant.front.patches[0].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64874,
+  "offset": 65098,
   "rtol": 1e-09,
   "shape": []
  },
@@ -695,7 +695,7 @@
   "label": "compliant.front.patches[0].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64882,
+  "offset": 65106,
   "rtol": null,
   "shape": [
    9
@@ -709,7 +709,7 @@
   "label": "compliant.front.patches[0].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64891,
+  "offset": 65115,
   "rtol": 1e-09,
   "shape": []
  },
@@ -721,7 +721,7 @@
   "label": "compliant.front.patches[0].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64899,
+  "offset": 65123,
   "rtol": null,
   "shape": [
    1
@@ -735,7 +735,7 @@
   "label": "compliant.front.patches[0].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64900,
+  "offset": 65124,
   "rtol": 1e-09,
   "shape": []
  },
@@ -747,7 +747,7 @@
   "label": "compliant.front.patches[0].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64908,
+  "offset": 65132,
   "rtol": 1e-09,
   "shape": []
  },
@@ -759,7 +759,7 @@
   "label": "compliant.front.patches[0].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64916,
+  "offset": 65140,
   "rtol": 1e-09,
   "shape": []
  },
@@ -771,7 +771,7 @@
   "label": "compliant.front.penetration_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64924,
+  "offset": 65148,
   "rtol": 1e-09,
   "shape": []
  },
@@ -783,7 +783,7 @@
   "label": "compliant.front.radial_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64932,
+  "offset": 65156,
   "rtol": 1e-09,
   "shape": []
  },
@@ -795,7 +795,7 @@
   "label": "compliant.front.raw_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64940,
+  "offset": 65164,
   "rtol": null,
   "shape": [
    4
@@ -809,7 +809,7 @@
   "label": "compliant.front.shear_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64944,
+  "offset": 65168,
   "rtol": 1e-09,
   "shape": []
  },
@@ -821,7 +821,7 @@
   "label": "compliant.front.slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64952,
+  "offset": 65176,
   "rtol": 1e-09,
   "shape": []
  },
@@ -833,7 +833,7 @@
   "label": "compliant.front.slip_ratio",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64960,
+  "offset": 65184,
   "rtol": 1e-09,
   "shape": []
  },
@@ -845,7 +845,7 @@
   "label": "compliant.front.supports_multiple_contacts",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64968,
+  "offset": 65192,
   "rtol": null,
   "shape": [
    5
@@ -859,7 +859,7 @@
   "label": "compliant.front.surface",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64973,
+  "offset": 65197,
   "rtol": null,
   "shape": [
    9
@@ -873,7 +873,7 @@
   "label": "compliant.front.tangent_center_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64982,
+  "offset": 65206,
   "rtol": 1e-09,
   "shape": []
  },
@@ -885,7 +885,7 @@
   "label": "compliant.front.tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64990,
+  "offset": 65214,
   "rtol": 1e-09,
   "shape": []
  },
@@ -897,7 +897,7 @@
   "label": "compliant.front.unloaded_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 64998,
+  "offset": 65222,
   "rtol": 1e-09,
   "shape": []
  },
@@ -909,7 +909,7 @@
   "label": "compliant.front.vertical_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65006,
+  "offset": 65230,
   "rtol": 1e-09,
   "shape": []
  },
@@ -921,7 +921,7 @@
   "label": "compliant.front.wheel_axis_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65014,
+  "offset": 65238,
   "rtol": null,
   "shape": [
    1
@@ -935,7 +935,7 @@
   "label": "compliant.front.wheel_axis_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65015,
+  "offset": 65239,
   "rtol": 1e-09,
   "shape": []
  },
@@ -947,7 +947,7 @@
   "label": "compliant.front.wheel_axis_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65023,
+  "offset": 65247,
   "rtol": 1e-09,
   "shape": []
  },
@@ -959,7 +959,7 @@
   "label": "compliant.front.wheel_axis_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65031,
+  "offset": 65255,
   "rtol": 1e-09,
   "shape": []
  },
@@ -971,7 +971,7 @@
   "label": "compliant.front.wheel_axis_moment_nm",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65039,
+  "offset": 65263,
   "rtol": 1e-09,
   "shape": []
  },
@@ -983,7 +983,7 @@
   "label": "compliant.front.world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65047,
+  "offset": 65271,
   "rtol": null,
   "shape": [
    1
@@ -997,7 +997,7 @@
   "label": "compliant.front.world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65048,
+  "offset": 65272,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1009,7 +1009,7 @@
   "label": "compliant.front.world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65056,
+  "offset": 65280,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1021,7 +1021,7 @@
   "label": "compliant.front.world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65064,
+  "offset": 65288,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1033,7 +1033,7 @@
   "label": "compliant.rear#keys",
   "nbytes": 549,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65072,
+  "offset": 65296,
   "rtol": null,
   "shape": [
    549
@@ -1047,7 +1047,7 @@
   "label": "compliant.rear.backend",
   "nbytes": 14,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65621,
+  "offset": 65845,
   "rtol": null,
   "shape": [
    14
@@ -1061,7 +1061,7 @@
   "label": "compliant.rear.branch_release_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65635,
+  "offset": 65859,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1073,7 +1073,7 @@
   "label": "compliant.rear.brush_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65643,
+  "offset": 65867,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1085,7 +1085,7 @@
   "label": "compliant.rear.controller_grounded",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65651,
+  "offset": 65875,
   "rtol": null,
   "shape": [
    4
@@ -1099,7 +1099,7 @@
   "label": "compliant.rear.effective_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65655,
+  "offset": 65879,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1111,7 +1111,7 @@
   "label": "compliant.rear.friction_coefficient",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65663,
+  "offset": 65887,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1123,7 +1123,7 @@
   "label": "compliant.rear.geometric_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65671,
+  "offset": 65895,
   "rtol": null,
   "shape": [
    4
@@ -1137,7 +1137,7 @@
   "label": "compliant.rear.multi_support",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65675,
+  "offset": 65899,
   "rtol": null,
   "shape": [
    5
@@ -1151,7 +1151,7 @@
   "label": "compliant.rear.normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65680,
+  "offset": 65904,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1163,7 +1163,7 @@
   "label": "compliant.rear.normal_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65688,
+  "offset": 65912,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1175,7 +1175,7 @@
   "label": "compliant.rear.normal_vertical_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65696,
+  "offset": 65920,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1187,7 +1187,7 @@
   "label": "compliant.rear.omega_abs_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65704,
+  "offset": 65928,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1199,7 +1199,7 @@
   "label": "compliant.rear.omega_rel_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65712,
+  "offset": 65936,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1211,7 +1211,7 @@
   "label": "compliant.rear.outside_material_load_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65720,
+  "offset": 65944,
   "rtol": null,
   "shape": [
    5
@@ -1225,7 +1225,7 @@
   "label": "compliant.rear.patches#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65725,
+  "offset": 65949,
   "rtol": null,
   "shape": [
    1
@@ -1239,7 +1239,7 @@
   "label": "compliant.rear.patches[0]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65726,
+  "offset": 65950,
   "rtol": null,
   "shape": [
    113
@@ -1253,7 +1253,7 @@
   "label": "compliant.rear.patches[0].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65839,
+  "offset": 66063,
   "rtol": null,
   "shape": [
    1
@@ -1267,7 +1267,7 @@
   "label": "compliant.rear.patches[0].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65840,
+  "offset": 66064,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1279,7 +1279,7 @@
   "label": "compliant.rear.patches[0].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65848,
+  "offset": 66072,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1291,7 +1291,7 @@
   "label": "compliant.rear.patches[0].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65856,
+  "offset": 66080,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1303,7 +1303,7 @@
   "label": "compliant.rear.patches[0].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65864,
+  "offset": 66088,
   "rtol": null,
   "shape": [
    1
@@ -1317,7 +1317,7 @@
   "label": "compliant.rear.patches[0].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65865,
+  "offset": 66089,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1329,7 +1329,7 @@
   "label": "compliant.rear.patches[0].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65873,
+  "offset": 66097,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1341,7 +1341,7 @@
   "label": "compliant.rear.patches[0].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65881,
+  "offset": 66105,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1353,7 +1353,7 @@
   "label": "compliant.rear.patches[0].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65889,
+  "offset": 66113,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1365,7 +1365,7 @@
   "label": "compliant.rear.patches[0].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65897,
+  "offset": 66121,
   "rtol": null,
   "shape": [
    1
@@ -1379,7 +1379,7 @@
   "label": "compliant.rear.patches[0].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65898,
+  "offset": 66122,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1391,7 +1391,7 @@
   "label": "compliant.rear.patches[0].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65906,
+  "offset": 66130,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1403,7 +1403,7 @@
   "label": "compliant.rear.patches[0].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65914,
+  "offset": 66138,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1415,7 +1415,7 @@
   "label": "compliant.rear.patches[0].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65922,
+  "offset": 66146,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1427,7 +1427,7 @@
   "label": "compliant.rear.patches[0].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65930,
+  "offset": 66154,
   "rtol": null,
   "shape": [
    9
@@ -1441,7 +1441,7 @@
   "label": "compliant.rear.patches[0].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65939,
+  "offset": 66163,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1453,7 +1453,7 @@
   "label": "compliant.rear.patches[0].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65947,
+  "offset": 66171,
   "rtol": null,
   "shape": [
    1
@@ -1467,7 +1467,7 @@
   "label": "compliant.rear.patches[0].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65948,
+  "offset": 66172,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1479,7 +1479,7 @@
   "label": "compliant.rear.patches[0].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65956,
+  "offset": 66180,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1491,7 +1491,7 @@
   "label": "compliant.rear.patches[0].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65964,
+  "offset": 66188,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1503,7 +1503,7 @@
   "label": "compliant.rear.penetration_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65972,
+  "offset": 66196,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1515,7 +1515,7 @@
   "label": "compliant.rear.radial_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65980,
+  "offset": 66204,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1527,7 +1527,7 @@
   "label": "compliant.rear.raw_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65988,
+  "offset": 66212,
   "rtol": null,
   "shape": [
    4
@@ -1541,7 +1541,7 @@
   "label": "compliant.rear.shear_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 65992,
+  "offset": 66216,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1553,7 +1553,7 @@
   "label": "compliant.rear.slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66000,
+  "offset": 66224,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1565,7 +1565,7 @@
   "label": "compliant.rear.slip_ratio",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66008,
+  "offset": 66232,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1577,7 +1577,7 @@
   "label": "compliant.rear.supports_multiple_contacts",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66016,
+  "offset": 66240,
   "rtol": null,
   "shape": [
    5
@@ -1591,7 +1591,7 @@
   "label": "compliant.rear.surface",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66021,
+  "offset": 66245,
   "rtol": null,
   "shape": [
    9
@@ -1605,7 +1605,7 @@
   "label": "compliant.rear.tangent_center_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66030,
+  "offset": 66254,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1617,7 +1617,7 @@
   "label": "compliant.rear.tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66038,
+  "offset": 66262,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1629,7 +1629,7 @@
   "label": "compliant.rear.unloaded_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66046,
+  "offset": 66270,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1641,7 +1641,7 @@
   "label": "compliant.rear.vertical_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66054,
+  "offset": 66278,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1653,7 +1653,7 @@
   "label": "compliant.rear.wheel_axis_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66062,
+  "offset": 66286,
   "rtol": null,
   "shape": [
    1
@@ -1667,7 +1667,7 @@
   "label": "compliant.rear.wheel_axis_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66063,
+  "offset": 66287,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1679,7 +1679,7 @@
   "label": "compliant.rear.wheel_axis_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66071,
+  "offset": 66295,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1691,7 +1691,7 @@
   "label": "compliant.rear.wheel_axis_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66079,
+  "offset": 66303,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1703,7 +1703,7 @@
   "label": "compliant.rear.wheel_axis_moment_nm",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66087,
+  "offset": 66311,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1715,7 +1715,7 @@
   "label": "compliant.rear.world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66095,
+  "offset": 66319,
   "rtol": null,
   "shape": [
    1
@@ -1729,7 +1729,7 @@
   "label": "compliant.rear.world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66096,
+  "offset": 66320,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1741,7 +1741,7 @@
   "label": "compliant.rear.world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66104,
+  "offset": 66328,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1753,7 +1753,7 @@
   "label": "compliant.rear.world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66112,
+  "offset": 66336,
   "rtol": 1e-09,
   "shape": []
  },
@@ -1763,12 +1763,12 @@
   "index": 137,
   "kind": "bitwise",
   "label": "distributed.files",
-  "nbytes": 832,
+  "nbytes": 864,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66120,
+  "offset": 66344,
   "rtol": null,
   "shape": [
-   104
+   108
   ]
  },
  {
@@ -1777,12 +1777,12 @@
   "index": 138,
   "kind": "bitwise",
   "label": "distributed.file::config.json",
-  "nbytes": 29928,
+  "nbytes": 30112,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 66952,
+  "offset": 67208,
   "rtol": null,
   "shape": [
-   3741
+   3764
   ]
  },
  {
@@ -1793,7 +1793,7 @@
   "label": "distributed.file::state.json",
   "nbytes": 60232,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 96880,
+  "offset": 97320,
   "rtol": null,
   "shape": [
    7529
@@ -1807,7 +1807,7 @@
   "label": "distributed.file::state.arrays/a000.f64",
   "nbytes": 2336,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 157112,
+  "offset": 157552,
   "rtol": null,
   "shape": [
    292
@@ -1821,7 +1821,7 @@
   "label": "distributed.file::state.arrays/a001.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 159448,
+  "offset": 159888,
   "rtol": null,
   "shape": [
    3
@@ -1835,7 +1835,7 @@
   "label": "distributed.file::state.arrays/a002.f64",
   "nbytes": 8192,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 159472,
+  "offset": 159912,
   "rtol": null,
   "shape": [
    1024
@@ -1849,7 +1849,7 @@
   "label": "distributed.file::state.arrays/a003.f64",
   "nbytes": 16,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167664,
+  "offset": 168104,
   "rtol": null,
   "shape": [
    2
@@ -1863,7 +1863,7 @@
   "label": "distributed.file::state.arrays/a004.f64",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167680,
+  "offset": 168120,
   "rtol": null,
   "shape": [
    1
@@ -1877,7 +1877,7 @@
   "label": "distributed.file::state.arrays/a005.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167688,
+  "offset": 168128,
   "rtol": null,
   "shape": [
    3
@@ -1891,7 +1891,7 @@
   "label": "distributed.file::state.arrays/a006.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167712,
+  "offset": 168152,
   "rtol": null,
   "shape": [
    3
@@ -1905,7 +1905,7 @@
   "label": "distributed.file::state.arrays/a007.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167736,
+  "offset": 168176,
   "rtol": null,
   "shape": [
    3
@@ -1919,7 +1919,7 @@
   "label": "distributed.file::state.arrays/a008.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167760,
+  "offset": 168200,
   "rtol": null,
   "shape": [
    3
@@ -1933,7 +1933,7 @@
   "label": "distributed.file::state.arrays/a009.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167784,
+  "offset": 168224,
   "rtol": null,
   "shape": [
    3
@@ -1947,7 +1947,7 @@
   "label": "distributed.file::state.arrays/a010.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167808,
+  "offset": 168248,
   "rtol": null,
   "shape": [
    3
@@ -1961,7 +1961,7 @@
   "label": "distributed.file::state.arrays/a011.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167832,
+  "offset": 168272,
   "rtol": null,
   "shape": [
    3
@@ -1975,7 +1975,7 @@
   "label": "distributed.file::state.arrays/a012.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167856,
+  "offset": 168296,
   "rtol": null,
   "shape": [
    3
@@ -1989,7 +1989,7 @@
   "label": "distributed.file::state.arrays/a013.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167880,
+  "offset": 168320,
   "rtol": null,
   "shape": [
    3
@@ -2003,7 +2003,7 @@
   "label": "distributed.file::state.arrays/a014.f64",
   "nbytes": 24,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167904,
+  "offset": 168344,
   "rtol": null,
   "shape": [
    3
@@ -2017,7 +2017,7 @@
   "label": "distributed.file::state.arrays/a015.f64",
   "nbytes": 72,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 167928,
+  "offset": 168368,
   "rtol": null,
   "shape": [
    9
@@ -2031,7 +2031,7 @@
   "label": "distributed.file::state.arrays/a016.f64",
   "nbytes": 72,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168000,
+  "offset": 168440,
   "rtol": null,
   "shape": [
    9
@@ -2045,7 +2045,7 @@
   "label": "distributed#keys",
   "nbytes": 16,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168072,
+  "offset": 168512,
   "rtol": null,
   "shape": [
    16
@@ -2059,7 +2059,7 @@
   "label": "distributed.front#keys",
   "nbytes": 633,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168088,
+  "offset": 168528,
   "rtol": null,
   "shape": [
    633
@@ -2073,7 +2073,7 @@
   "label": "distributed.front.active_station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168721,
+  "offset": 169161,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2085,7 +2085,7 @@
   "label": "distributed.front.backend",
   "nbytes": 26,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168729,
+  "offset": 169169,
   "rtol": null,
   "shape": [
    26
@@ -2099,7 +2099,7 @@
   "label": "distributed.front.brush_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168755,
+  "offset": 169195,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2111,7 +2111,7 @@
   "label": "distributed.front.calibration_status",
   "nbytes": 26,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168763,
+  "offset": 169203,
   "rtol": null,
   "shape": [
    26
@@ -2125,7 +2125,7 @@
   "label": "distributed.front.capability_status",
   "nbytes": 46,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168789,
+  "offset": 169229,
   "rtol": null,
   "shape": [
    46
@@ -2139,7 +2139,7 @@
   "label": "distributed.front.controller_grounded",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168835,
+  "offset": 169275,
   "rtol": null,
   "shape": [
    4
@@ -2153,7 +2153,7 @@
   "label": "distributed.front.effective_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168839,
+  "offset": 169279,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2165,7 +2165,7 @@
   "label": "distributed.front.geometric_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168847,
+  "offset": 169287,
   "rtol": null,
   "shape": [
    4
@@ -2179,7 +2179,7 @@
   "label": "distributed.front.max_patch_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168851,
+  "offset": 169291,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2191,7 +2191,7 @@
   "label": "distributed.front.multi_support",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168859,
+  "offset": 169299,
   "rtol": null,
   "shape": [
    5
@@ -2205,7 +2205,7 @@
   "label": "distributed.front.nonsmooth_station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168864,
+  "offset": 169304,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2217,7 +2217,7 @@
   "label": "distributed.front.normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168872,
+  "offset": 169312,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2229,7 +2229,7 @@
   "label": "distributed.front.normal_vertical_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168880,
+  "offset": 169320,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2241,7 +2241,7 @@
   "label": "distributed.front.omega_abs_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168888,
+  "offset": 169328,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2253,7 +2253,7 @@
   "label": "distributed.front.omega_rel_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168896,
+  "offset": 169336,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2265,7 +2265,7 @@
   "label": "distributed.front.outside_material_deflection_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168904,
+  "offset": 169344,
   "rtol": null,
   "shape": [
    5
@@ -2279,7 +2279,7 @@
   "label": "distributed.front.outside_material_load_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168909,
+  "offset": 169349,
   "rtol": null,
   "shape": [
    5
@@ -2293,7 +2293,7 @@
   "label": "distributed.front.patches#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168914,
+  "offset": 169354,
   "rtol": null,
   "shape": [
    1
@@ -2307,7 +2307,7 @@
   "label": "distributed.front.patches[0]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 168915,
+  "offset": 169355,
   "rtol": null,
   "shape": [
    113
@@ -2321,7 +2321,7 @@
   "label": "distributed.front.patches[0].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169028,
+  "offset": 169468,
   "rtol": null,
   "shape": [
    1
@@ -2335,7 +2335,7 @@
   "label": "distributed.front.patches[0].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169029,
+  "offset": 169469,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2347,7 +2347,7 @@
   "label": "distributed.front.patches[0].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169037,
+  "offset": 169477,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2359,7 +2359,7 @@
   "label": "distributed.front.patches[0].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169045,
+  "offset": 169485,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2371,7 +2371,7 @@
   "label": "distributed.front.patches[0].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169053,
+  "offset": 169493,
   "rtol": null,
   "shape": [
    1
@@ -2385,7 +2385,7 @@
   "label": "distributed.front.patches[0].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169054,
+  "offset": 169494,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2397,7 +2397,7 @@
   "label": "distributed.front.patches[0].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169062,
+  "offset": 169502,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2409,7 +2409,7 @@
   "label": "distributed.front.patches[0].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169070,
+  "offset": 169510,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2421,7 +2421,7 @@
   "label": "distributed.front.patches[0].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169078,
+  "offset": 169518,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2433,7 +2433,7 @@
   "label": "distributed.front.patches[0].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169086,
+  "offset": 169526,
   "rtol": null,
   "shape": [
    1
@@ -2447,7 +2447,7 @@
   "label": "distributed.front.patches[0].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169087,
+  "offset": 169527,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2459,7 +2459,7 @@
   "label": "distributed.front.patches[0].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169095,
+  "offset": 169535,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2471,7 +2471,7 @@
   "label": "distributed.front.patches[0].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169103,
+  "offset": 169543,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2483,7 +2483,7 @@
   "label": "distributed.front.patches[0].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169111,
+  "offset": 169551,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2495,7 +2495,7 @@
   "label": "distributed.front.patches[0].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169119,
+  "offset": 169559,
   "rtol": null,
   "shape": [
    9
@@ -2509,7 +2509,7 @@
   "label": "distributed.front.patches[0].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169128,
+  "offset": 169568,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2521,7 +2521,7 @@
   "label": "distributed.front.patches[0].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169136,
+  "offset": 169576,
   "rtol": null,
   "shape": [
    1
@@ -2535,7 +2535,7 @@
   "label": "distributed.front.patches[0].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169137,
+  "offset": 169577,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2547,7 +2547,7 @@
   "label": "distributed.front.patches[0].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169145,
+  "offset": 169585,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2559,7 +2559,7 @@
   "label": "distributed.front.patches[0].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169153,
+  "offset": 169593,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2571,7 +2571,7 @@
   "label": "distributed.front.patches[1]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169161,
+  "offset": 169601,
   "rtol": null,
   "shape": [
    113
@@ -2585,7 +2585,7 @@
   "label": "distributed.front.patches[1].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169274,
+  "offset": 169714,
   "rtol": null,
   "shape": [
    1
@@ -2599,7 +2599,7 @@
   "label": "distributed.front.patches[1].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169275,
+  "offset": 169715,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2611,7 +2611,7 @@
   "label": "distributed.front.patches[1].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169283,
+  "offset": 169723,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2623,7 +2623,7 @@
   "label": "distributed.front.patches[1].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169291,
+  "offset": 169731,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2635,7 +2635,7 @@
   "label": "distributed.front.patches[1].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169299,
+  "offset": 169739,
   "rtol": null,
   "shape": [
    1
@@ -2649,7 +2649,7 @@
   "label": "distributed.front.patches[1].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169300,
+  "offset": 169740,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2661,7 +2661,7 @@
   "label": "distributed.front.patches[1].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169308,
+  "offset": 169748,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2673,7 +2673,7 @@
   "label": "distributed.front.patches[1].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169316,
+  "offset": 169756,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2685,7 +2685,7 @@
   "label": "distributed.front.patches[1].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169324,
+  "offset": 169764,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2697,7 +2697,7 @@
   "label": "distributed.front.patches[1].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169332,
+  "offset": 169772,
   "rtol": null,
   "shape": [
    1
@@ -2711,7 +2711,7 @@
   "label": "distributed.front.patches[1].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169333,
+  "offset": 169773,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2723,7 +2723,7 @@
   "label": "distributed.front.patches[1].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169341,
+  "offset": 169781,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2735,7 +2735,7 @@
   "label": "distributed.front.patches[1].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169349,
+  "offset": 169789,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2747,7 +2747,7 @@
   "label": "distributed.front.patches[1].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169357,
+  "offset": 169797,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2759,7 +2759,7 @@
   "label": "distributed.front.patches[1].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169365,
+  "offset": 169805,
   "rtol": null,
   "shape": [
    9
@@ -2773,7 +2773,7 @@
   "label": "distributed.front.patches[1].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169374,
+  "offset": 169814,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2785,7 +2785,7 @@
   "label": "distributed.front.patches[1].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169382,
+  "offset": 169822,
   "rtol": null,
   "shape": [
    1
@@ -2799,7 +2799,7 @@
   "label": "distributed.front.patches[1].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169383,
+  "offset": 169823,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2811,7 +2811,7 @@
   "label": "distributed.front.patches[1].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169391,
+  "offset": 169831,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2823,7 +2823,7 @@
   "label": "distributed.front.patches[1].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169399,
+  "offset": 169839,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2835,7 +2835,7 @@
   "label": "distributed.front.patches[2]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169407,
+  "offset": 169847,
   "rtol": null,
   "shape": [
    113
@@ -2849,7 +2849,7 @@
   "label": "distributed.front.patches[2].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169520,
+  "offset": 169960,
   "rtol": null,
   "shape": [
    1
@@ -2863,7 +2863,7 @@
   "label": "distributed.front.patches[2].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169521,
+  "offset": 169961,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2875,7 +2875,7 @@
   "label": "distributed.front.patches[2].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169529,
+  "offset": 169969,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2887,7 +2887,7 @@
   "label": "distributed.front.patches[2].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169537,
+  "offset": 169977,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2899,7 +2899,7 @@
   "label": "distributed.front.patches[2].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169545,
+  "offset": 169985,
   "rtol": null,
   "shape": [
    1
@@ -2913,7 +2913,7 @@
   "label": "distributed.front.patches[2].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169546,
+  "offset": 169986,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2925,7 +2925,7 @@
   "label": "distributed.front.patches[2].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169554,
+  "offset": 169994,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2937,7 +2937,7 @@
   "label": "distributed.front.patches[2].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169562,
+  "offset": 170002,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2949,7 +2949,7 @@
   "label": "distributed.front.patches[2].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169570,
+  "offset": 170010,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2961,7 +2961,7 @@
   "label": "distributed.front.patches[2].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169578,
+  "offset": 170018,
   "rtol": null,
   "shape": [
    1
@@ -2975,7 +2975,7 @@
   "label": "distributed.front.patches[2].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169579,
+  "offset": 170019,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2987,7 +2987,7 @@
   "label": "distributed.front.patches[2].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169587,
+  "offset": 170027,
   "rtol": 1e-09,
   "shape": []
  },
@@ -2999,7 +2999,7 @@
   "label": "distributed.front.patches[2].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169595,
+  "offset": 170035,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3011,7 +3011,7 @@
   "label": "distributed.front.patches[2].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169603,
+  "offset": 170043,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3023,7 +3023,7 @@
   "label": "distributed.front.patches[2].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169611,
+  "offset": 170051,
   "rtol": null,
   "shape": [
    9
@@ -3037,7 +3037,7 @@
   "label": "distributed.front.patches[2].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169620,
+  "offset": 170060,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3049,7 +3049,7 @@
   "label": "distributed.front.patches[2].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169628,
+  "offset": 170068,
   "rtol": null,
   "shape": [
    1
@@ -3063,7 +3063,7 @@
   "label": "distributed.front.patches[2].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169629,
+  "offset": 170069,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3075,7 +3075,7 @@
   "label": "distributed.front.patches[2].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169637,
+  "offset": 170077,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3087,7 +3087,7 @@
   "label": "distributed.front.patches[2].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169645,
+  "offset": 170085,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3099,7 +3099,7 @@
   "label": "distributed.front.patches[3]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169653,
+  "offset": 170093,
   "rtol": null,
   "shape": [
    113
@@ -3113,7 +3113,7 @@
   "label": "distributed.front.patches[3].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169766,
+  "offset": 170206,
   "rtol": null,
   "shape": [
    1
@@ -3127,7 +3127,7 @@
   "label": "distributed.front.patches[3].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169767,
+  "offset": 170207,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3139,7 +3139,7 @@
   "label": "distributed.front.patches[3].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169775,
+  "offset": 170215,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3151,7 +3151,7 @@
   "label": "distributed.front.patches[3].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169783,
+  "offset": 170223,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3163,7 +3163,7 @@
   "label": "distributed.front.patches[3].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169791,
+  "offset": 170231,
   "rtol": null,
   "shape": [
    1
@@ -3177,7 +3177,7 @@
   "label": "distributed.front.patches[3].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169792,
+  "offset": 170232,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3189,7 +3189,7 @@
   "label": "distributed.front.patches[3].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169800,
+  "offset": 170240,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3201,7 +3201,7 @@
   "label": "distributed.front.patches[3].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169808,
+  "offset": 170248,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3213,7 +3213,7 @@
   "label": "distributed.front.patches[3].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169816,
+  "offset": 170256,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3225,7 +3225,7 @@
   "label": "distributed.front.patches[3].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169824,
+  "offset": 170264,
   "rtol": null,
   "shape": [
    1
@@ -3239,7 +3239,7 @@
   "label": "distributed.front.patches[3].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169825,
+  "offset": 170265,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3251,7 +3251,7 @@
   "label": "distributed.front.patches[3].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169833,
+  "offset": 170273,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3263,7 +3263,7 @@
   "label": "distributed.front.patches[3].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169841,
+  "offset": 170281,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3275,7 +3275,7 @@
   "label": "distributed.front.patches[3].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169849,
+  "offset": 170289,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3287,7 +3287,7 @@
   "label": "distributed.front.patches[3].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169857,
+  "offset": 170297,
   "rtol": null,
   "shape": [
    9
@@ -3301,7 +3301,7 @@
   "label": "distributed.front.patches[3].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169866,
+  "offset": 170306,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3313,7 +3313,7 @@
   "label": "distributed.front.patches[3].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169874,
+  "offset": 170314,
   "rtol": null,
   "shape": [
    1
@@ -3327,7 +3327,7 @@
   "label": "distributed.front.patches[3].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169875,
+  "offset": 170315,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3339,7 +3339,7 @@
   "label": "distributed.front.patches[3].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169883,
+  "offset": 170323,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3351,7 +3351,7 @@
   "label": "distributed.front.patches[3].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169891,
+  "offset": 170331,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3363,7 +3363,7 @@
   "label": "distributed.front.patches[4]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 169899,
+  "offset": 170339,
   "rtol": null,
   "shape": [
    113
@@ -3377,7 +3377,7 @@
   "label": "distributed.front.patches[4].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170012,
+  "offset": 170452,
   "rtol": null,
   "shape": [
    1
@@ -3391,7 +3391,7 @@
   "label": "distributed.front.patches[4].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170013,
+  "offset": 170453,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3403,7 +3403,7 @@
   "label": "distributed.front.patches[4].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170021,
+  "offset": 170461,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3415,7 +3415,7 @@
   "label": "distributed.front.patches[4].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170029,
+  "offset": 170469,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3427,7 +3427,7 @@
   "label": "distributed.front.patches[4].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170037,
+  "offset": 170477,
   "rtol": null,
   "shape": [
    1
@@ -3441,7 +3441,7 @@
   "label": "distributed.front.patches[4].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170038,
+  "offset": 170478,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3453,7 +3453,7 @@
   "label": "distributed.front.patches[4].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170046,
+  "offset": 170486,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3465,7 +3465,7 @@
   "label": "distributed.front.patches[4].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170054,
+  "offset": 170494,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3477,7 +3477,7 @@
   "label": "distributed.front.patches[4].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170062,
+  "offset": 170502,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3489,7 +3489,7 @@
   "label": "distributed.front.patches[4].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170070,
+  "offset": 170510,
   "rtol": null,
   "shape": [
    1
@@ -3503,7 +3503,7 @@
   "label": "distributed.front.patches[4].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170071,
+  "offset": 170511,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3515,7 +3515,7 @@
   "label": "distributed.front.patches[4].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170079,
+  "offset": 170519,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3527,7 +3527,7 @@
   "label": "distributed.front.patches[4].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170087,
+  "offset": 170527,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3539,7 +3539,7 @@
   "label": "distributed.front.patches[4].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170095,
+  "offset": 170535,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3551,7 +3551,7 @@
   "label": "distributed.front.patches[4].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170103,
+  "offset": 170543,
   "rtol": null,
   "shape": [
    9
@@ -3565,7 +3565,7 @@
   "label": "distributed.front.patches[4].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170112,
+  "offset": 170552,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3577,7 +3577,7 @@
   "label": "distributed.front.patches[4].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170120,
+  "offset": 170560,
   "rtol": null,
   "shape": [
    1
@@ -3591,7 +3591,7 @@
   "label": "distributed.front.patches[4].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170121,
+  "offset": 170561,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3603,7 +3603,7 @@
   "label": "distributed.front.patches[4].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170129,
+  "offset": 170569,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3615,7 +3615,7 @@
   "label": "distributed.front.patches[4].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170137,
+  "offset": 170577,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3627,7 +3627,7 @@
   "label": "distributed.front.patches[5]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170145,
+  "offset": 170585,
   "rtol": null,
   "shape": [
    113
@@ -3641,7 +3641,7 @@
   "label": "distributed.front.patches[5].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170258,
+  "offset": 170698,
   "rtol": null,
   "shape": [
    1
@@ -3655,7 +3655,7 @@
   "label": "distributed.front.patches[5].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170259,
+  "offset": 170699,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3667,7 +3667,7 @@
   "label": "distributed.front.patches[5].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170267,
+  "offset": 170707,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3679,7 +3679,7 @@
   "label": "distributed.front.patches[5].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170275,
+  "offset": 170715,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3691,7 +3691,7 @@
   "label": "distributed.front.patches[5].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170283,
+  "offset": 170723,
   "rtol": null,
   "shape": [
    1
@@ -3705,7 +3705,7 @@
   "label": "distributed.front.patches[5].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170284,
+  "offset": 170724,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3717,7 +3717,7 @@
   "label": "distributed.front.patches[5].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170292,
+  "offset": 170732,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3729,7 +3729,7 @@
   "label": "distributed.front.patches[5].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170300,
+  "offset": 170740,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3741,7 +3741,7 @@
   "label": "distributed.front.patches[5].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170308,
+  "offset": 170748,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3753,7 +3753,7 @@
   "label": "distributed.front.patches[5].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170316,
+  "offset": 170756,
   "rtol": null,
   "shape": [
    1
@@ -3767,7 +3767,7 @@
   "label": "distributed.front.patches[5].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170317,
+  "offset": 170757,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3779,7 +3779,7 @@
   "label": "distributed.front.patches[5].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170325,
+  "offset": 170765,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3791,7 +3791,7 @@
   "label": "distributed.front.patches[5].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170333,
+  "offset": 170773,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3803,7 +3803,7 @@
   "label": "distributed.front.patches[5].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170341,
+  "offset": 170781,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3815,7 +3815,7 @@
   "label": "distributed.front.patches[5].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170349,
+  "offset": 170789,
   "rtol": null,
   "shape": [
    9
@@ -3829,7 +3829,7 @@
   "label": "distributed.front.patches[5].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170358,
+  "offset": 170798,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3841,7 +3841,7 @@
   "label": "distributed.front.patches[5].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170366,
+  "offset": 170806,
   "rtol": null,
   "shape": [
    1
@@ -3855,7 +3855,7 @@
   "label": "distributed.front.patches[5].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170367,
+  "offset": 170807,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3867,7 +3867,7 @@
   "label": "distributed.front.patches[5].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170375,
+  "offset": 170815,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3879,7 +3879,7 @@
   "label": "distributed.front.patches[5].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170383,
+  "offset": 170823,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3891,7 +3891,7 @@
   "label": "distributed.front.patches[6]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170391,
+  "offset": 170831,
   "rtol": null,
   "shape": [
    113
@@ -3905,7 +3905,7 @@
   "label": "distributed.front.patches[6].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170504,
+  "offset": 170944,
   "rtol": null,
   "shape": [
    1
@@ -3919,7 +3919,7 @@
   "label": "distributed.front.patches[6].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170505,
+  "offset": 170945,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3931,7 +3931,7 @@
   "label": "distributed.front.patches[6].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170513,
+  "offset": 170953,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3943,7 +3943,7 @@
   "label": "distributed.front.patches[6].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170521,
+  "offset": 170961,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3955,7 +3955,7 @@
   "label": "distributed.front.patches[6].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170529,
+  "offset": 170969,
   "rtol": null,
   "shape": [
    1
@@ -3969,7 +3969,7 @@
   "label": "distributed.front.patches[6].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170530,
+  "offset": 170970,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3981,7 +3981,7 @@
   "label": "distributed.front.patches[6].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170538,
+  "offset": 170978,
   "rtol": 1e-09,
   "shape": []
  },
@@ -3993,7 +3993,7 @@
   "label": "distributed.front.patches[6].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170546,
+  "offset": 170986,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4005,7 +4005,7 @@
   "label": "distributed.front.patches[6].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170554,
+  "offset": 170994,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4017,7 +4017,7 @@
   "label": "distributed.front.patches[6].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170562,
+  "offset": 171002,
   "rtol": null,
   "shape": [
    1
@@ -4031,7 +4031,7 @@
   "label": "distributed.front.patches[6].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170563,
+  "offset": 171003,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4043,7 +4043,7 @@
   "label": "distributed.front.patches[6].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170571,
+  "offset": 171011,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4055,7 +4055,7 @@
   "label": "distributed.front.patches[6].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170579,
+  "offset": 171019,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4067,7 +4067,7 @@
   "label": "distributed.front.patches[6].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170587,
+  "offset": 171027,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4079,7 +4079,7 @@
   "label": "distributed.front.patches[6].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170595,
+  "offset": 171035,
   "rtol": null,
   "shape": [
    9
@@ -4093,7 +4093,7 @@
   "label": "distributed.front.patches[6].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170604,
+  "offset": 171044,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4105,7 +4105,7 @@
   "label": "distributed.front.patches[6].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170612,
+  "offset": 171052,
   "rtol": null,
   "shape": [
    1
@@ -4119,7 +4119,7 @@
   "label": "distributed.front.patches[6].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170613,
+  "offset": 171053,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4131,7 +4131,7 @@
   "label": "distributed.front.patches[6].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170621,
+  "offset": 171061,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4143,7 +4143,7 @@
   "label": "distributed.front.patches[6].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170629,
+  "offset": 171069,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4155,7 +4155,7 @@
   "label": "distributed.front.penetration_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170637,
+  "offset": 171077,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4167,7 +4167,7 @@
   "label": "distributed.front.radial_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170645,
+  "offset": 171085,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4179,7 +4179,7 @@
   "label": "distributed.front.raw_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170653,
+  "offset": 171093,
   "rtol": null,
   "shape": [
    4
@@ -4193,7 +4193,7 @@
   "label": "distributed.front.shear_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170657,
+  "offset": 171097,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4205,7 +4205,7 @@
   "label": "distributed.front.slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170665,
+  "offset": 171105,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4217,7 +4217,7 @@
   "label": "distributed.front.slip_ratio",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170673,
+  "offset": 171113,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4229,7 +4229,7 @@
   "label": "distributed.front.station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170681,
+  "offset": 171121,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4241,7 +4241,7 @@
   "label": "distributed.front.supports_multiple_contacts",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170689,
+  "offset": 171129,
   "rtol": null,
   "shape": [
    4
@@ -4255,7 +4255,7 @@
   "label": "distributed.front.tangent_center_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170693,
+  "offset": 171133,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4267,7 +4267,7 @@
   "label": "distributed.front.tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170701,
+  "offset": 171141,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4279,7 +4279,7 @@
   "label": "distributed.front.unloaded_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170709,
+  "offset": 171149,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4291,7 +4291,7 @@
   "label": "distributed.front.vertical_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170717,
+  "offset": 171157,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4303,7 +4303,7 @@
   "label": "distributed.front.wheel_axis_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170725,
+  "offset": 171165,
   "rtol": null,
   "shape": [
    1
@@ -4317,7 +4317,7 @@
   "label": "distributed.front.wheel_axis_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170726,
+  "offset": 171166,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4329,7 +4329,7 @@
   "label": "distributed.front.wheel_axis_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170734,
+  "offset": 171174,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4341,7 +4341,7 @@
   "label": "distributed.front.wheel_axis_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170742,
+  "offset": 171182,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4353,7 +4353,7 @@
   "label": "distributed.front.wheel_axis_moment_nm",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170750,
+  "offset": 171190,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4365,7 +4365,7 @@
   "label": "distributed.front.world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170758,
+  "offset": 171198,
   "rtol": null,
   "shape": [
    1
@@ -4379,7 +4379,7 @@
   "label": "distributed.front.world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170759,
+  "offset": 171199,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4391,7 +4391,7 @@
   "label": "distributed.front.world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170767,
+  "offset": 171207,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4403,7 +4403,7 @@
   "label": "distributed.front.world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170775,
+  "offset": 171215,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4415,7 +4415,7 @@
   "label": "distributed.rear#keys",
   "nbytes": 633,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 170783,
+  "offset": 171223,
   "rtol": null,
   "shape": [
    633
@@ -4429,7 +4429,7 @@
   "label": "distributed.rear.active_station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171416,
+  "offset": 171856,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4441,7 +4441,7 @@
   "label": "distributed.rear.backend",
   "nbytes": 26,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171424,
+  "offset": 171864,
   "rtol": null,
   "shape": [
    26
@@ -4455,7 +4455,7 @@
   "label": "distributed.rear.brush_loss_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171450,
+  "offset": 171890,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4467,7 +4467,7 @@
   "label": "distributed.rear.calibration_status",
   "nbytes": 26,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171458,
+  "offset": 171898,
   "rtol": null,
   "shape": [
    26
@@ -4481,7 +4481,7 @@
   "label": "distributed.rear.capability_status",
   "nbytes": 46,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171484,
+  "offset": 171924,
   "rtol": null,
   "shape": [
    46
@@ -4495,7 +4495,7 @@
   "label": "distributed.rear.controller_grounded",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171530,
+  "offset": 171970,
   "rtol": null,
   "shape": [
    4
@@ -4509,7 +4509,7 @@
   "label": "distributed.rear.effective_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171534,
+  "offset": 171974,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4521,7 +4521,7 @@
   "label": "distributed.rear.geometric_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171542,
+  "offset": 171982,
   "rtol": null,
   "shape": [
    4
@@ -4535,7 +4535,7 @@
   "label": "distributed.rear.max_patch_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171546,
+  "offset": 171986,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4547,7 +4547,7 @@
   "label": "distributed.rear.multi_support",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171554,
+  "offset": 171994,
   "rtol": null,
   "shape": [
    5
@@ -4561,7 +4561,7 @@
   "label": "distributed.rear.nonsmooth_station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171559,
+  "offset": 171999,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4573,7 +4573,7 @@
   "label": "distributed.rear.normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171567,
+  "offset": 172007,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4585,7 +4585,7 @@
   "label": "distributed.rear.normal_vertical_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171575,
+  "offset": 172015,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4597,7 +4597,7 @@
   "label": "distributed.rear.omega_abs_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171583,
+  "offset": 172023,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4609,7 +4609,7 @@
   "label": "distributed.rear.omega_rel_rad_s",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171591,
+  "offset": 172031,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4621,7 +4621,7 @@
   "label": "distributed.rear.outside_material_deflection_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171599,
+  "offset": 172039,
   "rtol": null,
   "shape": [
    5
@@ -4635,7 +4635,7 @@
   "label": "distributed.rear.outside_material_load_range",
   "nbytes": 5,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171604,
+  "offset": 172044,
   "rtol": null,
   "shape": [
    5
@@ -4649,7 +4649,7 @@
   "label": "distributed.rear.patches#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171609,
+  "offset": 172049,
   "rtol": null,
   "shape": [
    1
@@ -4663,7 +4663,7 @@
   "label": "distributed.rear.patches[0]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171610,
+  "offset": 172050,
   "rtol": null,
   "shape": [
    113
@@ -4677,7 +4677,7 @@
   "label": "distributed.rear.patches[0].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171723,
+  "offset": 172163,
   "rtol": null,
   "shape": [
    1
@@ -4691,7 +4691,7 @@
   "label": "distributed.rear.patches[0].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171724,
+  "offset": 172164,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4703,7 +4703,7 @@
   "label": "distributed.rear.patches[0].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171732,
+  "offset": 172172,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4715,7 +4715,7 @@
   "label": "distributed.rear.patches[0].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171740,
+  "offset": 172180,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4727,7 +4727,7 @@
   "label": "distributed.rear.patches[0].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171748,
+  "offset": 172188,
   "rtol": null,
   "shape": [
    1
@@ -4741,7 +4741,7 @@
   "label": "distributed.rear.patches[0].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171749,
+  "offset": 172189,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4753,7 +4753,7 @@
   "label": "distributed.rear.patches[0].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171757,
+  "offset": 172197,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4765,7 +4765,7 @@
   "label": "distributed.rear.patches[0].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171765,
+  "offset": 172205,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4777,7 +4777,7 @@
   "label": "distributed.rear.patches[0].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171773,
+  "offset": 172213,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4789,7 +4789,7 @@
   "label": "distributed.rear.patches[0].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171781,
+  "offset": 172221,
   "rtol": null,
   "shape": [
    1
@@ -4803,7 +4803,7 @@
   "label": "distributed.rear.patches[0].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171782,
+  "offset": 172222,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4815,7 +4815,7 @@
   "label": "distributed.rear.patches[0].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171790,
+  "offset": 172230,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4827,7 +4827,7 @@
   "label": "distributed.rear.patches[0].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171798,
+  "offset": 172238,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4839,7 +4839,7 @@
   "label": "distributed.rear.patches[0].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171806,
+  "offset": 172246,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4851,7 +4851,7 @@
   "label": "distributed.rear.patches[0].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171814,
+  "offset": 172254,
   "rtol": null,
   "shape": [
    9
@@ -4865,7 +4865,7 @@
   "label": "distributed.rear.patches[0].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171823,
+  "offset": 172263,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4877,7 +4877,7 @@
   "label": "distributed.rear.patches[0].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171831,
+  "offset": 172271,
   "rtol": null,
   "shape": [
    1
@@ -4891,7 +4891,7 @@
   "label": "distributed.rear.patches[0].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171832,
+  "offset": 172272,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4903,7 +4903,7 @@
   "label": "distributed.rear.patches[0].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171840,
+  "offset": 172280,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4915,7 +4915,7 @@
   "label": "distributed.rear.patches[0].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171848,
+  "offset": 172288,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4927,7 +4927,7 @@
   "label": "distributed.rear.patches[1]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171856,
+  "offset": 172296,
   "rtol": null,
   "shape": [
    113
@@ -4941,7 +4941,7 @@
   "label": "distributed.rear.patches[1].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171969,
+  "offset": 172409,
   "rtol": null,
   "shape": [
    1
@@ -4955,7 +4955,7 @@
   "label": "distributed.rear.patches[1].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171970,
+  "offset": 172410,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4967,7 +4967,7 @@
   "label": "distributed.rear.patches[1].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171978,
+  "offset": 172418,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4979,7 +4979,7 @@
   "label": "distributed.rear.patches[1].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171986,
+  "offset": 172426,
   "rtol": 1e-09,
   "shape": []
  },
@@ -4991,7 +4991,7 @@
   "label": "distributed.rear.patches[1].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171994,
+  "offset": 172434,
   "rtol": null,
   "shape": [
    1
@@ -5005,7 +5005,7 @@
   "label": "distributed.rear.patches[1].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 171995,
+  "offset": 172435,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5017,7 +5017,7 @@
   "label": "distributed.rear.patches[1].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172003,
+  "offset": 172443,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5029,7 +5029,7 @@
   "label": "distributed.rear.patches[1].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172011,
+  "offset": 172451,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5041,7 +5041,7 @@
   "label": "distributed.rear.patches[1].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172019,
+  "offset": 172459,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5053,7 +5053,7 @@
   "label": "distributed.rear.patches[1].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172027,
+  "offset": 172467,
   "rtol": null,
   "shape": [
    1
@@ -5067,7 +5067,7 @@
   "label": "distributed.rear.patches[1].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172028,
+  "offset": 172468,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5079,7 +5079,7 @@
   "label": "distributed.rear.patches[1].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172036,
+  "offset": 172476,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5091,7 +5091,7 @@
   "label": "distributed.rear.patches[1].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172044,
+  "offset": 172484,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5103,7 +5103,7 @@
   "label": "distributed.rear.patches[1].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172052,
+  "offset": 172492,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5115,7 +5115,7 @@
   "label": "distributed.rear.patches[1].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172060,
+  "offset": 172500,
   "rtol": null,
   "shape": [
    9
@@ -5129,7 +5129,7 @@
   "label": "distributed.rear.patches[1].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172069,
+  "offset": 172509,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5141,7 +5141,7 @@
   "label": "distributed.rear.patches[1].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172077,
+  "offset": 172517,
   "rtol": null,
   "shape": [
    1
@@ -5155,7 +5155,7 @@
   "label": "distributed.rear.patches[1].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172078,
+  "offset": 172518,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5167,7 +5167,7 @@
   "label": "distributed.rear.patches[1].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172086,
+  "offset": 172526,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5179,7 +5179,7 @@
   "label": "distributed.rear.patches[1].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172094,
+  "offset": 172534,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5191,7 +5191,7 @@
   "label": "distributed.rear.patches[2]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172102,
+  "offset": 172542,
   "rtol": null,
   "shape": [
    113
@@ -5205,7 +5205,7 @@
   "label": "distributed.rear.patches[2].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172215,
+  "offset": 172655,
   "rtol": null,
   "shape": [
    1
@@ -5219,7 +5219,7 @@
   "label": "distributed.rear.patches[2].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172216,
+  "offset": 172656,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5231,7 +5231,7 @@
   "label": "distributed.rear.patches[2].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172224,
+  "offset": 172664,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5243,7 +5243,7 @@
   "label": "distributed.rear.patches[2].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172232,
+  "offset": 172672,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5255,7 +5255,7 @@
   "label": "distributed.rear.patches[2].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172240,
+  "offset": 172680,
   "rtol": null,
   "shape": [
    1
@@ -5269,7 +5269,7 @@
   "label": "distributed.rear.patches[2].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172241,
+  "offset": 172681,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5281,7 +5281,7 @@
   "label": "distributed.rear.patches[2].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172249,
+  "offset": 172689,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5293,7 +5293,7 @@
   "label": "distributed.rear.patches[2].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172257,
+  "offset": 172697,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5305,7 +5305,7 @@
   "label": "distributed.rear.patches[2].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172265,
+  "offset": 172705,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5317,7 +5317,7 @@
   "label": "distributed.rear.patches[2].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172273,
+  "offset": 172713,
   "rtol": null,
   "shape": [
    1
@@ -5331,7 +5331,7 @@
   "label": "distributed.rear.patches[2].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172274,
+  "offset": 172714,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5343,7 +5343,7 @@
   "label": "distributed.rear.patches[2].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172282,
+  "offset": 172722,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5355,7 +5355,7 @@
   "label": "distributed.rear.patches[2].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172290,
+  "offset": 172730,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5367,7 +5367,7 @@
   "label": "distributed.rear.patches[2].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172298,
+  "offset": 172738,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5379,7 +5379,7 @@
   "label": "distributed.rear.patches[2].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172306,
+  "offset": 172746,
   "rtol": null,
   "shape": [
    9
@@ -5393,7 +5393,7 @@
   "label": "distributed.rear.patches[2].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172315,
+  "offset": 172755,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5405,7 +5405,7 @@
   "label": "distributed.rear.patches[2].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172323,
+  "offset": 172763,
   "rtol": null,
   "shape": [
    1
@@ -5419,7 +5419,7 @@
   "label": "distributed.rear.patches[2].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172324,
+  "offset": 172764,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5431,7 +5431,7 @@
   "label": "distributed.rear.patches[2].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172332,
+  "offset": 172772,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5443,7 +5443,7 @@
   "label": "distributed.rear.patches[2].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172340,
+  "offset": 172780,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5455,7 +5455,7 @@
   "label": "distributed.rear.patches[3]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172348,
+  "offset": 172788,
   "rtol": null,
   "shape": [
    113
@@ -5469,7 +5469,7 @@
   "label": "distributed.rear.patches[3].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172461,
+  "offset": 172901,
   "rtol": null,
   "shape": [
    1
@@ -5483,7 +5483,7 @@
   "label": "distributed.rear.patches[3].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172462,
+  "offset": 172902,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5495,7 +5495,7 @@
   "label": "distributed.rear.patches[3].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172470,
+  "offset": 172910,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5507,7 +5507,7 @@
   "label": "distributed.rear.patches[3].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172478,
+  "offset": 172918,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5519,7 +5519,7 @@
   "label": "distributed.rear.patches[3].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172486,
+  "offset": 172926,
   "rtol": null,
   "shape": [
    1
@@ -5533,7 +5533,7 @@
   "label": "distributed.rear.patches[3].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172487,
+  "offset": 172927,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5545,7 +5545,7 @@
   "label": "distributed.rear.patches[3].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172495,
+  "offset": 172935,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5557,7 +5557,7 @@
   "label": "distributed.rear.patches[3].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172503,
+  "offset": 172943,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5569,7 +5569,7 @@
   "label": "distributed.rear.patches[3].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172511,
+  "offset": 172951,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5581,7 +5581,7 @@
   "label": "distributed.rear.patches[3].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172519,
+  "offset": 172959,
   "rtol": null,
   "shape": [
    1
@@ -5595,7 +5595,7 @@
   "label": "distributed.rear.patches[3].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172520,
+  "offset": 172960,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5607,7 +5607,7 @@
   "label": "distributed.rear.patches[3].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172528,
+  "offset": 172968,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5619,7 +5619,7 @@
   "label": "distributed.rear.patches[3].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172536,
+  "offset": 172976,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5631,7 +5631,7 @@
   "label": "distributed.rear.patches[3].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172544,
+  "offset": 172984,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5643,7 +5643,7 @@
   "label": "distributed.rear.patches[3].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172552,
+  "offset": 172992,
   "rtol": null,
   "shape": [
    9
@@ -5657,7 +5657,7 @@
   "label": "distributed.rear.patches[3].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172561,
+  "offset": 173001,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5669,7 +5669,7 @@
   "label": "distributed.rear.patches[3].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172569,
+  "offset": 173009,
   "rtol": null,
   "shape": [
    1
@@ -5683,7 +5683,7 @@
   "label": "distributed.rear.patches[3].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172570,
+  "offset": 173010,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5695,7 +5695,7 @@
   "label": "distributed.rear.patches[3].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172578,
+  "offset": 173018,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5707,7 +5707,7 @@
   "label": "distributed.rear.patches[3].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172586,
+  "offset": 173026,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5719,7 +5719,7 @@
   "label": "distributed.rear.patches[4]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172594,
+  "offset": 173034,
   "rtol": null,
   "shape": [
    113
@@ -5733,7 +5733,7 @@
   "label": "distributed.rear.patches[4].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172707,
+  "offset": 173147,
   "rtol": null,
   "shape": [
    1
@@ -5747,7 +5747,7 @@
   "label": "distributed.rear.patches[4].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172708,
+  "offset": 173148,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5759,7 +5759,7 @@
   "label": "distributed.rear.patches[4].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172716,
+  "offset": 173156,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5771,7 +5771,7 @@
   "label": "distributed.rear.patches[4].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172724,
+  "offset": 173164,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5783,7 +5783,7 @@
   "label": "distributed.rear.patches[4].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172732,
+  "offset": 173172,
   "rtol": null,
   "shape": [
    1
@@ -5797,7 +5797,7 @@
   "label": "distributed.rear.patches[4].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172733,
+  "offset": 173173,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5809,7 +5809,7 @@
   "label": "distributed.rear.patches[4].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172741,
+  "offset": 173181,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5821,7 +5821,7 @@
   "label": "distributed.rear.patches[4].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172749,
+  "offset": 173189,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5833,7 +5833,7 @@
   "label": "distributed.rear.patches[4].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172757,
+  "offset": 173197,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5845,7 +5845,7 @@
   "label": "distributed.rear.patches[4].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172765,
+  "offset": 173205,
   "rtol": null,
   "shape": [
    1
@@ -5859,7 +5859,7 @@
   "label": "distributed.rear.patches[4].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172766,
+  "offset": 173206,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5871,7 +5871,7 @@
   "label": "distributed.rear.patches[4].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172774,
+  "offset": 173214,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5883,7 +5883,7 @@
   "label": "distributed.rear.patches[4].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172782,
+  "offset": 173222,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5895,7 +5895,7 @@
   "label": "distributed.rear.patches[4].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172790,
+  "offset": 173230,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5907,7 +5907,7 @@
   "label": "distributed.rear.patches[4].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172798,
+  "offset": 173238,
   "rtol": null,
   "shape": [
    9
@@ -5921,7 +5921,7 @@
   "label": "distributed.rear.patches[4].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172807,
+  "offset": 173247,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5933,7 +5933,7 @@
   "label": "distributed.rear.patches[4].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172815,
+  "offset": 173255,
   "rtol": null,
   "shape": [
    1
@@ -5947,7 +5947,7 @@
   "label": "distributed.rear.patches[4].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172816,
+  "offset": 173256,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5959,7 +5959,7 @@
   "label": "distributed.rear.patches[4].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172824,
+  "offset": 173264,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5971,7 +5971,7 @@
   "label": "distributed.rear.patches[4].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172832,
+  "offset": 173272,
   "rtol": 1e-09,
   "shape": []
  },
@@ -5983,7 +5983,7 @@
   "label": "distributed.rear.patches[5]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172840,
+  "offset": 173280,
   "rtol": null,
   "shape": [
    113
@@ -5997,7 +5997,7 @@
   "label": "distributed.rear.patches[5].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172953,
+  "offset": 173393,
   "rtol": null,
   "shape": [
    1
@@ -6011,7 +6011,7 @@
   "label": "distributed.rear.patches[5].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172954,
+  "offset": 173394,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6023,7 +6023,7 @@
   "label": "distributed.rear.patches[5].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172962,
+  "offset": 173402,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6035,7 +6035,7 @@
   "label": "distributed.rear.patches[5].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172970,
+  "offset": 173410,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6047,7 +6047,7 @@
   "label": "distributed.rear.patches[5].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172978,
+  "offset": 173418,
   "rtol": null,
   "shape": [
    1
@@ -6061,7 +6061,7 @@
   "label": "distributed.rear.patches[5].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172979,
+  "offset": 173419,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6073,7 +6073,7 @@
   "label": "distributed.rear.patches[5].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172987,
+  "offset": 173427,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6085,7 +6085,7 @@
   "label": "distributed.rear.patches[5].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 172995,
+  "offset": 173435,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6097,7 +6097,7 @@
   "label": "distributed.rear.patches[5].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173003,
+  "offset": 173443,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6109,7 +6109,7 @@
   "label": "distributed.rear.patches[5].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173011,
+  "offset": 173451,
   "rtol": null,
   "shape": [
    1
@@ -6123,7 +6123,7 @@
   "label": "distributed.rear.patches[5].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173012,
+  "offset": 173452,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6135,7 +6135,7 @@
   "label": "distributed.rear.patches[5].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173020,
+  "offset": 173460,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6147,7 +6147,7 @@
   "label": "distributed.rear.patches[5].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173028,
+  "offset": 173468,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6159,7 +6159,7 @@
   "label": "distributed.rear.patches[5].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173036,
+  "offset": 173476,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6171,7 +6171,7 @@
   "label": "distributed.rear.patches[5].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173044,
+  "offset": 173484,
   "rtol": null,
   "shape": [
    9
@@ -6185,7 +6185,7 @@
   "label": "distributed.rear.patches[5].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173053,
+  "offset": 173493,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6197,7 +6197,7 @@
   "label": "distributed.rear.patches[5].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173061,
+  "offset": 173501,
   "rtol": null,
   "shape": [
    1
@@ -6211,7 +6211,7 @@
   "label": "distributed.rear.patches[5].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173062,
+  "offset": 173502,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6223,7 +6223,7 @@
   "label": "distributed.rear.patches[5].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173070,
+  "offset": 173510,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6235,7 +6235,7 @@
   "label": "distributed.rear.patches[5].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173078,
+  "offset": 173518,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6247,7 +6247,7 @@
   "label": "distributed.rear.patches[6]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173086,
+  "offset": 173526,
   "rtol": null,
   "shape": [
    113
@@ -6261,7 +6261,7 @@
   "label": "distributed.rear.patches[6].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173199,
+  "offset": 173639,
   "rtol": null,
   "shape": [
    1
@@ -6275,7 +6275,7 @@
   "label": "distributed.rear.patches[6].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173200,
+  "offset": 173640,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6287,7 +6287,7 @@
   "label": "distributed.rear.patches[6].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173208,
+  "offset": 173648,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6299,7 +6299,7 @@
   "label": "distributed.rear.patches[6].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173216,
+  "offset": 173656,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6311,7 +6311,7 @@
   "label": "distributed.rear.patches[6].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173224,
+  "offset": 173664,
   "rtol": null,
   "shape": [
    1
@@ -6325,7 +6325,7 @@
   "label": "distributed.rear.patches[6].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173225,
+  "offset": 173665,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6337,7 +6337,7 @@
   "label": "distributed.rear.patches[6].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173233,
+  "offset": 173673,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6349,7 +6349,7 @@
   "label": "distributed.rear.patches[6].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173241,
+  "offset": 173681,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6361,7 +6361,7 @@
   "label": "distributed.rear.patches[6].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173249,
+  "offset": 173689,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6373,7 +6373,7 @@
   "label": "distributed.rear.patches[6].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173257,
+  "offset": 173697,
   "rtol": null,
   "shape": [
    1
@@ -6387,7 +6387,7 @@
   "label": "distributed.rear.patches[6].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173258,
+  "offset": 173698,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6399,7 +6399,7 @@
   "label": "distributed.rear.patches[6].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173266,
+  "offset": 173706,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6411,7 +6411,7 @@
   "label": "distributed.rear.patches[6].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173274,
+  "offset": 173714,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6423,7 +6423,7 @@
   "label": "distributed.rear.patches[6].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173282,
+  "offset": 173722,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6435,7 +6435,7 @@
   "label": "distributed.rear.patches[6].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173290,
+  "offset": 173730,
   "rtol": null,
   "shape": [
    9
@@ -6449,7 +6449,7 @@
   "label": "distributed.rear.patches[6].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173299,
+  "offset": 173739,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6461,7 +6461,7 @@
   "label": "distributed.rear.patches[6].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173307,
+  "offset": 173747,
   "rtol": null,
   "shape": [
    1
@@ -6475,7 +6475,7 @@
   "label": "distributed.rear.patches[6].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173308,
+  "offset": 173748,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6487,7 +6487,7 @@
   "label": "distributed.rear.patches[6].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173316,
+  "offset": 173756,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6499,7 +6499,7 @@
   "label": "distributed.rear.patches[6].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173324,
+  "offset": 173764,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6511,7 +6511,7 @@
   "label": "distributed.rear.patches[7]#keys",
   "nbytes": 113,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173332,
+  "offset": 173772,
   "rtol": null,
   "shape": [
    113
@@ -6525,7 +6525,7 @@
   "label": "distributed.rear.patches[7].couple_world_nm#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173445,
+  "offset": 173885,
   "rtol": null,
   "shape": [
    1
@@ -6539,7 +6539,7 @@
   "label": "distributed.rear.patches[7].couple_world_nm[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173446,
+  "offset": 173886,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6551,7 +6551,7 @@
   "label": "distributed.rear.patches[7].couple_world_nm[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173454,
+  "offset": 173894,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6563,7 +6563,7 @@
   "label": "distributed.rear.patches[7].couple_world_nm[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173462,
+  "offset": 173902,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6575,7 +6575,7 @@
   "label": "distributed.rear.patches[7].normal#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173470,
+  "offset": 173910,
   "rtol": null,
   "shape": [
    1
@@ -6589,7 +6589,7 @@
   "label": "distributed.rear.patches[7].normal[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173471,
+  "offset": 173911,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6601,7 +6601,7 @@
   "label": "distributed.rear.patches[7].normal[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173479,
+  "offset": 173919,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6613,7 +6613,7 @@
   "label": "distributed.rear.patches[7].normal[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173487,
+  "offset": 173927,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6625,7 +6625,7 @@
   "label": "distributed.rear.patches[7].normal_load_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173495,
+  "offset": 173935,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6637,7 +6637,7 @@
   "label": "distributed.rear.patches[7].point_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173503,
+  "offset": 173943,
   "rtol": null,
   "shape": [
    1
@@ -6651,7 +6651,7 @@
   "label": "distributed.rear.patches[7].point_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173504,
+  "offset": 173944,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6663,7 +6663,7 @@
   "label": "distributed.rear.patches[7].point_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173512,
+  "offset": 173952,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6675,7 +6675,7 @@
   "label": "distributed.rear.patches[7].point_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173520,
+  "offset": 173960,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6687,7 +6687,7 @@
   "label": "distributed.rear.patches[7].slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173528,
+  "offset": 173968,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6699,7 +6699,7 @@
   "label": "distributed.rear.patches[7].source_geom",
   "nbytes": 9,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173536,
+  "offset": 173976,
   "rtol": null,
   "shape": [
    9
@@ -6713,7 +6713,7 @@
   "label": "distributed.rear.patches[7].tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173545,
+  "offset": 173985,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6725,7 +6725,7 @@
   "label": "distributed.rear.patches[7].world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173553,
+  "offset": 173993,
   "rtol": null,
   "shape": [
    1
@@ -6739,7 +6739,7 @@
   "label": "distributed.rear.patches[7].world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173554,
+  "offset": 173994,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6751,7 +6751,7 @@
   "label": "distributed.rear.patches[7].world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173562,
+  "offset": 174002,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6763,7 +6763,7 @@
   "label": "distributed.rear.patches[7].world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173570,
+  "offset": 174010,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6775,7 +6775,7 @@
   "label": "distributed.rear.penetration_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173578,
+  "offset": 174018,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6787,7 +6787,7 @@
   "label": "distributed.rear.radial_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173586,
+  "offset": 174026,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6799,7 +6799,7 @@
   "label": "distributed.rear.raw_contact",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173594,
+  "offset": 174034,
   "rtol": null,
   "shape": [
    4
@@ -6813,7 +6813,7 @@
   "label": "distributed.rear.shear_energy_j",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173598,
+  "offset": 174038,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6825,7 +6825,7 @@
   "label": "distributed.rear.slip_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173606,
+  "offset": 174046,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6837,7 +6837,7 @@
   "label": "distributed.rear.slip_ratio",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173614,
+  "offset": 174054,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6849,7 +6849,7 @@
   "label": "distributed.rear.station_count",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173622,
+  "offset": 174062,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6861,7 +6861,7 @@
   "label": "distributed.rear.supports_multiple_contacts",
   "nbytes": 4,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173630,
+  "offset": 174070,
   "rtol": null,
   "shape": [
    4
@@ -6875,7 +6875,7 @@
   "label": "distributed.rear.tangent_center_speed_mps",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173634,
+  "offset": 174074,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6887,7 +6887,7 @@
   "label": "distributed.rear.tangent_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173642,
+  "offset": 174082,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6899,7 +6899,7 @@
   "label": "distributed.rear.unloaded_radius_m",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173650,
+  "offset": 174090,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6911,7 +6911,7 @@
   "label": "distributed.rear.vertical_force_n",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173658,
+  "offset": 174098,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6923,7 +6923,7 @@
   "label": "distributed.rear.wheel_axis_m#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173666,
+  "offset": 174106,
   "rtol": null,
   "shape": [
    1
@@ -6937,7 +6937,7 @@
   "label": "distributed.rear.wheel_axis_m[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173667,
+  "offset": 174107,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6949,7 +6949,7 @@
   "label": "distributed.rear.wheel_axis_m[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173675,
+  "offset": 174115,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6961,7 +6961,7 @@
   "label": "distributed.rear.wheel_axis_m[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173683,
+  "offset": 174123,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6973,7 +6973,7 @@
   "label": "distributed.rear.wheel_axis_moment_nm",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173691,
+  "offset": 174131,
   "rtol": 1e-09,
   "shape": []
  },
@@ -6985,7 +6985,7 @@
   "label": "distributed.rear.world_force_n#length",
   "nbytes": 1,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173699,
+  "offset": 174139,
   "rtol": null,
   "shape": [
    1
@@ -6999,7 +6999,7 @@
   "label": "distributed.rear.world_force_n[0]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173700,
+  "offset": 174140,
   "rtol": 1e-09,
   "shape": []
  },
@@ -7011,7 +7011,7 @@
   "label": "distributed.rear.world_force_n[1]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173708,
+  "offset": 174148,
   "rtol": 1e-09,
   "shape": []
  },
@@ -7023,7 +7023,7 @@
   "label": "distributed.rear.world_force_n[2]",
   "nbytes": 8,
   "node": "native_numeric_completion/tire_channel_parity_across_backends",
-  "offset": 173716,
+  "offset": 174156,
   "rtol": 1e-09,
   "shape": []
  }

@@ -551,7 +551,6 @@
             "enabled": true,
             "mash_cadence_rpm": 45.0,
             "mash_torque_nm": 60.0,
-            "resume_below_rpm": 105.0,
             "reposition_back_rate_rad_s": 3.0,
             "reposition_cooldown_s": 1.0,
             "reposition_min_effort_nm": 20.0,
@@ -561,6 +560,7 @@
             "reposition_stall_progress_rad": 0.5,
             "reposition_stall_window_s": 1.0,
             "reposition_timeout_s": 3.0,
+            "resume_below_rpm": 105.0,
             "rollback_brake": true,
             "rollback_demand": 1.0,
             "rollback_engage_mps": 0.25,
@@ -713,6 +713,14 @@
           "upshift_crank_rpm": 82.0
         },
         "seated_climb": {
+          "climb_effort_cap_grade_nm": [
+            1000.0
+          ],
+          "climb_effort_cap_grades": [
+            0.0
+          ],
+          "climb_effort_full_speed_mps": 4.0,
+          "climb_effort_rise_speed_mps": 2.5,
           "enabled": true,
           "front_load_share_target": 0.3,
           "lean_gain": 1.0,
@@ -722,6 +730,7 @@
           "max_backward_lean_rad": 0.1,
           "max_crank_torque_nm": 60.0,
           "max_forward_lean_rad": 0.35,
+          "min_elbow_flexion_deg": 15.0,
           "orientation_tau_s": 0.5,
           "period_s": 0.01,
           "reaction_delay_s": 0.15,
@@ -730,8 +739,7 @@
           "surge_power_w": 400.0,
           "surge_recovery_rate": 0.3333333333333333,
           "target_crank_power_w": 250.0,
-          "trim_dead_time_s": 0.2,
-          "min_elbow_flexion_deg": 15.0
+          "trim_dead_time_s": 0.2
         },
         "timestep_s": 0.00125,
         "tires": {
@@ -776,10 +784,10 @@
           },
           "front": {
             "material": {
-              "pressure_pa_gauge": 200000.0,
-              "provenance": "synthetic",
               "hysteresis_rate_eps_mps": 0.01,
               "loss_factor": 0.0662,
+              "pressure_pa_gauge": 200000.0,
+              "provenance": "synthetic",
               "radial_k_n_m": 130000.0,
               "valid_load_range_n": {
                 "$tuple": [
@@ -838,10 +846,10 @@
           },
           "rear": {
             "material": {
-              "pressure_pa_gauge": 200000.0,
-              "provenance": "synthetic",
               "hysteresis_rate_eps_mps": 0.01,
               "loss_factor": 0.069,
+              "pressure_pa_gauge": 200000.0,
+              "provenance": "synthetic",
               "radial_k_n_m": 130000.0,
               "valid_load_range_n": {
                 "$tuple": [

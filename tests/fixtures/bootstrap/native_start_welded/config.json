@@ -614,6 +614,14 @@
     "weld_servo_limit_nm": 25.0
   },
   "rider_intent": {
+    "climb_effort_cap_grade_nm": [
+      1000.0
+    ],
+    "climb_effort_cap_grades": [
+      0.0
+    ],
+    "climb_effort_full_speed_mps": 4.0,
+    "climb_effort_rise_speed_mps": 2.5,
     "enabled": true,
     "front_load_share_target": 0.3,
     "lean_gain": 1.0,

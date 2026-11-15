@@ -5,12 +5,12 @@
   "index": 0,
   "kind": "bitwise",
   "label": "input.adapter.0",
-  "nbytes": 3944,
+  "nbytes": 5040,
   "node": "native_rider_intent/resolve_skipped_acquisition",
   "offset": 0,
   "rtol": null,
   "shape": [
-   493
+   630
   ]
  },
  {
@@ -21,7 +21,7 @@
   "label": "input.resolve.0",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_skipped_acquisition",
-  "offset": 3944,
+  "offset": 5040,
   "rtol": null,
   "shape": [
    402
@@ -35,7 +35,7 @@
   "label": "output.control.0",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_skipped_acquisition",
-  "offset": 7160,
+  "offset": 8256,
   "rtol": null,
   "shape": [
    219
@@ -49,7 +49,7 @@
   "label": "output.state.0",
   "nbytes": 1396,
   "node": "native_rider_intent/resolve_skipped_acquisition",
-  "offset": 7379,
+  "offset": 8475,
   "rtol": null,
   "shape": [
    1396
@@ -63,7 +63,7 @@
   "label": "input.resolve.1",
   "nbytes": 3224,
   "node": "native_rider_intent/resolve_skipped_acquisition",
-  "offset": 8775,
+  "offset": 9871,
   "rtol": null,
   "shape": [
    403
@@ -77,7 +77,7 @@
   "label": "error.resolve.0",
   "nbytes": 0,
   "node": "native_rider_intent/resolve_skipped_acquisition",
-  "offset": 11999,
+  "offset": 13095,
   "rtol": null,
   "shape": [
    0

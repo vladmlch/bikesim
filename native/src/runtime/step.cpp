@@ -2780,15 +2780,17 @@ PhysicalStep::balance_channel(const BrakeResolution &brakes) {
     const mjData *d = stepper_->data();
     const double speed_mps =
         buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)];
-    const bool stopped =
+    const BalanceStop stop =
         brakes.motor_braking &&
-        std::abs(speed_mps) <= config_.launch.standstill_speed_mps;
+                std::abs(speed_mps) <= config_.launch.standstill_speed_mps
+            ? BalanceStop::braked
+            : BalanceStop::none;
     balance_monitor_.update(
         d->time,
         buf(d->qpos, m->nq)[static_cast<std::size_t>(root_x_qposadr_)],
         speed_mps,
         brakes.riding,
-        stopped);
+        stop);
     return balance_monitor_.observation();
 }
 

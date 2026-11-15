@@ -283,7 +283,7 @@ void BalanceMonitor::reset() noexcept {
 
 std::optional<BalanceLostEvent> BalanceMonitor::update(
     double time_s, double position_m, double speed_mps, bool riding,
-    bool stopped) {
+    BalanceStop stop) {
     if (!std::isfinite(time_s) || time_s < 0.)
         throw std::invalid_argument("balance time");
     if (!std::isfinite(position_m))
@@ -295,8 +295,8 @@ std::optional<BalanceLostEvent> BalanceMonitor::update(
             "balance monitor time must not rewind");
     last_time_s = time_s;
     // A full braked stop re-arms the 3 s launch grace after brake release,
-    // while brief rolling braking (!riding && !stopped) only pauses dwell.
-    if (!riding && stopped) started_s.reset();
+    // while brief rolling braking (!riding && BalanceStop::none) only pauses dwell.
+    if (!riding && stop == BalanceStop::braked) started_s.reset();
     if (riding && !started_s.has_value()) started_s = time_s;
     grace_left_s = !started_s.has_value()
                        ? grace_s

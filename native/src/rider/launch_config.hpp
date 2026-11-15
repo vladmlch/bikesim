@@ -91,9 +91,10 @@ void validate_launch_table(const LaunchConfig &table);
 void validate_launch_plan_context(const LaunchConfig &table, double period_s);
 
 namespace detail {
-// The grade cap without the table validation — the plan's per-tick path;
-// the table is validated at construction.
+// The grade cap and launch cog without table validation — the plan's per-tick
+// paths; the table is validated at construction.
 [[nodiscard]] double grade_cap_unchecked(const LaunchConfig &table, double grade);
+[[nodiscard]] int launch_teeth_unchecked(const LaunchConfig &table, double grade);
 } // namespace detail
 
 } // namespace rider

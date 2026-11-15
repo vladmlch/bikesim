@@ -296,21 +296,28 @@ std::string encoded(const rider::RiderIntent &intent) {
     table.start_cog_grade_breaks = {.03, .08};
     table.start_cog_teeth = {24, 33, 39};
 
-    const auto tick_senses = [](rider::RiderIntent &intent, std::int64_t k, double speed,
-                                double crank_rate, int rear_teeth, double grade_ahead,
-                                double torque = 0.) {
+    struct SensesInput {
+        double speed = 0.;
+        double crank_rate = 0.;
+        int rear_teeth = 12;
+        double grade_ahead = 0.;
+        double torque = 0.;
+    };
+    const auto tick_senses = [](rider::RiderIntent &intent, std::int64_t k,
+                                const SensesInput &in) {
         rider::IntentSignals signals{};
-        signals.human_crank_torque_nm = torque;
-        signals.crank_rate_rad_s = crank_rate;
+        signals.human_crank_torque_nm = in.torque;
+        signals.crank_rate_rad_s = in.crank_rate;
         signals.specific_force_body_mps2 = {0., 0., 9.81};
         rider::RiderSenses senses{};
-        senses.speed_mps = speed;
-        senses.rear_teeth = rear_teeth;
+        senses.speed_mps = in.speed;
+        senses.rear_teeth = in.rear_teeth;
         senses.surface_front = rider::SurfaceLabel::asphalt;
         senses.surface_ahead = rider::SurfaceLabel::asphalt;
-        senses.grade_ahead = grade_ahead;
-        (void)intent.resolve_full(automatic(), signals, senses, k, grade_ahead, grade_ahead,
-                                  std::nullopt, true, true, std::nullopt, kEffort);
+        senses.grade_ahead = in.grade_ahead;
+        (void)intent.resolve_full(automatic(), signals, senses, k, in.grade_ahead,
+                                  in.grade_ahead, std::nullopt, true, true,
+                                  std::nullopt, kEffort);
         return intent.commands();
     };
 
@@ -325,14 +332,18 @@ std::string encoded(const rider::RiderIntent &intent) {
     std::int64_t k = 0;
     for (; k < 5000 && intent->launch().phase != rider::LaunchPhase::done; ++k) {
         const bool moving = k > delay + 50;
-        (void)tick_senses(*intent, k, moving ? 4. : 0., moving ? 7.33 : 0., 12, .10, 40.);
+        (void)tick_senses(*intent, k, {.speed = moving ? 4. : 0.,
+                                       .crank_rate = moving ? 7.33 : 0.,
+                                       .rear_teeth = 12,
+                                       .grade_ahead = .10,
+                                       .torque = 40.});
     }
     bt::require(intent->launch().phase == rider::LaunchPhase::done, "cold start reaches done");
 
     // 3) Mid-ride stop on 10% in 12T -> hold sets stationary_rear_teeth = 39.
     bool saw_hold = false;
     for (int i = 0; i < delay + 20 && !saw_hold; ++i, ++k) {
-        const auto cmds = tick_senses(*intent, k, 0., 0., 12, .10, 0.);
+        const auto cmds = tick_senses(*intent, k, {.rear_teeth = 12, .grade_ahead = .10});
         if (intent->launch().phase == rider::LaunchPhase::hold) {
             saw_hold = true;
             bt::require(cmds.owns_shifting && cmds.stationary_rear_teeth == std::optional{39},
@@ -350,7 +361,8 @@ std::string encoded(const rider::RiderIntent &intent) {
     // 5) Entering release clears stationary_rear_teeth.
     bool saw_release = false;
     for (std::int64_t i = 0; i < delay + 20 && !saw_release; ++i, ++k) {
-        const auto cmds = tick_senses(*intent, k, 0., 0., 39, .10, 40.);
+        const auto cmds =
+            tick_senses(*intent, k, {.rear_teeth = 39, .grade_ahead = .10, .torque = 40.});
         if (intent->launch().phase == rider::LaunchPhase::release ||
             intent->launch().phase == rider::LaunchPhase::accelerate) {
             saw_release = true;
@@ -369,7 +381,8 @@ std::string encoded(const rider::RiderIntent &intent) {
         auto check = std::make_unique<rider::RiderIntent>(intent_config(), switched_off_reaction(), table, kDt);
         bool saw_case_hold = false;
         for (std::int64_t step_k = 0; step_k <= delay + 5 && !saw_case_hold; ++step_k) {
-            const auto cmds = tick_senses(*check, step_k, 0., 0., teeth, grade, 0.);
+            const auto cmds =
+                tick_senses(*check, step_k, {.rear_teeth = teeth, .grade_ahead = grade});
             if (check->launch().phase == rider::LaunchPhase::hold) {
                 saw_case_hold = true;
                 bt::require(!cmds.stationary_rear_teeth.has_value(),

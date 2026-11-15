@@ -297,6 +297,8 @@ struct BalanceLostEvent {
     double time_s = 0., position_m = 0., speed_mps = 0.;
 };
 
+enum class BalanceStop : std::uint8_t { none, braked };
+
 class BalanceMonitor {
 public:
     BalanceMonitor(double floor, double dwell, double grace);
@@ -305,7 +307,7 @@ public:
     // keeps the run's first latched record for summaries and metrics.
     std::optional<BalanceLostEvent> update(double time_s, double position_m,
                                          double speed_mps, bool riding,
-                                         bool stopped = false);
+                                         BalanceStop stop = BalanceStop::none);
     // observation() — the rider_balance channel dict; reports the active
     // `current_event` so the HUD recovers when the dwell timer resets.
     [[nodiscard]] WireObject observation() const;

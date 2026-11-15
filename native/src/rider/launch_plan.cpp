@@ -251,7 +251,7 @@ LaunchCommand LaunchPlan::command() const {
 LaunchPlan::State LaunchPlan::state() const { return s_; }
 
 int LaunchPlan::launch_teeth(double grade_ahead) const {
-    return prepare_launch(config_, grade_ahead).rear_teeth;
+    return detail::launch_teeth_unchecked(config_, grade_ahead);
 }
 
 void LaunchPlan::restore(const State &s) {

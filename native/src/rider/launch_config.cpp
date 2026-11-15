@@ -90,12 +90,7 @@ void validate_launch_table(const LaunchConfig &table) {
 
 LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
-    if (!std::isfinite(grade)) throw std::invalid_argument("launch preparation grade must be finite");
-    // upper_bound counts the breaks at or below the grade: a grade equal to
-    // a break already takes the next cog.
-    const auto &breaks = table.start_cog_grade_breaks;
-    const auto cog = static_cast<std::size_t>(
-        std::distance(breaks.begin(), std::ranges::upper_bound(breaks, grade)));
+    const int rear_teeth = detail::launch_teeth_unchecked(table, grade);
     const auto &knots = table.start_lean_grades;
     const auto &leans = table.start_lean_rad;
     double lean = leans.front();
@@ -107,7 +102,7 @@ LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
         const double t = (grade - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
         lean = leans[upper - 1] + t * (leans[upper] - leans[upper - 1]);
     }
-    return {.rear_teeth = table.start_cog_teeth[cog],
+    return {.rear_teeth = rear_teeth,
             .crank_phase_rad = table.start_pedal_angle_rad,
             .lean_rad = lean};
 }
@@ -127,6 +122,16 @@ double effort_grade_cap_nm(const LaunchConfig &table, double grade) {
 namespace detail {
 double grade_cap_unchecked(const LaunchConfig &table, double grade) {
     return knot_value(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
+}
+
+int launch_teeth_unchecked(const LaunchConfig &table, double grade) {
+    if (!std::isfinite(grade)) throw std::invalid_argument("launch preparation grade must be finite");
+    // upper_bound counts the breaks at or below the grade: a grade equal to
+    // a break already takes the next cog.
+    const auto &breaks = table.start_cog_grade_breaks;
+    const auto cog = static_cast<std::size_t>(
+        std::distance(breaks.begin(), std::ranges::upper_bound(breaks, grade)));
+    return table.start_cog_teeth[cog];
 }
 } // namespace detail
 

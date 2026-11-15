@@ -66,6 +66,15 @@ void test_normal_rider_restart_after_a_stop() {
         if (!rm.launch.release_s.has_value() || !rm.launch.handover_s.has_value()) {
             failures.push_back(
                 std::string(spec.name) + ": restart did not reach release and handover");
+        } else if (*rm.launch.handover_s - *rm.launch.release_s >= 6.0) {
+            failures.push_back(
+                std::format("{}: restart handover took {:.3f} s (>= 6.0 s)",
+                            spec.name, *rm.launch.handover_s - *rm.launch.release_s));
+        }
+        if (!(rm.post_restart_max_speed_mps > 5.0)) {
+            failures.push_back(
+                std::format("{}: post-restart max speed {:.3f} <= 5.0 m/s",
+                            spec.name, rm.post_restart_max_speed_mps));
         }
 
         const std::string verdict =

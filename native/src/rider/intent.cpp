@@ -383,18 +383,16 @@ namespace {
 // shifting ownership.
 RiderCommands commands_of(const LaunchCommand &c,
                           const LaunchPlan *launch = nullptr,
-                          const Perception *perception = nullptr) {
+                          const RiderSenses *delayed_senses = nullptr) {
     RiderCommands out{.front_brake = c.brake,
                       .rear_brake = c.brake,
                       .shift_request = c.shift_up ? std::optional{ShiftRequest::up} : std::nullopt,
                       .owns_shifting = c.owns_shifting};
-    if (c.phase == LaunchPhase::hold && launch != nullptr && perception != nullptr) {
-        const auto &delayed = perception->state().delayed;
-        if (delayed.has_value() && delayed->senses.grade_ahead > 0.) {
-            const int target = launch->launch_teeth(delayed->senses.grade_ahead);
-            if (delayed->senses.rear_teeth < target)
-                out.stationary_rear_teeth = target;
-        }
+    if (c.phase == LaunchPhase::hold && launch != nullptr &&
+        delayed_senses != nullptr && delayed_senses->grade_ahead > 0.) {
+        const int target = launch->launch_teeth(delayed_senses->grade_ahead);
+        if (delayed_senses->rear_teeth < target)
+            out.stationary_rear_teeth = target;
     }
     return out;
 }
@@ -489,9 +487,7 @@ void RiderIntent::seed_lean(double lean_rad) {
 
 bool RiderIntent::arm_standstill_start(double lean_rad) {
     if (!core_->launch || !core_->launch->arm_start(lean_rad)) return false;
-    core_->commands = commands_of(
-        core_->launch->command(), &*core_->launch,
-        core_->perception ? &*core_->perception : nullptr);
+    core_->commands = commands_of(core_->launch->command());
     return true;
 }
 
@@ -545,7 +541,7 @@ void RiderIntent::tick(Core &core, const IntentControl &control,
     core.intent = intent;
     core.commands = commands_of(
         plan, core.launch ? &*core.launch : nullptr,
-        core.perception ? &*core.perception : nullptr);
+        percepts ? &percepts->senses : nullptr);
     core.last_tick_step = step;
 }
 
@@ -669,9 +665,14 @@ void RiderIntent::restore(const State &state) {
     if (staged_->reaction) staged_->reaction->restore(*state.reaction);
     // NOLINTNEXTLINE(bugprone-unchecked-optional-access) same presence pair as the perception check above
     if (staged_->launch) staged_->launch->restore(*state.launch);
+    const auto delayed =
+        staged_->perception && staged_->launch &&
+                staged_->launch->command().phase == LaunchPhase::hold
+            ? staged_->perception->state().delayed
+            : std::nullopt;
     staged_->commands = staged_->launch
         ? commands_of(staged_->launch->command(), &*staged_->launch,
-                      staged_->perception ? &*staged_->perception : nullptr)
+                      delayed ? &delayed->senses : nullptr)
         : RiderCommands{};
     staged_->last_tick_step = state.last_tick_step;
     staged_->intent = state.intent;

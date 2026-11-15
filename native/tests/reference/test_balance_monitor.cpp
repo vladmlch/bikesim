@@ -166,15 +166,15 @@ void test_full_stop_rearms_grace_after_brake_release() {
     bt::require(monitor.grace_left_s == 0.,
                 "initial grace expires after 3 s of riding");
     // Brief rolling brake pauses without re-arming grace.
-    monitor.update(4.5, 5.5, 3. * KMH, false, false);
+    monitor.update(4.5, 5.5, 3. * KMH, false, runtime::BalanceStop::none);
     bt::require(monitor.grace_left_s == 0.,
                 "rolling brake does not re-arm grace");
     // Full braked stop restores the full 3 s grace for the next launch.
-    bt::require(!monitor.update(5., 6., 0., false, true).has_value(),
+    bt::require(!monitor.update(5., 6., 0., false, runtime::BalanceStop::braked).has_value(),
                 "full braked stop emits no balance event");
     bt::require(monitor.grace_left_s == 3.,
                 "full braked stop restores full 3 s grace");
-    bt::require(!monitor.update(5.1, 6., 0., true, false).has_value(),
+    bt::require(!monitor.update(5.1, 6., 0., true, runtime::BalanceStop::none).has_value(),
                 "brake release starts fresh 3 s grace");
     bt::require(std::abs(monitor.grace_left_s - 3.) < 1e-9,
                 "first riding sample after release holds full grace");
@@ -189,7 +189,7 @@ void test_full_stop_rearms_grace_after_brake_release() {
                 "sustained crawl past re-armed grace + 0.5 s dwell latches");
     const auto first_event = monitor.event;
     // Subsequent braked stop clears the active event but preserves first record.
-    bt::require(!monitor.update(9., 8.5, 0., false, true).has_value(),
+    bt::require(!monitor.update(9., 8.5, 0., false, runtime::BalanceStop::braked).has_value(),
                 "subsequent braked stop clears active event");
     bt::require(!monitor.current_event.has_value(),
                 "subsequent braked stop clears current_event");

@@ -235,6 +235,11 @@ template <typename Pred>
     return any ? best : std::numeric_limits<double>::quiet_NaN();
 }
 
+struct RideSpec {
+    double track_length_m = 150.;
+    double duration_s = 20.;
+};
+
 struct RunOutput {
     std::vector<IntervalMetricsRow> rows;
     double snap_time_s = 0.;
@@ -242,12 +247,12 @@ struct RunOutput {
 
 template <typename BrakeFn>
 [[nodiscard]] inline RunOutput run_ride(
-    std::string_view profile, const LaunchCase &c, double track_length_m,
-    double duration_s, LaunchMetrics &m, const BrakeFn &brake_at) {
-    const std::string knots =
-        std::format("[[0.0, {:.6f}], [{:.1f}, {:.6f}]]", c.grade, track_length_m, c.grade);
+    std::string_view profile, const LaunchCase &c, const RideSpec &spec,
+    LaunchMetrics &m, const BrakeFn &brake_at) {
+    const std::string knots = std::format(
+        "[[0.0, {:.6f}], [{:.1f}, {:.6f}]]", c.grade, spec.track_length_m, c.grade);
     auto env = launch_environment(
-        profile, track(knots, track_length_m, c.surface), duration_s);
+        profile, track(knots, spec.track_length_m, c.surface), spec.duration_s);
 
     const runtime::RideControl control;
     std::string abort_msg;
@@ -337,17 +342,26 @@ template <typename BrakeFn>
     return rows.size();
 }
 
+struct WindowInput {
+    std::span<const IntervalMetricsRow> win_rows;
+    std::span<const IntervalMetricsRow> episode_rows;
+    std::size_t i_start = 0;
+    std::size_t ep_min_end_idx = 0;
+    std::size_t i_rb = 0;
+};
+
 [[nodiscard]] inline std::vector<Episode> populate_window_metrics(
-    std::span<const IntervalMetricsRow> win_rows,
-    std::span<const IntervalMetricsRow> episode_rows,
-    std::size_t i_start, std::size_t ep_min_end_idx, std::size_t i_rb,
-    LaunchMetrics &m) {
+    const WindowInput &in, LaunchMetrics &m) {
+    const auto win_rows = in.win_rows;
+    const std::size_t i_start = in.i_start;
+    const std::size_t i_rb = in.i_rb;
+
     // Wheel lift: front normal load <= 50 N longer than 0.05 s.
     const auto eps50_all = find_episodes(
-        episode_rows, [](const auto &r) { return r.front_normal_n <= 50.; });
+        in.episode_rows, [](const auto &r) { return r.front_normal_n <= 50.; });
     std::vector<Episode> eps50;
     for (const auto &ep : eps50_all) {
-        if (ep.end_idx < ep_min_end_idx) continue;
+        if (ep.end_idx < in.ep_min_end_idx) continue;
         eps50.push_back(ep);
         if (ep.end_s - ep.start_s > 0.05) {
             m.lifts.emplace_back(ep.start_s, ep.end_s - ep.start_s);
@@ -355,12 +369,12 @@ template <typename BrakeFn>
     }
 
     // Rear slip: |tangent| / (mu * N) > 0.9 longer than 0.05 s when N > 1 and mu > 0.
-    const auto slip_all = find_episodes(episode_rows, [](const auto &r) {
+    const auto slip_all = find_episodes(in.episode_rows, [](const auto &r) {
         const double u = rear_utilization(r);
         return !std::isnan(u) && u > 0.9;
     });
     for (const auto &ep : slip_all) {
-        if (ep.end_idx >= ep_min_end_idx && ep.end_s - ep.start_s > 0.05) {
+        if (ep.end_idx >= in.ep_min_end_idx && ep.end_s - ep.start_s > 0.05) {
             m.slips.emplace_back(ep.start_s, ep.end_s - ep.start_s);
         }
     }
@@ -404,21 +418,26 @@ template <typename BrakeFn>
     return eps50;
 }
 
+struct ControllerWindowInput {
+    std::span<const IntervalMetricsRow> all_rows;
+    std::span<const Episode> eps50;
+    double t_search_from = 0.;
+    double snap_time_s = 0.;
+};
+
 inline void populate_controller_window(
-    std::span<const IntervalMetricsRow> all_rows,
-    std::span<const Episode> eps50, double t_search_from, double snap_time_s,
-    LaunchMetrics &m) {
+    const ControllerWindowInput &in, LaunchMetrics &m) {
     if (!m.lifts.empty()) {
         m.lift_start_s = m.lifts.front().first;
-    } else if (!eps50.empty()) {
-        m.lift_start_s = eps50.front().start_s;
+    } else if (!in.eps50.empty()) {
+        m.lift_start_s = in.eps50.front().start_s;
     }
     if (m.lift_start_s) {
         const auto react_tr = phase_transitions(
-            all_rows, [](const auto &r) -> std::string_view { return r.reaction_phase; });
+            in.all_rows, [](const auto &r) -> std::string_view { return r.reaction_phase; });
         std::optional<double> t_act;
         for (const auto &tr : react_tr) {
-            if (tr.time_s >= t_search_from - 1e-9 && tr.to == "acting") {
+            if (tr.time_s >= in.t_search_from - 1e-9 && tr.to == "acting") {
                 t_act = tr.time_s;
                 break;
             }
@@ -426,7 +445,7 @@ inline void populate_controller_window(
         if (t_act && *t_act >= *m.lift_start_s) {
             m.controller_window_s = *t_act - *m.lift_start_s;
         } else if (m.crashed) {
-            m.controller_window_s = snap_time_s - *m.lift_start_s;
+            m.controller_window_s = in.snap_time_s - *m.lift_start_s;
         }
     }
 }
@@ -443,7 +462,7 @@ inline void populate_controller_window(
 
     LaunchMetrics m;
     const auto run = detail::run_ride(
-        profile, c, kTrackLengthM, kDurationS, m,
+        profile, c, {.track_length_m = kTrackLengthM, .duration_s = kDurationS}, m,
         [](double) { return std::pair{0., 0.}; });
     const auto &all_rows = run.rows;
     if (all_rows.empty()) return m;
@@ -486,9 +505,18 @@ inline void populate_controller_window(
     }
 
     const auto eps50 = detail::populate_window_metrics(
-        win_rows, win_rows, i0, i0, i_rb, m);
+        {.win_rows = win_rows,
+         .episode_rows = win_rows,
+         .i_start = i0,
+         .ep_min_end_idx = i0,
+         .i_rb = i_rb},
+        m);
     detail::populate_controller_window(
-        all_rows, eps50, t_hold, run.snap_time_s, m);
+        {.all_rows = all_rows,
+         .eps50 = eps50,
+         .t_search_from = t_hold,
+         .snap_time_s = run.snap_time_s},
+        m);
 
     // Whole-ride t20 from t = 0 (unclipped) and second printed basis from accelerate entry.
     for (std::size_t i = i0; i < all_rows.size(); ++i) {
@@ -521,7 +549,8 @@ inline void populate_controller_window(
         .surface = std::string(surface),
     };
     const auto run = detail::run_ride(
-        profile, c, kTrackLengthM, kDurationS, rm.launch,
+        profile, c, {.track_length_m = kTrackLengthM, .duration_s = kDurationS},
+        rm.launch,
         [](double t_s) -> std::pair<double, double> {
             if (t_s < kBrakeStartS || t_s >= kBrakeReleaseS) return {0., 0.};
             if (t_s < kBrakeRampEndS) {
@@ -555,14 +584,19 @@ inline void populate_controller_window(
             rm.launch.hold_s = tr.time_s;
         } else if (rm.launch.hold_s && tr.to == "release" && !rm.launch.release_s) {
             rm.launch.release_s = tr.time_s;
-        } else if (rm.launch.release_s && tr.to == "accelerate" && !rm.launch.accelerate_s) {
+        } else if (rm.launch.hold_s && tr.to == "accelerate" && !rm.launch.accelerate_s) {
             rm.launch.accelerate_s = tr.time_s;
-        } else if (rm.launch.release_s && tr.to == "handover" && !rm.launch.handover_s) {
+        } else if ((rm.launch.release_s || rm.launch.accelerate_s) &&
+                   tr.to == "handover" && !rm.launch.handover_s) {
             rm.launch.handover_s = tr.time_s;
         }
     }
 
-    const double stop_end_s = rm.launch.release_s.value_or(kDurationS);
+    // Profiles with brake_release_s == 0 transition straight from hold to
+    // accelerate without a release phase; normal uses brake_release_s > 0.
+    const std::optional<double> release_or_accel_s =
+        rm.launch.release_s ? rm.launch.release_s : rm.launch.accelerate_s;
+    const double stop_end_s = release_or_accel_s.value_or(kDurationS);
     for (const auto &row : all_rows) {
         if (row.time_s >= kBrakeStartS && row.time_s <= stop_end_s) {
             rm.min_abs_speed_during_stop_mps =
@@ -576,7 +610,7 @@ inline void populate_controller_window(
         }
     }
 
-    if (!rm.launch.release_s) return rm;
+    if (!release_or_accel_s) return rm;
 
     const std::size_t clip_end =
         rm.launch.handover_s.has_value()
@@ -584,7 +618,7 @@ inline void populate_controller_window(
             : all_rows.size();
     const auto win_rows =
         std::span<const detail::IntervalMetricsRow>(all_rows).first(clip_end);
-    const std::size_t i_release = detail::index_at_or_after(win_rows, *rm.launch.release_s);
+    const std::size_t i_release = detail::index_at_or_after(win_rows, *release_or_accel_s);
     if (i_release >= win_rows.size()) return rm;
 
     if (!std::isnan(win_rows[i_release].rear_teeth)) {
@@ -598,9 +632,18 @@ inline void populate_controller_window(
     }
 
     const auto eps50 = detail::populate_window_metrics(
-        win_rows, win_rows.subspan(i_release), i_release, 0, i_release, rm.launch);
+        {.win_rows = win_rows,
+         .episode_rows = win_rows.subspan(i_release),
+         .i_start = i_release,
+         .ep_min_end_idx = 0,
+         .i_rb = i_release},
+        rm.launch);
     detail::populate_controller_window(
-        all_rows, eps50, *rm.launch.release_s, run.snap_time_s, rm.launch);
+        {.all_rows = all_rows,
+         .eps50 = eps50,
+         .t_search_from = *release_or_accel_s,
+         .snap_time_s = run.snap_time_s},
+        rm.launch);
 
     return rm;
 }

@@ -250,6 +250,10 @@ LaunchCommand LaunchPlan::command() const {
 
 LaunchPlan::State LaunchPlan::state() const { return s_; }
 
+int LaunchPlan::launch_teeth(double grade_ahead) const {
+    return prepare_launch(config_, grade_ahead).rear_teeth;
+}
+
 void LaunchPlan::restore(const State &s) {
     const auto max_cap = std::max({config_.effort_cap_asphalt_nm, config_.effort_cap_hardpack_nm,
                                    config_.effort_cap_loose_nm, config_.effort_cap_wet_nm,

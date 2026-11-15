@@ -272,6 +272,114 @@ std::string encoded(const rider::RiderIntent &intent) {
     bt::require(encoded(*fresh) == clean, "rejected restores change nothing");
 }
 
+// Stationary launch-gear selection in LaunchPhase::hold:
+// - validate(RiderCommands) rejects invalid stationary_rear_teeth combinations;
+// - cold start leaves stationary_rear_teeth unset;
+// - mid-ride stop in hold with grade_ahead > 0 & rear_teeth < target sets
+//   stationary_rear_teeth, state()/restore() preserves it, release clears it,
+//   and grade_ahead <= 0 or rear_teeth >= target leaves it unset.
+[[gnu::noinline]] void test_stationary_launch_gear_selection_in_hold() {
+    // 1) RiderCommands validation.
+    rider::validate(rider::RiderCommands{.owns_shifting = true, .stationary_rear_teeth = 39});
+    rejects([] { rider::validate(rider::RiderCommands{.stationary_rear_teeth = 39}); },
+            "owns_shifting", "stationary_rear_teeth without ownership");
+    rejects([] { rider::validate(rider::RiderCommands{.owns_shifting = true, .stationary_rear_teeth = 2}); },
+            "at least 3", "stationary_rear_teeth below 3");
+    rejects([] {
+        rider::validate(rider::RiderCommands{.shift_request = rider::ShiftRequest::up,
+                                             .owns_shifting = true,
+                                             .stationary_rear_teeth = 39});
+    }, "conflicts", "shift_request with stationary_rear_teeth");
+
+    // Configure launch table with grade-indexed launch cogs: <3% -> 24, <8% -> 33, >=8% -> 39.
+    auto table = launch_table(true);
+    table.start_cog_grade_breaks = {.03, .08};
+    table.start_cog_teeth = {24, 33, 39};
+
+    const auto tick_senses = [](rider::RiderIntent &intent, std::int64_t k, double speed,
+                                double crank_rate, int rear_teeth, double grade_ahead,
+                                double torque = 0.) {
+        rider::IntentSignals signals{};
+        signals.human_crank_torque_nm = torque;
+        signals.crank_rate_rad_s = crank_rate;
+        signals.specific_force_body_mps2 = {0., 0., 9.81};
+        rider::RiderSenses senses{};
+        senses.speed_mps = speed;
+        senses.rear_teeth = rear_teeth;
+        senses.surface_front = rider::SurfaceLabel::asphalt;
+        senses.surface_ahead = rider::SurfaceLabel::asphalt;
+        senses.grade_ahead = grade_ahead;
+        (void)intent.resolve_full(automatic(), signals, senses, k, grade_ahead, grade_ahead,
+                                  std::nullopt, true, true, std::nullopt, kEffort);
+        return intent.commands();
+    };
+
+    // 2) Cold start at t=0 leaves stationary_rear_teeth == nullopt.
+    auto intent = std::make_unique<rider::RiderIntent>(intent_config(), switched_off_reaction(), table, kDt);
+    bt::require(intent->arm_standstill_start(0.), "armed cold start");
+    bt::require(!intent->commands().stationary_rear_teeth.has_value(),
+                "cold start at t=0 leaves stationary_rear_teeth unset");
+
+    // Advance through cold start until done (cruising at 4 m/s, 70 rpm in 12T).
+    const std::int64_t delay = std::llround(intent_config().reaction_delay_s / intent_config().period_s);
+    std::int64_t k = 0;
+    for (; k < 5000 && intent->launch().phase != rider::LaunchPhase::done; ++k) {
+        const bool moving = k > delay + 50;
+        (void)tick_senses(*intent, k, moving ? 4. : 0., moving ? 7.33 : 0., 12, .10, 40.);
+    }
+    bt::require(intent->launch().phase == rider::LaunchPhase::done, "cold start reaches done");
+
+    // 3) Mid-ride stop on 10% in 12T -> hold sets stationary_rear_teeth = 39.
+    bool saw_hold = false;
+    for (int i = 0; i < delay + 20 && !saw_hold; ++i, ++k) {
+        const auto cmds = tick_senses(*intent, k, 0., 0., 12, .10, 0.);
+        if (intent->launch().phase == rider::LaunchPhase::hold) {
+            saw_hold = true;
+            bt::require(cmds.owns_shifting && cmds.stationary_rear_teeth == std::optional{39},
+                        "mid-ride hold on 10% in 12T requests stationary_rear_teeth = 39");
+        }
+    }
+    bt::require(saw_hold, "mid-ride stop enters hold");
+
+    // 4) state()/restore() preserves stationary_rear_teeth.
+    auto restored = std::make_unique<rider::RiderIntent>(intent_config(), switched_off_reaction(), table, kDt);
+    restored->restore(rider::decode_intent_state(rider::encode_intent_state(intent->state()), "intent"));
+    bt::require(restored->commands().stationary_rear_teeth == std::optional{39},
+                "state/restore preserves stationary_rear_teeth in hold");
+
+    // 5) Entering release clears stationary_rear_teeth.
+    bool saw_release = false;
+    for (std::int64_t i = 0; i < delay + 20 && !saw_release; ++i, ++k) {
+        const auto cmds = tick_senses(*intent, k, 0., 0., 39, .10, 40.);
+        if (intent->launch().phase == rider::LaunchPhase::release ||
+            intent->launch().phase == rider::LaunchPhase::accelerate) {
+            saw_release = true;
+            bt::require(!cmds.stationary_rear_teeth.has_value(),
+                        "leaving hold clears stationary_rear_teeth");
+        }
+    }
+    bt::require(saw_release, "hold advances into release");
+
+    // 6) grade_ahead <= 0 or rear_teeth >= target leaves stationary_rear_teeth == nullopt.
+    for (const auto &[teeth, grade, label] : {
+             std::tuple{12, 0., "flat grade_ahead == 0"},
+             std::tuple{12, -.05, "downhill grade_ahead < 0"},
+             std::tuple{39, .10, "already on target cog 39 >= 39"},
+             std::tuple{45, .10, "already on lighter cog 45 >= 39"}}) {
+        auto check = std::make_unique<rider::RiderIntent>(intent_config(), switched_off_reaction(), table, kDt);
+        bool saw_case_hold = false;
+        for (std::int64_t step_k = 0; step_k <= delay + 5 && !saw_case_hold; ++step_k) {
+            const auto cmds = tick_senses(*check, step_k, 0., 0., teeth, grade, 0.);
+            if (check->launch().phase == rider::LaunchPhase::hold) {
+                saw_case_hold = true;
+                bt::require(!cmds.stationary_rear_teeth.has_value(),
+                            std::string(label) + ": leaves stationary_rear_teeth unset");
+            }
+        }
+        bt::require(saw_case_hold, std::string(label) + ": enters hold");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -282,5 +390,6 @@ int main() {
         test_handover_is_continuous_and_surge_is_held();
         test_ownership_follows_the_caller();
         test_state_round_trip_probe_and_joint_rule();
+        test_stationary_launch_gear_selection_in_hold();
     });
 }

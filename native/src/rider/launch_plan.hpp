@@ -85,6 +85,7 @@ public:
     LaunchCommand update(const LaunchInputs &inputs);
     [[nodiscard]] LaunchCommand command() const;
     [[nodiscard]] State state() const;
+    [[nodiscard]] int launch_teeth(double grade_ahead) const;
     // Rejects every state update() cannot leave behind (decision 11); a
     // rejected state leaves the plan unchanged.
     void restore(const State &state);

@@ -93,6 +93,7 @@ struct RiderCommands {
     double rear_brake = 0.;
     std::optional<ShiftRequest> shift_request = std::nullopt;
     bool owns_shifting = false;
+    std::optional<int> stationary_rear_teeth = std::nullopt;
 };
 // Brake demands are fractions in [0, 1] — validate rejects nonfinite or
 // out-of-range values with std::invalid_argument, the same error every

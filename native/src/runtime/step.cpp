@@ -1344,7 +1344,8 @@ PhysicalStep::apply_forces_body(
         // automaton below runs exactly as before.
         const auto &shift_commands = rider_commands();
         drivetrain::RiderShift rider_shift{
-            .owns = shift_commands.owns_shifting};
+            .owns = shift_commands.owns_shifting,
+            .stationary_target_teeth = shift_commands.stationary_rear_teeth};
         if (shift_commands.shift_request)
             rider_shift.request =
                     *shift_commands.shift_request == rider::ShiftRequest::up

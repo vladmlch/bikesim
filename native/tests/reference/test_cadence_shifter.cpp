@@ -416,6 +416,96 @@ void test_probe_prepare_does_not_consume_a_rider_request() {
                     (after.rear_teeth != probed.rear_teeth),
                 "accepted shifts, rejected keeps the cog");
 }
+
+// Stationary target teeth: validation, cassette rejection, multi-cog commit
+// under braking/no-pedaling, idempotency across perception lag, and
+// deferral during an active shift cut.
+void test_stationary_target_teeth() {
+    // 1) Boundary validation rejects inconsistent or too-small targets.
+    {
+        auto s = shifter(12);
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            (void)s.update(0., 0., .01, false, true, true, std::nullopt,
+                           {.owns = false, .stationary_target_teeth = 39});
+        }, "rider shift without ownership");
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            (void)s.update(0., 0., .01, false, true, true, std::nullopt,
+                           {.owns = true,
+                            .request = drivetrain::ShiftDirection::down,
+                            .stationary_target_teeth = 39});
+        }, "rider shift conflict");
+        drivetrain_reference::error<std::invalid_argument>([&] {
+            (void)s.update(0., 0., .01, false, true, true, std::nullopt,
+                           {.owns = true, .stationary_target_teeth = 2});
+        }, "stationary target teeth");
+    }
+    // 2) Unknown cog on the cassette is rejected without moving gear.
+    {
+        auto s = shifter(12);
+        bt::require(!s.update(0., 0., .01, false, true, true, std::nullopt,
+                              {.owns = true, .stationary_target_teeth = 25}),
+                    "unknown target cog does not shift");
+        bt::require(s.state().rider_response == "rejected" &&
+                        s.state().rear_teeth == 12,
+                    "unknown target cog reports rejected");
+    }
+    // 3) Multi-cog jump 12 -> 39 commits while braking & not pedaling,
+    //    clears cut immediately, and repeats idempotently while >= target.
+    {
+        auto s = shifter(12);
+        bt::require(s.update(60., 60., .01, false, true, true, std::nullopt,
+                             {.owns = true, .stationary_target_teeth = 39}),
+                    "stationary jump 12 -> 39 commits even when braking and not pedaling");
+        bt::require(s.state().from_teeth == 12 &&
+                        s.state().rear_teeth == 39 &&
+                        s.state().direction == "down" &&
+                        s.state().shift_count == 1 &&
+                        s.state().cut_remaining_s == 0. &&
+                        s.state().rider_response == "accepted" &&
+                        std::abs(s.state().required_ema.value() - 60. * 39. / 12.) < 1e-9, // NOLINT(bugprone-unchecked-optional-access) update() initializes required_ema
+                    "stationary commit updates gear, count, landing EMA and clears cut");
+        // Repeat while perception lag keeps target=39: idempotent no-op.
+        bt::require(!s.update(0., 0., .01, false, true, true, std::nullopt,
+                              {.owns = true, .stationary_target_teeth = 39}),
+                    "repeat stationary target at 39 is idempotent");
+        bt::require(s.state().rider_response == "none" &&
+                        s.state().shift_count == 1 &&
+                        s.state().rear_teeth == 39,
+                    "idempotent repeat leaves shift_count and response none");
+        // Already on an even larger cog (51 >= 39) is also idempotent.
+        auto bigger = shifter(51);
+        bt::require(!bigger.update(0., 0., .01, false, true, true, std::nullopt,
+                                   {.owns = true, .stationary_target_teeth = 39}),
+                    "larger cog than target is a no-op");
+        bt::require(bigger.state().rider_response == "none" &&
+                        bigger.state().rear_teeth == 51,
+                    "larger cog keeps 51 and reports none");
+    }
+    // 4) Deferred while an ordinary cut is active, then commits once clear.
+    {
+        auto s = shifter(12);
+        bt::require(s.update(90., 90., .01, true, false, true, std::nullopt,
+                             {.owns = true,
+                              .request = drivetrain::ShiftDirection::down}),
+                    "start ordinary downshift 12 -> 14 with 0.2 s cut");
+        bt::require(s.state().rear_teeth == 14 &&
+                        s.state().cut_remaining_s > .15,
+                    "ordinary downshift arms cut");
+        bt::require(!s.update(0., 0., .05, false, true, true, std::nullopt,
+                              {.owns = true, .stationary_target_teeth = 39}),
+                    "stationary target defers while cut_remaining_s > 0");
+        bt::require(s.state().rider_response == "deferred" &&
+                        s.state().rear_teeth == 14,
+                    "deferred response keeps 14");
+        bt::require(s.update(0., 0., .20, false, true, true, std::nullopt,
+                             {.owns = true, .stationary_target_teeth = 39}),
+                    "stationary target commits as soon as cut finishes");
+        bt::require(s.state().rider_response == "accepted" &&
+                        s.state().rear_teeth == 39 &&
+                        s.state().cut_remaining_s == 0.,
+                    "committed stationary shift clears cut and lands on 39");
+    }
+}
 } // namespace
 int main() { return bt::run([] {
     test_low_crank_cadence_downshifts_to_the_next_bigger_cog();
@@ -444,4 +534,5 @@ int main() { return bt::run([] {
     test_rider_request_on_an_off_cassette_state_is_internal_error();
     test_rider_shift_contract_validation();
     test_probe_prepare_does_not_consume_a_rider_request();
+    test_stationary_target_teeth();
 }); }

@@ -57,6 +57,7 @@ namespace drivetrain {
     struct RiderShift {
         bool owns = false;
         std::optional<ShiftDirection> request = std::nullopt;
+        std::optional<int> stationary_target_teeth = std::nullopt;
     };
 
     // The closed serialization domain of ShiftingSnapshot.rider_response

@@ -32,10 +32,14 @@ namespace drivetrain {
         finite_optional(slip, "rear tire slip");
         // A request without ownership would be silently dropped by the
         // band path — the caller asked for a rider tick or it didn't.
-        if (!rider.owns && rider.request)
+        if (!rider.owns && (rider.request || rider.stationary_target_teeth))
             throw std::invalid_argument("rider shift without ownership");
         if (rider.request == ShiftDirection::none)
             throw std::invalid_argument("rider shift direction");
+        if (rider.request && rider.stationary_target_teeth)
+            throw std::invalid_argument("rider shift conflict");
+        if (rider.stationary_target_teeth && *rider.stationary_target_teeth < 3)
+            throw std::invalid_argument("stationary target teeth");
         auto next = state_;
         next.rider_response = "none";
         const auto finish = [&](bool shifted) {
@@ -62,6 +66,45 @@ namespace drivetrain {
         int selected = next.rear_teeth;
         ShiftDirection direction = ShiftDirection::none;
         if (rider.owns) {
+            if (rider.stationary_target_teeth) {
+                if (!config_.enabled) {
+                    next.rider_response = "deferred";
+                    return finish(false);
+                }
+                const auto at =
+                    std::ranges::find(config_.cassette, next.rear_teeth);
+                if (at == config_.cassette.end())
+                    throw std::logic_error("CadenceShifter.rear_teeth");
+                if (std::ranges::find(config_.cassette,
+                                      *rider.stationary_target_teeth) ==
+                    config_.cassette.end()) {
+                    next.rider_response = "rejected";
+                    return finish(false);
+                }
+                // Idempotent across the 0.15 s perception lag after commit.
+                if (next.rear_teeth >= *rider.stationary_target_teeth)
+                    return finish(false);
+                if (next.cut_remaining_s > 1e-12) {
+                    next.rider_response = "deferred";
+                    return finish(false);
+                }
+                if (next.shift_count == std::numeric_limits<int>::max())
+                    throw std::overflow_error("shift_count");
+                const int selected_stationary = *rider.stationary_target_teeth;
+                const double stationary_landing = validation::derived(
+                    engaged(next.required_ema) * selected_stationary /
+                        next.rear_teeth,
+                    "CadenceShifter.landing_cadence");
+                next.from_teeth = next.rear_teeth;
+                next.rear_teeth = selected_stationary;
+                next.required_ema = stationary_landing;
+                next.direction = shift_direction_name(ShiftDirection::down);
+                ++next.shift_count;
+                next.cooldown_s = config_.shift_cooldown_s;
+                next.cut_remaining_s = 0.;
+                next.rider_response = "accepted";
+                return finish(true);
+            }
             if (!rider.request)
                 // Ownership alone suppresses the band — the rider asked
                 // for nothing this tick.

@@ -20,22 +20,29 @@
 
 ## Задачи
 
-- [ ] **Задача 1. Общий интерполятор, схема конфигурации, валидация, кодек и отпечаток равновесия.**
+- [x] **Задача 1. Общий интерполятор, схема конфигурации, валидация, кодек и отпечаток равновесия.**
   - Выделить общий неаллоцирующий helper кусочно-линейной интерполяции и проверки строго возрастающих конечных узлов (`native/src/rider/table_lookup.hpp`) для переиспользования в `launch_config.cpp` и `intent.cpp`.
   - Добавить 4 обязательных поля `climb_effort_cap_*` в `rider::IntentConfig` (`native/src/rider/intent.hpp`), `kSeatedClimbConfigFields` (`native/src/configuration/model_config.hpp`), `post_init(const SeatedClimbConfig&)` и `default_physics()` (`native/src/configuration/validate.cpp`).
   - Обновить `decode_intent_config` (`native/src/rider/state_codec.cpp`) и проверки конструкторов `SeatedClimbPolicy` / `RiderIntent`.
   - Исключить 4 ключа `climb_effort_cap_*` рядом с `min_elbow_flexion_deg` в `equilibrium_cache.cpp` и `initial_state.cpp`.
 
-- [ ] **Задача 2. Реализация потолка усилия в `RiderIntent::tick`.**
+- [x] **Задача 2. Реализация потолка усилия в `RiderIntent::tick`.**
   - Реализовать расчёт `compute_climb_cap_nm` (кусочно-линейный уклон по `percepts->senses.grade_ahead` и линейная рампа по `percepts->senses.speed_mps` на `[rise, full]` к `config_.max_crank_torque_nm`) в `native/src/rider/intent.cpp` строго до `if (owns)` и без изменения `output()` / `effort_limited`.
   - Проверить побитовую неизменность `effort_ceiling_nm` и `effort_limited` при инертной таблице `[0.0] -> [1000.0]`.
 
-- [ ] **Задача 3. Обновление профилей, C++-билдеров, фикстур и золотых входов.**
+- [x] **Задача 3. Обновление профилей, C++-билдеров, фикстур и золотых входов.**
   - Обновить 5 профилей `examples/research/*.toml` согласно калибровке `N4_lin_sc35`, `C1_lin_nosurf`, `A1_lin_sc35`.
   - Обновить C++-билдеры в `native/src/validation/*` и `native/tests/**`, TOML/JSON-фикстуры в `tests/fixtures/{config,bootstrap,ft2,golden,replay,research}/**` (включая `assets.json` sha256 при обновлении `resolved_config.json`), а также только `input.adapter.*` в `native_rider_intent` (без перезаписи `output.*` / `error.*`).
 
-- [ ] **Задача 4. Тесты и приёмка.**
+- [x] **Задача 4. Тесты и приёмка.**
   - Обновить `test_welded_profile_config.cpp` (таблицы профилей, проверка 5 профилей, фильтр 4 ключей `climb_effort_cap_*` в `[seated_climb]` без пропуска остальной секции, проверки обязательности/валидации).
   - Добавить модульные тесты: кусочно-линейная интерполяция с зажатием концов, линейный подъём по скорости на `[rise, full]`, насыщение на `full_speed` до `max_crank_torque_nm`, побитовая эквивалентность инертной таблицы `1000.0`, ошибки валидации и round-trip через `state_codec` / `schema`.
   - Добавить приёмочные тесты подъёма на 20 с (включая проверку `g15`, `g20`, `g25`, `loose25`, `restart_g25` для профилей).
   - Сборка `build/native-release`, целевой прогон `ctest` с `perl -e 'alarm 2400; exec @ARGV' --` и фиксация коммитов на `queue-2026-11-15`.
+
+## Итоги проверки
+
+- **Проверенный коммит кода:** `eff7bb45` (коммиты реализации и фикстур на ветке `queue-2026-11-15`: `c752736f`, `67ca4b30`, `ceb4e816`, `272f49b2`, `732a3887`, `eff7bb45`).
+- **Ревью кода и фикстур:** пройдено (`APPROVED` на `272f49b2`, `q2-review.md`).
+- **Gate 1 (`bash tools/check_change.sh main` на `eff7bb45`):** `EXIT=0` (`321 s`): `194/194` обычных тестов пройдено; `cppcheck`, `frontends` (`g++-16`) и `clang-tidy` на `346` TU — `0` находок (`misc-no-recursion=15`).
+- **Gate 2 (целевой прогон `slow` на `eff7bb45`):** `EXIT=0` (`136.60 s`, `9/9` пройдено, `0` пропущено/упало): `reference.golden_episode_regressions` (`8.55 s`), `reference.native_encode_columns` (`0.70 s`), `reference.rider_launch_rides_normal` (`136.58 s`), `reference.rider_launch_rides_careful` (`126.36 s`), `reference.rider_launch_rides_aggressive` (`128.08 s`), `reference.seated_pedaling_cycle` (`19.77 s`), `reference.seated_posture_program` (`2.75 s`), `reference.realistic_pedelec_acceptance` (`16.05 s`), `reference.pneumatic_physical_runtime` (`0.58 s`).

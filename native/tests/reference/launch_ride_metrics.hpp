@@ -66,6 +66,16 @@ struct LaunchMetrics {
     std::optional<double> hold_s, release_s, accelerate_s, handover_s;
 };
 
+struct RestartMetrics {
+    LaunchMetrics launch;
+    double pre_stop_cruise_min_speed_mps = 0.;
+    int pre_stop_rear_teeth = 0;
+    int hold_rear_teeth_at_release = 0;
+    double min_abs_speed_during_stop_mps = std::numeric_limits<double>::infinity();
+    double post_restart_max_speed_mps = 0.;
+    double stop_min_front_normal_n = std::numeric_limits<double>::quiet_NaN();
+};
+
 namespace detail {
 
 struct IntervalMetricsRow {
@@ -80,6 +90,7 @@ struct IntervalMetricsRow {
     double saddle_normal_n = std::numeric_limits<double>::quiet_NaN();
     double front_pedal_normal_n = std::numeric_limits<double>::quiet_NaN();
     double rear_pedal_normal_n = std::numeric_limits<double>::quiet_NaN();
+    double rear_teeth = std::numeric_limits<double>::quiet_NaN();
     double budget_exceeded = 0.;
     double balance_lost = 0.;
     std::string launch_phase;
@@ -224,29 +235,30 @@ template <typename Pred>
     return any ? best : std::numeric_limits<double>::quiet_NaN();
 }
 
-} // namespace detail
+struct RunOutput {
+    std::vector<IntervalMetricsRow> rows;
+    double snap_time_s = 0.;
+};
 
-// Rides `profile` on a 150 m constant-grade track of `c` for 20 s, the
-// calibration probe's drive (caller control empty, no caller brake).
-[[nodiscard]] inline LaunchMetrics ride(std::string_view profile,
-                                          const LaunchCase &c) {
-    constexpr double kTrackLengthM = 150.;
-    constexpr double kDurationS = 20.;
-    constexpr double kTwentyKmhMps = 20. / 3.6;
-
+template <typename BrakeFn>
+[[nodiscard]] inline RunOutput run_ride(
+    std::string_view profile, const LaunchCase &c, double track_length_m,
+    double duration_s, LaunchMetrics &m, const BrakeFn &brake_at) {
     const std::string knots =
-        std::format("[[0.0, {:.6f}], [150.0, {:.6f}]]", c.grade, c.grade);
+        std::format("[[0.0, {:.6f}], [{:.1f}, {:.6f}]]", c.grade, track_length_m, c.grade);
     auto env = launch_environment(
-        profile, track(knots, kTrackLengthM, c.surface), kDurationS);
+        profile, track(knots, track_length_m, c.surface), duration_s);
 
     const runtime::RideControl control;
     std::string abort_msg;
     try {
         while (!env.runtime->snapshot().outcome.has_value() &&
                env.runtime->snapshot().step < env.max_steps) {
+            const auto [front_brake, rear_brake] =
+                brake_at(env.runtime->snapshot().time_s);
             const auto result = env.runtime->advance(
                 env.runtime->snapshot().step + env.control_steps,
-                control, 0., 0., std::nullopt);
+                control, front_brake, rear_brake, std::nullopt);
             if (result.reason == "outcome") break;
         }
         env.runtime->flush();
@@ -255,7 +267,6 @@ template <typename Pred>
     }
 
     const auto snap = env.runtime->snapshot();
-    LaunchMetrics m;
     m.outcome = snap.outcome.value_or("none");
     m.crashed = m.outcome != "none";
     if (snap.first_failure.has_value()) {
@@ -270,34 +281,171 @@ template <typename Pred>
     layout.root_pitch_qpos = static_cast<std::size_t>(env.root_pitch_qpos);
 
     const auto recorded = env.runtime->recorded_intervals();
-    std::vector<detail::IntervalMetricsRow> all_rows;
-    all_rows.reserve(recorded.size());
+    RunOutput out;
+    out.snap_time_s = snap.time_s;
+    out.rows.reserve(recorded.size());
     std::set<std::string> violation_set;
 
     for (const auto &sample : recorded) {
-        detail::collect_violations(sample->channels, violation_set);
+        collect_violations(sample->channels, violation_set);
         const auto flat = sample->flat_columns(layout);
-        detail::IntervalMetricsRow row;
-        row.time_s = detail::lookup_col(flat, "time_s", sample->time_s);
-        row.x_m = detail::lookup_col(flat, "x_m", 0.);
-        row.speed_mps = detail::lookup_col(flat, "speed_mps", 0.);
-        row.front_normal_n = detail::lookup_col(flat, "tires.front.normal_load_n");
-        row.rear_normal_n = detail::lookup_col(flat, "tires.rear.normal_load_n");
-        row.rear_tangent_n = detail::lookup_col(flat, "tires.rear.tangent_force_n");
-        row.rear_mu = detail::lookup_col(flat, "tires.rear.friction_coefficient");
-        row.crank_rad_s = detail::lookup_col(flat, "sensors.encoders_rad_s.crank", 0.);
-        row.saddle_normal_n = detail::lookup_col(flat, "rider_welds.saddle.normal_n");
-        row.front_pedal_normal_n = detail::lookup_col(flat, "rider_welds.front_pedal.normal_n");
-        row.rear_pedal_normal_n = detail::lookup_col(flat, "rider_welds.rear_pedal.normal_n");
-        row.budget_exceeded = detail::lookup_col(flat, "rider_effort_budget_exceeded", 0.);
-        row.balance_lost = detail::lookup_col(flat, "rider_balance.balance_lost", 0.);
-        row.launch_phase = detail::channel_phase(sample->channels, "rider_launch");
-        row.reaction_phase = detail::channel_phase(sample->channels, "rider_reaction");
-        all_rows.push_back(std::move(row));
+        IntervalMetricsRow row;
+        row.time_s = lookup_col(flat, "time_s", sample->time_s);
+        row.x_m = lookup_col(flat, "x_m", 0.);
+        row.speed_mps = lookup_col(flat, "speed_mps", 0.);
+        row.front_normal_n = lookup_col(flat, "tires.front.normal_load_n");
+        row.rear_normal_n = lookup_col(flat, "tires.rear.normal_load_n");
+        row.rear_tangent_n = lookup_col(flat, "tires.rear.tangent_force_n");
+        row.rear_mu = lookup_col(flat, "tires.rear.friction_coefficient");
+        row.crank_rad_s = lookup_col(flat, "sensors.encoders_rad_s.crank", 0.);
+        row.saddle_normal_n = lookup_col(flat, "rider_welds.saddle.normal_n");
+        row.front_pedal_normal_n = lookup_col(flat, "rider_welds.front_pedal.normal_n");
+        row.rear_pedal_normal_n = lookup_col(flat, "rider_welds.rear_pedal.normal_n");
+        row.rear_teeth = lookup_col(flat, "drive.gear_rear_teeth");
+        row.budget_exceeded = lookup_col(flat, "rider_effort_budget_exceeded", 0.);
+        row.balance_lost = lookup_col(flat, "rider_balance.balance_lost", 0.);
+        row.launch_phase = channel_phase(sample->channels, "rider_launch");
+        row.reaction_phase = channel_phase(sample->channels, "rider_reaction");
+        out.rows.push_back(std::move(row));
     }
     m.violations.assign(violation_set.begin(), violation_set.end());
     env.runtime->close();
+    return out;
+}
 
+[[nodiscard]] inline double rear_utilization(const IntervalMetricsRow &r) {
+    if (!std::isnan(r.rear_normal_n) && !std::isnan(r.rear_mu) &&
+        !std::isnan(r.rear_tangent_n) && r.rear_normal_n > 1. && r.rear_mu > 0.) {
+        return std::abs(r.rear_tangent_n) / (r.rear_mu * r.rear_normal_n);
+    }
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+[[nodiscard]] inline std::size_t index_after_time(
+    std::span<const IntervalMetricsRow> rows, double time_s) {
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        if (rows[i].time_s > time_s) return i;
+    }
+    return rows.size();
+}
+
+[[nodiscard]] inline std::size_t index_at_or_after(
+    std::span<const IntervalMetricsRow> rows, double time_s) {
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        if (rows[i].time_s >= time_s) return i;
+    }
+    return rows.size();
+}
+
+[[nodiscard]] inline std::vector<Episode> populate_window_metrics(
+    std::span<const IntervalMetricsRow> win_rows,
+    std::span<const IntervalMetricsRow> episode_rows,
+    std::size_t i_start, std::size_t ep_min_end_idx, std::size_t i_rb,
+    LaunchMetrics &m) {
+    // Wheel lift: front normal load <= 50 N longer than 0.05 s.
+    const auto eps50_all = find_episodes(
+        episode_rows, [](const auto &r) { return r.front_normal_n <= 50.; });
+    std::vector<Episode> eps50;
+    for (const auto &ep : eps50_all) {
+        if (ep.end_idx < ep_min_end_idx) continue;
+        eps50.push_back(ep);
+        if (ep.end_s - ep.start_s > 0.05) {
+            m.lifts.emplace_back(ep.start_s, ep.end_s - ep.start_s);
+        }
+    }
+
+    // Rear slip: |tangent| / (mu * N) > 0.9 longer than 0.05 s when N > 1 and mu > 0.
+    const auto slip_all = find_episodes(episode_rows, [](const auto &r) {
+        const double u = rear_utilization(r);
+        return !std::isnan(u) && u > 0.9;
+    });
+    for (const auto &ep : slip_all) {
+        if (ep.end_idx >= ep_min_end_idx && ep.end_s - ep.start_s > 0.05) {
+            m.slips.emplace_back(ep.start_s, ep.end_s - ep.start_s);
+        }
+    }
+    for (std::size_t i = i_start; i < win_rows.size(); ++i) {
+        const double u = rear_utilization(win_rows[i]);
+        if (!std::isnan(u)) m.slip_peak = std::max(m.slip_peak, u);
+    }
+
+    // Rollback from release entry (or fallback index).
+    double min_x = win_rows[i_rb].x_m;
+    for (std::size_t i = i_rb; i < win_rows.size(); ++i) {
+        min_x = std::min(min_x, win_rows[i].x_m);
+    }
+    m.rollback_m = min_x - win_rows[i_rb].x_m;
+
+    // Leg EMA cadence (tau = 0.35 s) over clipped rows from t = 0; peak from i_start.
+    double ema = 0.;
+    for (std::size_t i = 0; i < win_rows.size(); ++i) {
+        const double rpm =
+            std::abs(win_rows[i].crank_rad_s * (60. / (2. * std::numbers::pi)));
+        if (i == 0) {
+            ema = rpm;
+        } else {
+            const double dt = win_rows[i].time_s - win_rows[i - 1].time_s;
+            ema += std::min(1., dt / .35) * (rpm - ema);
+        }
+        if (i >= i_start) m.leg_ema_peak_rpm = std::max(m.leg_ema_peak_rpm, ema);
+    }
+
+    // Supports, effort budget, balance loss inside [i_start, win_rows.size()).
+    m.saddle_min_n = window_col_min(
+        win_rows, i_start, [](const auto &r) { return r.saddle_normal_n; });
+    m.front_foot_min_n = window_col_min(
+        win_rows, i_start, [](const auto &r) { return r.front_pedal_normal_n; });
+    m.rear_foot_min_n = window_col_min(
+        win_rows, i_start, [](const auto &r) { return r.rear_pedal_normal_n; });
+    for (std::size_t i = i_start; i < win_rows.size(); ++i) {
+        if (win_rows[i].budget_exceeded > .5) m.budget_exceeded = true;
+        if (win_rows[i].balance_lost > .5) m.balance_lost = true;
+    }
+    return eps50;
+}
+
+inline void populate_controller_window(
+    std::span<const IntervalMetricsRow> all_rows,
+    std::span<const Episode> eps50, double t_search_from, double snap_time_s,
+    LaunchMetrics &m) {
+    if (!m.lifts.empty()) {
+        m.lift_start_s = m.lifts.front().first;
+    } else if (!eps50.empty()) {
+        m.lift_start_s = eps50.front().start_s;
+    }
+    if (m.lift_start_s) {
+        const auto react_tr = phase_transitions(
+            all_rows, [](const auto &r) -> std::string_view { return r.reaction_phase; });
+        std::optional<double> t_act;
+        for (const auto &tr : react_tr) {
+            if (tr.time_s >= t_search_from - 1e-9 && tr.to == "acting") {
+                t_act = tr.time_s;
+                break;
+            }
+        }
+        if (t_act && *t_act >= *m.lift_start_s) {
+            m.controller_window_s = *t_act - *m.lift_start_s;
+        } else if (m.crashed) {
+            m.controller_window_s = snap_time_s - *m.lift_start_s;
+        }
+    }
+}
+
+} // namespace detail
+
+// Rides `profile` on a 150 m constant-grade track of `c` for 20 s, the
+// calibration probe's drive (caller control empty, no caller brake).
+[[nodiscard]] inline LaunchMetrics ride(std::string_view profile,
+                                          const LaunchCase &c) {
+    constexpr double kTrackLengthM = 150.;
+    constexpr double kDurationS = 20.;
+    constexpr double kTwentyKmhMps = 20. / 3.6;
+
+    LaunchMetrics m;
+    const auto run = detail::run_ride(
+        profile, c, kTrackLengthM, kDurationS, m,
+        [](double) { return std::pair{0., 0.}; });
+    const auto &all_rows = run.rows;
     if (all_rows.empty()) return m;
 
     const auto full_lp = detail::phase_transitions(
@@ -311,15 +459,8 @@ template <typename Pred>
             break;
         }
     }
-    std::size_t clip_end = all_rows.size();
-    if (dn0.has_value()) {
-        for (std::size_t i = 0; i < all_rows.size(); ++i) {
-            if (all_rows[i].time_s > *dn0) {
-                clip_end = i;
-                break;
-            }
-        }
-    }
+    const std::size_t clip_end =
+        dn0.has_value() ? detail::index_after_time(all_rows, *dn0) : all_rows.size();
     const auto win_rows = std::span<const detail::IntervalMetricsRow>(all_rows).first(clip_end);
     if (win_rows.empty()) return m;
 
@@ -328,8 +469,7 @@ template <typename Pred>
     m.hold_s = detail::find_hold_entry(win_rows, win_lp);
     const double t_hold = m.hold_s.value_or(0.);
 
-    std::size_t i0 = 0;
-    while (i0 < win_rows.size() && win_rows[i0].time_s < t_hold) ++i0;
+    std::size_t i0 = detail::index_at_or_after(win_rows, t_hold);
     if (i0 >= win_rows.size()) i0 = 0;
 
     for (const auto &tr : win_lp) {
@@ -339,105 +479,16 @@ template <typename Pred>
         else if (tr.to == "handover" && !m.handover_s) m.handover_s = tr.time_s;
     }
 
-    // Wheel lift: front normal load <= 50 N longer than 0.05 s, episode ending at/after i0.
-    const auto eps50_all = detail::find_episodes(
-        win_rows, [](const auto &r) { return r.front_normal_n <= 50.; });
-    std::vector<detail::Episode> eps50;
-    for (const auto &ep : eps50_all) {
-        if (ep.end_idx < i0) continue;
-        eps50.push_back(ep);
-        if (ep.end_s - ep.start_s > 0.05) {
-            m.lifts.emplace_back(ep.start_s, ep.end_s - ep.start_s);
-        }
-    }
-
-    // Rear slip: |tangent| / (mu * N) > 0.9 longer than 0.05 s when N > 1 and mu > 0.
-    const auto util_of = [](const detail::IntervalMetricsRow &r) -> double {
-        if (!std::isnan(r.rear_normal_n) && !std::isnan(r.rear_mu) &&
-            !std::isnan(r.rear_tangent_n) && r.rear_normal_n > 1. && r.rear_mu > 0.) {
-            return std::abs(r.rear_tangent_n) / (r.rear_mu * r.rear_normal_n);
-        }
-        return std::numeric_limits<double>::quiet_NaN();
-    };
-    const auto slip_all = detail::find_episodes(win_rows, [&](const auto &r) {
-        const double u = util_of(r);
-        return !std::isnan(u) && u > 0.9;
-    });
-    for (const auto &ep : slip_all) {
-        if (ep.end_idx >= i0 && ep.end_s - ep.start_s > 0.05) {
-            m.slips.emplace_back(ep.start_s, ep.end_s - ep.start_s);
-        }
-    }
-    for (std::size_t i = i0; i < win_rows.size(); ++i) {
-        const double u = util_of(win_rows[i]);
-        if (!std::isnan(u)) m.slip_peak = std::max(m.slip_peak, u);
-    }
-
-    // Rollback from release entry (or hold entry if release was never reached).
     std::size_t i_rb = i0;
     if (m.release_s) {
-        for (std::size_t i = 0; i < win_rows.size(); ++i) {
-            if (win_rows[i].time_s >= *m.release_s) {
-                i_rb = i;
-                break;
-            }
-        }
-    }
-    double min_x = win_rows[i_rb].x_m;
-    for (std::size_t i = i_rb; i < win_rows.size(); ++i) {
-        min_x = std::min(min_x, win_rows[i].x_m);
-    }
-    m.rollback_m = min_x - win_rows[i_rb].x_m;
-
-    // Leg EMA cadence (tau = 0.35 s) over clipped rows from t = 0; peak from i0.
-    double ema = 0.;
-    for (std::size_t i = 0; i < win_rows.size(); ++i) {
-        const double rpm =
-            std::abs(win_rows[i].crank_rad_s * (60. / (2. * std::numbers::pi)));
-        if (i == 0) {
-            ema = rpm;
-        } else {
-            const double dt = win_rows[i].time_s - win_rows[i - 1].time_s;
-            ema += std::min(1., dt / .35) * (rpm - ema);
-        }
-        if (i >= i0) m.leg_ema_peak_rpm = std::max(m.leg_ema_peak_rpm, ema);
+        const std::size_t found = detail::index_at_or_after(win_rows, *m.release_s);
+        if (found < win_rows.size()) i_rb = found;
     }
 
-    // Supports, effort budget, balance loss inside the window [i0, clip_end).
-    m.saddle_min_n = detail::window_col_min(
-        win_rows, i0, [](const auto &r) { return r.saddle_normal_n; });
-    m.front_foot_min_n = detail::window_col_min(
-        win_rows, i0, [](const auto &r) { return r.front_pedal_normal_n; });
-    m.rear_foot_min_n = detail::window_col_min(
-        win_rows, i0, [](const auto &r) { return r.rear_pedal_normal_n; });
-    for (std::size_t i = i0; i < win_rows.size(); ++i) {
-        if (win_rows[i].budget_exceeded > .5) m.budget_exceeded = true;
-        if (win_rows[i].balance_lost > .5) m.balance_lost = true;
-    }
-
-    // Controller window: cal_metrics.py:341-353 literally, searching reaction
-    // acting across the whole ride from t_hold.
-    if (!m.lifts.empty()) {
-        m.lift_start_s = m.lifts.front().first;
-    } else if (!eps50.empty()) {
-        m.lift_start_s = eps50.front().start_s;
-    }
-    if (m.lift_start_s) {
-        const auto react_tr = detail::phase_transitions(
-            all_rows, [](const auto &r) -> std::string_view { return r.reaction_phase; });
-        std::optional<double> t_act;
-        for (const auto &tr : react_tr) {
-            if (tr.time_s >= t_hold - 1e-9 && tr.to == "acting") {
-                t_act = tr.time_s;
-                break;
-            }
-        }
-        if (t_act && *t_act >= *m.lift_start_s) {
-            m.controller_window_s = *t_act - *m.lift_start_s;
-        } else if (m.crashed) {
-            m.controller_window_s = snap.time_s - *m.lift_start_s;
-        }
-    }
+    const auto eps50 = detail::populate_window_metrics(
+        win_rows, win_rows, i0, i0, i_rb, m);
+    detail::populate_controller_window(
+        all_rows, eps50, t_hold, run.snap_time_s, m);
 
     // Whole-ride t20 from t = 0 (unclipped) and second printed basis from accelerate entry.
     for (std::size_t i = i0; i < all_rows.size(); ++i) {
@@ -449,6 +500,109 @@ template <typename Pred>
     if (m.t20_s && m.accelerate_s) m.t20_from_release_s = *m.t20_s - *m.accelerate_s;
 
     return m;
+}
+
+// Rides `profile` on a 200 m constant-grade track for 25 s, cruises until 10 s,
+// smoothly ramps both brakes 0 -> 0.5 over 0.5 s, holds until 12.5 s, releases,
+// and measures the restart cleanly inside [t_second_release, t_second_handover].
+[[nodiscard]] inline RestartMetrics ride_restart(
+    std::string_view profile, double grade, std::string_view surface = "asphalt") {
+    static constexpr double kTrackLengthM = 200.;
+    static constexpr double kDurationS = 25.;
+    static constexpr double kBrakeStartS = 10.0;
+    static constexpr double kBrakeRampEndS = 10.5;
+    static constexpr double kBrakeReleaseS = 12.5;
+    static constexpr double kBrakeLevel = 0.5;
+
+    RestartMetrics rm;
+    const LaunchCase c{
+        .name = std::format("restart_{:02d}", static_cast<int>(std::llround(grade * 100.))),
+        .grade = grade,
+        .surface = std::string(surface),
+    };
+    const auto run = detail::run_ride(
+        profile, c, kTrackLengthM, kDurationS, rm.launch,
+        [](double t_s) -> std::pair<double, double> {
+            if (t_s < kBrakeStartS || t_s >= kBrakeReleaseS) return {0., 0.};
+            if (t_s < kBrakeRampEndS) {
+                const double b =
+                    kBrakeLevel * ((t_s - kBrakeStartS) / (kBrakeRampEndS - kBrakeStartS));
+                return {b, b};
+            }
+            return {kBrakeLevel, kBrakeLevel};
+        });
+    const auto &all_rows = run.rows;
+    if (all_rows.empty()) return rm;
+
+    bool have_cruise = false;
+    double cruise_min = std::numeric_limits<double>::infinity();
+    for (const auto &row : all_rows) {
+        if (row.time_s >= 9.0 && row.time_s <= kBrakeStartS) {
+            have_cruise = true;
+            cruise_min = std::min(cruise_min, row.speed_mps);
+            if (!std::isnan(row.rear_teeth)) {
+                rm.pre_stop_rear_teeth = static_cast<int>(std::llround(row.rear_teeth));
+            }
+        }
+    }
+    if (have_cruise) rm.pre_stop_cruise_min_speed_mps = cruise_min;
+
+    const auto full_lp = detail::phase_transitions(
+        all_rows, [](const auto &r) -> std::string_view { return r.launch_phase; });
+    for (const auto &tr : full_lp) {
+        if (tr.time_s < kBrakeStartS - 1e-9) continue;
+        if (tr.to == "hold" && !rm.launch.hold_s) {
+            rm.launch.hold_s = tr.time_s;
+        } else if (rm.launch.hold_s && tr.to == "release" && !rm.launch.release_s) {
+            rm.launch.release_s = tr.time_s;
+        } else if (rm.launch.release_s && tr.to == "accelerate" && !rm.launch.accelerate_s) {
+            rm.launch.accelerate_s = tr.time_s;
+        } else if (rm.launch.release_s && tr.to == "handover" && !rm.launch.handover_s) {
+            rm.launch.handover_s = tr.time_s;
+        }
+    }
+
+    const double stop_end_s = rm.launch.release_s.value_or(kDurationS);
+    for (const auto &row : all_rows) {
+        if (row.time_s >= kBrakeStartS && row.time_s <= stop_end_s) {
+            rm.min_abs_speed_during_stop_mps =
+                std::min(rm.min_abs_speed_during_stop_mps, std::abs(row.speed_mps));
+            if (!std::isnan(row.front_normal_n)) {
+                rm.stop_min_front_normal_n = std::isnan(rm.stop_min_front_normal_n)
+                                                 ? row.front_normal_n
+                                                 : std::min(rm.stop_min_front_normal_n,
+                                                            row.front_normal_n);
+            }
+        }
+    }
+
+    if (!rm.launch.release_s) return rm;
+
+    const std::size_t clip_end =
+        rm.launch.handover_s.has_value()
+            ? detail::index_after_time(all_rows, *rm.launch.handover_s)
+            : all_rows.size();
+    const auto win_rows =
+        std::span<const detail::IntervalMetricsRow>(all_rows).first(clip_end);
+    const std::size_t i_release = detail::index_at_or_after(win_rows, *rm.launch.release_s);
+    if (i_release >= win_rows.size()) return rm;
+
+    if (!std::isnan(win_rows[i_release].rear_teeth)) {
+        rm.hold_rear_teeth_at_release =
+            static_cast<int>(std::llround(win_rows[i_release].rear_teeth));
+    }
+
+    for (std::size_t i = i_release; i < all_rows.size(); ++i) {
+        rm.post_restart_max_speed_mps =
+            std::max(rm.post_restart_max_speed_mps, all_rows[i].speed_mps);
+    }
+
+    const auto eps50 = detail::populate_window_metrics(
+        win_rows, win_rows.subspan(i_release), i_release, 0, i_release, rm.launch);
+    detail::populate_controller_window(
+        all_rows, eps50, *rm.launch.release_s, run.snap_time_s, rm.launch);
+
+    return rm;
 }
 
 // The seated limits every launch keeps (spec «Проверки», roadmap task 13,

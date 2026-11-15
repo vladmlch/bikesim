@@ -78,6 +78,15 @@ bool approx(double actual, double expected, double rtol = 1e-6,
                 "zero capacity in both directions returns zero");
 }
 
+[[gnu::noinline]] void test_split_accepts_a_temporary_capacity() {
+    // A temporary callback must bind the defined overload.
+    const auto [th, tk] = spindle::split_joint_torques(
+        40., {1., -1.}, [](int, double) { return 100.; });
+    bt::require(approx(th, 20.) && approx(tk, -20.) &&
+                    approx(th * 1. + tk * -1., 40.),
+                "a temporary capacity computes the same crank split");
+}
+
 [[gnu::noinline]] void test_shares_sum_to_one() {
     // crank_split/shares_sum_to_one
     for (const double phi : {0., .3, 1.2, std::numbers::pi / 2., 2.,
@@ -234,6 +243,7 @@ int main() {
         test_split_uses_directional_capacity_and_clips();
         test_split_spills_over_when_one_joint_saturates();
         test_singular_and_zero_capacity_deliver_zero();
+        test_split_accepts_a_temporary_capacity();
         test_shares_sum_to_one();
         test_vertical_handover_and_opposite_power_strokes();
         test_preload_is_downward_virtual_work_in_native_plus_y();

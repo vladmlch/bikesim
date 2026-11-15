@@ -113,7 +113,7 @@ namespace spindle {
     // (hip_nm, knee_nm). Header-inline so the callback stays generic.
     template<typename Capacity>
     [[nodiscard]] Vec2 split_joint_torques(double tau_leg_nm, Vec2 jac,
-                                           Capacity &&capacity);
+                                           const Capacity &capacity);
 
     template<typename Capacity>
     [[nodiscard]] Vec2 downstroke_joint_torques(double tau_leg_nm, Vec2 jac,

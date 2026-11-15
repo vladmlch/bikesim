@@ -139,8 +139,7 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
         if (ticks > 0x1p31) reject(field, "must be at most 2^31 intention periods");
         return static_cast<std::int64_t>(ticks);
     };
-    // A duration the table requires positive additionally counts at least
-    // one tick — a sub-tick value must not round to an empty interval.
+    // A positive-required duration must not round down to an empty interval.
     const auto positive_on_grid = [&on_grid](double seconds, std::string_view field) {
         if (on_grid(seconds, field) == 0)
             reject(field, "a positive time must count at least one intention period tick");

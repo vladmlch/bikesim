@@ -310,12 +310,8 @@ void test_update_rejects_bad_input_without_mutation() {
                 "a poisoned sample mutates nothing");
 }
 
-// A delivery whose integrated pitch or scaled cadence leaves the finite
-// domain is rejected before the queue, the delayed slot, the clock or the
-// integrator move — the same atomicity a poisoned input gets. A corrected
-// retry then advances exactly one tick.
+// An overflowing output changes nothing and a corrected retry advances one tick.
 void test_output_overflow_rejects_atomically() {
-    // Zero delay: the fresh sample itself is the delivery.
     {
         rider::Perception p(0., .01);
         rider::Perception::State seeded;
@@ -339,7 +335,6 @@ void test_output_overflow_rejects_atomically() {
         bt::require(state_json(p.state()) == state_json(reference.state()),
                     "the retried state equals one clean update");
     }
-    // One tick of delay: the delivery comes out of the queue.
     {
         rider::Perception p(.01, .01);
         rider::Perception::State seeded;
@@ -355,7 +350,6 @@ void test_output_overflow_rejects_atomically() {
         bt::require(state_json(p.state()) == before,
                     "a queued overflowing sample changes nothing either");
     }
-    // The cadence channel is checked the same way.
     {
         rider::Perception p(0., .01);
         rider::Perception::State seeded;

@@ -84,18 +84,11 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
     if (s_.tick == std::numeric_limits<std::int64_t>::max())
         throw std::invalid_argument("perception tick counter overflowed");
     check_sample(sample, "perception sample");
-    // The delivery is selected and its derived outputs validated before
-    // live state moves, so a rejected update leaves a retry-clean state.
-    // A stamp k is due at the tick n with k <= n - delay_ticks — the
-    // integer form of the intent queue's `<= ready + 1e-12` (exact, no
-    // accumulated rounding can slip it).
+    // Validate the delivery's outputs before live state moves.
     const SenseSample *delayed = s_.delayed ? &*s_.delayed : nullptr;
-    for (auto it = s_.samples.crbegin(); it != s_.samples.crend(); ++it) {
-        if (it->first <= s_.tick - delay_ticks_) {
-            delayed = &it->second;
-            break;
-        }
-    }
+    if (!s_.samples.empty() &&
+        s_.samples.front().first <= s_.tick - delay_ticks_)
+        delayed = &s_.samples.front().second;
     if (delay_ticks_ == 0) delayed = &sample;
     double pitch = s_.pitch_rad;
     std::optional<Percepts> out;
@@ -118,6 +111,9 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
                        .pitch_rad = pitch};
     }
     s_.samples.emplace_back(s_.tick, sample);
+    // A stamp k is due at the tick n with k <= n - delay_ticks — the
+    // integer form of the intent queue's `<= ready + 1e-12` (exact, no
+    // accumulated rounding can slip it).
     while (!s_.samples.empty() &&
            s_.samples.front().first <= s_.tick - delay_ticks_) {
         s_.delayed = s_.samples.front().second;

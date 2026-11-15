@@ -203,8 +203,7 @@ test_downstroke_allocation_is_continuous_and_has_no_wrong_sign_hip_after_tdc() {
 }
 
 [[gnu::noinline]] void test_downstroke_accepts_a_temporary_capacity() {
-    // The declared signature is the defined one: a temporary callback binds
-    // the same const& overload the named callbacks above use.
+    // A temporary callback must bind the defined overload.
     const auto [th, tk] = spindle::downstroke_joint_torques(
         40., {1., -1.}, [](int, double) { return 100.; });
     bt::require(approx(th, 20.) && approx(tk, -20.) &&

@@ -33,8 +33,7 @@ std::int64_t ticks(double seconds, double period_s, std::string_view field) {
     return static_cast<std::int64_t>(n);
 }
 
-// A duration the table requires positive additionally counts at least one
-// tick — a sub-tick value must not round to an empty interval.
+// A positive-required duration must not round down to an empty interval.
 std::int64_t positive_ticks(double seconds, double period_s, std::string_view field) {
     const std::int64_t n = ticks(seconds, period_s, field);
     if (n == 0) reject(field, "a positive time must count at least one intention period tick");

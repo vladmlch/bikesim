@@ -178,8 +178,7 @@ configuration::SimulationPhysicsConfig resolve_research_physics(
     auto overrides = file ? configuration::detail::parse_toml_file(*file) : Value{Object{}};
     if (file) {
         configuration::detail::resolve_config_paths(overrides, std::filesystem::absolute(*file).parent_path());
-        // An explicitly supplied physics file is itself a complete profile:
-        // it must construct on its own before defaults can fill it in.
+        // A supplied physics file is itself a complete profile.
         configuration::detail::reject_computed_members(overrides);
         (void)configuration::detail::construct_config(configuration::detail::with_flat_start(overrides));
     }

@@ -259,10 +259,6 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.climb_effort_cap_grade_nm = {1000.};
             config.climb_effort_rise_speed_mps = 2.5;
             config.climb_effort_full_speed_mps = 4.0;
-        config.climb_effort_cap_grades = {0.};
-        config.climb_effort_cap_grade_nm = {1000.};
-        config.climb_effort_rise_speed_mps = 2.5;
-        config.climb_effort_full_speed_mps = 4.0;
             config.*field = 0.;
             cfg::detail::post_init(config);
         });
@@ -284,10 +280,6 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.climb_effort_cap_grade_nm = {1000.};
             config.climb_effort_rise_speed_mps = 2.5;
             config.climb_effort_full_speed_mps = 4.0;
-        config.climb_effort_cap_grades = {0.};
-        config.climb_effort_cap_grade_nm = {1000.};
-        config.climb_effort_rise_speed_mps = 2.5;
-        config.climb_effort_full_speed_mps = 4.0;
             config.*field = -1.;
             cfg::detail::post_init(config);
         });

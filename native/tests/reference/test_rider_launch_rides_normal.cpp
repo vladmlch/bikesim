@@ -121,5 +121,7 @@ int main() {
             "normal", "examples/research/viewer_physics_welded.toml",
             normal_rule);
         test_normal_rider_restart_after_a_stop();
+        launch_ride::verify_restart_25_percent(
+            "normal", "examples/research/viewer_physics_welded.toml", 39);
     });
 }

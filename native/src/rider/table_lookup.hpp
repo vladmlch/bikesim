@@ -1,15 +1,11 @@
-// rider/table_lookup.hpp — shared piecewise-linear table interpolation and
-// knot-table validation for launch and seated-climb effort caps.
+// rider/table_lookup.hpp — shared non-allocating piecewise-linear table lookup
+// for launch and seated-climb effort caps.
 #pragma once
 
 #include <algorithm>
-#include <cmath>
 #include <cstddef>
 #include <iterator>
 #include <span>
-#include <stdexcept>
-#include <string>
-#include <string_view>
 
 namespace rider::detail {
 
@@ -27,50 +23,6 @@ namespace rider::detail {
         std::distance(knots.begin(), std::ranges::upper_bound(knots, x)));
     const double t = (x - knots[upper - 1]) / (knots[upper] - knots[upper - 1]);
     return values[upper - 1] + t * (values[upper] - values[upper - 1]);
-}
-
-inline void validate_strictly_ascending(
-    std::span<const double> values,
-    std::string_view section,
-    std::string_view field) {
-    for (std::size_t i = 0; i < values.size(); ++i) {
-        if (!std::isfinite(values[i])) {
-            throw std::invalid_argument(
-                std::string(section) + "." + std::string(field) +
-                ": values must be finite");
-        }
-        if (i > 0 && !(values[i - 1] < values[i])) {
-            throw std::invalid_argument(
-                std::string(section) + "." + std::string(field) +
-                ": values must ascend strictly");
-        }
-    }
-}
-
-inline void validate_grade_cap_table(
-    std::span<const double> grades,
-    std::span<const double> caps_nm,
-    std::string_view section,
-    std::string_view grades_field,
-    std::string_view caps_field) {
-    if (grades.empty()) {
-        throw std::invalid_argument(
-            std::string(section) + "." + std::string(grades_field) +
-            ": needs at least one knot");
-    }
-    if (caps_nm.size() != grades.size()) {
-        throw std::invalid_argument(
-            std::string(section) + "." + std::string(caps_field) +
-            ": needs one cap per " + std::string(grades_field) + " knot");
-    }
-    validate_strictly_ascending(grades, section, grades_field);
-    for (const double cap : caps_nm) {
-        if (!(std::isfinite(cap) && cap > 0.)) {
-            throw std::invalid_argument(
-                std::string(section) + "." + std::string(caps_field) +
-                ": must be finite and positive");
-        }
-    }
 }
 
 } // namespace rider::detail

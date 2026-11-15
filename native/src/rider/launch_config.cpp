@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -17,18 +18,49 @@
 namespace rider {
 namespace {
 
+[[noreturn]] void reject_section(std::string_view section, std::string_view field,
+                                 std::string_view why) {
+    throw std::invalid_argument(
+        std::string(section) + "." + std::string(field) + ": " + std::string(why));
+}
+
 [[noreturn]] void reject(std::string_view field, std::string_view why) {
-    throw std::invalid_argument("rider_launch." + std::string(field) + ": " + std::string(why));
+    reject_section("rider_launch", field, why);
 }
 
-void strictly_ascending(const std::vector<double> &values, std::string_view field) {
-    detail::validate_strictly_ascending(values, "rider_launch", field);
+void validate_strictly_ascending(std::span<const double> values,
+                                 std::string_view section,
+                                 std::string_view field) {
+    for (std::size_t i = 0; i < values.size(); ++i) {
+        if (!std::isfinite(values[i])) reject_section(section, field, "values must be finite");
+        if (i > 0 && !(values[i - 1] < values[i]))
+            reject_section(section, field, "values must ascend strictly");
+    }
 }
 
-// Piecewise linear over strictly ascending knots, held at the end values —
-// the arithmetic release_torque_nm used since part 3b.
-double knot_value(const std::vector<double> &knots, const std::vector<double> &values, double grade) {
-    return detail::piecewise_linear_knot(knots, values, grade);
+void validate_knot_table_shape(std::span<const double> knots,
+                               std::span<const double> values,
+                               std::string_view section,
+                               std::string_view knots_field,
+                               std::string_view values_field,
+                               std::string_view mismatch_why) {
+    if (knots.empty()) reject_section(section, knots_field, "needs at least one knot");
+    if (values.size() != knots.size()) reject_section(section, values_field, mismatch_why);
+    validate_strictly_ascending(knots, section, knots_field);
+}
+
+void validate_grade_cap_table(std::span<const double> grades,
+                              std::span<const double> caps_nm,
+                              std::string_view section,
+                              std::string_view grades_field,
+                              std::string_view caps_field) {
+    validate_knot_table_shape(
+        grades, caps_nm, section, grades_field, caps_field,
+        "needs one cap per " + std::string(grades_field) + " knot");
+    for (const double cap : caps_nm) {
+        if (!(std::isfinite(cap) && cap > 0.))
+            reject_section(section, caps_field, "must be finite and positive");
+    }
 }
 
 } // namespace
@@ -39,12 +71,11 @@ void validate_launch_table(const LaunchConfig &table) {
         if (teeth < 3) reject("start_cog_teeth", "a cog has at least three teeth");
     if (table.start_cog_grade_breaks.size() + 1 != table.start_cog_teeth.size())
         reject("start_cog_grade_breaks", "needs exactly one break fewer than start_cog_teeth");
-    strictly_ascending(table.start_cog_grade_breaks, "start_cog_grade_breaks");
+    validate_strictly_ascending(table.start_cog_grade_breaks, "rider_launch", "start_cog_grade_breaks");
     if (!std::isfinite(table.start_pedal_angle_rad)) reject("start_pedal_angle_rad", "must be finite");
-    if (table.start_lean_grades.empty()) reject("start_lean_grades", "needs at least one knot");
-    if (table.start_lean_rad.size() != table.start_lean_grades.size())
-        reject("start_lean_rad", "needs one lean per start_lean_grades knot");
-    strictly_ascending(table.start_lean_grades, "start_lean_grades");
+    validate_knot_table_shape(
+        table.start_lean_grades, table.start_lean_rad, "rider_launch",
+        "start_lean_grades", "start_lean_rad", "needs one lean per start_lean_grades knot");
     for (const double lean : table.start_lean_rad)
         if (!std::isfinite(lean)) reject("start_lean_rad", "values must be finite");
     const auto nonnegative = [](double v, std::string_view field) {
@@ -61,14 +92,14 @@ void validate_launch_table(const LaunchConfig &table) {
     positive(table.effort_cap_loose_nm, "effort_cap_loose_nm");
     positive(table.effort_cap_wet_nm, "effort_cap_wet_nm");
     positive(table.effort_cap_scree_nm, "effort_cap_scree_nm");
-    detail::validate_grade_cap_table(
+    validate_grade_cap_table(
         table.effort_cap_grades, table.effort_cap_grade_nm,
         "rider_launch", "effort_cap_grades", "effort_cap_grade_nm");
     positive(table.effort_rise_speed_mps, "effort_rise_speed_mps");
-    if (table.release_torque_grades.empty()) reject("release_torque_grades", "needs at least one knot");
-    if (table.release_torque_nm.size() != table.release_torque_grades.size())
-        reject("release_torque_nm", "needs one torque per release_torque_grades knot");
-    strictly_ascending(table.release_torque_grades, "release_torque_grades");
+    validate_knot_table_shape(
+        table.release_torque_grades, table.release_torque_nm, "rider_launch",
+        "release_torque_grades", "release_torque_nm",
+        "needs one torque per release_torque_grades knot");
     for (const double torque : table.release_torque_nm) nonnegative(torque, "release_torque_nm");
     nonnegative(table.brake_release_s, "brake_release_s");
     positive(table.max_hold_s, "max_hold_s");
@@ -84,7 +115,8 @@ void validate_launch_table(const LaunchConfig &table) {
 LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
     const int rear_teeth = detail::launch_teeth_unchecked(table, grade);
-    const double lean = knot_value(table.start_lean_grades, table.start_lean_rad, grade);
+    const double lean = detail::piecewise_linear_knot(
+        table.start_lean_grades, table.start_lean_rad, grade);
     return {.rear_teeth = rear_teeth,
             .crank_phase_rad = table.start_pedal_angle_rad,
             .lean_rad = lean};
@@ -93,18 +125,20 @@ LaunchPreparation prepare_launch(const LaunchConfig &table, double grade) {
 double release_torque_nm(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
     if (!std::isfinite(grade)) throw std::invalid_argument("launch release grade must be finite");
-    return knot_value(table.release_torque_grades, table.release_torque_nm, grade);
+    return detail::piecewise_linear_knot(
+        table.release_torque_grades, table.release_torque_nm, grade);
 }
 
 double effort_grade_cap_nm(const LaunchConfig &table, double grade) {
     validate_launch_table(table);
     if (!std::isfinite(grade)) throw std::invalid_argument("launch grade cap grade must be finite");
-    return knot_value(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
+    return detail::piecewise_linear_knot(
+        table.effort_cap_grades, table.effort_cap_grade_nm, grade);
 }
 
 namespace detail {
 double grade_cap_unchecked(const LaunchConfig &table, double grade) {
-    return knot_value(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
+    return piecewise_linear_knot(table.effort_cap_grades, table.effort_cap_grade_nm, grade);
 }
 
 int launch_teeth_unchecked(const LaunchConfig &table, double grade) {
@@ -142,7 +176,7 @@ void validate_launch_plan_context(const LaunchConfig &table, double period_s) {
 }
 
 void validate_climb_effort_cap(const IntentConfig &config) {
-    detail::validate_grade_cap_table(
+    validate_grade_cap_table(
         config.climb_effort_cap_grades,
         config.climb_effort_cap_grade_nm,
         "seated_climb",

@@ -25,5 +25,7 @@ int main() {
         launch_ride::run_launch_suite(
             "aggressive", "examples/research/rider_type_aggressive.toml",
             aggressive_rule);
+        launch_ride::verify_restart_25_percent(
+            "aggressive", "examples/research/rider_type_aggressive.toml", 33);
     });
 }

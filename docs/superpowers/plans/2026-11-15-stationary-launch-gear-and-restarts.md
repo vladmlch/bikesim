@@ -10,23 +10,24 @@
 
 ## Задачи
 
-- [ ] **Задача 1. `BalanceMonitor`: перезапуск 3 с форы после каждой полной остановки на тормозах.**
-  - Обновить `BalanceMonitor::update(..., bool stopped = false)` в `native/src/runtime/control.{hpp,cpp}`: при `!riding && stopped` сбрасывать `started_s`, сохраняя `state().event` и прежнюю паузу при кратковременном притормаживании на ходу (`!riding && !stopped`).
-  - В `PhysicalStep::balance_channel` (`native/src/runtime/step.cpp`) передавать `stopped = brakes.motor_braking && std::abs(speed_mps) <= config_.launch.standstill_speed_mps`.
-  - Добавить модульный тест `test_full_stop_rearms_grace_after_brake_release` в `native/tests/reference/test_balance_monitor.cpp` и проверить `mise run test 'balance_monitor'`.
+- [x] **Задача 1. `BalanceMonitor`: перезапуск 3 с форы после каждой полной остановки на тормозах.** (`4491661a`, `b3b9fefa`, `e0f999f4`)
+  - Обновить `BalanceMonitor::update(..., BalanceStop stop = BalanceStop::none)` в `native/src/runtime/control.{hpp,cpp}`: при `!riding && stop == BalanceStop::braked` сбрасывать `started_s`, сохраняя `state().event` и прежнюю паузу при кратковременном притормаживании на ходу (`!riding && BalanceStop::none`).
+  - В `PhysicalStep::balance_channel` (`native/src/runtime/step.cpp`) выставлять `BalanceStop::braked` при `brakes.motor_braking && std::abs(speed_mps) <= config_.launch.standstill_speed_mps && (rider_intent_.launch().phase == rider::LaunchPhase::hold || grace_spent)` (сохраняет побитовую совместимость ранних эталонов вроде `research_flat` на `t = 0.01 s`).
+  - Добавить модульный тест `test_full_stop_rearms_grace_after_brake_release` в `native/tests/reference/test_balance_monitor.cpp` и проверить `reference.balance_monitor` (пройден) и `reference.native_research_environment` (пройден).
 
-- [ ] **Задача 2. Выбор стартовой передачи на месте в `LaunchPhase::hold` (без изменения схем).**
-  - Добавить `LaunchPlan::launch_teeth(double grade_ahead) const` в `native/src/rider/launch_plan.{hpp,cpp}`.
-  - В `RiderCommands` (`native/src/rider/intent.{hpp,cpp}`) добавить `std::optional<int> stationary_rear_teeth = std::nullopt;` с проверками `validate()` и заполнением в `commands_of()` при `phase == LaunchPhase::hold`, `delayed.has_value()`, `grade_ahead > 0.` и `rear_teeth < launch_teeth(grade_ahead)`.
+- [x] **Задача 2. Выбор стартовой передачи на месте в `LaunchPhase::hold` (без изменения схем).** (`1e238fa4`, `b3b9fefa`)
+  - Добавить `LaunchPlan::launch_teeth(double grade_ahead) const` в `native/src/rider/launch_plan.{hpp,cpp}` через `detail::launch_teeth_unchecked` в `native/src/rider/launch_config.{hpp,cpp}` (без повторной валидации таблицы на каждом тике).
+  - В `RiderCommands` (`native/src/rider/intent.{hpp,cpp}`) добавить `std::optional<int> stationary_rear_teeth = std::nullopt;` с проверками `validate()` и заполнением в `commands_of(..., const RiderSenses *delayed_senses)` без аллокаций на тике при `phase == LaunchPhase::hold`, `delayed_senses != nullptr`, `grade_ahead > 0.` и `rear_teeth < launch_teeth(grade_ahead)`.
   - В `RiderShift` и `CadenceShifter::update` (`native/src/drivetrain/shifting.{hpp,cpp}`) добавить `std::optional<int> stationary_target_teeth = std::nullopt;` с проверками, идемпотентностью при `rear_teeth >= target`, ожиданием конца активного среза (`cut_remaining_s > 1e-12 -> deferred`) и прямым переключением на звезду кассеты без отсечения по `landing`/`slip`.
   - Подключить `stationary_target_teeth` в `PhysicalStep::apply_forces_body` (`native/src/runtime/step.cpp`).
-  - Добавить модульные тесты для `CadenceShifter` и `RiderIntent` и проверить `mise run test 'shifting|rider_brake_channel|launch_plan|launch_intent|rider_senses|drivetrain'`.
+  - Проверено набором тестов `cadence_shifter|shifting|rider_brake_channel|launch_plan|launch_intent|rider_senses|drivetrain` (9/9 пройдены).
 
-- [ ] **Задача 3. Приёмочный тест рестарта после остановки `test_normal_rider_restart_after_a_stop`.**
+- [x] **Задача 3. Приёмочный тест рестарта после остановки `test_normal_rider_restart_after_a_stop`.** (`9cbc13ff`, `b3b9fefa`)
   - Добавить `RestartMetrics` и `ride_restart()` в `native/tests/reference/launch_ride_metrics.hpp` с общим помощником извлечения оконных метрик (трек 200 м постоянного уклона, длительность 25 с, плавный нажим обоих тормозов 0 → 0.5 за `10.0..10.5` с, удержание до `12.5` с, затем отпускание, окно оценки `[t_second_release, t_second_handover]`).
   - Добавить `test_normal_rider_restart_after_a_stop()` на 5 % (ожидаемая звезда 33T) и 10 % (39T) в `native/tests/reference/test_rider_launch_rides_normal.cpp`.
-  - Проверить `mise run test 'rider_launch_rides_normal|realistic_pedelec_acceptance'`.
+  - Замеры (`viewer_physics_welded.toml`, асфальт): 5 % — `12 → 33T`, откат `-0.12 мм`, `0` отрывов/пробуксовок, пик `6.790 м/с` (`PASS`); 10 % — `12 → 39T`, откат `+0.00 мм`, `0` отрывов/пробуксовок, пик `6.296 м/с` (`PASS`).
 
-- [ ] **Задача 4. Финальная проверка этапа.**
-  - Выполнить `bash tools/check_change.sh main` и прогон медленных тестов `rider_launch_rides_*`.
-  - Отметить выполненные флажки в этом плане.
+- [x] **Задача 4. Финальная проверка этапа.**
+  - `bash tools/check_change.sh main`: выход `0` за `397 с` (`194/194` тестов CTest, `346/346` единиц `cppcheck` и `frontends` без замечаний, `clang-tidy` без замечаний).
+  - Медленные тесты `rider_launch_rides_(normal|careful|aggressive)`: `3/3` пройдены за `361.95 с` (`normal` `128.25 с`, `careful` `115.37 с`, `aggressive` `118.27 с`).
+  - Коммиты на ветке `queue-2026-11-15`: `16b933a9` (план/решения), `4491661a` (BalanceMonitor), `1e238fa4` (переключение на месте), `9cbc13ff` (тесты рестарта), `b3b9fefa` (правки ревью), `e0f999f4` (условие удержания/форы в `step.cpp`).

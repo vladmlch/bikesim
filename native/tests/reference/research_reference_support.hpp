@@ -369,10 +369,14 @@ inline void flatten_state(const runtime::WireObject &state,
     return true; // both null
 }
 
-// RideControl(2.) — the Python single-positional form is motor_torque_nm.
-[[nodiscard]] inline runtime::RideControl motor_control(double torque) {
+// RideControl(2.) — the Python single-positional form is motor_torque_nm;
+// the optional second argument is human_torque_nm (an explicit 0. parks
+// the articulated rider's legs on the pedals instead of mashing).
+[[nodiscard]] inline runtime::RideControl motor_control(
+    double torque, std::optional<double> human_torque = std::nullopt) {
     runtime::RideControl control;
     control.motor_torque_nm = torque;
+    control.human_torque_nm = human_torque;
     return control;
 }
 

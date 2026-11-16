@@ -357,7 +357,7 @@ void test_one_second_pair_with_one_e_minus_nine_gate() {
         std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+            node, step(*env, motor_control(0., 0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> state =
             env->snapshot().integration_state;
         node.f64(state, "integration state at step " +
@@ -366,6 +366,14 @@ void test_one_second_pair_with_one_e_minus_nine_gate() {
     }
     bt::require(sim_steps(*env) == env->configuration().max_steps,
                 "the one-second gate completes every physics step");
+    const auto status = env->status();
+    const bool model_valid = sw::boolean(sw::required(status, "model_valid"));
+    const auto &acct = sw::object(sw::required(status, "accounting"));
+    const auto &hist = sw::object(sw::required(acct, "history"));
+    const auto &support = sw::object(sw::required(hist, "rider_support"));
+    const bool support_ok = runtime::rider_support_ok(support);
+    bt::require(model_valid && support_ok,
+                "the one-second gate preserves model validity and rider support");
     ft2_reference::consume_tree(node, env->commands_requested(),
                                 "commands_requested");
     ft2_reference::consume_tree(node, env->commands_applied(),
@@ -401,7 +409,7 @@ void test_one_second_pair_complete_episode_gate() {
         std::snprintf(label, sizeof(label), "transition.%08lld", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
                       static_cast<long long>(boundary));
         ft2_reference::consume_tree(
-            node, step(*env, motor_control(0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+            node, step(*env, motor_control(0., 0.)).as_wire(), label); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
         const std::vector<double> state =
             env->snapshot().integration_state;
         node.f64(state, "integration state at step " +
@@ -420,6 +428,14 @@ void test_one_second_pair_complete_episode_gate() {
     node.f64_close(residual_row, "max_energy_residual_ratio");
     bt::require(residual <= .05,
                 "the raised gate ran the default-gate physics");
+    const auto status = env->status();
+    const bool model_valid = sw::boolean(sw::required(status, "model_valid"));
+    const auto &acct = sw::object(sw::required(status, "accounting"));
+    const auto &hist = sw::object(sw::required(acct, "history"));
+    const auto &support = sw::object(sw::required(hist, "rider_support"));
+    const bool support_ok = runtime::rider_support_ok(support);
+    bt::require(model_valid && support_ok,
+                "the one-second gate preserves model validity and rider support");
     ft2_reference::consume_tree(node, env->commands_requested(),
                                 "commands_requested");
     ft2_reference::consume_tree(node, env->commands_applied(),

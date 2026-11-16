@@ -267,7 +267,19 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
 2. **Предел нажима в обычной езде на подъёмах** (П8, П13, пункт 17). **Выполнено на ветке `queue-2026-11-15`** (`c752736f`, `67ca4b30`, `ceb4e816`, `272f49b2`, `732a3887`, `eff7bb45`; план: [seated climb effort cap](2026-11-15-seated-climb-effort-cap.md)): обязательные поля `climb_effort_cap_grades`, `climb_effort_cap_grade_nm`, `climb_effort_rise_speed_mps`, `climb_effort_full_speed_mps` в `[seated_climb]`, калибровка `N4_lin_sc35` / `C1_lin_nosurf` / `A1_lin_sc35` и узлы `0.22`/`0.25` в `[rider_launch]` для `normal` и `careful`; `check_change.sh main` (`194/194`, `321 с`, `0` находок `cppcheck`/`frontends`/`clang-tidy`) и целевой набор `slow` (`9/9`, `136.60 с`) пройдены на `eff7bb45`.
 3. **Короткое торможение задним** в реакции на подъём колеса («Решено — не сделано», пункт 2 в)). **Закрыто без включения на ветке `queue-2026-11-15`** (`rear_brake_tap_enabled = false`, эмпирически отвергнуто по замерам `q2-probe/report.md`, план: [seated climb effort cap](2026-11-15-seated-climb-effort-cap.md)): с Вариантом 2 реакция `ease + lean` уже убирает отрывы после передачи управления и падения на `0–25 %`, тогда как `rear_brake` через §16 (`motor_braking = true`) мгновенно сбрасывает момент мотора (`~67.5 → 0 Н·м`), вызывая удары переднего колеса 994–1112 Н, срывы `grip.pull` и потерю опоры седла до 6.1 Н.
 4. **Старт с угла педали круче −0,8 рад** (стена −0,9 рад, вероятно, была неустойчивостью удержания).
-5. **Потери шин на `distributed`**: ровный старт до 20 км/ч за 7,3 с.
+5. **Потери шин на `distributed`**: ровный старт до 20 км/ч за 7,3 с. **Выполнено на ветке `queue-2026-11-15`**
+   (`5f23a658`):
+   вязкий радиальный член `damping_ns_m·δ̇` (~616 Вт на разгоне, нарушение запрета 39) заменён
+   гистерезисом `η·kδ·tanh(δ̇/ε)` в `native/src/tyre/station.cpp`, `native/src/numerics/density_fit.cpp` и
+   `native/src/gpu/tire_kernel.hpp`; упругая энергия ½Σkᵢxᵢ² осталась независимой от скорости. В
+   `HingeDensity` добавлены обязательные `loss_factor` (0,05) и `hysteresis_rate_eps_mps` (0,01 м/с);
+   `damping_ns_m` оставлен ключом совместимости и отклоняется при любом ненулевом значении.
+   Двойной учёт качения снят `[resistance] crr = 0.0` в `viewer_physics_distributed.toml`. Замер
+   `probe_q4_q5` (0 % асфальт, 20 с): 7,32 с → 3,73 с до 20 км/ч, `step_tire_radial_loss_j` 558 Дж.
+   Переписаны эталоны `native_distributed_tire`, `distributed_tire_reference`, `native_numeric_completion`,
+   `native_pneumatic_tire` (initial_state), `native_research_environment`, `native_research_recording`,
+   фикстуры `replay/{legacy_v1,legacy_v2,historical_v2}`, `ft2/*/assets/resolved_config.json` (+`assets.json`,
+   `provenance.json`) и порог `sweep_world_differences` (дельта вилки 50 → 10 Н после снятия вязкости).
 6. **Восстановление шины `pneumatic`**: `savage_pneumatic.npz` даёт невязку загрузки 0,083 при пороге 0,05 —
    материал и гистерезис шины после `b6c42f71` не сохраняются. **Выполнено на ветке `queue-2026-11-15`**
    (`d5abc831`, правки ревизии `7f193e55`): `SetupOwner::settle` сохраняет `settled_state_file` до

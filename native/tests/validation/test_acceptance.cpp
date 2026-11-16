@@ -405,7 +405,7 @@ void python_coercion_and_density_contract(){
     // contact_manifold_rigs.py:wheel_stand — arbitrary density/mu inputs:
     // a stiffer declared density compresses less under the same load and
     // mu/density both reach the distributed material record.
-    const nativecfg::HingeDensity stiff{.knots_m={0.,.004,.012},.stiffness_n_m={600000.,0.,0.},.damping_ns_m=2000.,.provenance="doubled synthetic density"};
+    const nativecfg::HingeDensity stiff{.knots_m={0.,.004,.012},.stiffness_n_m={600000.,0.,0.},.damping_ns_m=0.,.provenance="doubled synthetic density"};
     const double declared=flat_depth(600.,128),stiffened=flat_depth(600.,128,2e-12,&stiff);
     bt::require(declared>stiffened&&stiffened>0.,"stiffer density reduces the analytic flat depth under the same load");
     const auto config=distributed_config(128,.5,&stiff);

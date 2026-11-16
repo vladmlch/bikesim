@@ -6,6 +6,8 @@
 // standalone, like test_distance.cpp does for SignedProfile.
 #include "../src/tyre/station.hpp"
 
+#include "../src/config_validation.hpp"
+
 #include <array>
 #include <cmath>
 #include <exception>
@@ -48,11 +50,14 @@ namespace {
     }
 
     // HingeDensity.__post_init__ defaults (distributed_tire.py:12-16) —
-    // the density the example configs carry.
+    // the density the example configs carry. damping_ns_m remains a
+    // schema key for backward compatibility, but Ban #39 forces it to
+    // zero: the radial loss is the rate-independent loss-factor
+    // hysteresis, not viscous drag.
     nativecfg::HingeDensity default_density() {
         return {.knots_m = {0., .004, .012},
                 .stiffness_n_m = {300000., 0., 0.},
-                .damping_ns_m = 2000.,
+                .damping_ns_m = 0.,
                 .provenance = "synthetic density; not fitted or measured"};
     }
 
@@ -157,14 +162,17 @@ namespace {
 
     void test_station_response_values() {
         const nativecfg::HingeDensity d = default_density();
-        // elastic = 1500 at delta .005; force = max(0, 1500 + 2000*rate)
+        // elastic = 1500 at delta .005; Ban #39 loss is rate-independent
+        // hysteresis: force = max(0, elastic*(1 + .05*tanh(rate/.01))),
         // gated on delta > 0, then scaled by the quadrature weight.
+        // tanh(-30) saturates at -1, so the unweighted force is
+        // 1500*.95 = 1425.
         const auto [f0, e0] = biketyre::station_response(.005, -.3, 2., d);
-        require(f0 == 1800. && e0 == 7.5,
-                "weighted response w*max(0, 1500 + 2000*(-.3))");
+        require(f0 == 2850. && e0 == 7.5,
+                "weighted response w*(elastic + loss*elastic*tanh(rate/eps))");
         const auto [f1, e1] =
                 biketyre::station_response(.005, -.3, 7.25, d);
-        require(f1 == 6525. && e1 == 27.1875,
+        require(f1 == 10331.25 && e1 == 27.1875,
                 "the weight multiplies force and energy alike");
         const auto [f2, e2] = biketyre::station_response(0., 1., 2., d);
         require(f2 == 0. && e2 == 0.,
@@ -172,16 +180,78 @@ namespace {
         const auto [f3, e3] = biketyre::station_response(-.01, .5, 2., d);
         require(f3 == 0. && e3 == 0.,
                 "negative penetration carries no load or energy");
-        // The damping clamp: elastic 300 + 2000*(-1000) < 0 clips the
-        // force to 0 while the stored energy survives.
+        // Hysteresis saturates at (1 - loss_factor)*elastic on release:
+        // 300*.95 = 285 unweighted — viscous damping would clip at 0,
+        // this law cannot pull the force negative while elastic > 0.
         const auto [f4, e4] =
                 biketyre::station_response(.001, -1000., 2., d);
-        require(f4 == 0. && e4 == 0.3,
-                "force clamps at zero; energy is unaffected");
+        require(f4 == 570. && e4 == 0.3,
+                "release-rate hysteresis saturates at (1-loss)*elastic; energy is unaffected");
         const auto [f5, e5] = biketyre::station_response(.005, 0., 0., d);
         require(f5 == 0. && !std::signbit(f5) && e5 == 0. &&
                     !std::signbit(e5),
                 "a zero weight zeroes both channels to +0.0");
+    }
+
+    void test_station_response_hysteresis() {
+        const nativecfg::HingeDensity d = default_density();
+        const double elastic = 1500.; // single knot at delta .005
+        // Rate independence: once |rate| >> eps the tanh saturates, so
+        // the force stops growing with speed (viscous damping's flaw).
+        const auto [slow, e_slow] =
+                biketyre::station_response(.005, 1., 1., d);
+        const auto [fast, e_fast] =
+                biketyre::station_response(.005, 100., 1., d);
+        require(slow == fast && e_slow == e_fast,
+                "saturated hysteresis is rate-independent bitwise");
+        const auto [load_up, e_up] =
+                biketyre::station_response(.005, .5, 1., d);
+        const auto [load_dn, e_dn] =
+                biketyre::station_response(.005, -.5, 1., d);
+        require(std::abs(load_up - elastic * 1.05) < 1e-12,
+                "loading adds loss_factor*elastic");
+        require(std::abs(load_dn - elastic * 0.95) < 1e-12,
+                "release subtracts loss_factor*elastic");
+        require(load_up > elastic && load_dn < elastic,
+                "loss sign follows the deflection rate");
+        // Mid-band: the literal formula with the same operand order.
+        const auto [mid, e_mid] =
+                biketyre::station_response(.005, .005, 1., d);
+        require(mid == elastic + .05 * elastic * std::tanh(.5),
+                "hysteresis force is loss_factor*elastic*tanh(rate/eps)");
+        // Stored energy stays the elastic integral at every rate —
+        // hysteresis dissipates without touching stored energy.
+        for (const double rate : {-2., -.01, 0., .01, 2.}) {
+            const auto [f_r, e_r] =
+                    biketyre::station_response(.005, rate, 2., d);
+            require(e_r == 7.5, "energy is the elastic term only");
+            require(std::isfinite(f_r), "finite force at every rate");
+        }
+        // Zero elastic force stays zero however fast the release: the
+        // max(0, ...) clamp has nothing to clip once elastic is 0.
+        const nativecfg::HingeDensity limp{
+                .knots_m = {0.}, .stiffness_n_m = {0.},
+                .damping_ns_m = 0., .provenance = "limp test density"};
+        const auto [limp_f, limp_e] =
+                biketyre::station_response(.005, -50., 3., limp);
+        require(limp_f == 0. && limp_e == 0.,
+                "zero stiffness carries no hysteresis force");
+    }
+
+    void test_density_rejects_viscous_damping() {
+        // Ban #39 in config_validation.hpp: damping_ns_m survives on the
+        // wire only as a compatibility key pinned to zero.
+        nativecfg::HingeDensity d = default_density();
+        d.damping_ns_m = .001;
+        require_throws_invalid_argument(
+            [&] { nativecfg::validate(d, "test.density"); },
+            "nonzero viscous radial damping must be rejected");
+        d.damping_ns_m = 2000.;
+        require_throws_invalid_argument(
+            [&] { nativecfg::validate(d, "test.density"); },
+            "the retired 2000 N*s/m default must be rejected");
+        d.damping_ns_m = 0.;
+        nativecfg::validate(d, "test.density");
     }
 
     void test_station_response_domain() {
@@ -201,7 +271,7 @@ namespace {
             "a negative quadrature weight must be rejected");
     }
 
-    constexpr std::array<TestCase, 7> cases{{
+    constexpr std::array<TestCase, 9> cases{{
         {.name = "station_angles_domain", .run = test_station_angles_domain},
         {.name = "station_angles_values", .run = test_station_angles_values},
         {.name = "station_density_default_law",
@@ -211,8 +281,12 @@ namespace {
         {.name = "station_density_domain", .run = test_station_density_domain},
         {.name = "station_response_values",
          .run = test_station_response_values},
+        {.name = "station_response_hysteresis",
+         .run = test_station_response_hysteresis},
         {.name = "station_response_domain",
          .run = test_station_response_domain},
+        {.name = "density_rejects_viscous_damping",
+         .run = test_density_rejects_viscous_damping},
     }};
 
     int run_case(const TestCase &test_case) {

@@ -559,8 +559,11 @@ void test_sweep_world_differences() {
     const std::span<const float> qfrc_w32 = qfrc_rows.subspan(32 * nv, nv);
     const std::span<const float> qfrc_w63 = qfrc_rows.subspan(63 * nv, nv);
 
+    // Ban #39: hysteresis caps the tire loss at +-loss_factor*elastic —
+    // the viscous-damped forces that inflated this threshold are gone,
+    // so the sweep gap is suspension-dominated (measured ~28 N).
     require(std::fabs(qfrc_w63[to_index(idx.fork_travel_dof)] -
-                      qfrc_w0[to_index(idx.fork_travel_dof)]) > 50.0f,
+                      qfrc_w0[to_index(idx.fork_travel_dof)]) > 10.0f,
             "fork DOF force differs across the pressure sweep");
     require(std::fabs(qfrc_w63[to_index(idx.shock_stroke_dof)]) >
                 std::fabs(qfrc_w0[to_index(idx.shock_stroke_dof)]) + 50.0f,

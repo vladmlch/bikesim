@@ -279,16 +279,28 @@ void post_init(const HingeDensity &density) {
         return std::isfinite(v);
     }) && std::ranges::all_of(k, [](double v) {
         return std::isfinite(v);
-    }) && std::isfinite(density.damping_ns_m);
+    }) && std::isfinite(density.damping_ns_m) &&
+        std::isfinite(density.loss_factor) &&
+        std::isfinite(density.hysteresis_rate_eps_mps);
     if (!finite) fail("density parameters must be finite");
     bool monotone = a.front() == 0.;
     for (std::size_t i = 1; i < a.size(); ++i)
         if (a[i] <= a[i - 1]) monotone = false;
     const bool nonnegative = std::ranges::all_of(k, [](double v) {
         return v >= 0.;
-    }) && density.damping_ns_m >= 0.;
+    }) && density.damping_ns_m >= 0. && density.loss_factor >= 0.;
     if (!monotone || !nonnegative)
         fail("density law must be monotone and dissipative");
+    // Ban #39 (Decisions 22/39): the radial loss is rate-independent
+    // hysteresis — damping_ns_m survives only as a zero-pinned
+    // compatibility key.
+    if (density.damping_ns_m != 0.)
+        fail("viscous damping is banned (Ban 39); keep the "
+             "compatibility key at 0");
+    if (!(density.loss_factor < 1.))
+        fail("density loss factor must be below 1");
+    if (!(density.hysteresis_rate_eps_mps > 0.))
+        fail("density hysteresis rate scale must be positive");
     if (!nonblank(density.provenance))
         fail("material provenance is required");
 }

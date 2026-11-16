@@ -349,7 +349,8 @@
     "distributed": {
       "calibration_status": "experimental_unvalidated",
       "density": {
-        "damping_ns_m": 2000.0,
+        "damping_ns_m": 0.0,
+        "hysteresis_rate_eps_mps": 0.01,
         "knots_m": {
           "$tuple": [
             0.0,
@@ -357,6 +358,7 @@
             0.012
           ]
         },
+        "loss_factor": 0.05,
         "provenance": "synthetic density; not fitted or measured",
         "stiffness_n_m": {
           "$tuple": [

@@ -2566,7 +2566,7 @@ namespace {
         const nativecfg::HingeDensity density{
             .knots_m = {0., .004, .012},
             .stiffness_n_m = {300000., 150000., 90000.},
-            .damping_ns_m = 800., .provenance = "contract-test"};
+            .damping_ns_m = 0., .provenance = "contract-test"};
         const nativecfg::DistributedMaterial material{
             .density = density, .fitting_dataset_id = "contract-test",
             .valid_load_range_n = {0., 3000.},

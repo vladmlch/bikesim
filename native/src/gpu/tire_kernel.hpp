@@ -20,7 +20,11 @@ struct GpuHingeDensity {
     float stiffness_n_m[kMaxHingeKnots] = {
         55000.0f, 85000.0f, 140000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
     };
-    float damping_ns_m = 420.0f;
+    // Ban #39: rate-independent hysteresis; damping_ns_m is a
+    // zero-pinned compatibility key (validation rejects nonzero).
+    float damping_ns_m = 0.0f;
+    float loss_factor = 0.05f;
+    float hysteresis_rate_eps_mps = 0.01f;
 };
 
 struct GpuTireParams {
@@ -87,8 +91,11 @@ BIKE_HD GpuVec2 gpu_station_response(
     const BIKE_THREAD GpuHingeDensity &d
 ) noexcept {
     const GpuVec2 dens = gpu_station_density(delta_m, d);
+    // Ban #39: rate-independent hysteresis eta*elastic*tanh(rate/eps),
+    // not viscous damping; energy stays the elastic fold.
     const float force = delta_m > 0.0f
-        ? gpu_max(0.0f, dens.x + d.damping_ns_m * rate_mps)
+        ? gpu_max(0.0f, dens.x + d.loss_factor * dens.x *
+                                 gpu_tanh(rate_mps / d.hysteresis_rate_eps_mps))
         : 0.0f;
     return GpuVec2{.x = weight * force, .y = weight * dens.y};
 }

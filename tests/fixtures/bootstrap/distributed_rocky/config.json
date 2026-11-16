@@ -849,7 +849,7 @@
         "rear_wheel": "rear_wheel"
       },
       "cda_m2": 0.5,
-      "crr": 0.015,
+      "crr": 0.0,
       "point_body_m": [
         0.0,
         0.0,
@@ -967,12 +967,14 @@
       "distinct_normal_deg": 20.0,
       "distributed": {
         "density": {
-          "damping_ns_m": 2000.0,
+          "damping_ns_m": 0.0,
+          "hysteresis_rate_eps_mps": 0.01,
           "knots_m": [
             0.0,
             0.004,
             0.012
           ],
+          "loss_factor": 0.05,
           "provenance": "synthetic density; not fitted or measured",
           "stiffness_n_m": [
             300000.0,
@@ -983,12 +985,14 @@
         "front": {
           "calibration_status": "experimental_unvalidated",
           "density": {
-            "damping_ns_m": 2000.0,
+            "damping_ns_m": 0.0,
+            "hysteresis_rate_eps_mps": 0.01,
             "knots_m": [
               0.0,
               0.004,
               0.012
             ],
+            "loss_factor": 0.05,
             "provenance": "synthetic density; not fitted or measured",
             "stiffness_n_m": [
               300000.0,
@@ -1009,12 +1013,14 @@
         "rear": {
           "calibration_status": "experimental_unvalidated",
           "density": {
-            "damping_ns_m": 2000.0,
+            "damping_ns_m": 0.0,
+            "hysteresis_rate_eps_mps": 0.01,
             "knots_m": [
               0.0,
               0.004,
               0.012
             ],
+            "loss_factor": 0.05,
             "provenance": "synthetic density; not fitted or measured",
             "stiffness_n_m": [
               300000.0,

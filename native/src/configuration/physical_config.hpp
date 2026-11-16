@@ -62,7 +62,12 @@ struct TabulatedTireSpec {
 struct HingeDensity {
     std::vector<double> knots_m{0., .004, .012};
     std::vector<double> stiffness_n_m{300000., 0., 0.};
-    double damping_ns_m = 2000.;
+    // Ban #39: radial loss is rate-independent hysteresis
+    // F = elastic + loss_factor*elastic*tanh(rate/hysteresis_rate_eps_mps);
+    // damping_ns_m stays only as a zero-pinned compatibility key.
+    double damping_ns_m = 0.;
+    double loss_factor = .05;
+    double hysteresis_rate_eps_mps = .01;
     std::string provenance = "synthetic density; not fitted or measured";
 };
 
@@ -551,6 +556,8 @@ inline constexpr auto kHingeDensityFields = std::to_array<FieldDecl>({
     {.name="stiffness_n_m", .type="tuple[float, ...]", .kind=FieldKind::RealTuple,
      .offset=offsetof(HingeDensity, stiffness_n_m), .required=false, .factory="", .nested=nullptr, .nested2=nullptr},
     REAL(HingeDensity, damping_ns_m),
+    REAL(HingeDensity, loss_factor),
+    REAL(HingeDensity, hysteresis_rate_eps_mps),
     STR(HingeDensity, provenance),
 });
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there

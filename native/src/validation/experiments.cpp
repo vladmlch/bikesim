@@ -222,7 +222,7 @@ Array contact_fits(const configuration::HingeDensity& density){
             {"station_count",value::integer(fit.station_count)},{"accepted",Value{fit.accepted}},{"target_load_n",value::doubles(fit.target_load_n)},
             {"predicted_load_n",value::doubles(fit.predicted_load_n)},{"deflection_m",value::doubles(fit.deflection_m)},
             {"density",Value{Object{{"knots_m",value::doubles(fit.density.knots_m)},{"stiffness_n_m",value::doubles(fit.density.stiffness_n_m)},
-                {"damping_ns_m",value::real(fit.density.damping_ns_m)},{"provenance",value::text(fit.density.provenance)}}}}}});}
+                {"damping_ns_m",value::real(fit.density.damping_ns_m)},{"loss_factor",value::real(fit.density.loss_factor)},{"hysteresis_rate_eps_mps",value::real(fit.density.hysteresis_rate_eps_mps)},{"provenance",value::text(fit.density.provenance)}}}}}});}
     return fits;
 }
 Array contact_stand_checks(){
@@ -270,7 +270,7 @@ Value reference_matrix(const Value& config,const std::filesystem::path& root) {
 
 Value contact_resolution(const Value& config,const std::filesystem::path& root) {
     const auto out=root/text(config,"output","results/contact_resolution");std::filesystem::create_directories(out);const configuration::HingeDensity density;
-    Value material{Object{{"knots_m",value::doubles(density.knots_m)},{"stiffness_n_m",value::doubles(density.stiffness_n_m)},{"damping_ns_m",value::real(density.damping_ns_m)},{"provenance",value::text(density.provenance)}}};
+    Value material{Object{{"knots_m",value::doubles(density.knots_m)},{"stiffness_n_m",value::doubles(density.stiffness_n_m)},{"damping_ns_m",value::real(density.damping_ns_m)},{"loss_factor",value::real(density.loss_factor)},{"hysteresis_rate_eps_mps",value::real(density.hysteresis_rate_eps_mps)},{"provenance",value::text(density.provenance)}}};
     Value report{Object{{"schema_version",value::integer(1)},{"source_sha256",value::text(source_fingerprint(root/"native/src"))},{"environment",environment_contract(root)},
         {"material",material},{"synthetic",Value{true}},{"series",Value{Array{}}},{"stand_checks",Value{Array{}}},{"comparisons",Value{Array{}}},{"passed",Value{false}}}};
     set(report,"fits",Value{contact_fits(density)});set(report,"material_selection",value::text("unchanged declared synthetic density; no automatic promotion from fit"));Array series,comparisons;

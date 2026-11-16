@@ -195,6 +195,21 @@ void set_array(io::Value::Object &o, std::string_view key,
         set_array(*member_mut(dist, "density"), "stiffness_n_m",
                   {"-1", "0", "0"});
     });
+    // Ban #39: the retained damping_ns_m key is pinned to zero —
+    // rate-independent hysteresis carries the radial loss.
+    mutate([](io::Value &v) {
+        auto &dist = nested(v, "tire", "distributed");
+        set_number(*member_mut(dist, "density"), "damping_ns_m", "40");
+    });
+    mutate([](io::Value &v) {
+        auto &dist = nested(v, "tire", "distributed");
+        set_number(*member_mut(dist, "density"),
+                   "hysteresis_rate_eps_mps", "0");
+    });
+    mutate([](io::Value &v) {
+        auto &dist = nested(v, "tire", "distributed");
+        set_number(*member_mut(dist, "density"), "loss_factor", "1.0");
+    });
 }
 
 // native_distributed_tire/distributed_state_wire_round_trip

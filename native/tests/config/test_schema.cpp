@@ -127,10 +127,12 @@ Value valid_distributed_node() {
     const auto density = [] {
         return make_object(
             {{"knots_m",
-              make_array({make_number("0.05"), make_number("0.2")})},
+              make_array({make_number("0"), make_number("0.2")})},
              {"stiffness_n_m",
               make_array({make_number("90000"), make_number("120000")})},
-             {"damping_ns_m", make_number("40")},
+             {"damping_ns_m", make_number("0")},
+             {"loss_factor", make_number("0.05")},
+             {"hysteresis_rate_eps_mps", make_number("0.01")},
              {"provenance", make_text("synthetic")}});
     };
     const auto material = [&density](std::string_view dataset) {
@@ -1179,6 +1181,9 @@ void test_resolved_profiles() {
                   [](cfg::SimulationPhysicsConfig& c) {
                       c.tires.backend = "distributed_2d_reference";
                       c.tires.distributed.station_count = 128;
+                      // The distributed TOML's [resistance] crr = 0.0:
+                      // hysteresis already carries rolling dissipation.
+                      c.resistance.crr = 0.0;
                       // The distributed TOML is byte-mirrored from the
                       // shipped profile too, but unlike the welded profile
                       // it does not supply the F1 delivered/weld envelope
@@ -1386,6 +1391,34 @@ void test_wire_validation() {
         .emplace_back("distributed", valid_distributed_node());
     expect_invalid("config.tire.distributed: unknown key",
                    [&] { cfg::wire::validate_config(mutated); });
+    // Ban #39: damping_ns_m survives only as a zero-pinned compatibility
+    // key — the recursive optional-section check reaches the domain
+    // rule before the presence matrix.
+    mutated = wire;
+    {
+        // The domain rule runs only when the backend selects the
+        // distributed tire — the presence matrix wins otherwise.
+        auto& tire_obj = object_of(member_mut(mutated, "tire", "wire"));
+        for (auto& [k, val] : tire_obj)
+            if (k == "backend")
+                val = make_text("distributed_2d_reference");
+        for (const char* side : {"front", "rear"})
+            for (auto& [k, val] : tire_obj)
+                if (k == side)
+                    std::erase_if(object_of(val), [](const auto& kv) {
+                        return kv.first == "material";
+                    });
+        Value bad_node = valid_distributed_node();
+        Value& density =
+            *find_member_mut(object_of(bad_node), "density");
+        for (auto& [k, val] : object_of(density))
+            if (k == "damping_ns_m") val = make_number("40");
+        tire_obj.emplace_back("distributed", std::move(bad_node));
+    }
+    expect_invalid(
+        "config.tire.distributed.density.damping_ns_m: viscous "
+        "damping is banned (Ban 39); keep the compatibility key at 0",
+        [&] { cfg::wire::validate_config(mutated); });
     mutated = wire;
     member_mut(member_mut(mutated, "tire", "wire"), "backend", "tire") =
         make_text("distributed_2d_reference");

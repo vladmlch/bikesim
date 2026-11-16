@@ -562,7 +562,8 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "tire.distributed", .entry = {.required = "station_count density front rear",
           .optional = ""}},
         {.name = "tire.distributed.density", .entry =
-         {.required = "knots_m stiffness_n_m damping_ns_m provenance",
+         {.required = "knots_m stiffness_n_m damping_ns_m loss_factor "
+          "hysteresis_rate_eps_mps provenance",
           .optional = ""}},
         {.name = "tire.distributed.material", .entry =
          {.required = "density fitting_dataset_id valid_load_range_n "
@@ -752,8 +753,23 @@ void check_hinge_density(const Value::Object &density,
     for (const Value &k : stiffness)
         if (py_lt_num(k, 0.))
             fail(path + ".stiffness_n_m: negative stiffness");
-    wire_scalar(*bike::io::find_member(density, "damping_ns_m"),
-                path + ".damping_ns_m", 0.);
+    const double damping =
+        wire_scalar(*bike::io::find_member(density, "damping_ns_m"),
+                    path + ".damping_ns_m", 0.);
+    // Ban #39 (Decisions 22/39): the radial loss is rate-independent
+    // hysteresis — damping_ns_m stays only as a zero-pinned
+    // compatibility key.
+    if (damping != 0.)
+        fail(path + ".damping_ns_m: viscous damping is banned "
+                    "(Ban 39); keep the compatibility key at 0");
+    const Value &loss_v =
+        *bike::io::find_member(density, "loss_factor");
+    wire_scalar(loss_v, path + ".loss_factor", 0.);
+    if (!py_lt_num(loss_v, 1.))
+        fail(path + ".loss_factor: must be below 1");
+    wire_scalar(
+        *bike::io::find_member(density, "hysteresis_rate_eps_mps"),
+        path + ".hysteresis_rate_eps_mps", std::nullopt, true);
     const Value *provenance =
         bike::io::find_member(density, "provenance");
     const auto *text = provenance == nullptr

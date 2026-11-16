@@ -280,7 +280,11 @@ namespace nativecfg {
     }
     // HingeDensity.__post_init__ (distributed_tire.py:18-29): nonempty
     // aligned tables, all values finite, knots strictly increasing from
-    // zero, nonnegative stiffnesses/damping and a nonblank provenance.
+    // zero, nonnegative stiffnesses and a nonblank provenance.
+    // Decisions 22/39: the radial loss is the rate-independent
+    // hysteresis eta*F*tanh(rate/eps) — loss_factor in [0,1) and a
+    // positive rate scale; damping_ns_m survives only as a
+    // zero-pinned compatibility key.
     inline void validate(const HingeDensity &s, std::string_view path) {
         const std::string p(path);
         if (s.knots_m.empty() || s.knots_m.size() != s.stiffness_n_m.size())
@@ -295,6 +299,15 @@ namespace nativecfg {
         for (const double stiffness: s.stiffness_n_m)
             validation::nonnegative(stiffness, p + ".stiffness_n_m");
         validation::nonnegative(s.damping_ns_m, p + ".damping_ns_m");
+        if (s.damping_ns_m != 0.)
+            throw std::invalid_argument(
+                p + ".damping_ns_m: viscous damping is banned (Ban 39);"
+                    " keep the compatibility key at 0");
+        validation::nonnegative(s.loss_factor, p + ".loss_factor");
+        if (!(s.loss_factor < 1.))
+            throw std::invalid_argument(p + ".loss_factor: must be below 1");
+        validation::positive(s.hysteresis_rate_eps_mps,
+                             p + ".hysteresis_rate_eps_mps");
         if (!nonblank(s.provenance))
             throw std::invalid_argument(p + ".provenance");
     }

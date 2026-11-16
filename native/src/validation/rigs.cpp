@@ -141,7 +141,7 @@ RigResult shaft_ratio_rig(double dt,double ratio,bool overrun){
 nativecfg::TireConfig distributed_config(int n,double mu,const nativecfg::HingeDensity* density){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API.
     nativecfg::TireConfig c;c.backend="distributed_2d_reference";c.surface_mode="configured";c.front={.material=std::nullopt,.tangent_k_n_m=20000.,.mu=mu,.relaxation_length_m=.2};c.rear=c.front;
     c.significant_delta_m=.0001;c.significance_fraction=.05;c.distinct_normal_deg=20.;
-    const nativecfg::HingeDensity material_density=density?*density:nativecfg::HingeDensity{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};
+    const nativecfg::HingeDensity material_density=density?*density:nativecfg::HingeDensity{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=0.,.loss_factor=.05,.hysteresis_rate_eps_mps=.01,.provenance="synthetic density; not fitted or measured"};
     nativecfg::DistributedMaterial const material{.density=material_density,.fitting_dataset_id="none-synthetic",.valid_load_range_n={0.,2000.},.valid_deflection_range_m={0.,.04},.calibration_status="experimental_unvalidated"};
     c.distributed=nativecfg::DistributedConfig{.station_count=n,.density=material_density,.front=material,.rear=material};return c;
 }
@@ -177,10 +177,10 @@ std::pair<Value,Value> run_stand(WheelStand& s,double load,double duration){ // 
 }
 }
 double flat_depth(double load,int n,double tolerance,const nativecfg::HingeDensity* density){ // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    const nativecfg::HingeDensity declared{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=2000.,.provenance="synthetic density; not fitted or measured"};if(!density)density=&declared;
-    // flat_load consumes the configuration schema type; copy the four
+    const nativecfg::HingeDensity declared{.knots_m={0.,.004,.012},.stiffness_n_m={300000.,0.,0.},.damping_ns_m=0.,.loss_factor=.05,.hysteresis_rate_eps_mps=.01,.provenance="synthetic density; not fitted or measured"};if(!density)density=&declared;
+    // flat_load consumes the configuration schema type; copy the six
     // mirrored fields across (same record, different namespace).
-    const configuration::HingeDensity analytic{.knots_m=density->knots_m,.stiffness_n_m=density->stiffness_n_m,.damping_ns_m=density->damping_ns_m,.provenance=density->provenance};
+    const configuration::HingeDensity analytic{.knots_m=density->knots_m,.stiffness_n_m=density->stiffness_n_m,.damping_ns_m=density->damping_ns_m,.loss_factor=density->loss_factor,.hysteresis_rate_eps_mps=density->hysteresis_rate_eps_mps,.provenance=density->provenance};
     return numerics::brentq([&](double x){const std::array depths{x};return numerics::flat_load(depths,.37,analytic,n).force[0]-load;},1e-9,.1,tolerance).root;
 }
 RigResult distributed_flat_rig(double dt,int n,double load){

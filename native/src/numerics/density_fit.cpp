@@ -16,7 +16,8 @@
 namespace bike::numerics {
 namespace {
 void material(const bike::configuration::HingeDensity& m) {
-    if(m.knots_m.empty() || m.knots_m.size()!=m.stiffness_n_m.size() || !dense::finite(m.knots_m) || !dense::finite(m.stiffness_n_m) || !std::isfinite(m.damping_ns_m) || m.damping_ns_m<0. || m.knots_m[0]!=0. || m.provenance.find_first_not_of(" \n\t\r")==std::string::npos)throw std::invalid_argument("invalid density table/domain/provenance");
+    if(m.knots_m.empty() || m.knots_m.size()!=m.stiffness_n_m.size() || !dense::finite(m.knots_m) || !dense::finite(m.stiffness_n_m) || !std::isfinite(m.damping_ns_m) || m.damping_ns_m<0. || !std::isfinite(m.loss_factor) || m.loss_factor<0. || !(m.loss_factor<1.) || !std::isfinite(m.hysteresis_rate_eps_mps) || m.hysteresis_rate_eps_mps<=0. || m.knots_m[0]!=0. || m.provenance.find_first_not_of(" \n\t\r")==std::string::npos)throw std::invalid_argument("invalid density table/domain/provenance");
+    if(m.damping_ns_m!=0.)throw std::invalid_argument("viscous damping is banned (Ban 39); keep the compatibility key at 0");
     for(std::size_t i=0;i<m.knots_m.size();++i)if(m.stiffness_n_m[i]<0. || (i && m.knots_m[i]<=m.knots_m[i-1]))throw std::invalid_argument("density law must be monotone and dissipative");
 }
 }
@@ -47,7 +48,11 @@ DensityResponse normal_station_response(std::span<const double> delta,std::span<
     auto out=density_response(expanded,m);
     for(std::size_t i=0;i<count;++i) {
         const double w=weights[weights.size()==1?0:i],r=rate[rate.size()==1?0:i];
-        out.force[i]=w*(expanded[i]>0.?std::max(0.,out.force[i]+m.damping_ns_m*r):0.);out.energy[i]*=w;
+        // Ban #39: rate-independent hysteresis eta*elastic*tanh(rate/eps)
+        // (tyre/station.cpp station_response), not viscous damping;
+        // energy stays the elastic fold.
+        const double elastic=out.force[i];
+        out.force[i]=w*(expanded[i]>0.?std::max(0.,elastic+m.loss_factor*elastic*std::tanh(r/m.hysteresis_rate_eps_mps)):0.);out.energy[i]*=w;
     }
     return out;
 }

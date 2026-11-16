@@ -1,32 +1,32 @@
 [
-  {
-    "media_type": "application/toml",
-    "name": "track.toml",
-    "sha256": "cada1729fa7de786f012d128ce70d39aadcbc243e602adc3f7cefbc4740bbb0d"
-  },
-  {
-    "media_type": "application/x-npy",
-    "name": "terrain_vertices.npy",
-    "sha256": "67a239a8ea64cf7ee883706db8cafe2d70e6bf433fad7af7dce2f6e5ae50c2c3"
-  },
-  {
-    "media_type": "application/json",
-    "name": "resolved_config.json",
-    "sha256": "228a9c1a7b1cc95f4c2064d865bcba029b4940d12669f9bf1741a80ab6f8318b"
-  },
-  {
-    "media_type": "application/json",
-    "name": "rider_joint_envelope.json",
-    "sha256": "865658885b220eb6e3b60542c7f8332b2bee27cef3a021b45db7e24798ea0db8"
-  },
-  {
-    "media_type": "application/json",
-    "name": "rider_joint_strength.json",
-    "sha256": "071e8e8bc19cd23c229bfcad98c62fe03e56bbde374f9dcab61a9cc8c5a7d760"
-  },
-  {
-    "media_type": "application/json",
-    "name": "recipe.json",
-    "sha256": "88ac2a35291020f9de2bf63764b89927d8ca00d79512f44b2dd0edd1d4df1066"
-  }
+ {
+  "media_type": "application/toml",
+  "name": "track.toml",
+  "sha256": "cada1729fa7de786f012d128ce70d39aadcbc243e602adc3f7cefbc4740bbb0d"
+ },
+ {
+  "media_type": "application/x-npy",
+  "name": "terrain_vertices.npy",
+  "sha256": "67a239a8ea64cf7ee883706db8cafe2d70e6bf433fad7af7dce2f6e5ae50c2c3"
+ },
+ {
+  "media_type": "application/json",
+  "name": "resolved_config.json",
+  "sha256": "781979b2b38961c027056db9a6a8a3ba21e1c8e535d3b0c6ec80ef0475093ced"
+ },
+ {
+  "media_type": "application/json",
+  "name": "rider_joint_envelope.json",
+  "sha256": "865658885b220eb6e3b60542c7f8332b2bee27cef3a021b45db7e24798ea0db8"
+ },
+ {
+  "media_type": "application/json",
+  "name": "rider_joint_strength.json",
+  "sha256": "071e8e8bc19cd23c229bfcad98c62fe03e56bbde374f9dcab61a9cc8c5a7d760"
+ },
+ {
+  "media_type": "application/json",
+  "name": "recipe.json",
+  "sha256": "88ac2a35291020f9de2bf63764b89927d8ca00d79512f44b2dd0edd1d4df1066"
+ }
 ]

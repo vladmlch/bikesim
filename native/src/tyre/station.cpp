@@ -84,12 +84,18 @@ namespace biketyre {
               std::isfinite(weight)) ||
             weight < 0.0)
             throw std::invalid_argument("invalid contact quadrature");
-        // lines 146-148 — density first, then the gated damped force;
-        // the weight multiplies force and energy alike.
+        // lines 146-148 — density first, then the gated force; the
+        // weight multiplies force and energy alike. Ban #39: the radial
+        // loss is the rate-independent hysteresis
+        // eta*elastic*tanh(rate/eps) of contact/laws.hpp
+        // (normal_contact_hysteresis), not viscous damping — stored
+        // energy stays the elastic fold, independent of rate.
         const auto [elastic, energy] = station_density(delta, density);
         const double force =
             delta > 0.0
-                ? std::max(0.0, elastic + density.damping_ns_m * rate)
+                ? std::max(0.0, elastic +
+                                density.loss_factor * elastic *
+                                    std::tanh(rate / density.hysteresis_rate_eps_mps))
                 : 0.0;
         return {weight * force, weight * energy};
     }

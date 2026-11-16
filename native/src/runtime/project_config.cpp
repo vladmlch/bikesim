@@ -196,7 +196,10 @@ Value surface(const trn::SurfaceSpec& s) {
 Value density(const cfg::HingeDensity& d) {
     return Value{Object{{"knots_m", reals(d.knots_m)},
         {"stiffness_n_m", reals(d.stiffness_n_m)},
-        {"damping_ns_m", real(d.damping_ns_m)}, {"provenance", text(d.provenance)}}};
+        {"damping_ns_m", real(d.damping_ns_m)},
+        {"loss_factor", real(d.loss_factor)},
+        {"hysteresis_rate_eps_mps", real(d.hysteresis_rate_eps_mps)},
+        {"provenance", text(d.provenance)}}};
 }
 Value wheel_material(const cfg::DistributedWheelMaterial& m) {
     return Value{Object{{"density", density(m.density)},

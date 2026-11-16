@@ -38,14 +38,15 @@ namespace numerics = bike::numerics;
 
 // distributed_tire_reference/step_rig_matches_the_pinned_trace_to_reordering_tolerance
 // Pinned from the vectorised implementation before the portable rewrite;
-// rows[::8] compared to literal pins at 1e-9 relative tolerance.
+// re-pinned for the Ban-#39 hysteresis law (2026-11-16); rows[::8]
+// compared to literal pins at 1e-9 relative tolerance.
 [[gnu::noinline]] void test_step_rig_matches_the_pinned_trace_to_reordering_tolerance() {
     const std::array<double, 10> before_normal{
-            632.674608364, 609.382103444, 613.516398494, 614.034816138,
-            613.869405735, 613.817389269, 613.801320645, 613.703552998,
-            613.341342092, 626.68744485};
+            600.000000000, 589.936619902, 595.347740838, 601.179335699,
+            601.491483982, 604.605556537, 605.715707387, 604.707571168,
+            604.417854790, 601.743481981};
     const std::array<double, 10> &before_vertical = before_normal;
-    const std::array<int, 10> before_patches{9, 8, 8, 8, 8, 8, 8, 8, 9, 9};
+    const std::array<int, 10> before_patches{9, 8, 8, 8, 8, 8, 8, 8, 8, 8};
 
     const auto [rows_v, metrics] = validation::distributed_road_trace(
             .00125, 128, .005, "step", .1);

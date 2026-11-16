@@ -78,13 +78,18 @@ struct RefStationQuery {
 };
 
 // Exact double-precision reference from native/src/tyre/station.cpp:78-95.
+// Ban #39: the radial loss is rate-independent hysteresis —
+// loss_factor * elastic * tanh(rate / hysteresis_rate_eps_mps) — not
+// the retired viscous damping_ns_m * rate.
 std::pair<double, double> ref_station_response(
     const RefStationQuery &q,
     const GpuHingeDensity &d
 ) {
     const auto [elastic, energy] = ref_station_density(q.delta, d);
     const double force = q.delta > 0.0
-        ? std::max(0.0, elastic + static_cast<double>(d.damping_ns_m) * q.rate)
+        ? std::max(0.0, elastic + static_cast<double>(d.loss_factor) *
+                   elastic * std::tanh(q.rate /
+                       static_cast<double>(d.hysteresis_rate_eps_mps)))
         : 0.0;
     return {q.weight * force, q.weight * energy};
 }
@@ -103,7 +108,8 @@ void test_station_density_and_response() {
     d.stiffness_n_m[0] = 55000.0f;
     d.stiffness_n_m[1] = 85000.0f;
     d.stiffness_n_m[2] = 140000.0f;
-    d.damping_ns_m = 420.0f;
+    d.loss_factor = 0.05f;
+    d.hysteresis_rate_eps_mps = 0.01f;
 
     // Equivalent nativecfg::HingeDensity for authoritative native biketyre::station_response
     nativecfg::HingeDensity native_d{};
@@ -114,7 +120,10 @@ void test_station_density_and_response() {
         gpu_knots.first(num_knots).begin(), gpu_knots.first(num_knots).end());
     native_d.stiffness_n_m.assign(
         gpu_stiffness.first(num_knots).begin(), gpu_stiffness.first(num_knots).end());
-    native_d.damping_ns_m = static_cast<double>(d.damping_ns_m);
+    native_d.damping_ns_m = 0.0;
+    native_d.loss_factor = static_cast<double>(d.loss_factor);
+    native_d.hysteresis_rate_eps_mps =
+        static_cast<double>(d.hysteresis_rate_eps_mps);
 
     // 1. Negative and zero penetrations
     for (const float delta : {-0.025f, -0.001f, 0.0f}) {

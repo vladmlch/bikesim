@@ -36,6 +36,12 @@ mu = 1.1
 [tires.rear]
 mu = 1.1
 
+[resistance]
+# Ban #39 / Queue Item 5: the distributed tire's radial hysteresis
+# (density loss_factor) already carries rolling dissipation — the generic
+# crr writer would double-count it.
+crr = 0.0
+
 [drive]
 # Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling
 # forward engages it and drives the chainring; backward, or slower than the

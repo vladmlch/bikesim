@@ -263,9 +263,14 @@ namespace nativecfg {
 
     // HingeDensity (physics/distributed_tire.py:12-29) — radial stiffness as
     // a density per radian over strictly increasing deflection knots.
+    // Ban #39: the radial loss is rate-independent hysteresis
+    // (loss_factor, hysteresis_rate_eps_mps); damping_ns_m is a
+    // zero-pinned compatibility key.
     struct HingeDensity {
         std::vector<double> knots_m, stiffness_n_m;
         double damping_ns_m{};
+        double loss_factor = .05;
+        double hysteresis_rate_eps_mps = .01;
         std::string provenance;
     };
 

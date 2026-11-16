@@ -450,7 +450,7 @@ namespace nativecfg {
             }
             if (name.ends_with(".density")) {
                 // tire.distributed.density and each wheel's own density law.
-                constexpr auto required = keys("knots_m", "stiffness_n_m", "damping_ns_m", "provenance");
+                constexpr auto required = keys("knots_m", "stiffness_n_m", "damping_ns_m", "loss_factor", "hysteresis_rate_eps_mps", "provenance");
                 constexpr auto optional = keys();
                 exact_at(d, required, optional, d.path);
                 return;
@@ -687,6 +687,8 @@ namespace nativecfg {
                 .knots_m = vector(req(d, "knots_m"), d.child("knots_m")),
                 .stiffness_n_m = vector(req(d, "stiffness_n_m"), d.child("stiffness_n_m")),
                 .damping_ns_m = req_f64(d, "damping_ns_m"),
+                .loss_factor = req_f64(d, "loss_factor"),
+                .hysteresis_rate_eps_mps = req_f64(d, "hysteresis_rate_eps_mps"),
                 .provenance = req_str(d, "provenance"),
             };
         }

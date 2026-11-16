@@ -52,15 +52,18 @@ void calibration_and_root() {
     const auto root=n::brentq([](double x){return x*x-2.;},0.,2.);
     bt::require(std::abs(root.root-std::numbers::sqrt2)<2e-12,"safeguarded bracket converges to analytic root");
     bt::invalid([]{(void)n::brentq([](double x){return x*x+1.;},-1.,1.);});
-    bike::configuration::HingeDensity material{.knots_m={0.,.01},.stiffness_n_m={100.,100.},.damping_ns_m=10.,.provenance="analytic test"};
+    bike::configuration::HingeDensity material{.knots_m={0.,.01},.stiffness_n_m={100.,100.},.damping_ns_m=0.,.provenance="analytic test"};
     const auto response=n::density_response(std::array<double,3>{-.01,.01,.02},material);
     bt::require(response.force==std::vector<double>({0.,1.,3.})&&std::abs(response.energy[2]-.025)<1e-15,"hinge potential derivative and separated force");
     const auto detached=n::normal_station_response(std::array<double,1>{0.},std::array<double,1>{100.},std::array<double,1>{1.},material);
-    bt::require(detached.force[0]==0.,"damper creates no detached contact force");
+    bt::require(detached.force[0]==0.,"hysteresis creates no detached contact force");
     bt::require(n::normal_station_response({},std::array<double,1>{0.},std::array<double,1>{1.},material).force.empty(),"empty quadrature broadcasts scalar rate and weight without indexing it");
     const std::array<double,5> deflection{.002,.004,.008,.016,.024};const auto load=n::flat_load(deflection,.35,material,64).force;
-    const auto fitted=n::fit_density(deflection,load,.35,"synthetic analytic",material.knots_m,64,10.);
+    const auto fitted=n::fit_density(deflection,load,.35,"synthetic analytic",material.knots_m,64,0.);
     bt::require(fitted.accepted&&fitted.maximum_relative_error<1e-7&&fitted.calibration_status=="synthetic_fit_only","fit cannot certify physical material");
+    bike::configuration::HingeDensity viscous=material;viscous.damping_ns_m=.5;
+    bt::invalid([&]{(void)n::density_response(std::array<double,1>{.01},viscous);});
+    bt::invalid([&]{(void)n::normal_station_response(std::array<double,1>{.01},std::array<double,1>{1.},std::array<double,1>{1.},viscous);});
 }
 void binary64_certificate_edges() {
     // Zero tolerance distinguishes a one-ulp contradiction from deliberate

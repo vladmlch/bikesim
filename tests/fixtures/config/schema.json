@@ -206,9 +206,21 @@
                   "type": "tuple[float, ...]"
                 },
                 {
-                  "default": 2000.0,
+                  "default": 0.0,
                   "default_factory": null,
                   "name": "damping_ns_m",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.05,
+                  "default_factory": null,
+                  "name": "loss_factor",
+                  "type": "<class 'float'>"
+                },
+                {
+                  "default": 0.01,
+                  "default_factory": null,
+                  "name": "hysteresis_rate_eps_mps",
                   "type": "<class 'float'>"
                 },
                 {

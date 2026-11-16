@@ -1471,11 +1471,17 @@ PhysicalStep::apply_forces_body(
             command.enabled = control.rider_enabled;
             command.posture = control.posture.value_or(rider::RiderPosture{});
             command.crank_target_phase_rad = crank_goal;
-            command.crank_target_rate_rad_s =
-                control.crank_target_rate_rad_s.value_or(
-                    pedaling.target_rate_rad_s);
-            command.crank_reposition =
+            // While the manoeuvre runs its negative backpedal rate owns
+            // the command — the control-wire rate is gated nonnegative
+            // (control_validate_for) and would defeat the backpedal.
+            const bool crank_reposition =
                 drivetrain::is_reposition(pedaling.reason);
+            command.crank_target_rate_rad_s =
+                crank_reposition
+                    ? pedaling.target_rate_rad_s
+                    : control.crank_target_rate_rad_s.value_or(
+                          pedaling.target_rate_rad_s);
+            command.crank_reposition = crank_reposition;
             accumulator_.add("rider_joint_envelope",
                              rider_control_->envelope_forces(d).first);
             rider::NamedEntries<double> torques;

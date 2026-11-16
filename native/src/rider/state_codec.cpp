@@ -2040,6 +2040,8 @@ RiderCommand decode_rider_command(const bio::Value &value,
         invalid(path, "coasting goals cannot request pedaling effort");
     if (command.crank_reposition && command.mean_crank_torque_nm > 0.)
         invalid(path, "crank reposition cannot request pedaling effort");
+    if (command.crank_reposition && command.crank_target_rate_rad_s >= 0.)
+        invalid(path, "crank reposition requires a negative crank rate");
     return command;
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "policy_config.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <string_view>
@@ -70,6 +71,19 @@ namespace drivetrain {
     [[nodiscard]] constexpr bool is_reposition(CoastReason r) noexcept {
         return r == CoastReason::reposition_requested || r == CoastReason::reposition_stall;
     }
+    // The longest label coast_reason_name can emit
+    // ("reposition_requested", 20 chars) — the capacity every
+    // coasting_reason open-lane pre-reserve must meet so no set_open or
+    // snapshot copy reallocs inside the warm core. The assert walks the
+    // whole underlying domain, so a longer future label cannot add
+    // itself without tripping it.
+    inline constexpr std::size_t kMaxCoastReasonLength = 20;
+    static_assert([] {
+        for (int i = 0; i < 256; ++i)
+            if (coast_reason_name(static_cast<CoastReason>(i)).size() > kMaxCoastReasonLength)
+                return false;
+        return true;
+    }(), "kMaxCoastReasonLength must bound every CoastReason label");
     // Crank qpos of the first power phase (Task 1 pins it; multiples of pi
     // from it are the two horizontal crank poses).
     inline constexpr double kPowerPhaseOffsetRad = 0.;

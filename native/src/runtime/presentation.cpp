@@ -94,7 +94,7 @@ void PhysicalStep::initialize_presentation(PresentationState &out) const {
     for (std::size_t i = 0; i < fields.size(); ++i) out.model_fields[i].resize(fields[i].size());
     // Match the writer's bounded open-label capacities before the first tick.
     out.drive.ensure_open_capacity(drivetrain::TelemetryField::coasting_reason,
-        drivetrain::coast_reason_name(drivetrain::CoastReason::no_effort).size());
+        drivetrain::kMaxCoastReasonLength);
     out.drive.ensure_open_capacity(drivetrain::TelemetryField::assist_mode,
         stepper_->drive().config().policies.assist.mode.size());
     if (rider_control_) {

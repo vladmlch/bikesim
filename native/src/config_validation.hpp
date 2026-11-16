@@ -2,6 +2,7 @@
 #include "config_types.hpp"
 #include "validation.hpp"
 #include <algorithm>
+#include <numbers>
 
 namespace nativecfg {
     inline bool nonblank(std::string_view text) {
@@ -123,6 +124,20 @@ namespace drivetrain {
         validation::nonnegative(s.effort_slew_nm_s, "config.drive.pedaling.effort_slew_nm_s");
         if (s.resume_below_rpm >= s.coast_above_rpm || (s.mash_torque_nm > 0. && s.mash_cadence_rpm <= 0.))
             throw std::invalid_argument("config.drive.pedaling.cadence_band");
+        // The nine reposition knobs mirror the wire decode domains
+        // (writer_config.hpp pedaling section): a C++-built config must
+        // meet the same gate the document does.
+        validation::nonnegative(s.reposition_min_effort_nm, "config.drive.pedaling.reposition_min_effort_nm");
+        validation::positive(s.reposition_stall_window_s, "config.drive.pedaling.reposition_stall_window_s");
+        validation::positive(s.reposition_stall_progress_rad, "config.drive.pedaling.reposition_stall_progress_rad");
+        validation::nonnegative(s.reposition_cooldown_s, "config.drive.pedaling.reposition_cooldown_s");
+        validation::positive(s.reposition_back_rate_rad_s, "config.drive.pedaling.reposition_back_rate_rad_s");
+        validation::positive(s.reposition_timeout_s, "config.drive.pedaling.reposition_timeout_s");
+        validation::positive(s.reposition_phase_tolerance_rad, "config.drive.pedaling.reposition_phase_tolerance_rad");
+        validation::nonnegative(s.reposition_noop_rad, "config.drive.pedaling.reposition_noop_rad");
+        if (s.reposition_noop_rad >= .5 * std::numbers::pi ||
+            s.reposition_stall_progress_rad >= std::numbers::pi)
+            throw std::invalid_argument("config.drive.pedaling.reposition_band");
     }
     inline void validate(const ShiftingConfig &s) {
         if (s.cassette.empty()) throw std::invalid_argument("config.drive.shifting.cassette");

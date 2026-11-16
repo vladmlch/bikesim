@@ -24,8 +24,22 @@ namespace drivetrain {
         nonnegative(s.deceleration_rad_s2, "deceleration_rad_s2");
         nonnegative(s.effort, "_effort");
         if (s.coasting && !s.target_phase_rad) throw std::invalid_argument("coasting target_phase_rad");
-        if (s.reposition)
-            finite_optional(s.reposition->goal_rad, "_reposition.goal_rad");
+        // The engaged manoeuvre sub-object gates at the same domain the
+        // wire codec admits — set_state is reachable without the codec
+        // (restore/commit), so it cannot delegate the checks.
+        if (s.reposition) {
+            const RepositionSnapshot &r = *s.reposition;
+            finite(r.crank_rad, "_reposition.crank_rad");
+            finite(r.wheel_rad, "_reposition.wheel_rad");
+            finite_optional(r.stall_elapsed_s, "_reposition.stall_elapsed_s");
+            if (r.stall_elapsed_s)
+                nonnegative(*r.stall_elapsed_s, "_reposition.stall_elapsed_s");
+            finite_optional(r.goal_rad, "_reposition.goal_rad");
+            nonnegative(r.elapsed_s, "_reposition.elapsed_s");
+            nonnegative(r.cooldown_s, "_reposition.cooldown_s");
+            if (r.reason > 2)
+                throw std::invalid_argument("_reposition.reason");
+        }
         state_ = s;
     }
 
@@ -47,7 +61,6 @@ namespace drivetrain {
         positive(dt, "pedaling interval");
         // Signed wheel rate in crank-equivalent units: rollback is not progress.
         const double wheel_rad_s = required * 2. * std::numbers::pi / 60.;
-        required = std::max(required, 0.);
         if (!enabled) {
             reset();
             // A request held across a disable/enable toggle stays consumed:
@@ -58,7 +71,8 @@ namespace drivetrain {
                 state_.reposition->armed = false;
             }
             return {
-                .mode = PedalMode::disabled, .reason = CoastReason::disabled, .effort_nm = 0., .required_cadence_rpm = required,
+                .mode = PedalMode::disabled, .reason = CoastReason::disabled, .effort_nm = 0.,
+                .required_cadence_rpm = std::max(required, 0.),
                 .target_phase_rad = std::nullopt, .target_rate_rad_s = 0.
             };
         }
@@ -109,6 +123,10 @@ namespace drivetrain {
             }
             if (!config_.reposition_on_stall && !r.goal_rad && r.cooldown_s <= 0. && r.armed) state_.reposition.reset();
         }
+        // `required` stayed signed through the manoeuvre block so the stall
+        // detector and the reposition return see the raw wheel-implied rate;
+        // the pedaling domain below clamps it like pedaling.py did at entry.
+        required = std::max(required, 0.);
         const double actual = validation::derived(std::abs(rate) * 60. / (2. * std::numbers::pi), "PedalingPolicy.cadence");
         const double cadence = std::max(actual, required);
         if (config_.coast_cadence_tau_s > 0. && state_.cadence_ema)

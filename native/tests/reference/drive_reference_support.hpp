@@ -107,9 +107,17 @@ inline drivetrain::CadenceShifter shifter(int rear = 28, double tau = 0.) { // N
 }
 
 inline drivetrain::PedalingConfig pedaling_config(double tau = 0.) {
+    // The reposition knobs are required fields on the wire and in the
+    // ctor gate — the programmatic source declares the defaults the
+    // profiles carry (reposition_on_stall stays off).
     return {.enabled = true, .coast_above_rpm = 120., .resume_below_rpm = 105.,
         .stop_time_s = .35, .coast_cadence_tau_s = tau, .mash_cadence_rpm = 45.,
         .mash_torque_nm = 60., .effort_slew_nm_s = 0., .rollback_brake = true,
-        .rollback_engage_mps = .25, .rollback_release_mps = 0., .rollback_demand = 1.};
+        .rollback_engage_mps = .25, .rollback_release_mps = 0., .rollback_demand = 1.,
+        .reposition_on_stall = false, .reposition_min_effort_nm = 20.,
+        .reposition_stall_window_s = 1., .reposition_stall_progress_rad = .5,
+        .reposition_cooldown_s = 1., .reposition_back_rate_rad_s = 3.,
+        .reposition_timeout_s = 3., .reposition_phase_tolerance_rad = .05,
+        .reposition_noop_rad = .12};
 }
 } // namespace drive_reference

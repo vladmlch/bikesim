@@ -129,6 +129,126 @@ void test_reposition_stall_reflex() {
                         "held request + cooldown never retrigger");
     }
 }
+// R4 (2026-11-03 crank-reposition plan): the manoeuvre is bounded — it
+// ends on goal, timeout or abort, starts the cooldown, and normal
+// pedaling resumes with the effort slewing back from zero.
+void test_reposition_lifecycle() {
+    using drivetrain::CoastReason;
+    {   // reaching the goal ends the manoeuvre: reason and goal clear,
+        // the cooldown starts, and effort slews back from zero rather
+        // than stepping to the target
+        auto config = reposition_config(); config.effort_slew_nm_s = 300.;
+        drivetrain::PedalingPolicy p(config);
+        double phase = kDeadSpot;
+        auto s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested && s.target_rate_rad_s < 0.,
+                    "the request engages the manoeuvre");
+        for (int i = 0; i < 4000 && drivetrain::is_reposition(s.reason); ++i) {
+            phase += s.target_rate_rad_s * kDt;
+            s = p.update(phase, s.target_rate_rad_s, 0., 20., kDt, true, false, false);
+        }
+        bt::require(!drivetrain::is_reposition(s.reason) && s.mode == PedalMode::pedaling,
+                    "reaching the goal resumes normal pedaling");
+        bt::require(p.state().reposition && !p.state().reposition->goal_rad &&
+                    p.state().reposition->reason == 0 &&
+                    p.state().reposition->cooldown_s > 0.,
+                    "completion clears the goal and starts the cooldown");
+        bt::require(s.effort_nm > 0. && s.effort_nm <= 300. * kDt + 1e-12,
+                    "effort slews back from zero, one slew step on the resume tick");
+        const double resumed = s.effort_nm;
+        s = p.update(phase, s.target_rate_rad_s, 0., 20., kDt, true, false, false);
+        bt::require(s.effort_nm > resumed,
+                    "the effort ramp continues slewing on later ticks");
+    }
+    {   // a crank that never reaches the goal ends on the timeout and
+        // starts the same cooldown
+        drivetrain::PedalingPolicy p(reposition_config());
+        auto s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, true);
+        bt::require(drivetrain::is_reposition(s.reason), "the request engages");
+        int ticks = 0;
+        for (; ticks < 4000 && drivetrain::is_reposition(s.reason); ++ticks)
+            s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, false);
+        bt::require(ticks * kDt > 2.5 && ticks * kDt <= 3.5,
+                    "the manoeuvre holds until the 3 s timeout");
+        bt::require(s.mode == PedalMode::pedaling,
+                    "timeout resumes normal pedaling");
+        bt::require(p.state().reposition && p.state().reposition->cooldown_s > 0.,
+                    "timeout starts the cooldown");
+    }
+    {   // the cooldown swallows a press; a release+press after expiry
+        // re-arms a fresh manoeuvre
+        drivetrain::PedalingPolicy p(reposition_config());
+        double phase = kDeadSpot;
+        auto s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        for (int i = 0; i < 4000 && drivetrain::is_reposition(s.reason); ++i) {
+            phase += s.target_rate_rad_s * kDt;
+            s = p.update(phase, s.target_rate_rad_s, 0., 20., kDt, true, false, false);
+        }
+        bt::require(p.state().reposition && p.state().reposition->cooldown_s > 0.,
+                    "completion starts the cooldown");
+        s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        bt::require(!drivetrain::is_reposition(s.reason),
+                    "a press inside the cooldown is consumed");
+        for (int i = 0; i < 1000 && p.state().reposition &&
+             p.state().reposition->cooldown_s > 0.; ++i)
+            s = p.update(phase, 0., 0., 20., kDt, true, false, false);
+        const auto &cooled = p.state().reposition;
+        bt::require(cooled && cooled->cooldown_s <= 0., "the cooldown expires");
+        // The crank finished inside the no-op band of the last power
+        // phase; a fresh request at the next dead spot earns a new
+        // manoeuvre.
+        phase = 83. * std::numbers::pi + .5 * std::numbers::pi;
+        s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested && cooled &&
+                    cooled->goal_rad &&
+                    std::abs(*cooled->goal_rad - 83. * std::numbers::pi) < 1e-9,
+                    "a fresh press after expiry re-arms the manoeuvre");
+    }
+    {   // a manual request works without the stall reflex; once the
+        // cooldown lapses the engaged snapshot disengages entirely
+        auto config = reposition_config(); config.reposition_on_stall = false;
+        drivetrain::PedalingPolicy p(config);
+        double phase = kDeadSpot;
+        auto s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested,
+                    "the manual request engages without the reflex");
+        for (int i = 0; i < 4000 && drivetrain::is_reposition(s.reason); ++i) {
+            phase += s.target_rate_rad_s * kDt;
+            s = p.update(phase, s.target_rate_rad_s, 0., 20., kDt, true, false, false);
+        }
+        bt::require(!drivetrain::is_reposition(s.reason), "the manoeuvre completes");
+        for (int i = 0; i < 1000 && p.state().reposition; ++i)
+            s = p.update(phase, 0., 0., 20., kDt, true, false, false);
+        bt::require(!p.state().reposition.has_value(),
+                    "the reposition snapshot disengages after the cooldown");
+    }
+    {   // a request held across a disable/enable toggle stays consumed:
+        // only a fresh release+press earns the manoeuvre
+        drivetrain::PedalingPolicy p(reposition_config());
+        auto s = p.update(kDeadSpot, 0., 0., 20., kDt, false, false, true);
+        bt::require(s.mode == PedalMode::disabled && s.reason == CoastReason::disabled,
+                    "the disabled path wins over the request");
+        s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, true);
+        bt::require(!drivetrain::is_reposition(s.reason),
+                    "a request held through the toggle does not retrigger");
+        s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, false);
+        s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested,
+                    "a fresh press after release re-arms");
+    }
+    {   // a negative crank phase folds through fmod into the same band;
+        // the goal stays the nearest lower power phase
+        drivetrain::PedalingPolicy p(reposition_config());
+        const double phase = -.5 * std::numbers::pi;
+        const auto s = p.update(phase, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested && s.target_rate_rad_s < 0.,
+                    "negative phase engages the backpedal");
+        const auto &neg = p.state().reposition;
+        bt::require(neg && neg->goal_rad &&
+                    std::abs(*neg->goal_rad + std::numbers::pi) < 1e-9,
+                    "the goal is the nearest lower power phase");
+    }
+}
 void test_a_rocking_loaded_crank_simply_keeps_pedalling() {
     auto config = pedaling_config(); config.coast_above_rpm = 110.; config.resume_below_rpm = 90.;
     PedalingPolicy policy(config);
@@ -235,6 +355,7 @@ int main() { return bt::run([] {
     test_reposition_knobs_exist_and_mode_domain_is_unchanged();
     test_stall_detector();
     test_reposition_stall_reflex();
+    test_reposition_lifecycle();
     test_a_rocking_loaded_crank_simply_keeps_pedalling();
     test_ride_control_has_no_reposition_field();
     test_rider_program_rejects_the_removed_reposition_command();

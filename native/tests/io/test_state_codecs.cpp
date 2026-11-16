@@ -371,19 +371,29 @@ void checks_drive_reposition() {
              // finite-only reals, required and optional alike
              swap("\"goal_rad\":1.0", "\"goal_rad\":1e400"),
              swap("\"crank_rad\":0.4", "\"crank_rad\":1e400"),
+             swap("\"wheel_rad\":-1.25", "\"wheel_rad\":1e400"),
+             swap("\"elapsed_s\":0.1", "\"elapsed_s\":1e400"),
+             swap("\"cooldown_s\":0.25", "\"cooldown_s\":1e400"),
+             swap("\"stall_elapsed_s\":0.62", "\"stall_elapsed_s\":1e400"),
              // wrong kinds on the closed lanes
              swap("\"armed\":false", R"("armed":"yes")"),
              swap("\"armed\":false,", ""),
              swap("\"crank_rad\":0.4,", ""),
+             swap("\"wheel_rad\":-1.25,", ""),
+             swap("\"elapsed_s\":0.1,", ""),
+             swap("\"reason\":2}", "}"),
              swap("\"reason\":2}", R"("reason":2,"bogus":0})")}) {
         bt::invalid([&] {
             (void)drivetrain::decode_drive_snapshot(with_reposition(wire));
         });
     }
-    // _reposition itself must be an object, not a scalar.
-    bt::invalid([&] {
-        (void)drivetrain::decode_drive_snapshot(with_reposition("true"));
-    });
+    // _reposition itself must be an object: neither a scalar nor an
+    // explicit null stands in for the absent-key shape.
+    for (const char *wire : {"true", "null"}) {
+        bt::invalid([&] {
+            (void)drivetrain::decode_drive_snapshot(with_reposition(wire));
+        });
+    }
 }
 
 void checks_drive_invalid() {

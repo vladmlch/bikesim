@@ -720,11 +720,15 @@ void test_spindle_reposition_backpedals_toward_goal() {
 // a disengaged command keeps the historical five-key document.
 void test_spindle_reposition_command_wire() {
     const auto document = [](std::string_view extra = {},
-                             std::string_view effort = "0.0") {
+                             std::string_view effort = "0.0",
+                             std::string_view phase = "0.0",
+                             std::string_view rate = "-3.0") {
         return bio::parse_json(
             std::string(R"({"mean_crank_torque_nm":)") +
             std::string(effort) +
-            R"(,"enabled":true,"posture":{"torso_lean_rad":0.1,"pelvis_pitch_rad":0.0,"pelvis_offset_m":null,"use_saddle":true},"crank_target_phase_rad":0.0,"crank_target_rate_rad_s":-3.0)" +
+            R"(,"enabled":true,"posture":{"torso_lean_rad":0.1,"pelvis_pitch_rad":0.0,"pelvis_offset_m":null,"use_saddle":true},"crank_target_phase_rad":)" +
+            std::string(phase) +
+            R"(,"crank_target_rate_rad_s":)" + std::string(rate) +
             std::string(extra) + "}");
     };
     const rider::RiderCommand engaged = rider::decode_rider_command(
@@ -735,12 +739,42 @@ void test_spindle_reposition_command_wire() {
         rider::decode_rider_command(document(), "command");
     bt::require(!disengaged.crank_reposition,
                 "the absent member decodes to false");
+    // A present phase goal plus effort trips the coasting-goal guard
+    // before the reposition one — both rejections exist independently.
     bt::require(throws_std([&] {
                     (void)rider::decode_rider_command(
                         document(R"(,"crank_reposition":true)", "5.0"),
                         "command");
                 }),
+                "a coasting goal with pedaling effort rejects");
+    // With the phase goal absent the reposition+effort guard is the one
+    // that must fire — it is unreachable through the document above.
+    bt::require(throws_std([&] {
+                    (void)rider::decode_rider_command(
+                        document(R"(,"crank_reposition":true)", "5.0",
+                                 "null"),
+                        "command");
+                }),
                 "reposition with pedaling effort rejects");
+    // The backpedal owns the rate lane while the flag is up: a
+    // nonnegative caller rate is malformed beside an engaged manoeuvre.
+    for (const char *rate : {"0.0", "1.5"}) {
+        bt::require(throws_std([&] {
+                        (void)rider::decode_rider_command(
+                            document(R"(,"crank_reposition":true)", "0.0",
+                                     "null", rate),
+                            "command");
+                    }),
+                    "reposition with a nonnegative crank rate rejects");
+    }
+    // The negative-rate goal beside a null phase is the valid engaged
+    // document — the guard rejects the malformed lanes only.
+    const rider::RiderCommand goalless = rider::decode_rider_command(
+        document(R"(,"crank_reposition":true)", "0.0", "null"), "command");
+    bt::require(goalless.crank_reposition &&
+                    !goalless.crank_target_phase_rad.has_value() &&
+                    goalless.crank_target_rate_rad_s < 0.,
+                "an engaged goalless reposition command decodes");
     bt::require(throws_std([&] {
                     (void)rider::decode_rider_command(
                         document(R"(,"crank_reposition":1)"), "command");

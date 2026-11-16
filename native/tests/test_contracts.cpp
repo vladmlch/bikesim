@@ -75,6 +75,10 @@ namespace {
             .mash_cadence_rpm = 25.,
             .mash_torque_nm = 25.,
             .effort_slew_nm_s = 0.,
+            .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
+            .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
+            .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+            .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12,
         };
         drivetrain::PedalingPolicy policy(config);
         const drivetrain::PedalingState state = policy.update(0., 0., 30., 20., .01);
@@ -102,7 +106,11 @@ namespace {
         return {
             .enabled = true, .coast_above_rpm = 110., .resume_below_rpm = 80.,
             .stop_time_s = 1., .coast_cadence_tau_s = 0., .mash_cadence_rpm = 25.,
-            .mash_torque_nm = 25., .effort_slew_nm_s = 0.
+            .mash_torque_nm = 25., .effort_slew_nm_s = 0.,
+            .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
+            .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
+            .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+            .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12
         };
     }
 
@@ -155,6 +163,18 @@ namespace {
         invalid([](auto &c) { c.mash_cadence_rpm = -1.; });
         invalid([](auto &c) { c.mash_cadence_rpm = 0.; }); // nonzero mash torque needs cadence
         invalid([](auto &c) { c.effort_slew_nm_s = -1.; });
+        // The nine reposition knobs gate at the same domain the wire
+        // decoder admits — a programmatic config gets no wider a door.
+        invalid([](auto &c) { c.reposition_min_effort_nm = -1.; });
+        invalid([](auto &c) { c.reposition_stall_window_s = 0.; });
+        invalid([](auto &c) { c.reposition_stall_progress_rad = 0.; });
+        invalid([](auto &c) { c.reposition_stall_progress_rad = std::numbers::pi; });
+        invalid([](auto &c) { c.reposition_cooldown_s = -1.; });
+        invalid([](auto &c) { c.reposition_back_rate_rad_s = 0.; });
+        invalid([](auto &c) { c.reposition_timeout_s = 0.; });
+        invalid([](auto &c) { c.reposition_phase_tolerance_rad = -1.; });
+        invalid([](auto &c) { c.reposition_noop_rad = -1.; });
+        invalid([](auto &c) { c.reposition_noop_rad = .5 * std::numbers::pi; });
         {   // Zero-disable control: slew, coast EMA tau and the mash feature
             // all accept 0 as "off" (mash cadence may be 0 only with torque 0).
             auto config = valid_pedaling_config();

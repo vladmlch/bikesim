@@ -337,11 +337,11 @@ namespace drivetrain {
         // copy-assigns carry them. Pre-reserve on the staged snapshot —
         // the commit swap hands this exact storage to live_ — and on
         // every bank below, so no lane ever reallocs inside the warm core.
-        // coasting_reason's bound is its longest closed-domain label;
-        // assist_mode's is the configured mode name.
+        // coasting_reason's bound is the longest label its open domain
+        // can emit; assist_mode's is the configured mode name.
         last.ensure_open_capacity(
                 TelemetryField::coasting_reason,
-                coast_reason_name(CoastReason::no_effort).size());
+                kMaxCoastReasonLength);
         last.ensure_open_capacity(
                 TelemetryField::assist_mode,
                 config_.policies.assist.mode.size());
@@ -362,7 +362,7 @@ namespace drivetrain {
             // inside a marked tick.
             bank.snapshot.last.ensure_open_capacity(
                     TelemetryField::coasting_reason,
-                    coast_reason_name(CoastReason::no_effort).size());
+                    kMaxCoastReasonLength);
             bank.snapshot.last.ensure_open_capacity(
                     TelemetryField::assist_mode,
                     config_.policies.assist.mode.size());

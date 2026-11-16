@@ -160,6 +160,44 @@ F6 lowers the scale, F7 raises it, F8 restores 1x. C cycles the camera, 1/2 sele
 2D/3D, T toggles terminal telemetry and G toggles model markers. Q/Escape closes.
 Physical Space toggles braking; comma/period lower/raise brake strength. Physical
 R seals the current generation in RAM and resets the same compiled setup.
+Physical V requests a one-shot crank reposition: a backpedal to the nearest
+lower horizontal power phase (see below).
+
+### Crank reposition
+
+Scope: spindle-weld riders only (`articulated.pedal_attachment = "spindle"`,
+the `articulated_planar` rider). Research mode does not bind V — a manual
+request is not part of the recorded command stream and would break checked
+replay parity (plan decision D1).
+
+Autonomous stall reflex: `reposition_on_stall = true` under `[drive.pedaling]`
+enables the progress stall detector, which arms the same manoeuvre when the
+rider commands effort but neither crank nor wheel makes progress inside the
+stall window.
+
+Mechanics and physics: when triggered (via key V or the stall reflex),
+pedaling enters `coasting` with reason `reposition_requested` or
+`reposition_stall`, the delivered pedal effort goes to 0 N·m, and the spindle
+controller commands a negative crank rate back to the lower power phase. The
+motor clutch and the rear freehub decouple the forward drive, so the rear
+wheel and the motor drive shaft are not backdriven. The spindle controller
+uses rate damping (D = 12 N·m·s/rad) bounded within [−60, +60] N·m, and clips
+the negative task press below the resting pedal weight so the feet never pull
+on the pedals.
+
+`[drive.pedaling]` knobs (defaults):
+
+| Key | Type | Default |
+|---|---|---|
+| `reposition_on_stall` | bool | `false` |
+| `reposition_min_effort_nm` | real (N·m) | `20` |
+| `reposition_stall_window_s` | real (s) | `1` |
+| `reposition_stall_progress_rad` | real (rad) | `0.5` |
+| `reposition_cooldown_s` | real (s) | `1` |
+| `reposition_back_rate_rad_s` | real (rad/s) | `3` |
+| `reposition_timeout_s` | real (s) | `3` |
+| `reposition_phase_tolerance_rad` | real (rad) | `0.05` |
+| `reposition_noop_rad` | real (rad) | `0.12` |
 
 Physical/research persistence now requires `--record`; `--out` alone does not
 enable it. The ordinary new recording adapter requires `--backend native`.

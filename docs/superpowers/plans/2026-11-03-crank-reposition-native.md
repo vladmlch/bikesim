@@ -10,6 +10,21 @@
 
 **Spec:** There is no separate spec document. The requirements are the **Requirements** section below. The behavioural reference is the removed Python implementation: `git show c809f12a^:src/bike_sim/physics/pedaling.py` (classes `ProgressStallDetector`, `PedalingPolicy`), `c809f12a^:src/bike_sim/physics/physical_config.py` (`PedalingConfig.reposition_*`), and its tests `c809f12a^:tests/test_pedaling_stall.py`. The removal decision is recorded in main2 at `docs/superpowers/plans/2026-10-04-realistic-pedelec-drive.md` (Q10). This plan reverses that decision at the user's request (2026-11-03).
 
+## Ревизия 2026-11-16 (итоги задачи 9; требования не меняет)
+
+- **M1 подписан.** В беспотерьной модели трансмиссии вал мотора имеет инерцию и нулевое
+  сопротивление, поэтому любой остаточный ход вперёд оставляет его вращающимся вперёд.
+  Проверка `crank_clutch_engaged == 0` и `min_backpedal_clutch_torque_nm >= -1e-6` во время
+  манёвра (`native/tests/reference/test_crank_reposition.cpp`,
+  `test_reposition_backpedal_respects_the_clutch_topology`) — точное физическое доказательство,
+  что обратный проворот шатуна не передаёт обратный момент ни на вал мотора, ни на заднее
+  колесо. Это закрывает R5 и стоп-условие S3.
+- **Задача 9, шаг 1 — измерения.** Велосипед с артикулированным райдером и моторным
+  ассистом не испытывает прогресс-столла на `rough_uphill_extreme` (финиш на 98 м),
+  `rough_uphill_savage` (48 м длительности) и `alpine_rocky` (54 м выезда наружу петли).
+  Включение `reposition_on_stall = true` даёт побайтово идентичную траекторию, когда
+  манёвр не запускается — R6 подтверждён на реальных трассах.
+
 ## Ревизия 2026-11-05 (читать первой; при расхождении с текстом ниже действует ревизия)
 
 Почему пересмотрен план. 2026-11-05 пользователь решил, что педали назад крутятся через муфту в моторе. Муфт

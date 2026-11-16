@@ -280,6 +280,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     climb.enabled = true;
     climb.target_crank_power_w = 250.0;
     climb.max_crank_torque_nm = 60.0;
+    climb.max_forward_lean_rad = 0.55;
     climb.surge_power_w = 400.0;
     climb.surge_grade = 0.20;
     climb.surge_budget_s = 15.0;

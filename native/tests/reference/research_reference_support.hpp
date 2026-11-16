@@ -96,6 +96,8 @@ struct Knobs {
     physics.seated_climb.orientation_tau_s = .5;
     physics.seated_climb.surge_budget_s = 15.;
     physics.seated_climb.trim_dead_time_s = .2;
+    physics.seated_climb.max_crank_torque_nm = 60.;
+    physics.seated_climb.max_forward_lean_rad = .35;
     physics.seated_climb.min_elbow_flexion_deg = 15.0;
     physics.seated_climb.climb_effort_cap_grades = {0.};
     physics.seated_climb.climb_effort_cap_grade_nm = {1000.};

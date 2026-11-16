@@ -69,7 +69,7 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
                "grounded_hold_s = 0.005\n"
                "contact_dropout_s = 0.005\n"
                "[seated_climb]\n"
-               "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15.0\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+               "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15.0\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                "[drive]\nmotor_clutch = false\n"
                "[drive.assist]\nrelease_hold_s = 0.3\n"
                "[drive.pedaling]\n"

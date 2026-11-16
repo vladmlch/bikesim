@@ -43,6 +43,8 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.surge_budget_s = 15.;
     config.seated_climb.trim_dead_time_s = .2;
+    config.seated_climb.max_crank_torque_nm = 60.;
+    config.seated_climb.max_forward_lean_rad = .55;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
     config.seated_climb.climb_effort_cap_grades = {0.};
     config.seated_climb.climb_effort_cap_grade_nm = {1000.};

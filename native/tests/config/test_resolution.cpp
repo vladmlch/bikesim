@@ -490,7 +490,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
                 "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -510,7 +510,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[seated_climb]\nperiod_s = 0.00125\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
                 "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -530,7 +530,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
             "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-            "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+            "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -547,7 +547,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
             "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-            "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+            "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -627,8 +627,9 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "period_s = 0.00125\nreaction_delay_s = 0.15\n"
         "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
         "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
-        "min_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n";
+        "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n";
     for (const auto missing : {"period_s", "reaction_delay_s",
+                              "max_forward_lean_rad", "max_crank_torque_nm",
                               "lean_rate_rad_s", "orientation_tau_s",
                               "surge_budget_s", "trim_dead_time_s"}) {
         std::string tail(seated_tail);
@@ -655,7 +656,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "period_s = 0.00125\nreaction_delay_s = 0.151\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
                 "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
-                "min_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -670,7 +671,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "period_s = 0.00125\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.002\n"
                 "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
-                "min_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -686,7 +687,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "period_s = 0.002\nreaction_delay_s = 0.15\n"
                 "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
                 "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
-                "min_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -705,7 +706,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "period_s = 0.002\nreaction_delay_s = 0.151\n"
             "lean_rate_rad_s = 0.5\norientation_tau_s = 0.001\n"
             "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
-            "min_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+            "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -738,7 +739,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+        "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\n";
     const std::string_view repo_tail =
         "reposition_min_effort_nm = 20.0\n"
@@ -782,7 +783,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+        "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = true\n"
         "reposition_min_effort_nm = 20.0\n"
         "reposition_stall_progress_rad = 0.5\n"
@@ -920,7 +921,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+        "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -1030,7 +1031,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+        "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -1147,7 +1148,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[seated_climb]\nenabled = false\nperiod_s = 0.03\n"
                 "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
                 "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-                "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+                "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\ntau = 0.08\n"
                 "release_hold_s = 0.3\n"
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
@@ -1188,7 +1189,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "stop_time_s = 0.35\n"
         "[seated_climb]\nenabled = true\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-        "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n";
+        "orientation_tau_s = 0.5\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n";
     for (const auto& [key, value, peer] : {
              std::tuple{"trim_dead_time_s", "0.201", "surge_budget_s = 15.0\n"},
              {"surge_budget_s", "15.001", "trim_dead_time_s = 0.2\n"}}) {
@@ -1231,7 +1232,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "stop_time_s = 0.35\n"
             "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
             "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
-            "orientation_tau_s = 0.5\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+            "orientation_tau_s = 0.5\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
             "trim_dead_time_s = 0.201\nsurge_budget_s = 15.001\n" +
             std::string(kAuxTimings) + std::string(kResearchSection)));
         bt::require(disabled.seated_climb.trim_dead_time_s == 0.201,
@@ -1285,7 +1286,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
-        "trim_dead_time_s = 0.2\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
+        "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
@@ -1463,6 +1464,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.seated_climb.climb_effort_full_speed_mps = 4.0;
         unresolved_base.seated_climb.surge_budget_s = 15.;
         unresolved_base.seated_climb.trim_dead_time_s = .2;
+        unresolved_base.seated_climb.max_crank_torque_nm = 60.;
+        unresolved_base.seated_climb.max_forward_lean_rad = .55;
         unresolved_base.drive.assist.release_hold_s = .3;
         unresolved_base.drive.pedaling.stop_time_s = .35;
         unresolved_base.drive.pedaling.reposition_min_effort_nm = 20.;

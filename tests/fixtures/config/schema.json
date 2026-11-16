@@ -1475,7 +1475,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 60.0,
+          "default": null,
           "default_factory": null,
           "name": "max_crank_torque_nm",
           "type": "<class 'float'>"
@@ -1487,7 +1487,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.35,
+          "default": null,
           "default_factory": null,
           "name": "max_forward_lean_rad",
           "type": "<class 'float'>"

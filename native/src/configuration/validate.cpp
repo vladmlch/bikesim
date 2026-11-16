@@ -824,6 +824,11 @@ void post_init(const EndStopConfig &config) {
 void post_init(const SeatedClimbConfig &config) {
     // seated_climb.py SeatedClimbConfig.__post_init__ on the shared
     // rider::IntentConfig record.
+    // max_crank_torque_nm and max_forward_lean_rad are required profile
+    // keys: the -1. unset sentinel is rejected by the positive /
+    // non-negative domain checks below (the reposition_back_rate_rad_s
+    // idiom), so a programmatic construction that leaves either unset
+    // fails here naming the field.
     static constexpr std::array kPositive{
         std::pair{"period_s", &SeatedClimbConfig::period_s},
         std::pair{"target_crank_power_w",
@@ -1352,7 +1357,8 @@ SimulationPhysicsConfig default_physics() {
     // grounded hold (four steps), a 10-step contact dropout at that
     // tick, the seated-climb intent's 1.25 ms period, 150 ms reaction
     // delay, 0.5 rad/s lean rate, 0.5 s orientation smoothing, 15 s surge
-    // budget and 0.2 s trim dead time, the motor run-on 0.3 s, coast
+    // budget and 0.2 s trim dead time, the 60 N m crank torque cap and the
+    // 0.55 rad forward lean ceiling, the motor run-on 0.3 s, coast
     // stop 0.35 s, shift cooldown 0.4 s and cut 0.2 s, the balance
     // dwell 0.5 s and grace 3 s, the crank-reposition manoeuvre's former
     // code defaults, and the research-mode timings the CLI and request
@@ -1376,6 +1382,8 @@ SimulationPhysicsConfig default_physics() {
     config.seated_climb.orientation_tau_s = .5;
     config.seated_climb.surge_budget_s = 15.;
     config.seated_climb.trim_dead_time_s = .2;
+    config.seated_climb.max_crank_torque_nm = 60.0;
+    config.seated_climb.max_forward_lean_rad = 0.55;
     config.seated_climb.min_elbow_flexion_deg = 15.0;
     config.seated_climb.climb_effort_cap_grades = {0.};
     config.seated_climb.climb_effort_cap_grade_nm = {1000.};

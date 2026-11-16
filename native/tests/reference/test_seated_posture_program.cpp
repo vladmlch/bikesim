@@ -97,6 +97,8 @@ rider::IntentConfig enabled(double lean_rate = 0.) {
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     config.lean_rate_rad_s = lean_rate != 0. ? lean_rate : .5;
+    config.max_crank_torque_nm = 60.;
+    config.max_forward_lean_rad = .35;
     return config;
 }
 
@@ -584,6 +586,7 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
     config.orientation_tau_s = .5;
     config.min_elbow_flexion_deg = 15.;
     config.lean_rate_rad_s = 10.;
+    config.max_forward_lean_rad = .35;
     config.surge_budget_s = 15.;
     config.trim_dead_time_s = .2;
     rider::SeatedPostureProgram program(config);

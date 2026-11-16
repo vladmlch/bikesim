@@ -238,7 +238,8 @@ void test_surge_and_trim_are_validated_in_climb_config() {
         config.climb_effort_cap_grade_nm = {1000.};
         config.climb_effort_rise_speed_mps = 2.5;
         config.climb_effort_full_speed_mps = 4.0;
-        cfg::detail::post_init(config);
+        config.max_crank_torque_nm = 60.;
+        config.max_forward_lean_rad = .35;        cfg::detail::post_init(config);
         bt::require(config.surge_power_w == 400. &&
                         config.surge_grade == .2 &&
                         config.surge_budget_s == 15. &&
@@ -259,7 +260,8 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.climb_effort_cap_grade_nm = {1000.};
             config.climb_effort_rise_speed_mps = 2.5;
             config.climb_effort_full_speed_mps = 4.0;
-            config.*field = 0.;
+            config.max_crank_torque_nm = 60.;
+            config.max_forward_lean_rad = .35;            config.*field = 0.;
             cfg::detail::post_init(config);
         });
     for (const auto field :
@@ -280,7 +282,8 @@ void test_surge_and_trim_are_validated_in_climb_config() {
             config.climb_effort_cap_grade_nm = {1000.};
             config.climb_effort_rise_speed_mps = 2.5;
             config.climb_effort_full_speed_mps = 4.0;
-            config.*field = -1.;
+            config.max_crank_torque_nm = 60.;
+            config.max_forward_lean_rad = .35;            config.*field = -1.;
             cfg::detail::post_init(config);
         });
 }

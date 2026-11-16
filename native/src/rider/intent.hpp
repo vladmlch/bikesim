@@ -40,9 +40,9 @@ struct IntentConfig {
     double period_s = -1.;
     double reaction_delay_s = -1.;
     double target_crank_power_w = 225.;
-    double max_crank_torque_nm = 60.;
+    double max_crank_torque_nm = -1.;
     double lean_gain = 1.;
-    double max_forward_lean_rad = .35;
+    double max_forward_lean_rad = -1.;
     double max_backward_lean_rad = .10;
     double lean_rate_rad_s = -1.;
     double orientation_tau_s = -1.;

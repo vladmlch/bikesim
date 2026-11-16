@@ -33,6 +33,8 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                 {"orientation_tau_s", io::Value{io::Number{"0.5"}}},
                 {"surge_budget_s", io::Value{io::Number{"15"}}},
                 {"trim_dead_time_s", io::Value{io::Number{"0.2"}}},
+                {"max_crank_torque_nm", io::Value{io::Number{"60.0"}}},
+                {"max_forward_lean_rad", io::Value{io::Number{"0.35"}}},
                 {"min_elbow_flexion_deg", io::Value{io::Number{"15.0"}}},
                 {"climb_effort_cap_grades", io::Value{io::Value::Array{io::Value{io::Number{"0.0"}}}}},
                 {"climb_effort_cap_grade_nm", io::Value{io::Value::Array{io::Value{io::Number{"1000.0"}}}}},

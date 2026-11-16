@@ -256,8 +256,8 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
 
 // test_reposition_backpedal_respects_the_clutch_topology — R5 + S3:
 // while the crank runs backward the rear wheel is not dragged back
-// (freehub), the motor-side drive shaft never reverses and the crank
-// clutch stays open, the delivered crank torque keeps inside the
+// (freehub), the crank clutch stays open and applies no backward torque
+// to the motor-side shaft, the delivered crank torque keeps inside the
 // reposition branch's bound, and both pedal weld normals stay safe.
 void test_reposition_backpedal_respects_the_clutch_topology() {
     auto runtime = reposition_env();

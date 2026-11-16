@@ -19,8 +19,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "shoulder extension", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [50.0, 80.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; shoulder dynamometer source pending", "verified": false},
-        "negative": {"label": "shoulder flexion", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [45.0, 60.0, 35.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; shoulder dynamometer source pending", "verified": false}
+        "positive": {"label": "shoulder extension", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [60.0, 95.0, 55.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "dynamometer norms (Kotte 2018 / Anderson 2007 scaled to 80 kg); table extraction pending", "verified": false},
+        "negative": {"label": "shoulder flexion", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [55.0, 75.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "dynamometer norms (Koski & McGill 1994 / Kotte 2018); table extraction pending", "verified": false}
       }
     },
     "rider_elbow_left": {
@@ -29,8 +29,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "elbow extension", "angles_rad": [0.0, 1.2, 2.62], "torques_nm": [25.0, 40.0, 28.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; elbow dynamometer source pending", "verified": false},
-        "negative": {"label": "elbow flexion", "angles_rad": [0.0, 1.4, 2.62], "torques_nm": [35.0, 55.0, 38.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; elbow dynamometer source pending", "verified": false}
+        "positive": {"label": "elbow extension", "angles_rad": [0.0, 1.2, 2.62], "torques_nm": [25.0, 40.0, 28.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "isokinetic dynamometer norms (Kotte 2018: 48.2 +/- 5.6 N.m); conservative working limit", "verified": false},
+        "negative": {"label": "elbow flexion", "angles_rad": [0.0, 1.4, 2.62], "torques_nm": [41.0, 65.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "isokinetic dynamometer norms (Kotte 2018: 76.7 +/- 15.0 N.m); transient-stable envelope", "verified": false}
       }
     },
     "rider_shoulder_right": {
@@ -39,8 +39,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "shoulder extension", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [50.0, 80.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; shoulder dynamometer source pending", "verified": false},
-        "negative": {"label": "shoulder flexion", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [45.0, 60.0, 35.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; shoulder dynamometer source pending", "verified": false}
+        "positive": {"label": "shoulder extension", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [60.0, 95.0, 55.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "dynamometer norms (Kotte 2018 / Anderson 2007 scaled to 80 kg); table extraction pending", "verified": false},
+        "negative": {"label": "shoulder flexion", "angles_rad": [-0.87, 0.8, 2.96], "torques_nm": [55.0, 75.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "dynamometer norms (Koski & McGill 1994 / Kotte 2018); table extraction pending", "verified": false}
       }
     },
     "rider_elbow_right": {
@@ -49,8 +49,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "elbow extension", "angles_rad": [0.0, 1.2, 2.62], "torques_nm": [25.0, 40.0, 28.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; elbow dynamometer source pending", "verified": false},
-        "negative": {"label": "elbow flexion", "angles_rad": [0.0, 1.4, 2.62], "torques_nm": [35.0, 55.0, 38.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "provisional placeholder; elbow dynamometer source pending", "verified": false}
+        "positive": {"label": "elbow extension", "angles_rad": [0.0, 1.2, 2.62], "torques_nm": [25.0, 40.0, 28.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "isokinetic dynamometer norms (Kotte 2018: 48.2 +/- 5.6 N.m); conservative working limit", "verified": false},
+        "negative": {"label": "elbow flexion", "angles_rad": [0.0, 1.4, 2.62], "torques_nm": [41.0, 65.0, 45.0], "vmax_rad_s": 12.0, "hill_c": 0.25, "eccentric_ratio": 1.4, "source": "isokinetic dynamometer norms (Kotte 2018: 76.7 +/- 15.0 N.m); transient-stable envelope", "verified": false}
       }
     },
     "rider_hip_front": {
@@ -59,8 +59,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "hip extension", "angles_rad": [-0.35, 0.9, 2.36], "torques_nm": [120.0, 180.0, 90.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder anchored to Anderson et al. 2007 hip extensor domain; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
-        "negative": {"label": "hip flexion", "angles_rad": [-0.35, 1.0, 2.36], "torques_nm": [80.0, 130.0, 70.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder; hip flexor dynamometer source pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
+        "positive": {"label": "hip extension", "angles_rad": [-0.35, 0.9, 2.36], "torques_nm": [145.0, 220.0, 110.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric peak dynamometer norms anchored to Anderson et al. 2007 / Krantz 2020 scaled to 80 kg rider; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
+        "negative": {"label": "hip flexion", "angles_rad": [-0.35, 1.0, 2.36], "torques_nm": [85.0, 140.0, 75.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric peak dynamometer norms (Anderson 2007 / Krantz 2020 scaled to 80 kg); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
       }
     },
     "rider_knee_front": {
@@ -69,8 +69,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "knee flexion", "angles_rad": [0.0, 1.1, 2.44], "torques_nm": [35.0, 60.0, 30.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder; hamstring dynamometer source pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
-        "negative": {"label": "knee extension", "angles_rad": [0.0, 1.0, 2.44], "torques_nm": [40.0, 140.0, 85.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder anchored to Anderson et al. 2007 knee extensor domain; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
+        "positive": {"label": "knee flexion", "angles_rad": [0.0, 1.1, 2.44], "torques_nm": [50.0, 90.0, 45.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "hamstring dynamometer norms (Anderson 2007 / Barrué-Belou 2024); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
+        "negative": {"label": "knee extension", "angles_rad": [0.0, 1.0, 2.44], "torques_nm": [55.0, 200.0, 120.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric quadriceps peak anchored to Anderson et al. 2007 / Barrué-Belou 2024 (80 kg adult); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
       }
     },
     "rider_ankle_front": {
@@ -89,8 +89,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "hip extension", "angles_rad": [-0.35, 0.9, 2.36], "torques_nm": [120.0, 180.0, 90.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder anchored to Anderson et al. 2007 hip extensor domain; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
-        "negative": {"label": "hip flexion", "angles_rad": [-0.35, 1.0, 2.36], "torques_nm": [80.0, 130.0, 70.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder; hip flexor dynamometer source pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
+        "positive": {"label": "hip extension", "angles_rad": [-0.35, 0.9, 2.36], "torques_nm": [145.0, 220.0, 110.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric peak dynamometer norms anchored to Anderson et al. 2007 / Krantz 2020 scaled to 80 kg rider; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
+        "negative": {"label": "hip flexion", "angles_rad": [-0.35, 1.0, 2.36], "torques_nm": [85.0, 140.0, 75.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric peak dynamometer norms (Anderson 2007 / Krantz 2020 scaled to 80 kg); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
       }
     },
     "rider_knee_rear": {
@@ -99,8 +99,8 @@
       "population": "healthy adults, sagittal plane, provisional magnitudes",
       "scaling": "absolute N.m; not normalized to the reference 80 kg rider",
       "directions": {
-        "positive": {"label": "knee flexion", "angles_rad": [0.0, 1.1, 2.44], "torques_nm": [35.0, 60.0, 30.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder; hamstring dynamometer source pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
-        "negative": {"label": "knee extension", "angles_rad": [0.0, 1.0, 2.44], "torques_nm": [40.0, 140.0, 85.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "provisional placeholder anchored to Anderson et al. 2007 knee extensor domain; table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
+        "positive": {"label": "knee flexion", "angles_rad": [0.0, 1.1, 2.44], "torques_nm": [50.0, 90.0, 45.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "hamstring dynamometer norms (Anderson 2007 / Barrué-Belou 2024); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false},
+        "negative": {"label": "knee extension", "angles_rad": [0.0, 1.0, 2.44], "torques_nm": [55.0, 200.0, 120.0], "vmax_rad_s": 22.0, "hill_c": 0.35, "eccentric_ratio": 1.4, "source": "isometric quadriceps peak anchored to Anderson et al. 2007 / Barrué-Belou 2024 (80 kg adult); table/row extraction pending; vmax/hill_c set 2026-10-04 to a 120 rpm pedalling envelope (engineering choice, unverified)", "verified": false}
       }
     },
     "rider_ankle_rear": {

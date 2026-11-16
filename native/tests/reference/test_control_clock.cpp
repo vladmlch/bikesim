@@ -159,17 +159,17 @@ test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
     // the rider write re-derives clip(held, directional_limit(qvel))
     // each step (runtime/step.cpp write site -> rider/
     // spindle_controller.cpp); the rider channels whose cap binds —
-    // act_rider_elbow_left/right and act_rider_hip_rear — update on
-    // non-tick steps instead of holding.
+    // act_rider_elbow_left/right, act_rider_hip_rear and
+    // act_rider_knee_rear — update on non-tick steps instead of holding.
     const auto ctrl = episode.ctrl_written.doubles(true);
     const std::size_t nu = episode.ctrl_written.shape.at(1);
     const bike::model::ModelOwner model{
         engine::load_model_image(env->model_image().mjb)};
     bt::require(model->nu == static_cast<int>(nu),
                 "ctrl row width is the model actuator count");
-    constexpr std::array<const char *, 3> every_step_actuators{
+    constexpr std::array<const char *, 4> every_step_actuators{
         "act_rider_elbow_left", "act_rider_elbow_right",
-        "act_rider_hip_rear"};
+        "act_rider_hip_rear", "act_rider_knee_rear"};
     std::array<std::size_t, every_step_actuators.size()> every_step{};
     for (std::size_t k = 0; k < every_step_actuators.size(); ++k) {
         const int id =

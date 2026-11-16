@@ -1695,6 +1695,18 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     : hold_nm < -task                          ? -task
                                                                : hold_nm;
                 total = task + applied_hold;
+            } else if (command.crank_reposition) {
+                // Reposition backpedal (2026-11-16 plan task 6): damp
+                // toward the negative crank-rate goal the manoeuvre
+                // publishes. The coasting press servo does not run — it
+                // would zero the very torque the manoeuvre needs — and
+                // the carried hold is neither integrated nor applied, so
+                // the pedaling weld servo resumes from its held value.
+                const double raw =
+                    kRepositionDampNmSRad *
+                    (command.crank_target_rate_rad_s - rate);
+                total = std::clamp(raw, -kRepositionTorqueLimitNm,
+                                   kRepositionTorqueLimitNm);
             } else {
                 // Coasting is a rider who stops pushing (user ruling
                 // 2026-11-10): the coast branch applies no crank torque —

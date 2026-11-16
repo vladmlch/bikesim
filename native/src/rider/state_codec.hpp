@@ -68,6 +68,11 @@ namespace rider {
     decode_rider_posture(const bike::io::Value &value, std::string_view path);
     [[nodiscard]] RiderCommand
     decode_rider_command(const bike::io::Value &value, std::string_view path);
+    // The command-document inverse: crank_reposition is the one
+    // conditional member — a disengaged command keeps the historical
+    // five-key shape.
+    [[nodiscard]] bike::io::Value
+    encode_rider_command(const RiderCommand &command);
     // Ordered joint-name -> scalar dict decode — the held_control/
     // held_rider_terms wire shapes the runtime bootstrap reads.
     [[nodiscard]] NamedEntries<double>

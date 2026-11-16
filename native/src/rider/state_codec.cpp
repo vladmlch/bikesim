@@ -2018,7 +2018,8 @@ RiderCommand decode_rider_command(const bio::Value &value,
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d,
                   keys("mean_crank_torque_nm", "enabled", "posture",
-                       "crank_target_phase_rad", "crank_target_rate_rad_s"));
+                       "crank_target_phase_rad", "crank_target_rate_rad_s"),
+                  keys("crank_reposition"));
     RiderCommand command;
     command.mean_crank_torque_nm =
         d["mean_crank_torque_nm"].finite_real(path);
@@ -2031,9 +2032,14 @@ RiderCommand decode_rider_command(const bio::Value &value,
         d["crank_target_phase_rad"].optional_real(path);
     command.crank_target_rate_rad_s =
         d["crank_target_rate_rad_s"].finite_real(path);
+    command.crank_reposition =
+        d.contains("crank_reposition") &&
+        d["crank_reposition"].boolean(path);
     if (command.crank_target_phase_rad.has_value() &&
         command.mean_crank_torque_nm > 0.)
         invalid(path, "coasting goals cannot request pedaling effort");
+    if (command.crank_reposition && command.mean_crank_torque_nm > 0.)
+        invalid(path, "crank reposition cannot request pedaling effort");
     return command;
 }
 
@@ -2075,6 +2081,23 @@ bio::Value encode_rider_posture(const RiderPosture &posture) {
         out.emplace_back("pelvis_offset_m", bio::Value{});
     }
     out.emplace_back("use_saddle", bio::Value{posture.use_saddle});
+    return bio::Value{std::move(out)};
+}
+
+bio::Value encode_rider_command(const RiderCommand &command) {
+    bio::Value::Object out;
+    out.emplace_back("mean_crank_torque_nm",
+                     real_value(command.mean_crank_torque_nm));
+    out.emplace_back("enabled", bio::Value{command.enabled});
+    out.emplace_back("posture", encode_rider_posture(command.posture));
+    out.emplace_back("crank_target_phase_rad",
+                     optional_value(command.crank_target_phase_rad));
+    out.emplace_back("crank_target_rate_rad_s",
+                     real_value(command.crank_target_rate_rad_s));
+    // Emitted only while the manoeuvre runs — a disengaged command
+    // keeps the historical five-key document byte-identical.
+    if (command.crank_reposition)
+        out.emplace_back("crank_reposition", bio::Value{true});
     return bio::Value{std::move(out)};
 }
 

@@ -649,6 +649,121 @@ void test_spindle_coasting_applies_no_crank_torque() {
     }
 }
 
+// The crank-reposition manoeuvre's dedicated branch (2026-11-16 plan
+// task 6): a zero-effort command carrying crank_reposition backpedals
+// the crank toward its negative rate goal —
+// raw = kRepositionDampNmSRad * (crank_target_rate_rad_s - rate),
+// clamped inside ±kRepositionTorqueLimitNm. The coasting press servo
+// would drive that same torque to zero, so the branch never consults
+// it: the weld reading changes nothing and the carried pedaling hold
+// survives untouched for the resume.
+void test_spindle_reposition_backpedals_toward_goal() {
+    Plant plant = make_plant();
+    stage(plant, .35, 0.);
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_phase_rad = 0.;
+    command.crank_target_rate_rad_s = -3.;
+    command.crank_reposition = true;
+    (void)plant.controller->compute(plant.data, command, true,
+                                    .00125, false);
+    const double task = plant.controller->state()
+                            .allocation_diagnostics.crank_task_nm;
+    bt::require(task < 0. && task >= -rider::kRepositionTorqueLimitNm,
+                std::format("reposition task {:.6f} N.m: backward and "
+                            "inside the torque limit", task));
+    bt::require(task == -6.,
+                std::format("damping law 2 N.m.s/rad over -3 rad/s at a "
+                            "stopped crank lands exactly, got {:.6f}",
+                            task));
+    // A weld reading equal to the delivered torque does not cancel the
+    // request — the press servo never runs in this branch.
+    (void)plant.controller->compute(plant.data, command, true,
+                                    .00125, false, std::nullopt, false,
+                                    task);
+    const double held = plant.controller->state()
+                            .allocation_diagnostics.crank_task_nm;
+    bt::require(held == task,
+                "the weld reading leaves the reposition task unchanged");
+    // A forward-rolling crank saturates the backpedal request at the
+    // declared limit, never beyond.
+    {
+        Plant fast = make_plant();
+        stage(fast, .35, 40.);
+        (void)fast.controller->compute(fast.data, command, true,
+                                       .00125, false);
+        bt::require(fast.controller->state()
+                            .allocation_diagnostics.crank_task_nm ==
+                        -rider::kRepositionTorqueLimitNm,
+                    "the reposition torque clamps at the limit");
+    }
+    // The pedaling hold is carried through untouched — the branch
+    // neither zeroes it like the coast branch nor adds it to the task.
+    {
+        Plant carried = make_plant();
+        stage(carried, .35, 0.);
+        auto snapshot = carried.controller->state();
+        snapshot.coast_hold_nm = 7.;
+        carried.controller->commit_state(std::move(snapshot));
+        (void)carried.controller->compute(carried.data, command, true,
+                                          .00125, false);
+        const auto state = carried.controller->state();
+        bt::require(state.coast_hold_nm == 7. &&
+                        state.allocation_diagnostics.crank_task_nm == -6.,
+                    "the carried pedaling hold survives untouched");
+    }
+}
+
+// The command document (2026-11-16 plan task 6): crank_reposition is
+// an optional member the decoder admits only beside a zero-effort
+// command, and the encoder emits it only while the manoeuvre runs —
+// a disengaged command keeps the historical five-key document.
+void test_spindle_reposition_command_wire() {
+    const auto document = [](std::string_view extra = {},
+                             std::string_view effort = "0.0") {
+        return bio::parse_json(
+            std::string(R"({"mean_crank_torque_nm":)") +
+            std::string(effort) +
+            R"(,"enabled":true,"posture":{"torso_lean_rad":0.1,"pelvis_pitch_rad":0.0,"pelvis_offset_m":null,"use_saddle":true},"crank_target_phase_rad":0.0,"crank_target_rate_rad_s":-3.0)" +
+            std::string(extra) + "}");
+    };
+    const rider::RiderCommand engaged = rider::decode_rider_command(
+        document(R"(,"crank_reposition":true)"), "command");
+    bt::require(engaged.crank_reposition,
+                "the optional member decodes");
+    const rider::RiderCommand disengaged =
+        rider::decode_rider_command(document(), "command");
+    bt::require(!disengaged.crank_reposition,
+                "the absent member decodes to false");
+    bt::require(throws_std([&] {
+                    (void)rider::decode_rider_command(
+                        document(R"(,"crank_reposition":true)", "5.0"),
+                        "command");
+                }),
+                "reposition with pedaling effort rejects");
+    bt::require(throws_std([&] {
+                    (void)rider::decode_rider_command(
+                        document(R"(,"crank_reposition":1)"), "command");
+                }),
+                "a non-bool crank_reposition rejects");
+    // The encoder emits the member only when engaged.
+    const bio::Value encoded = rider::encode_rider_command(engaged);
+    const bio::Value *const flag = bio::find_member(
+        std::get<bio::Value::Object>(encoded.data), "crank_reposition");
+    const auto *const flag_bool =
+        flag != nullptr ? std::get_if<bool>(&flag->data) : nullptr;
+    bt::require(flag_bool != nullptr && *flag_bool,
+                "the engaged command carries crank_reposition: true");
+    const bio::Value quiet = rider::encode_rider_command(disengaged);
+    bt::require(bio::find_member(std::get<bio::Value::Object>(quiet.data),
+                                 "crank_reposition") == nullptr,
+                "the disengaged command keeps the five-key shape");
+    // The flag survives the full encode-decode pass.
+    bt::require(rider::decode_rider_command(encoded, "command")
+                    .crank_reposition,
+                "the engaged flag round-trips");
+}
+
 // «Действует» 9's leg weight at the pedal — the same γ·leg-gravity
 // quantity the seated ride's LegWeightProbe measures
 // (test_seated_pedaling_cycle.cpp): the pedal-normal share of each
@@ -1209,6 +1324,8 @@ int main() {
         test_effort_ceiling_rejects_bad_inputs();
         test_free_crank_stays_held_under_balanced_leg_weights();
         test_spindle_coasting_applies_no_crank_torque();
+        test_spindle_reposition_backpedals_toward_goal();
+        test_spindle_reposition_command_wire();
         test_spindle_coasting_leg_rests_with_own_weight();
         test_legacy_coasting_leg_rests_with_own_weight();
         test_spindle_compute_matches_python();

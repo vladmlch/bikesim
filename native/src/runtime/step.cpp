@@ -1474,6 +1474,8 @@ PhysicalStep::apply_forces_body(
             command.crank_target_rate_rad_s =
                 control.crank_target_rate_rad_s.value_or(
                     pedaling.target_rate_rad_s);
+            command.crank_reposition =
+                drivetrain::is_reposition(pedaling.reason);
             accumulator_.add("rider_joint_envelope",
                              rider_control_->envelope_forces(d).first);
             rider::NamedEntries<double> torques;

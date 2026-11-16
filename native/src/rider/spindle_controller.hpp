@@ -119,7 +119,18 @@ struct RiderCommand {
     RiderPosture posture;
     std::optional<double> crank_target_phase_rad;
     double crank_target_rate_rad_s = 0.;
+    // The crank-reposition manoeuvre flag (2026-11-16 plan task 6): set
+    // only while the drivetrain backpedals the crank toward a horizontal
+    // pose — always beside a zero effort request and a negative
+    // crank_target_rate_rad_s, which the command decoder enforces.
+    bool crank_reposition = false;
 };
+
+// The reposition branch's dedicated torque law — the values the
+// removed coasting_brake_* knobs used to carry (2026-11-10 29dd2d1c):
+// a rate damper toward the backpedal goal inside a hard torque bound.
+inline constexpr double kRepositionDampNmSRad = 2.0;
+inline constexpr double kRepositionTorqueLimitNm = 60.0;
 
 // Insertion-ordered name->T pairs — mirrors Python dict ordering on the
 // wire (alphabetical std::map order would reorder the anatomical joint

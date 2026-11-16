@@ -82,6 +82,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
             if (action == Action::markers) { renderer->set_markers(input.markers);if(!renderer->has_markers())print("[KEY G] No marker geoms in this model."); }
             if (action == Action::help) print(help_text(options.mode));
             if (action == Action::fixed_parameter) print("Physical parameters are fixed per run; edit the configuration and start a new run.");
+            if (action == Action::crank_reposition && hooks.crank_reposition) hooks.crank_reposition();
             request_frame = true;
         }
         // A close event is a hard boundary: never begin another control tick.
@@ -175,6 +176,7 @@ RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options
     hooks.terminal=[&]{return ride.snapshot().outcome.has_value();};
     hooks.reset=[&]{if(lifecycle.before_reset)lifecycle.before_reset();ride.reset();if(lifecycle.after_reset)lifecycle.after_reset();};
     hooks.brakes=[&](double f,double r){front=f;rear=r;};
+    hooks.crank_reposition=[&]{ride.request_crank_reposition();};
     hooks.operator_event=lifecycle.operator_event;
     hooks.close_requested=lifecycle.close_requested;
     return run(std::move(hooks),ride.model_image(),options);

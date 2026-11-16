@@ -23,6 +23,7 @@ Action action_for_key(Mode mode, int key) {
         case 'B': return mode == Mode::research ? Action::toggle_brakes : Action::none;
         case ',': return mode == Mode::physical ? Action::brake_less : Action::none;
         case '.': return mode == Mode::physical ? Action::brake_more : Action::none;
+        case 'V': return mode == Mode::physical ? Action::crank_reposition : Action::none;
         default: break;
     }
     if (mode == Mode::physical && key >= 0 && key < 128 && std::string_view("PLKJHUYX09876543[]-=NM;'E").find(static_cast<char>(key)) != std::string_view::npos)
@@ -53,7 +54,7 @@ void InputState::apply(Action action) {
         case Action::none: case Action::close: case Action::camera_cycle:
         case Action::camera_side: case Action::camera_chase: case Action::help:
         case Action::slower: case Action::faster: case Action::normal_speed:
-        case Action::fixed_parameter: break;
+        case Action::fixed_parameter: case Action::crank_reposition: break;
     }
 }
 double InputState::brake_demand() const noexcept { return braking ? brake_strength : 0.; }
@@ -62,7 +63,7 @@ std::string help_text(Mode mode) {
     if (mode == Mode::research) return "Space pause | B brakes | R close/reset | " + controls;
     if (mode == Mode::inspection) return "Space pause | R restart | Left/Right seek 1 s (Shift 0.1 s) | Up/Down speed x1.5 | " + controls;
     if (mode == Mode::checked_replay) return "Space pause | R restart | " + controls;
-    if (mode == Mode::physical) return "Space brake toggle | ,/. brake strength | R reset | " + controls +
+    if (mode == Mode::physical) return "Space brake toggle | ,/. brake strength | V crank reposition | R reset | " + controls +
         "\nPhysical parameters are fixed per run; edit the configuration and start a new run.";
     return controls;
 }

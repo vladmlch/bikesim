@@ -136,6 +136,7 @@ int physical_run(std::unique_ptr<ResolvedRide> resolved) {
             hooks.advance=[&](std::int64_t target,double budget){(void)runtime->advance(std::min(target,max_steps),{},front,rear,budget);runtime->release_samples();};
             hooks.brakes=[&](double f,double r){front=f;rear=r;(void)journal->emit("brakes",wall(),runtime->snapshot().step,{},Value{Object{{"front",real(f)},{"rear",real(r)}}});};
             hooks.pause=[&](bool paused){(void)journal->emit(paused?"pause":"resume",wall(),runtime->snapshot().step);};
+            hooks.crank_reposition=[&]{runtime->request_crank_reposition();(void)journal->emit("crank_reposition",wall(),runtime->snapshot().step);};
             hooks.reset=[&]{seal("reset");runtime->reset();++episode_id;sealed=false;reason.clear();episode_started=platform::monotonic_seconds();journal=std::make_unique<recording::EpisodeJournal>(capture,episode_id);(void)journal->emit("episode_started",wall(),0);};
             hooks.stop=[&]{if(reason.empty())reason="viewer_closed";};
             const auto options=ride_viewer_options(args,dt);

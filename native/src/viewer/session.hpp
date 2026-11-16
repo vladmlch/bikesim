@@ -33,6 +33,7 @@ struct SessionHooks {
     std::function<void()> stop;
     std::function<void(double front, double rear)> brakes;
     std::function<void(bool)> pause;
+    std::function<void()> crank_reposition;
     std::function<bool(int)> unhandled_key;
     std::function<bool(int key, int modifiers)> key_event;
     // Needed only when an operation replaces the compiled model.

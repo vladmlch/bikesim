@@ -61,6 +61,15 @@ void controls_and_camera() {
         "both replay modes restart while inspection seek keys reach the cursor owner");
     bt::require(view::action_for_key(view::Mode::physical, 'P') == view::Action::fixed_parameter,
         "physical parameters stay fixed per run");
+    // 2026-11-16 plan task 8 / D1: V fires the crank-reposition one-shot
+    // in the physical viewer only; research keeps V unbound.
+    bt::require(view::action_for_key(view::Mode::physical, 'V') == view::Action::crank_reposition &&
+        view::action_for_key(view::Mode::research, 'v') == view::Action::none &&
+        view::action_for_key(view::Mode::research, 'V') == view::Action::none &&
+        view::action_for_key(view::Mode::inspection, 'V') == view::Action::none,
+        "the reposition request is physical-mode only");
+    bt::require(view::help_text(view::Mode::physical).find("V crank reposition") != std::string::npos,
+        "physical help text documents the reposition key");
     view::InputState input;
     input.apply(view::Action::toggle_brakes); input.apply(view::Action::brake_less);
     bt::require(std::abs(input.brake_demand() - .9) < 1e-12, "brake demand uses the selected strength");

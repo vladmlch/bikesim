@@ -11,7 +11,7 @@ enum class Mode : std::uint8_t { physical, research, inspection, checked_replay 
 enum class Action : std::uint8_t {
     none, close, reset, toggle_pause, toggle_brakes, brake_less, brake_more,
     camera_cycle, camera_side, camera_chase, telemetry, markers, help,
-    slower, faster, normal_speed, fixed_parameter
+    slower, faster, normal_speed, fixed_parameter, crank_reposition
 };
 [[nodiscard]] Action action_for_key(Mode, int key);
 [[nodiscard]] unsigned speed_for_action(Action, unsigned current);

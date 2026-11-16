@@ -285,7 +285,10 @@ namespace {
             .target_rate_rad_s = num(p, "target_rate_rad_s"),
             .deceleration_rad_s2 = num(p, "deceleration_rad_s2"),
             .effort = num(p, "_effort"),
-            .cadence_ema = optional_num(p, "_cadence_ema")};
+            .cadence_ema = optional_num(p, "_cadence_ema"),
+            // Task 5 decodes an optional "_reposition" member; the
+            // historical key set has none, so the snapshot stays absent.
+            .reposition = std::nullopt};
         out.shifting = {
             .rear_teeth = integer(s, "rear_teeth"),
             .from_teeth = integer(s, "from_teeth"),

@@ -35,20 +35,23 @@ void test_stall_detector() {
     const StallDetectorLimits limits{.window_s = 1., .crank_progress_rad = .5, .wheel_progress_rad = .5};
     {   // wheel progress alone prevents a stall
         StallDetectorState s; bool fired = false;
-        for (int i = 0; i < 2400; ++i) fired = drivetrain::stall_update(s, limits, 0., 1., dt, true) || fired;
+        for (int i = 0; i < 2400; ++i)
+            fired = drivetrain::stall_update(s, limits, {.crank_rad_s = 0., .wheel_rad_s = 1.}, dt, true) || fired;
         bt::require(!fired, "a rolling wheel with a parked crank is not a stall");
     }
     {   // rollback is not progress: fires exactly once after the window
         StallDetectorState s; int fired = 0;
-        for (int i = 0; i < 880; ++i) fired += drivetrain::stall_update(s, limits, -.8, -2., dt, true) ? 1 : 0;
+        for (int i = 0; i < 880; ++i)
+            fired += drivetrain::stall_update(s, limits, {.crank_rad_s = -.8, .wheel_rad_s = -2.}, dt, true) ? 1 : 0;
         bt::require(fired == 1, "backward motion accumulates as no progress");
     }
     {   // dropping the load restarts the window
         StallDetectorState s;
-        for (int i = 0; i < 720; ++i) bt::require(!drivetrain::stall_update(s, limits, 0., 0., dt, true), "no early fire");
-        (void)drivetrain::stall_update(s, limits, 0., 0., dt, false);
+        const drivetrain::StallDetectorRates parked{.crank_rad_s = 0., .wheel_rad_s = 0.};
+        for (int i = 0; i < 720; ++i) bt::require(!drivetrain::stall_update(s, limits, parked, dt, true), "no early fire");
+        (void)drivetrain::stall_update(s, limits, parked, dt, false);
         bool fired = false;
-        for (int i = 0; i < 720; ++i) fired = drivetrain::stall_update(s, limits, 0., 0., dt, true) || fired;
+        for (int i = 0; i < 720; ++i) fired = drivetrain::stall_update(s, limits, parked, dt, true) || fired;
         bt::require(!fired, "a stall needs a full loaded window");
     }
 }
@@ -90,8 +93,9 @@ void test_reposition_stall_reflex() {
             if (drivetrain::is_reposition(s.reason)) hit = s;
         }
         bt::require(hit.has_value(), "static dead-spot stall triggers");
-        bt::require(hit->mode == drivetrain::PedalMode::coasting && hit->effort_nm == 0., "manoeuvre reports coasting, zero effort");
-        bt::require(hit->target_rate_rad_s < 0., "manoeuvre backpedals");
+        const auto hit_state = hit.value_or(drivetrain::PedalingState{});
+        bt::require(hit_state.mode == drivetrain::PedalMode::coasting && hit_state.effort_nm == 0., "manoeuvre reports coasting, zero effort");
+        bt::require(hit_state.target_rate_rad_s < 0., "manoeuvre backpedals");
         bt::require(p.state().reposition && p.state().reposition->goal_rad &&
                     std::abs(*p.state().reposition->goal_rad - 81. * std::numbers::pi) < 1e-9,
                     "goal is the nearest lower power phase");

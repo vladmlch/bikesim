@@ -81,7 +81,7 @@ namespace drivetrain {
                 {.window_s = config_.reposition_stall_window_s,
                  .crank_progress_rad = config_.reposition_stall_progress_rad,
                  .wheel_progress_rad = config_.reposition_stall_progress_rad},
-                rate, wheel_rad_s, dt, loaded);
+                {.crank_rad_s = rate, .wheel_rad_s = wheel_rad_s}, dt, loaded);
             r.crank_rad = detector.crank_rad; r.wheel_rad = detector.wheel_rad; r.stall_elapsed_s = detector.elapsed_s;
             for (const auto& [edge, why] : {std::pair{request_edge, std::uint8_t{1}}, std::pair{reflex_edge, std::uint8_t{2}}}) {
                 if (braking || !edge || r.goal_rad || r.cooldown_s > 0.) continue;

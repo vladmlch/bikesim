@@ -9,6 +9,7 @@
 
 namespace drivetrain {
 struct StallDetectorLimits { double window_s, crank_progress_rad, wheel_progress_rad; };
+struct StallDetectorRates { double crank_rad_s, wheel_rad_s; };
 struct StallDetectorState {
     double crank_rad = 0., wheel_rad = 0.;
     std::optional<double> elapsed_s;
@@ -16,11 +17,11 @@ struct StallDetectorState {
 };
 // True once per stall; the next stall needs a fresh full window.
 [[nodiscard]] inline bool stall_update(StallDetectorState& s, const StallDetectorLimits& l,
-                                       double crank_rad_s, double wheel_rad_s, double dt, bool loaded) noexcept {
+                                       StallDetectorRates r, double dt, bool loaded) noexcept {
     if (!loaded) { s = {}; return false; }
     if (!s.elapsed_s) { s.elapsed_s = 0.; return false; }
-    s.crank_rad += crank_rad_s * dt;
-    s.wheel_rad += wheel_rad_s * dt;
+    s.crank_rad += r.crank_rad_s * dt;
+    s.wheel_rad += r.wheel_rad_s * dt;
     if (s.crank_rad > l.crank_progress_rad || s.wheel_rad > l.wheel_progress_rad) {
         s = {}; s.elapsed_s = 0.; return false;
     }

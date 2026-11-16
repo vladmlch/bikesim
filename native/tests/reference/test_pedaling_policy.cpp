@@ -1,5 +1,6 @@
 // Task 3.19: tests/reference/test_pedaling_policy.py, all nine functions.
 #include "drive_reference_support.hpp"
+#include "drivetrain/stall_detector.hpp"
 #include "io/json.hpp"
 #include "research/environment.hpp"
 #include "rider/state_codec.hpp"
@@ -26,6 +27,30 @@ void test_reposition_knobs_exist_and_mode_domain_is_unchanged() {
     // Python's removed update(reposition=...) keyword is a signature-only
     // check. There is no C++ keyword argument or equivalent state field.
     (void)doc;
+}
+// ProgressStallDetector ports (c809f12a^ tests/test_pedaling_stall.py).
+void test_stall_detector() {
+    using drivetrain::StallDetectorLimits; using drivetrain::StallDetectorState;
+    constexpr double dt = .00125;
+    const StallDetectorLimits limits{.window_s = 1., .crank_progress_rad = .5, .wheel_progress_rad = .5};
+    {   // wheel progress alone prevents a stall
+        StallDetectorState s; bool fired = false;
+        for (int i = 0; i < 2400; ++i) fired = drivetrain::stall_update(s, limits, 0., 1., dt, true) || fired;
+        bt::require(!fired, "a rolling wheel with a parked crank is not a stall");
+    }
+    {   // rollback is not progress: fires exactly once after the window
+        StallDetectorState s; int fired = 0;
+        for (int i = 0; i < 880; ++i) fired += drivetrain::stall_update(s, limits, -.8, -2., dt, true) ? 1 : 0;
+        bt::require(fired == 1, "backward motion accumulates as no progress");
+    }
+    {   // dropping the load restarts the window
+        StallDetectorState s;
+        for (int i = 0; i < 720; ++i) bt::require(!drivetrain::stall_update(s, limits, 0., 0., dt, true), "no early fire");
+        (void)drivetrain::stall_update(s, limits, 0., 0., dt, false);
+        bool fired = false;
+        for (int i = 0; i < 720; ++i) fired = drivetrain::stall_update(s, limits, 0., 0., dt, true) || fired;
+        bt::require(!fired, "a stall needs a full loaded window");
+    }
 }
 void test_a_rocking_loaded_crank_simply_keeps_pedalling() {
     auto config = pedaling_config(); config.coast_above_rpm = 110.; config.resume_below_rpm = 90.;
@@ -131,6 +156,7 @@ void test_open_clutch_never_wishes_below_the_shaft() {
 } // namespace
 int main() { return bt::run([] {
     test_reposition_knobs_exist_and_mode_domain_is_unchanged();
+    test_stall_detector();
     test_a_rocking_loaded_crank_simply_keeps_pedalling();
     test_ride_control_has_no_reposition_field();
     test_rider_program_rejects_the_removed_reposition_command();

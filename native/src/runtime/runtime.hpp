@@ -139,6 +139,10 @@ public:
     [[nodiscard]] PhysicalStep::ProbeResult
     probe_step_inputs(const RideControl &control, double front_brake_demand,
                       double rear_brake_demand);
+    // Crank-reposition one-shot (2026-11-16 plan task 7): the viewer's V
+    // key lands here. Queues the manoeuvre for the next advancing control
+    // tick; probe passes and non-tick steps never consume it.
+    void request_crank_reposition();
     [[nodiscard]] RuntimeSnapshot snapshot() const;
     [[nodiscard]] RenderFrame render_frame() const;
     [[nodiscard]] ModelImage model_image() const;

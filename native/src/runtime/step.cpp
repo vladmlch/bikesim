@@ -16,6 +16,7 @@
 #include <functional>
 #include <ranges>
 #include <stdexcept>
+#include <utility>
 
 #include "../cblas_abi.hpp"
 #include "../drivetrain/pedaling.hpp"
@@ -1337,7 +1338,13 @@ PhysicalStep::apply_forces_body(
             .motor_torque_nm = control.motor_torque_nm,
             .motor_limit_nm = control.motor_limit_nm,
             .human_torque_nm = control.human_torque_nm,
-            .rider_enabled = control.rider_enabled};
+            .rider_enabled = control.rider_enabled,
+            // One-shot reposition request (task 7): consumed on the first
+            // advancing control tick only — probe passes and non-tick
+            // steps leave the queued edge pending.
+            .crank_reposition = advance && control_tick
+                                    ? std::exchange(pending_reposition_, false)
+                                    : false};
         // Launch part 1, task 5 — the same rider_commands() record the
         // channel documents, mapped onto the shifter's request type. The
         // empty production set carries owns=false and no request, so the
@@ -3070,6 +3077,9 @@ void PhysicalStep::restore(const StepState &s) {
     last_constraint_snapshot_ = ConstraintSnapshot{};
     snapshots_ = WheelSnapshots{};
     rider_state_.reset();
+    // The queued one-shot is transient input, not serialized state: a
+    // restored episode starts with no reposition pending.
+    pending_reposition_ = false;
 }
 
 } // namespace runtime

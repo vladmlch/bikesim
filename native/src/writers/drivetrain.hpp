@@ -36,6 +36,10 @@ namespace drivetrain {
     struct RideControl {
         std::optional<double> motor_torque_nm, motor_limit_nm, human_torque_nm;
         bool rider_enabled = true;
+        // One-shot crank-reposition request (2026-11-16 plan task 7):
+        // an edge-triggered input — set for a single control tick, never
+        // latched — reaching PedalingPolicy::update's reposition_request.
+        bool crank_reposition = false;
     };
 
     struct PendingActuation {

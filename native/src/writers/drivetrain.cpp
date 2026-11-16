@@ -753,8 +753,7 @@ namespace drivetrain {
         const auto result = pedaling.update(q[static_cast<std::size_t>(crank.qpos)],
                                       v[static_cast<std::size_t>(crank.dof)], required,
                                       effort, in.dt, enabled, in.braking,
-                                      // Task 7 wires RideControl::crank_reposition here.
-                                      false,
+                                      in.control.crank_reposition,
                                       v[static_cast<std::size_t>(shaft_joint_.dof)],
                                       in.ceiling, torque_factor, in.cut_after_ceiling);
         bank.result = result;

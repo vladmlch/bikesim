@@ -817,6 +817,15 @@ NativeRideRuntime::probe_step_inputs(const RideControl &command,
                                         rear_brake_demand);
 }
 
+void NativeRideRuntime::request_crank_reposition() {
+    // Same exclusion as the other committed-state mutators: queuing the
+    // edge while an advance is in flight would race the consume on the
+    // step's own thread.
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    physical_->request_crank_reposition();
+}
+
 RuntimeSnapshot NativeRideRuntime::snapshot() const {
     const AdvancementGuard guard(advancing_);
     require_open();

@@ -158,6 +158,13 @@ bike_add_reference_test(drivetrain_policy_clone ENGINE
   SOURCES test_drivetrain_policy_clone.cpp LIBRARIES bike_app LABELS t52 drive)
 bike_add_reference_test(motor_clutch_topology ENGINE
   SOURCES test_motor_clutch_topology.cpp LIBRARIES bike_app LABELS t52 drive slow)
+# 2026-11-16 reposition stage, task 7 — the one-shot runtime request
+# reaches the pedaling policy on the welded plant: backpedal to the lower
+# power phase (R3) inside the clutch topology (R5) and the weld envelope
+# (S3).
+bike_add_reference_test(crank_reposition ENGINE
+  SOURCES test_crank_reposition.cpp LIBRARIES bike_app bike_validation
+  LABELS t52 drive rider slow)
 bike_add_reference_test(golden_episode_regressions ENGINE
   SOURCES test_golden_episode_regressions.cpp LIBRARIES bike_golden
   LABELS t52 episode golden slow)

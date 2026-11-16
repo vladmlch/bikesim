@@ -370,6 +370,11 @@ public:
         return rider_control_.has_value();
     }
     [[nodiscard]] std::string_view drive_mode() const;
+    // Crank-reposition one-shot (2026-11-16 plan task 7): queues the
+    // manoeuvre for the next advancing control tick. The request waits
+    // for that tick — probe and non-tick calls never consume it — and
+    // reaches the pedaling policy exactly once.
+    void request_crank_reposition() noexcept { pending_reposition_ = true; }
     [[nodiscard]] rider::SpindleController &rider_control() {
         return engaged(rider_control_);
     }
@@ -630,6 +635,10 @@ private:
     bool rollback_hold_ = false;
     bool research_accounting_valid_ = true;
     bool initializing_ = false;
+    // request_crank_reposition()'s queued edge — transient input, not
+    // wire-serialized; restore() re-disengages it like the other
+    // interval-local captures.
+    bool pending_reposition_ = false;
     std::optional<RiderKinematicState> rider_state_;
     std::optional<ForceSample> last_force_sample_;
     ConstraintSnapshot last_constraint_snapshot_;

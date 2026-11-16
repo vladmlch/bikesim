@@ -15,7 +15,7 @@ std::array<double, 2> evaluate_sag_point(const SetupRequest& base, double fork_p
     const auto options = candidate->equilibrium;
     auto setup = make_setup(std::move(*candidate));
     const auto result = settle(*setup, options);
-    return std::array<double, 2>{result.fork_travel_mm, result.rear_travel_mm};
+    return std::array<double, 2>{result.fork_travel_mm, result.shock_stroke_mm};
 }
 } // namespace
 

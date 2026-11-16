@@ -179,11 +179,11 @@ RigResult ride_flat_static(std::string_view name,double dt){
 }
 RigResult ride_requested_sag(std::string_view,double dt){
     const auto request=sag_request(dt);
-    auto& specs=request->model.bike;const std::array target{specs.fork_travel*.3,specs.rear_wheel_travel*.3},initial{specs.fork_initial_psi,specs.shock_stiffness};
+    auto& specs=request->model.bike;const std::array target{specs.fork_travel*.3,specs.shock_stroke*.3},initial{specs.fork_initial_psi,specs.shock_stiffness};
     const auto fitted=fit_requested_sag(*request,target,initial);
     specs.fork_initial_psi=fitted[0];specs.shock_stiffness=fitted[1];const auto sim=std::make_unique<Simulation>(std::move(*request));
     auto result=RuntimeRigAccess::static_metrics(*sim->runtime,sim->metadata,expected_mass(*sim));
-    merge(result,metrics({{"fork_error_mm",std::abs(sim->equilibrium.fork_travel_mm-target[0])},{"rear_error_mm",std::abs(sim->equilibrium.rear_travel_mm-target[1])},{"fork_pressure_psi",fitted[0]},{"coil_rate_n_m",fitted[1]}}));
+    merge(result,metrics({{"fork_error_mm",std::abs(sim->equilibrium.fork_travel_mm-target[0])},{"rear_error_mm",std::abs(sim->equilibrium.shock_stroke_mm-target[1])},{"fork_pressure_psi",fitted[0]},{"coil_rate_n_m",fitted[1]}}));
     return {.metrics=std::move(result),.bounds=bounds({{"fork_error_mm",0.,.5},{"rear_error_mm",0.,.5},{"force_relative_error",0.,.005},{"moment_relative_error",0.,.005}})};
 }
 RigResult ride_brake_hold(std::string_view,double dt){

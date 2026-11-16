@@ -53,7 +53,7 @@ runtime::WireObject preview_row(const runtime::RenderFrame& frame,const terrain:
     const double pct=args.real("sag");if(pct<=0.||pct>=100.)throw ArgumentError("sag percentage must lie strictly between 0 and 100");
     const auto& bike=request.model.bike;
     const auto fitted=initialization::fit_sag(initialization::build_equilibrium_evaluator(request),
-        {bike.fork_travel*pct/100.,bike.rear_wheel_travel*pct/100.},
+        {bike.fork_travel*pct/100.,bike.shock_stroke*pct/100.},
         {bike.fork_initial_psi,bike.shock_stiffness},{10.,1000.},{400.,250000.});
     request.model.bike.fork_initial_psi=fitted[0];request.model.bike.shock_stiffness=fitted[1];
 }

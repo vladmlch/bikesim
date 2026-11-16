@@ -35,13 +35,34 @@ surface_mode = "track"
 tier = "fast"
 # surface = "asphalt"   # only under surface_mode = "configured"; track mode reads the track's surface map
 
-# Per-tyre spec overrides merge onto the defaults (FRONT_TYRE / REAR_TYRE) —
-# a partial table like pressure_bar alone is enough.
-# [tires.pneumatic.front]
-# pressure_bar = 1.5
-#
-# [tires.pneumatic.rear]
-# pressure_bar = 1.7
+# 2.8" tyre calibrations (simulation decisions item 4; docs/research/2026-11-05-tyre-2p8-data.md)
+# Rear 27.5x2.8 fitted to Dressel 2020 / Sadauckas 2024 measurements.
+# Front 29x2.8 and Crr scaled/interpolated (marked as calculation, not direct measurement).
+[tires.pneumatic.front]
+name = "Schwalbe Magic Mary 29x2.8"
+outer_radius_mm = 379.0
+section_height_mm = 68.0
+casing_width_mm = 65.7
+area_factor = 0.509
+carcass_stiffness_n_mm2 = 0.136
+contact_length_factor = 0.851
+rate_stiffening = 0.22
+loss_factor = 0.055
+tread_loss_crr = 0.00586
+pressure_bar = 1.2
+
+[tires.pneumatic.rear]
+name = "Schwalbe Hans Dampf 27.5x2.8"
+outer_radius_mm = 360.0
+section_height_mm = 68.0
+casing_width_mm = 65.7
+area_factor = 0.522
+carcass_stiffness_n_mm2 = 0.140
+contact_length_factor = 0.827
+rate_stiffening = 0.22
+loss_factor = 0.055
+tread_loss_crr = 0.00481
+pressure_bar = 1.2
 
 [drive]
 # Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling

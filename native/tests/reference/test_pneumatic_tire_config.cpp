@@ -315,6 +315,15 @@ void stock(const cfg::TyreSpecs &value, const cfg::TyreSpecs &expected) {
         "track material resolution requires a compliant_2d, distributed_2d_reference or pneumatic tire backend");
     rejects([] { (void)resolve(R"({"tires":{"pneumtic":{}}})"); }, "unknown TireBackendConfig parameter");
 }
+[[gnu::noinline]] void test_pneumatic_2p8_spec_constants() {
+    // 2.8" tyre calibrations (simulation decisions item 4; docs/research/2026-11-05-tyre-2p8-data.md)
+    bt::require(cfg::kFrontTyre2p8.outer_radius_mm == 379.0, "front 29x2.8 outer radius is 379 mm");
+    bt::require(cfg::kFrontTyre2p8.casing_width_mm == 65.7, "front 29x2.8 width is 65.7 mm");
+    bt::require(cfg::kFrontTyre2p8.pressure_bar == 1.2, "front 29x2.8 default pressure is 1.2 bar");
+    bt::require(cfg::kRearTyre2p8.outer_radius_mm == 360.0, "rear 27.5x2.8 outer radius is 360 mm");
+    bt::require(cfg::kRearTyre2p8.casing_width_mm == 65.7, "rear 27.5x2.8 width is 65.7 mm");
+    bt::require(cfg::kRearTyre2p8.pressure_bar == 1.2, "rear 27.5x2.8 default pressure is 1.2 bar");
+}
 NATIVE_DIAG_POP
 } // namespace
 int main() { return bt::run([] {
@@ -331,4 +340,5 @@ int main() { return bt::run([] {
     test_pneumatic_rejects_unknown_tyre_keys();
     test_research_environment_rejects_a_named_pneumatic_surface();
     test_existing_backend_gates_are_unchanged();
+    test_pneumatic_2p8_spec_constants();
 }); }

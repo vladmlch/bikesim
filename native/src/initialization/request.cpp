@@ -115,6 +115,10 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
             } else physics.equilibrium_state_file = state_file.string();
         }
         configuration::post_init(physics);
+        if (physics.tires.backend == "pneumatic") {
+            out.model.bike.front_wheel_radius = physics.tires.pneumatic.front.outer_radius_mm;
+            out.model.bike.rear_wheel_radius = physics.tires.pneumatic.rear.outer_radius_mm;
+        }
         out.model.physics = std::move(physics);
         out.model.crank_joint = true;
         return out;

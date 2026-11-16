@@ -18,15 +18,20 @@ std::string generate_mjcf(const BuildRequest& request) {
     auto physics=request.physics?
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
     if(physics) configuration::post_init(*physics);
+    auto build_request = request;
+    if(physics && physics->tires.backend=="pneumatic") {
+        build_request.bike.front_wheel_radius = physics->tires.pneumatic.front.outer_radius_mm;
+        build_request.bike.rear_wheel_radius = physics->tires.pneumatic.rear.outer_radius_mm;
+    }
     const bool physical=physics && physics->physics_mode=="physical";
-    if(physical && request.mode!="ride") throw std::invalid_argument("physical configuration requires ride mode");
-    const bool crank=request.crank_joint || physical;
-    if(crank && request.mode!="ride") throw std::invalid_argument("the pedalled crankset is a ride-mode model; mode '"+request.mode+"' builds a rigid crankset");
-    auto rider=resolve_rider(request.rider?RiderArg(*request.rider):RiderArg(std::monostate{}),request.include_rider,"lumped");
+    if(physical && build_request.mode!="ride") throw std::invalid_argument("physical configuration requires ride mode");
+    const bool crank=build_request.crank_joint || physical;
+    if(crank && build_request.mode!="ride") throw std::invalid_argument("the pedalled crankset is a ride-mode model; mode '"+build_request.mode+"' builds a rigid crankset");
+    auto rider=resolve_rider(build_request.rider?RiderArg(*build_request.rider):RiderArg(std::monostate{}),build_request.include_rider,"lumped");
     std::optional<ArticulatedPose> articulated;
     if(rider.variant=="articulated_planar") {
         if(!physical) throw std::invalid_argument("articulated_planar requires physical ride mode");
-        articulated=geometry_pose(rider,request.bike);
+        articulated=geometry_pose(rider,build_request.bike);
     }
     if(physical && physics->drive_mode=="articulated_effort" && !articulated) throw std::invalid_argument("articulated_effort requires articulated_planar rider");
     // Source validation is independent of environment creation; all bad
@@ -38,12 +43,12 @@ std::string generate_mjcf(const BuildRequest& request) {
     }
     // Construct only when absent: preserve a caller's fitted linkage solver.
     std::optional<kinematics::HorstLinkageSolver> default_solver;
-    if(!request.solver) default_solver.emplace(request.bike);
-    const auto& solver=request.solver?*request.solver:*default_solver;
-    const auto fixed=geometry::get_fixed_frame_points(request.bike);
+    if(!build_request.solver) default_solver.emplace(build_request.bike);
+    const auto& solver=build_request.solver?*build_request.solver:*default_solver;
+    const auto fixed=geometry::get_fixed_frame_points(build_request.bike);
     const auto state=solver.solve_state_from_wheel_travel(0.);
-    const Vec3 cg=physical?Vec3{.001,0.,0.}:compute_static_system_cg(request.bike,request.masses,rider.present()?&rider:nullptr,&solver).cg_pos_m;
-    BuildContext context{.request=request,.solver=solver,.rider=std::move(rider),.articulated=articulated,.physics=std::move(physics),.fixed=fixed,.state=state,.cg=cg,.crank_joint=crank,.registry={}};
+    const Vec3 cg=physical?Vec3{.001,0.,0.}:compute_static_system_cg(build_request.bike,build_request.masses,rider.present()?&rider:nullptr,&solver).cg_pos_m;
+    BuildContext context{.request=build_request,.solver=solver,.rider=std::move(rider),.articulated=articulated,.physics=std::move(physics),.fixed=fixed,.state=state,.cg=cg,.crank_joint=crank,.registry={}};
     Element root("mujoco",{{"model","enduro_bike_horst_yoke"}});
     root.add("compiler",{{"angle","degree"},{"coordinate","local"},{"inertiafromgeom","auto"},{"autolimits","true"}});
     std::string timestep="0.002";

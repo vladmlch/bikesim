@@ -135,6 +135,18 @@ inline const TyreSpecs kRearTyre{
     .name="Schwalbe Hans Dampf 27.5x2.4", .outer_radius_mm=352., .rim_radius_mm=300., .section_height_mm=55., .pressure_bar=1.7, .crr_reference=.0103,
     .casing_width_mm=60., .compressed_casing_mm=6., .area_factor=.4576, .carcass_stiffness_n_mm2=.1225, .contact_length_factor=.8801, .rate_stiffening=.2498, .rate_relaxation_s=.2, .loss_factor=.069, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00481};
 
+// 2.8" tyre calibrations (simulation decisions item 4; docs/research/2026-11-05-tyre-2p8-data.md).
+// Rear 27.5x2.8 fitted to Dressel 2020 / Sadauckas 2024 measurements.
+// Front 29x2.8 and Crr scaled/interpolated (marked as calculation, not direct measurement).
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp)
+inline const TyreSpecs kFrontTyre2p8{
+    .name="Schwalbe Magic Mary 29x2.8", .outer_radius_mm=379., .rim_radius_mm=320., .section_height_mm=68., .pressure_bar=1.2, .crr_reference=.011,
+    .casing_width_mm=65.7, .compressed_casing_mm=6., .area_factor=.509, .carcass_stiffness_n_mm2=.136, .contact_length_factor=.851, .rate_stiffening=.22, .rate_relaxation_s=.2, .loss_factor=.055, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00586};
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp)
+inline const TyreSpecs kRearTyre2p8{
+    .name="Schwalbe Hans Dampf 27.5x2.8", .outer_radius_mm=360., .rim_radius_mm=300., .section_height_mm=68., .pressure_bar=1.2, .crr_reference=.0103,
+    .casing_width_mm=65.7, .compressed_casing_mm=6., .area_factor=.522, .carcass_stiffness_n_mm2=.140, .contact_length_factor=.827, .rate_stiffening=.22, .rate_relaxation_s=.2, .loss_factor=.055, .hysteresis_rate_eps_mps=.01, .relaxation_length_mm=60., .rim_stiffness_n_mm2=28., .tread_loss_crr=.00481};
+
 struct TierSpec {
     std::string_view name;
     int n_rays;

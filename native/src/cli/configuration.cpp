@@ -113,6 +113,10 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.seed_decimal = research::validate_seed(args.text("seed", "0"));
     request.model.mode = "ride"; request.model.field = terrain::HeightFieldSpec::for_track(request.track);
     request.model.physics = physics;
+    if (physics.tires.backend == "pneumatic") {
+        request.model.bike.front_wheel_radius = physics.tires.pneumatic.front.outer_radius_mm;
+        request.model.bike.rear_wheel_radius = physics.tires.pneumatic.rear.outer_radius_mm;
+    }
     auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", "lumped"), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
     request.model.rider = std::move(rider);
     request.model.include_rider = request.model.rider->present();

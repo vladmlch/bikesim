@@ -178,6 +178,12 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     // settle and the intent reset.
     const auto preparation = prepare_request(request);
     configuration::post_init(*request.model.physics);
+    if (request.model.physics->tires.backend == "pneumatic") {
+        request.model.bike.front_wheel_radius =
+            request.model.physics->tires.pneumatic.front.outer_radius_mm;
+        request.model.bike.rear_wheel_radius =
+            request.model.physics->tires.pneumatic.rear.outer_radius_mm;
+    }
     if (request.model.mode != "ride")
         throw std::invalid_argument("native setup requires model mode 'ride'");
     auto resolved_rider = model::resolve_rider(request.model.rider ? model::RiderArg{*request.model.rider}

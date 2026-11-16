@@ -1291,8 +1291,7 @@ PhysicalStep::apply_forces_body(
                 rider_control_.has_value() && rider_control_->lean_limit_rad().has_value()
                     ? std::optional<double>{std::min(config_.intent.max_forward_lean_rad,
                                                      *rider_control_->lean_limit_rad())}
-                    : (rider_control_.has_value() ? rider_control_->lean_limit_rad()
-                                                  : std::optional<double>{}),
+                    : std::nullopt,
                 active, advance, min_lean_rad, launch_context);
             control = resolution.control;
             effort_limited = resolution.effort_limited;

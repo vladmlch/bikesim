@@ -1489,7 +1489,7 @@ example (`examples/research/viewer_physics_welded.toml`) declares:
 | `weld_foot_max_normal_n` | 3000 | worst foot compression 2383 N |
 | `weld_foot_shear_n` | 2250 | worst foot shear 1803 N |
 | `weld_saddle_min_normal_n` | -2250 | worst saddle tension −1800 N (onset) |
-| `weld_saddle_max_normal_n` | 1750 | worst saddle compression 1378 N (obstacle impact on rough terrain, 1.25× rule: 1722.5 N ≈ 1750 N, ~1.76g rider equivalent vertical load) |
+| `weld_saddle_max_normal_n` | 1750 | worst saddle compression 1367–1378 N (obstacle impact on rough terrain, 1.25× rule: 1709–1723 N ≈ 1750 N, ~1.76g rider equivalent vertical load) |
 | `weld_saddle_shear_n` | 1300 | worst saddle shear 1024 N |
 
 The envelope is derived from measured extrema on the provisional strength

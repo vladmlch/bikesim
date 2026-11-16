@@ -662,6 +662,46 @@ void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
                 "without it the legacy config ceiling applies");
 }
 
+// test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach
+void test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach() {
+    rider::IntentConfig config;
+    config.enabled = true;
+    config.period_s = .01;
+    config.reaction_delay_s = .15;
+    config.orientation_tau_s = .5;
+    config.min_elbow_flexion_deg = 15.;
+    config.lean_rate_rad_s = 10.;
+    config.max_forward_lean_rad = .55;
+    config.surge_budget_s = 15.;
+    config.trim_dead_time_s = .2;
+
+    const auto effective_limit = [&](std::optional<double> reach) -> std::optional<double> {
+        return reach.has_value()
+            ? std::optional<double>{std::min(config.max_forward_lean_rad, *reach)}
+            : std::nullopt;
+    };
+
+    const auto lim_wide = effective_limit(0.61015625);
+    bt::require(lim_wide.has_value() && approx(*lim_wide, .55),
+                "when anatomical reach exceeds config ceiling, effective limit binds at config ceiling");
+    rider::SeatedPostureProgram prog_wide(config);
+    bt::require(approx(prog_wide.update(0., .8, .1, std::nullopt, lim_wide), .55),
+                "posture output clamps to .55 rad");
+
+    const auto lim_narrow = effective_limit(0.40);
+    bt::require(lim_narrow.has_value() && approx(*lim_narrow, .40),
+                "when anatomical reach is tighter, anatomical bound binds");
+    rider::SeatedPostureProgram prog_narrow(config);
+    bt::require(approx(prog_narrow.update(0., .8, .1, std::nullopt, lim_narrow), .40),
+                "posture output clamps to .40 rad");
+
+    const auto lim_none = effective_limit(std::nullopt);
+    bt::require(!lim_none.has_value(), "absent reach yields nullopt");
+    rider::SeatedPostureProgram prog_none(config);
+    bt::require(approx(prog_none.update(0., .8, .1, std::nullopt, lim_none), .55),
+                "without reach override, legacy config ceiling applies");
+}
+
 // Launch part 3b: without an override the program's arithmetic is bitwise
 // the part-3a one; an override at weight 1 replaces the grade target and
 // freezes the load trim; at a partial weight the targets mix; every
@@ -724,6 +764,7 @@ int main() {
         test_geometric_limit_caps_lean();
         test_preview_is_last_sample_and_preserves_exact_endpoint();
         test_geometric_limit_replaces_the_legacy_config_ceiling_when_available();
+        test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach();
         test_lean_override_hook();
         test_surge_is_not_spent_on_request();
     });

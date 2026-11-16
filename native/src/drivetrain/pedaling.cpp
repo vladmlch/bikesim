@@ -1,8 +1,12 @@
 #include "pedaling.hpp"
+#include "stall_detector.hpp"
 #include "../engaged.hpp"
 #include "../numeric_sincos.hpp"
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <numbers>
+#include <utility>
 
 namespace drivetrain {
     double human_crank_torque(double mean_nm, double phase_rad, double ripple) {
@@ -20,12 +24,14 @@ namespace drivetrain {
         nonnegative(s.deceleration_rad_s2, "deceleration_rad_s2");
         nonnegative(s.effort, "_effort");
         if (s.coasting && !s.target_phase_rad) throw std::invalid_argument("coasting target_phase_rad");
+        if (s.reposition)
+            finite_optional(s.reposition->goal_rad, "_reposition.goal_rad");
         state_ = s;
     }
 
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror pedaling.py
     PedalingState PedalingPolicy::update(double phase, double rate, double required, double effort,
-                                         double dt, bool enabled, bool braking,
+                                         double dt, bool enabled, bool braking, bool reposition_request,
                                          std::optional<double> shaft_rad_s,
                                          std::optional<double> ceiling_nm,
                                          double torque_factor, bool cut_after_ceiling) {
@@ -39,13 +45,69 @@ namespace drivetrain {
         nonnegative(torque_factor, "shift torque factor");
         nonnegative(effort, "rider effort");
         positive(dt, "pedaling interval");
+        // Signed wheel rate in crank-equivalent units: rollback is not progress.
+        const double wheel_rad_s = required * 2. * std::numbers::pi / 60.;
         required = std::max(required, 0.);
         if (!enabled) {
             reset();
+            // A request held across a disable/enable toggle stays consumed:
+            // only a fresh falling/rising pair earns a manoeuvre (pedaling.py
+            // sets _reposition_armed = not reposition after reset()).
+            if (reposition_request) {
+                state_.reposition.emplace();
+                state_.reposition->armed = false;
+            }
             return {
                 .mode = PedalMode::disabled, .reason = CoastReason::disabled, .effort_nm = 0., .required_cadence_rpm = required,
                 .target_phase_rad = std::nullopt, .target_rate_rad_s = 0.
             };
+        }
+        // Crank reposition manoeuvre (c809f12a^ pedaling.py:116-163): a
+        // rising request edge or the stall reflex backpedals to the nearest
+        // lower power phase, reporting coasting with a reposition reason.
+        const bool tracked = config_.reposition_on_stall || reposition_request ||
+                             (state_.reposition && (state_.reposition->goal_rad || state_.reposition->cooldown_s > 0.));
+        if (tracked && !state_.reposition) state_.reposition.emplace();
+        if (state_.reposition) {
+            auto& r = *state_.reposition;
+            r.cooldown_s = std::max(0., r.cooldown_s - dt);
+            if (braking) { r.goal_rad.reset(); r.reason = 0; r.cooldown_s = config_.reposition_cooldown_s; }
+            bool request_edge = false;
+            if (reposition_request) { request_edge = r.armed; r.armed = false; } else r.armed = true;
+            const bool loaded = config_.reposition_on_stall && !braking && !r.goal_rad && r.cooldown_s <= 0. &&
+                                effort >= config_.reposition_min_effort_nm;
+            StallDetectorState detector{.crank_rad = r.crank_rad, .wheel_rad = r.wheel_rad, .elapsed_s = r.stall_elapsed_s};
+            const bool reflex_edge = stall_update(detector,
+                {.window_s = config_.reposition_stall_window_s,
+                 .crank_progress_rad = config_.reposition_stall_progress_rad,
+                 .wheel_progress_rad = config_.reposition_stall_progress_rad},
+                rate, wheel_rad_s, dt, loaded);
+            r.crank_rad = detector.crank_rad; r.wheel_rad = detector.wheel_rad; r.stall_elapsed_s = detector.elapsed_s;
+            for (const auto& [edge, why] : {std::pair{request_edge, std::uint8_t{1}}, std::pair{reflex_edge, std::uint8_t{2}}}) {
+                if (braking || !edge || r.goal_rad || r.cooldown_s > 0.) continue;
+                const double rel = phase - kPowerPhaseOffsetRad;
+                double turn = std::fmod(rel, std::numbers::pi);
+                if (turn < 0.) turn += std::numbers::pi;
+                if (std::min(turn, std::numbers::pi - turn) <= config_.reposition_noop_rad) continue;
+                r.goal_rad = phase - turn; r.reason = why; r.elapsed_s = 0.;
+                state_.effort = 0.; state_.coasting = false;
+                break;
+            }
+            if (r.goal_rad) {
+                const double remaining = phase - *r.goal_rad;
+                r.elapsed_s += dt;
+                if (remaining <= config_.reposition_phase_tolerance_rad || r.elapsed_s > config_.reposition_timeout_s) {
+                    r.goal_rad.reset(); r.reason = 0; r.cooldown_s = config_.reposition_cooldown_s;
+                } else {
+                    constexpr double kApproachTauS = .05;
+                    const double target_rate = -std::min(config_.reposition_back_rate_rad_s, remaining / kApproachTauS);
+                    return {.mode = PedalMode::coasting,
+                            .reason = r.reason == 1 ? CoastReason::reposition_requested : CoastReason::reposition_stall,
+                            .effort_nm = 0., .required_cadence_rpm = std::max(required, 0.),
+                            .target_phase_rad = phase + target_rate * dt, .target_rate_rad_s = target_rate};
+                }
+            }
+            if (!config_.reposition_on_stall && !r.goal_rad && r.cooldown_s <= 0. && r.armed) state_.reposition.reset();
         }
         const double actual = validation::derived(std::abs(rate) * 60. / (2. * std::numbers::pi), "PedalingPolicy.cadence");
         const double cadence = std::max(actual, required);
@@ -62,9 +124,11 @@ namespace drivetrain {
         if (reason == CoastReason::none) {
             const double previous = state_.effort;
             const auto ema = state_.cadence_ema;
+            const auto reposition = state_.reposition;
             reset();
             state_.effort = previous;
             state_.cadence_ema = ema;
+            state_.reposition = reposition;
             double target = effort;
             if (config_.mash_torque_nm > target && cadence < config_.mash_cadence_rpm)
                 target = effort + (config_.mash_torque_nm - effort) * (1. - cadence / config_.mash_cadence_rpm);

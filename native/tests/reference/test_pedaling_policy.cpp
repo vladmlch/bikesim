@@ -52,6 +52,79 @@ void test_stall_detector() {
         bt::require(!fired, "a stall needs a full loaded window");
     }
 }
+constexpr double kDt = .00125;
+constexpr double kDeadSpot = 81. * std::numbers::pi + .5 * std::numbers::pi;  // phase % pi == pi/2
+// A valid pedaling config (the ctor's validate() gates the legacy fields)
+// with the reflex on and the nine knobs at their documented defaults (D2).
+drivetrain::PedalingConfig reposition_config() {
+    drivetrain::PedalingConfig c = pedaling_config();
+    c.reposition_on_stall = true;
+    c.reposition_min_effort_nm = 20.;
+    c.reposition_stall_window_s = 1.;
+    c.reposition_stall_progress_rad = .5;
+    c.reposition_cooldown_s = 1.;
+    c.reposition_back_rate_rad_s = 3.;
+    c.reposition_timeout_s = 3.;
+    c.reposition_phase_tolerance_rad = .05;
+    c.reposition_noop_rad = .12;
+    return c;
+}
+void test_reposition_stall_reflex() {
+    using drivetrain::CoastReason;
+    {   // rocking about the dead spot with no net advance fires within the window
+        drivetrain::PedalingPolicy p(reposition_config());
+        const double amp = .26, peak = 4.6, w = peak / amp;
+        double first = -1.;
+        for (int i = 0; i < 1600 && first < 0.; ++i) {
+            const double t = i * kDt;
+            const auto s = p.update(kDeadSpot + amp * std::sin(w * t), amp * w * std::cos(w * t), 0., 20., kDt);
+            if (s.reason == CoastReason::reposition_stall) first = t;
+        }
+        bt::require(first >= 0. && first <= 1.05, "rocking stall triggers the reflex within the window");
+    }
+    {   // a frozen crank on the dead spot is a stall; the goal is the lower power phase
+        drivetrain::PedalingPolicy p(reposition_config());
+        std::optional<drivetrain::PedalingState> hit;
+        for (int i = 0; i < 1200 && !hit; ++i) {
+            const auto s = p.update(kDeadSpot, 0., 0., 20., kDt);
+            if (drivetrain::is_reposition(s.reason)) hit = s;
+        }
+        bt::require(hit.has_value(), "static dead-spot stall triggers");
+        bt::require(hit->mode == drivetrain::PedalMode::coasting && hit->effort_nm == 0., "manoeuvre reports coasting, zero effort");
+        bt::require(hit->target_rate_rad_s < 0., "manoeuvre backpedals");
+        bt::require(p.state().reposition && p.state().reposition->goal_rad &&
+                    std::abs(*p.state().reposition->goal_rad - 81. * std::numbers::pi) < 1e-9,
+                    "goal is the nearest lower power phase");
+        // Revision 2026-11-05: the manoeuvre's crank-rate target stays
+        // negative even when the wheel-implied cadence and the open-clutch
+        // shaft floor would hold ordinary pedaling at the shaft speed.
+        const auto s = p.update(kDeadSpot, -1.5, 120., 20., kDt, true, false, false, 15.);
+        bt::require(drivetrain::is_reposition(s.reason) && s.target_rate_rad_s < 0.,
+                    "manoeuvre target stays negative regardless of required_cadence_rpm");
+    }
+    {   // slow forward grind (~1 rad/s) is progress
+        drivetrain::PedalingPolicy p(reposition_config());
+        for (int i = 0; i < 4000; ++i) {
+            const double t = i * kDt;
+            bt::require(!drivetrain::is_reposition(p.update(kDeadSpot + t, 1., 9.5, 20., kDt).reason), "no reflex on a grind");
+        }
+    }
+    {   // a crank already near a power phase is a no-op
+        drivetrain::PedalingPolicy p(reposition_config());
+        const auto s = p.update(81. * std::numbers::pi + .05, 0., 0., 20., kDt, true, false, true);
+        bt::require(!drivetrain::is_reposition(s.reason), "request inside the no-op band does nothing");
+    }
+    {   // braking aborts and starts the cooldown; a held request does not retrigger
+        drivetrain::PedalingPolicy p(reposition_config());
+        auto s = p.update(kDeadSpot, 0., 0., 20., kDt, true, false, true);
+        bt::require(s.reason == CoastReason::reposition_requested, "request starts the manoeuvre");
+        s = p.update(kDeadSpot, 0., 0., 20., kDt, true, true, true);
+        bt::require(!drivetrain::is_reposition(s.reason), "braking aborts");
+        for (int i = 0; i < 1000; ++i)
+            bt::require(!drivetrain::is_reposition(p.update(kDeadSpot, 0., 0., 20., kDt, true, false, true).reason),
+                        "held request + cooldown never retrigger");
+    }
+}
 void test_a_rocking_loaded_crank_simply_keeps_pedalling() {
     auto config = pedaling_config(); config.coast_above_rpm = 110.; config.resume_below_rpm = 90.;
     PedalingPolicy policy(config);
@@ -127,13 +200,13 @@ void test_open_clutch_never_wishes_below_the_shaft() {
     // and the clutch re-engages.
     const double crank = 60. * rpm_to_rad_s, shaft = 110. * rpm_to_rad_s;
     PedalingPolicy policy(pedaling_config(.35));
-    const auto open = policy.update(0., crank, 110., 30., .001, true, false, shaft);
+    const auto open = policy.update(0., crank, 110., 30., .001, true, false, false, shaft);
     bt::require(open.mode == PedalMode::pedaling, "the lagging crank keeps pedaling");
     bt::require(open.target_rate_rad_s >= shaft,
                 "the wish is not below the shaft while the clutch is open");
     // The backdriven stall signature: a crank ringing negative still gets a
     // wish at the shaft, not its own slowed EMA.
-    const auto backdriven = policy.update(0., -4.5, 110., 30., .001, true, false, shaft);
+    const auto backdriven = policy.update(0., -4.5, 110., 30., .001, true, false, false, shaft);
     bt::require(backdriven.target_rate_rad_s >= shaft,
                 "a backward-ringing crank still meets the shaft");
     // Rigid link (the shaft arg absent) and an engaged clutch (shaft not
@@ -142,14 +215,14 @@ void test_open_clutch_never_wishes_below_the_shaft() {
     const auto rigid = PedalingPolicy(pedaling_config(.35)).update(0., crank, 110., 30., .001);
     drive_reference::near(rigid.target_rate_rad_s, crank, "rigid link keeps the ema wish");
     const auto engaged = PedalingPolicy(pedaling_config(.35))
-                             .update(0., crank, 110., 30., .001, true, false, crank);
+                             .update(0., crank, 110., 30., .001, true, false, false, crank);
     drive_reference::near(engaged.target_rate_rad_s, crank, "engaged clutch keeps the ema wish");
     // Coasting keeps its own decaying target — the floor is pedaling-only.
     PedalingPolicy coasting(pedaling_config(.35));
     drivetrain::PedalingState state;
     for (int i = 0; i < 1500; ++i) state = coasting.update(0., 160. * rpm_to_rad_s, 160., 30., .001);
     bt::require(state.mode == PedalMode::coasting, "sustained cadence coasts");
-    const auto hold = coasting.update(0., 0., 160., 30., .001, true, false, shaft);
+    const auto hold = coasting.update(0., 0., 160., 30., .001, true, false, false, shaft);
     bt::require(hold.mode == PedalMode::coasting && hold.target_rate_rad_s < shaft,
                 "coasting keeps its decaying target below the shaft");
 }
@@ -157,6 +230,7 @@ void test_open_clutch_never_wishes_below_the_shaft() {
 int main() { return bt::run([] {
     test_reposition_knobs_exist_and_mode_domain_is_unchanged();
     test_stall_detector();
+    test_reposition_stall_reflex();
     test_a_rocking_loaded_crank_simply_keeps_pedalling();
     test_ride_control_has_no_reposition_field();
     test_rider_program_rejects_the_removed_reposition_command();

@@ -59,11 +59,26 @@ namespace drivetrain {
         AssistConfig assist;
     };
 
+    // Engaged only while the reposition machinery has state worth carrying
+    // (reflex enabled, a manoeuvre, or a cooldown). Absent = byte-identical
+    // historical snapshot. Cooldown/elapsed in seconds; reason 1=requested,
+    // 2=stall (0 = idle).
+    struct RepositionSnapshot {
+        double crank_rad = 0., wheel_rad = 0.;
+        std::optional<double> stall_elapsed_s;
+        std::optional<double> goal_rad;
+        double elapsed_s = 0., cooldown_s = 0.;
+        bool armed = true;
+        std::uint8_t reason = 0;
+        friend bool operator==(const RepositionSnapshot&, const RepositionSnapshot&) = default;
+    };
+
     struct PedalingSnapshot {
         bool coasting{};
         std::optional<double> target_phase_rad;
         double target_rate_rad_s{}, deceleration_rad_s2{}, effort{};
         std::optional<double> cadence_ema;
+        std::optional<RepositionSnapshot> reposition;
     };
 
     struct ShiftingSnapshot {

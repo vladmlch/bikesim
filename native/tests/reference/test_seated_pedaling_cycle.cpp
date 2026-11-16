@@ -176,18 +176,18 @@ void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
         drivetrain::PedalingPolicy policy(config);
         double prev = 0.;
         for (int i = 0; i < 100; ++i)
-            prev = policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+            prev = policy.update(0., 8., 80., 24., kDt, true, false, false, 8., 24., 1.).effort_nm;
         bt::require(std::abs(prev - 24.) < 1e-12,
                     "effort reaches steady 24 N.m before the shift cut");
         // Start of shift cut (0.2 s = 160 steps at 1.25 ms).
         const double first_drop =
-            policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., factor).effort_nm;
+            policy.update(0., 8., 80., 24., kDt, true, false, false, 8., 24., factor).effort_nm;
         bt::require(std::abs((prev - first_drop) - kMaxStepDelta) < 1e-12,
                     "start of shift cut slews down by 300 N.m/s * dt on step 1");
         prev = first_drop;
         for (int i = 1; i < 160; ++i) {
             const double cur =
-                policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., factor).effort_nm;
+                policy.update(0., 8., 80., 24., kDt, true, false, false, 8., 24., factor).effort_nm;
             bt::require(std::abs(cur - prev) <= kMaxStepDelta + 1e-12,
                         "shift-cut drop changes by at most 300 N.m/s * dt per step");
             prev = cur;
@@ -196,13 +196,13 @@ void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
                     "effort reaches the reduced shift-cut plateau");
         // End of shift cut: factor returns to 1.0.
         const double first_return =
-            policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+            policy.update(0., 8., 80., 24., kDt, true, false, false, 8., 24., 1.).effort_nm;
         bt::require(std::abs((first_return - prev) - kMaxStepDelta) < 1e-12,
                     "end of shift cut slews up by 300 N.m/s * dt on step 1");
         prev = first_return;
         for (int i = 1; i < 100; ++i) {
             const double cur =
-                policy.update(0., 8., 80., 24., kDt, true, false, 8., 24., 1.).effort_nm;
+                policy.update(0., 8., 80., 24., kDt, true, false, false, 8., 24., 1.).effort_nm;
             bt::require(std::abs(cur - prev) <= kMaxStepDelta + 1e-12,
                         "shift-cut return changes by at most 300 N.m/s * dt per step");
             prev = cur;
@@ -237,17 +237,17 @@ void test_falling_effort_ceiling_goes_through_the_configured_slew() {
         drivetrain::PedalingPolicy policy(make_config(kSlewNmS));
         double prev = 0.;
         for (int i = 0; i < 200; ++i)
-            prev = policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.).effort_nm;
+            prev = policy.update(0., 8., 80., 60., kDt, true, false, false, 8., 60., 1.).effort_nm;
         bt::require(std::abs(prev - 60.) < 1e-12,
                     "effort reaches steady 60 N.m at the ceiling");
         const double first =
-            policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.).effort_nm;
+            policy.update(0., 8., 80., 60., kDt, true, false, false, 8., 0., 1.).effort_nm;
         bt::require(std::abs((prev - first) - kMaxStepDelta) < 1e-12,
                     "a dropped ceiling slews down by 300 N.m/s * dt on step 1");
         prev = first;
         for (int i = 1; i < 200; ++i) {
             const double cur =
-                policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.).effort_nm;
+                policy.update(0., 8., 80., 60., kDt, true, false, false, 8., 0., 1.).effort_nm;
             bt::require(prev - cur <= kMaxStepDelta + 1e-12 && cur <= prev + 1e-12,
                         "falling ceiling drops effort by at most 300 N.m/s * dt per step");
             prev = cur;
@@ -258,16 +258,16 @@ void test_falling_effort_ceiling_goes_through_the_configured_slew() {
         drivetrain::PedalingPolicy capped(make_config(kSlewNmS));
         double rose = 0.;
         for (int i = 0; i < 200; ++i)
-            rose = capped.update(0., 8., 80., 60., kDt, true, false, 8., 20., 1.).effort_nm;
+            rose = capped.update(0., 8., 80., 60., kDt, true, false, false, 8., 20., 1.).effort_nm;
         bt::require(rose <= 20. && std::abs(rose - 20.) < 1e-12,
                     "a constant ceiling still bounds the slewed effort");
     }
     { // effort_slew_nm_s = 0: no slew configured — the drop applies at once.
         drivetrain::PedalingPolicy policy(make_config(0.));
         for (int i = 0; i < 5; ++i)
-            (void)policy.update(0., 8., 80., 60., kDt, true, false, 8., 60., 1.);
+            (void)policy.update(0., 8., 80., 60., kDt, true, false, false, 8., 60., 1.);
         const auto dropped =
-            policy.update(0., 8., 80., 60., kDt, true, false, 8., 0., 1.);
+            policy.update(0., 8., 80., 60., kDt, true, false, false, 8., 0., 1.);
         bt::require(dropped.effort_nm == 0.,
                     "with effort_slew_nm_s = 0 a dropped ceiling applies at once");
     }

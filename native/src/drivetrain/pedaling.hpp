@@ -36,7 +36,9 @@ namespace drivetrain {
         braking,
         no_effort,
         cadence,
-        disabled
+        disabled,
+        reposition_requested,
+        reposition_stall
     };
 
     [[nodiscard]] constexpr std::string_view
@@ -47,6 +49,8 @@ namespace drivetrain {
         case CoastReason::no_effort: return "no_effort";
         case CoastReason::cadence: return "cadence";
         case CoastReason::disabled: return "disabled";
+        case CoastReason::reposition_requested: return "reposition_requested";
+        case CoastReason::reposition_stall: return "reposition_stall";
         }
         return {};
     }
@@ -58,8 +62,17 @@ namespace drivetrain {
         if (name == "no_effort") return CoastReason::no_effort;
         if (name == "cadence") return CoastReason::cadence;
         if (name == "disabled") return CoastReason::disabled;
+        if (name == "reposition_requested") return CoastReason::reposition_requested;
+        if (name == "reposition_stall") return CoastReason::reposition_stall;
         return std::nullopt;
     }
+
+    [[nodiscard]] constexpr bool is_reposition(CoastReason r) noexcept {
+        return r == CoastReason::reposition_requested || r == CoastReason::reposition_stall;
+    }
+    // Crank qpos of the first power phase (Task 1 pins it; multiples of pi
+    // from it are the two horizontal crank poses).
+    inline constexpr double kPowerPhaseOffsetRad = 0.;
 
     // POD per-tick pedaling result — no string members, so copying into a
     // transaction bank is a plain move. String materialization happens at
@@ -82,6 +95,7 @@ namespace drivetrain {
 
         [[nodiscard]] PedalingState update(double phase_rad, double rate_rad_s, double required_cadence_rpm,
                                            double effort_nm, double dt, bool enabled = true, bool braking = false,
+                                           bool reposition_request = false,
                                            std::optional<double> shaft_rad_s = std::nullopt,
                                            std::optional<double> ceiling_nm = std::nullopt,
                                            double torque_factor = 1., bool cut_after_ceiling = false);

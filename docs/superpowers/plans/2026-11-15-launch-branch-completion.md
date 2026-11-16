@@ -292,7 +292,16 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
    `reference.equilibrium_state_file`: `test_savage_pneumatic_fixture_restores` со стражем тождества
    сборки, свежий круг settle→capture→restore и страж `qvel` переноса; `check_change.sh 85c0c18b` —
    194/194, cppcheck/frontends/tidy чисто.
-7. **`model_valid` в `one_second_pair`** после правил тяги опоры (`9525ce1f`, `abaff36d`).
+7. **`model_valid` в `one_second_pair`** после правил тяги опоры (`9525ce1f`, `abaff36d`). **Выполнено на ветке
+   `queue-2026-11-15`** (`51702136`; решение пользователя — вариант A разбора
+   `/Volumes/SSD_1TB_M2/work/tmp/2026-11-15-post-merge-queue/q6-q7-q11-report.md`): ворота
+   `one_second_pair_*` (1,0 с на `research_flat`, `articulated_effort`) получают явный
+   `human_torque_nm = 0` через `motor_control(0., 0.)` на каждой границе — ноги лежат на педалях
+   вместо мэша 60 Н·м с места; обе вороты дополнены проверками `model_valid && rider_support_ok`
+   по итогам всех 800 шагов; эталоны darwin-arm64 перезаписаны (`one_second_pair_*.{bin,json}`,
+   все 101 вхождение `model_valid` = `true`). Без правки `motor_control(0.)` с `nullopt` с места
+   гнал мощность бедра >375 Вт (t = 0,31875 с) и тянул седло до −516,9 Н. linux-близнецы — в
+   пункт 9.
 8. **Читатели старых форматов** в `native/src/replay/` (`drop_removed_battery`, `inert_rider`) — убрать, если
    задача 2 покажет, что они мертвы. **Выполнено на ветке `queue-2026-11-15`** (`3d52cd06`, `b99382d3`):
    проверка показала, что мёртв только `drop_removed_battery` — любая запись с `drive.battery` старше
@@ -314,7 +323,12 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
    `native_research_environment/reset_seed_generation_snapshot_and_facade_ownership.{bin,json}`
    (`reference.native_research_environment`);
    `native_research_recording/shared_export_native_rows_and_complete_provenance.{bin,json}`
-   (`reference.native_research_recording`). Плюс узел `reference.native_numeric_completion`:
+   (`reference.native_research_recording`). От задачи 7 (`51702136`) на том же узле
+   `reference.native_research_environment` ещё четыре файла:
+   `native_research_environment/one_second_pair_with_one_e_minus_nine_gate.{bin,json}` и
+   `native_research_environment/one_second_pair_complete_episode_gate.{bin,json}` — смена
+   сценария ворот (`human_torque_nm = 0` вместо `None`) меняет всю траекторию. Плюс узел
+   `reference.native_numeric_completion`:
    `native_numeric_completion/tire_channel_parity_across_backends.bin`, где входной seed уже пропатчен
    в `5f23a658`, а 143 выхода `distributed.*` остаются вязкими.
 10. **Неровные трассы**: остановка `rough_uphill_extreme` на 13,1 с, «стиральная доска» на savage (позже, решение

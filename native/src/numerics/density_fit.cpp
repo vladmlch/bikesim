@@ -74,7 +74,7 @@ DensityResponse flat_load(std::span<const double> deflection,double radius,
 }
 DensityFit fit_density(std::span<const double> deflections,std::span<const double> loads,double radius,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    std::string dataset,std::span<const double> knots,int count,double damping,double gate) {
+    std::string dataset,std::span<const double> knots,int count,double gate) {
     if(deflections.size()<3 || deflections.size()!=loads.size() || !dense::finite(deflections) || !dense::finite(loads))throw std::invalid_argument("fit needs ordered positive deflections and positive aggregate loads");
     for(std::size_t i=0;i<loads.size();++i)if(loads[i]<=0. || deflections[i]<=0. || (i && deflections[i]<=deflections[i-1]))throw std::invalid_argument("fit needs ordered positive deflections and positive aggregate loads");
     if(dataset.find_first_not_of(" \n\r\t")==std::string::npos)throw std::invalid_argument("a fitting dataset ID is required");
@@ -87,7 +87,7 @@ DensityFit fit_density(std::span<const double> deflections,std::span<const doubl
     }
     auto weighted=basis;for(std::size_t i=0;i<loads.size();++i)for(std::size_t j=0;j<knots.size();++j)weighted.values[i*knots.size()+j]/=loads[i];
     const auto fit=nnls(weighted,std::vector<double>(loads.size(),1.));
-    DensityFit out;out.density.knots_m.assign(knots.begin(),knots.end());out.density.stiffness_n_m=fit.x;out.density.damping_ns_m=damping;out.density.provenance="fit: "+dataset;material(out.density);
+    DensityFit out;out.density.knots_m.assign(knots.begin(),knots.end());out.density.stiffness_n_m=fit.x;out.density.damping_ns_m=0.;out.density.provenance="fit: "+dataset;material(out.density);
     out.dataset_id=std::move(dataset);out.radius_m=radius;out.station_count=count;out.error_gate=gate;out.target_load_n.assign(loads.begin(),loads.end());out.deflection_m.assign(deflections.begin(),deflections.end());out.predicted_load_n.resize(loads.size());
     // np.array(columns).T is Fortran contiguous, so preserve that matvec
     // layout at the existing BLAS supplier instead of a scalar row fold.

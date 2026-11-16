@@ -770,8 +770,10 @@
     (задача 5 плана `2026-11-15-launch-branch-completion.md`, замеры
     `/Volumes/SSD_1TB_M2/work/tmp/2026-11-15-post-merge-queue/q5-distributed-losses-report.md` и опыт
     `q4-q5-work/probe_q4_q5`): у `distributed_2d_reference` вязкий член `damping_ns_m·δ̇` заменён тем же
-    гистерезисом, что у `compliant_2d` — `F = kδ + η·kδ·tanh(δ̇/ε)` с обрезанием снизу нулём и упругой
-    энергией ½kδ² (`native/src/tyre/station.cpp`, зеркала в `native/src/numerics/density_fit.cpp` и
+    гистерезисом, что у `compliant_2d`, — `F = max(0, F_el + η·F_el·tanh(δ̇/ε))` при δ > 0, где
+    `F_el = Σkᵢxᵢ` — упругая свёртка по узлам плотности (`xᵢ = max(δ − knotᵢ, 0)`), а сохраняемая
+    энергия — упругая свёртка `½Σkᵢxᵢ²`, не зависящая от скорости
+    (`native/src/tyre/station.cpp`, зеркала в `native/src/numerics/density_fit.cpp` и
     `native/src/gpu/tire_kernel.hpp`). `HingeDensity` несёт обязательные `loss_factor` (по умолчанию 0,05)
     и `hysteresis_rate_eps_mps` (0,01 м/с); ключ совместимости `damping_ns_m` оставлен в схеме, но
     валидация отказывает любое ненулевое значение с диагностикой запрета 39. Двойной учёт сопротивления
@@ -790,6 +792,21 @@
     (Запись нарушения 2026-11-05:
     [проверка запретов](../research/2026-11-05-physics-bans-check.md),
     [данные шин](../research/2026-11-05-tyre-2p8-data.md).)
+    Эталоны linux-aarch64 этой смены закона ждут перезаписи в контейнере (`tools/linux/container.sh`,
+    очередь — пункт 9 плана `2026-11-15-launch-branch-completion.md`; правило AGENTS.md «нет базы
+    терпимых падений»). Все пути — под `tests/fixtures/golden/linux-aarch64/`; darwin-близнецы уже
+    перезаписаны в `5f23a658`, linux — нет. Девять файлов на шести тестовых узлах:
+    `distributed_tire_reference/scalar_station_formulas_equal_the_vectorised_ones_bitwise.bin`
+    (`reference.distributed_tire_reference`); `native_distributed_tire/distributed_qfrc_bitwise.bin`
+    и `native_distributed_tire/env_request/initial_state.json` (`reference.native_distributed_tire`);
+    `control_clock/env_request/initial_state.json` (`reference.control_clock`);
+    `pneumatic_tire/env_fast/initial_state.json` (`reference.native_pneumatic_tire`);
+    `native_research_environment/reset_seed_generation_snapshot_and_facade_ownership.{bin,json}`
+    (`reference.native_research_environment`);
+    `native_research_recording/shared_export_native_rows_and_complete_provenance.{bin,json}`
+    (`reference.native_research_recording`). Отдельно — седьмой узел
+    `reference.native_numeric_completion`: `native_numeric_completion/tire_channel_parity_across_backends.bin`,
+    где входной seed уже пропатчен в `5f23a658`, а все 143 выхода `distributed.*` остаются вязкими.
 8. **Тянуть руль на себя.** Сидя ноги могут давить сильнее веса, только если руки тянут руль на себя. Пользователь
    2026-11-07 опасается: крепление рук тоже держит в обе стороны и может стать новым местом, где прячутся ошибки
    управления. Пока руки руль на себя не тянут. Вернуться, если замеры покажут, что нажима не хватает.

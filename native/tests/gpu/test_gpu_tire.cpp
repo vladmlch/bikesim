@@ -77,7 +77,7 @@ struct RefStationQuery {
     double weight;
 };
 
-// Exact double-precision reference from native/src/tyre/station.cpp:78-95.
+// Exact double-precision reference from native/src/tyre/station.cpp:77-101.
 // Ban #39: the radial loss is rate-independent hysteresis —
 // loss_factor * elastic * tanh(rate / hysteresis_rate_eps_mps) — not
 // the retired viscous damping_ns_m * rate.

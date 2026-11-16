@@ -21,5 +21,5 @@ struct DensityFit {
 };
 [[nodiscard]] DensityFit fit_density(std::span<const double> deflections,std::span<const double> loads,
     double radius,std::string dataset_id,std::span<const double> knots=default_density_knots,
-    int station_count=512,double damping=0.,double max_relative_error=.05);
+    int station_count=512,double max_relative_error=.05);
 } // namespace bike::numerics

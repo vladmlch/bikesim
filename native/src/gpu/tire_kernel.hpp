@@ -82,7 +82,7 @@ BIKE_HD GpuVec2 gpu_station_density(
     return GpuVec2{.x = force, .y = 0.5f * energy};
 }
 
-// Mirrors biketyre::station_response in native/src/tyre/station.cpp:78-95 verbatim.
+// Mirrors biketyre::station_response in native/src/tyre/station.cpp:77-101 verbatim.
 // Returns GpuVec2{force, energy}.
 BIKE_HD GpuVec2 gpu_station_response(
     float delta_m,

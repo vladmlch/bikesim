@@ -304,6 +304,19 @@ bearing_c_nms_rad, chain_c_ns_m, chain_k_n_m, freehub_c_nms_rad, freehub_k_nm_ra
    Оставлен как проверка инертности удалённых полей и сведение сериализаций, а не читатель отказанного
    формата.
 9. **Эталоны linux-aarch64** — перезапись в контейнере (`tools/linux/container.sh`) по просьбе пользователя.
+   От задачи 5 (гистерезис `distributed`, `5f23a658`) подлежат перезаписи девять файлов на шести узлах
+   (darwin-близнецы перезаписаны, linux остались вязкими; все пути под `tests/fixtures/golden/linux-aarch64/`):
+   `distributed_tire_reference/scalar_station_formulas_equal_the_vectorised_ones_bitwise.bin`
+   (`reference.distributed_tire_reference`); `native_distributed_tire/distributed_qfrc_bitwise.bin` и
+   `native_distributed_tire/env_request/initial_state.json` (`reference.native_distributed_tire`);
+   `control_clock/env_request/initial_state.json` (`reference.control_clock`);
+   `pneumatic_tire/env_fast/initial_state.json` (`reference.native_pneumatic_tire`);
+   `native_research_environment/reset_seed_generation_snapshot_and_facade_ownership.{bin,json}`
+   (`reference.native_research_environment`);
+   `native_research_recording/shared_export_native_rows_and_complete_provenance.{bin,json}`
+   (`reference.native_research_recording`). Плюс узел `reference.native_numeric_completion`:
+   `native_numeric_completion/tire_channel_parity_across_backends.bin`, где входной seed уже пропатчен
+   в `5f23a658`, а 143 выхода `distributed.*` остаются вязкими.
 10. **Неровные трассы**: остановка `rough_uphill_extreme` на 13,1 с, «стиральная доска» на savage (позже, решение
     пользователя 2026-11-10).
 11. **Отскок передней вилки при резкой остановке на подъёме** («Решено — не сделано», пункт 19, `1303e344`):

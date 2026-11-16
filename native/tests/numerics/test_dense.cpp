@@ -59,7 +59,7 @@ void calibration_and_root() {
     bt::require(detached.force[0]==0.,"hysteresis creates no detached contact force");
     bt::require(n::normal_station_response({},std::array<double,1>{0.},std::array<double,1>{1.},material).force.empty(),"empty quadrature broadcasts scalar rate and weight without indexing it");
     const std::array<double,5> deflection{.002,.004,.008,.016,.024};const auto load=n::flat_load(deflection,.35,material,64).force;
-    const auto fitted=n::fit_density(deflection,load,.35,"synthetic analytic",material.knots_m,64,0.);
+    const auto fitted=n::fit_density(deflection,load,.35,"synthetic analytic",material.knots_m,64);
     bt::require(fitted.accepted&&fitted.maximum_relative_error<1e-7&&fitted.calibration_status=="synthetic_fit_only","fit cannot certify physical material");
     bike::configuration::HingeDensity viscous=material;viscous.damping_ns_m=.5;
     bt::invalid([&]{(void)n::density_response(std::array<double,1>{.01},viscous);});

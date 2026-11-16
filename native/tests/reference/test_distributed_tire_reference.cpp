@@ -90,6 +90,8 @@ namespace numerics = bike::numerics;
             .knots_m = material.knots_m,
             .stiffness_n_m = material.stiffness_n_m,
             .damping_ns_m = material.damping_ns_m,
+            .loss_factor = material.loss_factor,
+            .hysteresis_rate_eps_mps = material.hysteresis_rate_eps_mps,
             .provenance = material.provenance};
     const std::vector<double> deltas{-.01, 0., 1e-6, .003, .004, .0041,
                                      .011, .012, .02};

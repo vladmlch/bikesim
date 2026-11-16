@@ -271,7 +271,8 @@ namespace {
                    a = section(d, "assist");
         exact(p, ncd::keys("coasting", "target_phase_rad",
                               "target_rate_rad_s", "deceleration_rad_s2",
-                              "_effort", "_cadence_ema"));
+                              "_effort", "_cadence_ema"),
+              ncd::keys("_reposition"));
         exact(s, ncd::keys("rear_teeth", "from_teeth", "cooldown_s",
                               "cut_remaining_s", "shift_count", "direction",
                               "cadence_ema", "required_ema",
@@ -279,6 +280,38 @@ namespace {
         exact(a, ncd::keys("torque", "pedaling", "last_gain",
                               "hold_power_w", "hold_torque_nm",
                               "release_hold_left_s"));
+        // Task 5 — the optional "_reposition" member carries the engaged
+        // manoeuvre state. Every lane validates before any state moves;
+        // a document without the member decodes to the absent snapshot.
+        std::optional<RepositionSnapshot> reposition;
+        if (p.contains("_reposition")) {
+            const auto r = section(p, "_reposition");
+            exact(r, ncd::keys("crank_rad", "wheel_rad",
+                                  "stall_elapsed_s", "goal_rad",
+                                  "elapsed_s", "cooldown_s", "armed",
+                                  "reason"));
+            RepositionSnapshot snap;
+            snap.crank_rad = num(r, "crank_rad");
+            snap.wheel_rad = num(r, "wheel_rad");
+            snap.stall_elapsed_s = optional_num(r, "stall_elapsed_s");
+            snap.goal_rad = optional_num(r, "goal_rad");
+            snap.elapsed_s = num(r, "elapsed_s");
+            snap.cooldown_s = num(r, "cooldown_s");
+            snap.armed = boolean(r, "armed");
+            const int reason = integer(r, "reason");
+            if (snap.elapsed_s < 0.)
+                ncd::invalid(r.child("elapsed_s"), "negative time");
+            if (snap.cooldown_s < 0.)
+                ncd::invalid(r.child("cooldown_s"), "negative time");
+            if (snap.stall_elapsed_s.has_value() &&
+                *snap.stall_elapsed_s < 0.)
+                ncd::invalid(r.child("stall_elapsed_s"), "negative time");
+            if (reason < 0 || reason > 2)
+                ncd::invalid(r.child("reason"),
+                             "reason outside the {0,1,2} domain");
+            snap.reason = static_cast<std::uint8_t>(reason);
+            reposition = snap;
+        }
         out.pedaling = {
             .coasting = boolean(p, "coasting"),
             .target_phase_rad = optional_num(p, "target_phase_rad"),
@@ -286,9 +319,7 @@ namespace {
             .deceleration_rad_s2 = num(p, "deceleration_rad_s2"),
             .effort = num(p, "_effort"),
             .cadence_ema = optional_num(p, "_cadence_ema"),
-            // Task 5 decodes an optional "_reposition" member; the
-            // historical key set has none, so the snapshot stays absent.
-            .reposition = std::nullopt};
+            .reposition = reposition};
         out.shifting = {
             .rear_teeth = integer(s, "rear_teeth"),
             .from_teeth = integer(s, "from_teeth"),
@@ -402,6 +433,24 @@ namespace {
         return bio::Value{std::move(out)};
     }
 
+    // Task 5 — the engaged manoeuvre state. Emitted only while
+    // PedalingSnapshot::reposition carries a snapshot, so a disengaged
+    // state keeps the historical pedaling key set byte-identical.
+    [[nodiscard]] bio::Value reposition_value(
+        const RepositionSnapshot &s) {
+        bio::Value::Object out;
+        out.emplace_back("crank_rad", real_value(s.crank_rad));
+        out.emplace_back("wheel_rad", real_value(s.wheel_rad));
+        out.emplace_back("stall_elapsed_s",
+                         optional_value(s.stall_elapsed_s));
+        out.emplace_back("goal_rad", optional_value(s.goal_rad));
+        out.emplace_back("elapsed_s", real_value(s.elapsed_s));
+        out.emplace_back("cooldown_s", real_value(s.cooldown_s));
+        out.emplace_back("armed", bio::Value{s.armed});
+        out.emplace_back("reason", integer_value(s.reason));
+        return bio::Value{std::move(out)};
+    }
+
     [[nodiscard]] bio::Value policy_value(const DriveSnapshot &s) {
         bio::Value::Object p, sh, a;
         p.emplace_back("coasting", bio::Value{s.pedaling.coasting});
@@ -414,6 +463,9 @@ namespace {
         p.emplace_back("_effort", real_value(s.pedaling.effort));
         p.emplace_back("_cadence_ema",
                        optional_value(s.pedaling.cadence_ema));
+        if (s.pedaling.reposition.has_value())
+            p.emplace_back("_reposition",
+                           reposition_value(*s.pedaling.reposition));
         sh.emplace_back("rear_teeth", integer_value(s.shifting.rear_teeth));
         sh.emplace_back("from_teeth",
                         integer_value(s.shifting.from_teeth));

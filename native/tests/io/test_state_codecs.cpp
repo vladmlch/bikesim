@@ -272,6 +272,120 @@ void checks_drive_minimal() {
 
 }
 
+void checks_drive_reposition() {
+    // Task 5: an engaged reposition state rides the drive wire under
+    // policies.pedaling._reposition; a disengaged snapshot keeps the
+    // historical six-key pedaling object — the byte pin itself is the
+    // checks_drive_roundtrip golden over the unmodified fixture.
+    const bio::Value input = parse_fixture("state/drive.json");
+    const auto state = std::make_unique<drivetrain::DriveSnapshot>(
+        drivetrain::decode_drive_snapshot(input));
+    bt::require(!state->pedaling.reposition.has_value(),
+                "the captured drive state carries no _reposition member");
+    state->pedaling.reposition = drivetrain::RepositionSnapshot{
+        .crank_rad = .4, .wheel_rad = -1.25,
+        .stall_elapsed_s = .62, .goal_rad = 1.,
+        .elapsed_s = .1, .cooldown_s = .25,
+        .armed = false, .reason = 2};
+    const bio::Value encoded = encode_back_drive(*state);
+    const auto reparsed = std::make_unique<const drivetrain::DriveSnapshot>(
+        drivetrain::decode_drive_snapshot(encoded));
+    bt::require(reparsed->pedaling.reposition.has_value() &&
+                    *reparsed->pedaling.reposition ==
+                        *state->pedaling.reposition,
+                "the engaged reposition state round-trips field-exact");
+    // The member lands after _cadence_ema; the lane order inside it
+    // mirrors the declared RepositionSnapshot field sequence.
+    const auto &policies =
+        object_of(require_member(object_of(encoded), "policies"));
+    const auto &pedaling = object_of(require_member(policies, "pedaling"));
+    constexpr std::array<std::string_view, 7> kPedalingOrder{
+        "coasting",   "target_phase_rad", "target_rate_rad_s",
+        "deceleration_rad_s2", "_effort", "_cadence_ema", "_reposition"};
+    bt::require(member_names(pedaling) ==
+                    std::vector<std::string_view>(kPedalingOrder.begin(),
+                                                  kPedalingOrder.end()),
+                "the engaged pedaling object emits _reposition last");
+    constexpr std::array<std::string_view, 8> kRepositionOrder{
+        "crank_rad",  "wheel_rad",   "stall_elapsed_s", "goal_rad",
+        "elapsed_s",  "cooldown_s",  "armed",           "reason"};
+    bt::require(member_names(object_of(require_member(pedaling,
+                                                      "_reposition"))) ==
+                    std::vector<std::string_view>(kRepositionOrder.begin(),
+                                                  kRepositionOrder.end()),
+                "_reposition emission mirrors the declared field order");
+
+    // Absent optional lanes ride the wire as explicit nulls.
+    state->pedaling.reposition->stall_elapsed_s = std::nullopt;
+    state->pedaling.reposition->goal_rad = std::nullopt;
+    const auto null_round = std::make_unique<const drivetrain::DriveSnapshot>(
+        drivetrain::decode_drive_snapshot(encode_back_drive(*state)));
+    bt::require(null_round->pedaling.reposition ==
+                    state->pedaling.reposition,
+                "absent optional lanes round-trip through explicit nulls");
+
+    // The decoder validates every lane before any state moves: the
+    // minimal document carries the section verbatim, and each fragment
+    // below mutates exactly one lane of the valid object.
+    const auto with_reposition = [](std::string_view wire) {
+        std::string doc = bt::text(bt::fixture("state/drive_minimal.json"));
+        const std::string_view anchor = R"("_cadence_ema":null})";
+        const std::size_t at = doc.find(anchor);
+        bt::require(at != std::string::npos,
+                    "the minimal fixture carries the pedaling tail");
+        doc.insert(at + anchor.size() - 1,
+                   ",\"_reposition\":" + std::string(wire));
+        return parse(doc);
+    };
+    const std::string good_wire =
+        R"({"crank_rad":0.4,"wheel_rad":-1.25,"stall_elapsed_s":0.62,"goal_rad":1.0,"elapsed_s":0.1,"cooldown_s":0.25,"armed":false,"reason":2})";
+    const auto swap = [&good_wire](std::string_view from,
+                                   std::string_view to) {
+        std::string wire = good_wire;
+        const std::size_t at = wire.find(from);
+        bt::require(at != std::string::npos,
+                    "the fragment carries the mutated lane");
+        wire.replace(at, from.size(), to);
+        return wire;
+    };
+    {
+        const auto lit =
+            std::make_unique<const drivetrain::DriveSnapshot>(
+                drivetrain::decode_drive_snapshot(
+                    with_reposition(good_wire)));
+        bt::require(lit->pedaling.reposition.has_value() &&
+                        lit->pedaling.reposition->reason == 2 &&
+                        !lit->pedaling.reposition->armed,
+                    "a wire-authored _reposition decodes");
+    }
+    for (const std::string &wire : {
+             // reason outside the closed {0,1,2} label domain
+             swap("\"reason\":2", "\"reason\":3"),
+             swap("\"reason\":2", "\"reason\":-1"),
+             // a float-spelled lexeme is not an integer lane
+             swap("\"reason\":2", "\"reason\":2.0"),
+             // time lanes never go negative
+             swap("\"elapsed_s\":0.1", "\"elapsed_s\":-0.1"),
+             swap("\"cooldown_s\":0.25", "\"cooldown_s\":-0.25"),
+             swap("\"stall_elapsed_s\":0.62", "\"stall_elapsed_s\":-0.62"),
+             // finite-only reals, required and optional alike
+             swap("\"goal_rad\":1.0", "\"goal_rad\":1e400"),
+             swap("\"crank_rad\":0.4", "\"crank_rad\":1e400"),
+             // wrong kinds on the closed lanes
+             swap("\"armed\":false", R"("armed":"yes")"),
+             swap("\"armed\":false,", ""),
+             swap("\"crank_rad\":0.4,", ""),
+             swap("\"reason\":2}", R"("reason":2,"bogus":0})")}) {
+        bt::invalid([&] {
+            (void)drivetrain::decode_drive_snapshot(with_reposition(wire));
+        });
+    }
+    // _reposition itself must be an object, not a scalar.
+    bt::invalid([&] {
+        (void)drivetrain::decode_drive_snapshot(with_reposition("true"));
+    });
+}
+
 void checks_drive_invalid() {
     // ---- rejection family: each fixture carries one defect ------------
     for (const char *name:
@@ -560,6 +674,7 @@ int main() {
         failures += bt::run(checks_drive_welded);
         failures += bt::run(checks_drive_roundtrip);
         failures += bt::run(checks_drive_minimal);
+        failures += bt::run(checks_drive_reposition);
         failures += bt::run(checks_drive_invalid);
         failures += bt::run(checks_spindle);
         failures += bt::run(checks_intent);

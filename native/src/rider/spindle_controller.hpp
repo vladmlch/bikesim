@@ -126,10 +126,19 @@ struct RiderCommand {
     bool crank_reposition = false;
 };
 
-// The reposition branch's dedicated torque law — the values the
-// removed coasting_brake_* knobs used to carry (2026-11-10 29dd2d1c):
-// a rate damper toward the backpedal goal inside a hard torque bound.
-inline constexpr double kRepositionDampNmSRad = 2.0;
+// The reposition branch's dedicated torque law: a rate damper toward
+// the backpedal goal inside a hard torque bound. The bound is the value
+// the removed coasting_brake_limit_nm used to carry (2026-11-10
+// 29dd2d1c); the damping gain is not — the policy's approach rate
+// (-remaining / 0.05 s) turns the damper into a position servo of
+// stiffness kRepositionDampNmSRad / 0.05 N m/rad near the goal, so the
+// leg-weight lever torque (~3.4 N m at the horizontal pose, where the
+// lever is longest) leaves a steady-state residual of
+// ~0.05 * tau_g / D rad. 12.0 puts the residual at ~0.014 rad — under
+// 0.02 rad, comfortably inside the 0.05 rad arrival tolerance; the
+// carried 2.0 stalled at ~0.085 rad and burned the whole 3 s timeout
+// (review 2026-11-16 I1).
+inline constexpr double kRepositionDampNmSRad = 12.0;
 inline constexpr double kRepositionTorqueLimitNm = 60.0;
 
 // Insertion-ordered name->T pairs — mirrors Python dict ordering on the

@@ -1,6 +1,7 @@
-// 2026-11-16 plan task 7 — the crank-reposition plant check (S3 + R3/R5):
-// a one-shot NativeRideRuntime::request_crank_reposition() reaches the
-// pedaling policy through the writer-level RideControl, backpedals the
+// 2026-11-16 plan task 7 — the crank-reposition plant check (S3 + R3/R5)
+// and the request's one-shot contract: a
+// NativeRideRuntime::request_crank_reposition() reaches the pedaling
+// policy through the writer-level RideControl, backpedals the
 // spindle-welded crank to the nearest lower power phase while the motor
 // clutch and rear freehub keep the wheel and drive shaft from being
 // dragged backward, and the pedal welds stay inside their safe envelope.
@@ -32,6 +33,7 @@
 #include <mujoco/mujoco.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <limits>
 #include <numbers>
@@ -51,8 +53,13 @@ std::filesystem::path repo_file(std::string_view relative) {
 
 // weld_env variant: flat 30 m, standstill, diagnostic limits, crank
 // parked at a dead spot (kPowerPhaseOffsetRad + pi/2 + 0.6). The lower
-// power phase sits ~pi/2 + 0.6 rad of backpedal away.
-std::unique_ptr<runtime::NativeRideRuntime> reposition_env() {
+// power phase sits ~pi/2 + 0.6 rad of backpedal away. When given,
+// control_period_s receives the physics-level control period — the
+// cadence PhysicalStep's ControlClock ticks at — so a test can schedule
+// around the advancing control ticks. control_period_steps widens the
+// profile's 1-step cadence for tests that need non-tick intervals.
+std::unique_ptr<runtime::NativeRideRuntime> reposition_env(
+    double *control_period_s = nullptr, int control_period_steps = 0) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     request.setup.model.physics = cfg::load_physics(
@@ -61,6 +68,10 @@ std::unique_ptr<runtime::NativeRideRuntime> reposition_env() {
     request.setup.model.crank_joint = true;
     request.setup.model.rider =
         bike::model::rider_from_args("articulated_planar");
+    if (control_period_steps > 0)
+        request.setup.model.physics->control_period_s =
+            control_period_steps *
+            request.setup.model.physics->timestep_s;
     const std::string track_text =
         "name = \"probe\"\nlength_m = 30.0\nsurface = \"hardpack\"\n"
         "grade_profile = { knots = [[0.0, 0.0], [30.0, 0.0]] }\n";
@@ -78,6 +89,8 @@ std::unique_ptr<runtime::NativeRideRuntime> reposition_env() {
     // section across instead of relying on struct defaults.
     request.experiment.control_period_s =
         request.setup.model.physics->research.control_period_s;
+    if (control_period_s != nullptr)
+        *control_period_s = request.setup.model.physics->control_period_s;
     request.experiment.actuator_delay_s =
         request.setup.model.physics->research.actuator_delay_s;
     request.sensors.delivery.latency_s =
@@ -135,7 +148,8 @@ settled_entry(const writers::RiderSettledWelds &welds,
 
 // test_requested_reposition_reaches_the_lower_power_phase — R3:
 // the request engages a reposition goal (reason 'requested'), the crank
-// moves only backward and lands on the goal inside the tolerance window.
+// moves only backward and arrives inside the 0.05 rad tolerance well
+// before the 3 s timeout.
 void test_requested_reposition_reaches_the_lower_power_phase() {
     auto runtime = reposition_env();
     const runtime::RideControl control{.motor_torque_nm = 0.,
@@ -151,26 +165,24 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
     bt::require(runtime->snapshot().step == 40 && outcome_free(),
                 "the dead-spot plant reaches the request step");
 
-    double phase_at_request = 0.;
+    double phase_at_request = 0., timestep = 0.;
+    SpinJoint crank;
     bike::validation::RuntimeRigAccess::inspect(
         *runtime, [&](const Stepper &stepper, const runtime::PhysicalStep &) {
-            const auto crank = spin_joint(stepper.model(), "crank_spin");
+            crank = spin_joint(stepper.model(), "crank_spin");
+            timestep = stepper.model()->opt.timestep;
             phase_at_request = model_access::readonly_buffer(
                 stepper.data()->qpos,
                 stepper.model()->nq)[static_cast<std::size_t>(crank.qpos)];
         });
 
     // The one-shot request is consumed by the next advancing control
-    // tick; the manoeuvre then runs inside its 3 s timeout budget.
+    // tick; the manoeuvre then backpedals toward the goal.
     runtime->request_crank_reposition();
 
-    double timestep = 0.;
-    bike::validation::RuntimeRigAccess::inspect(
-        *runtime, [&](const Stepper &stepper, const runtime::PhysicalStep &) {
-            timestep = stepper.model()->opt.timestep;
-        });
-    // 4 s: the manoeuvre's own 3 s timeout plus slack — a
-    // tolerance-stalled approach still clears inside the window.
+    // 4 s: a hard bound far past the ~1 s the arrival takes — the loop
+    // must not hang if the manoeuvre ever regresses to waiting out the
+    // 3 s timeout.
     const int window = static_cast<int>(std::llround(4. / timestep));
 
     bool goal_seen = false, cleared = false;
@@ -185,7 +197,6 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
         bike::validation::RuntimeRigAccess::inspect(
             *runtime,
             [&](const Stepper &stepper, const runtime::PhysicalStep &) {
-                const auto crank = spin_joint(stepper.model(), "crank_spin");
                 const double phase = model_access::readonly_buffer(
                     stepper.data()->qpos, stepper.model()->nq)
                     [static_cast<std::size_t>(crank.qpos)];
@@ -205,6 +216,8 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
                 } else if (goal_seen) {
                     cleared = true;
                     phase_at_clear = phase;
+                    if (reposition.has_value())
+                        elapsed_at_clear = reposition->elapsed_s;
                 }
             });
     }
@@ -218,12 +231,20 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
                 "stall reflex (reason " +
                     std::to_string(static_cast<int>(goal_reason)) + ")");
     bt::require(cleared,
-                "the manoeuvre completes inside the 3 s window "
+                "the manoeuvre completes inside the window "
                 "(goal " + std::to_string(goal_rad) +
                     " rad, last phase " +
                     std::to_string(max_crank_rad) + " rad)");
-    // The goal is the phase's own lower power phase; the settle holds
-    // the crank there, so the manoeuvre may only lose angle.
+    // R3's "nearest power phase below": the goal is exactly a multiple
+    // of pi away from kPowerPhaseOffsetRad — not any lower phase —
+    // and never above the crank it started from.
+    bt::require(std::fmod(std::abs(goal_rad -
+                                   drivetrain::kPowerPhaseOffsetRad),
+                          std::numbers::pi) < 1e-6,
+                "the goal is a horizontal power phase (goal " +
+                    std::to_string(goal_rad) + " rad, offset " +
+                    std::to_string(drivetrain::kPowerPhaseOffsetRad) +
+                    " rad)");
     bt::require(goal_rad <= crank_at_goal,
                 "the goal is a lower power phase (goal " +
                     std::to_string(goal_rad) + " rad, crank at goal start " +
@@ -238,20 +259,22 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
                     std::to_string(crank_at_goal) + " rad, end " +
                     std::to_string(phase_at_clear) + " rad)");
     // Clear fires at remaining <= tolerance (0.05 rad) or at the 3 s
-    // timeout. On this plant the reposition branch is a pure rate damper
-    // (kRepositionDampNmSRad, no position integral): at the horizontal
-    // goal the leg-weight lever arm is longest, so the approach stalls
-    // at a small steady-state residual — measured ~0.085 rad ≈ 5 deg —
-    // and the manoeuvre exits through the timeout. The honest bound is
-    // 0.1 rad, not the plan's 0.05 position-servo assumption; the
-    // approach minimum and clear elapsed ride along for diagnosis.
+    // timeout. The reposition branch's rate damper
+    // (kRepositionDampNmSRad) holds a ~0.014 rad steady-state residual
+    // against the leg-weight lever at the horizontal pose — inside the
+    // tolerance — so the manoeuvre clears by arrival, ~0.7-0.9 s on
+    // this plant. The first require pins the plan's 0.05 rad
+    // acceptance bound; the second pins arrival over a timeout exit.
     bt::require(phase_at_clear - goal_rad >= -.01 &&
-                    phase_at_clear - goal_rad <= .1,
-                "the crank ends at the goal (end " +
+                    phase_at_clear - goal_rad <= .05,
+                "the crank arrives inside the 0.05 rad tolerance (end " +
                     std::to_string(phase_at_clear) + " rad vs goal " +
                     std::to_string(goal_rad) + " rad; approach min " +
-                    std::to_string(min_crank_rad) + " rad; clear elapsed " +
-                    std::to_string(elapsed_at_clear) + " s)");
+                    std::to_string(min_crank_rad) + " rad)");
+    bt::require(elapsed_at_clear < 1.5,
+                "the manoeuvre clears on tolerance well before the 3 s "
+                "timeout (clear at " + std::to_string(elapsed_at_clear) +
+                    " s)");
 }
 
 // test_reposition_backpedal_respects_the_clutch_topology — R5 + S3:
@@ -272,10 +295,18 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
                 "the dead-spot plant reaches the request step");
     runtime->request_crank_reposition();
 
+    // Joint addresses are model constants — resolve them once outside
+    // the inspected-step loop instead of paying an mj_name2id (and a
+    // non-assertion bt::require) per step.
     double timestep = 0.;
+    SpinJoint crank, wheel, shaft;
     bike::validation::RuntimeRigAccess::inspect(
         *runtime, [&](const Stepper &stepper, const runtime::PhysicalStep &) {
-            timestep = stepper.model()->opt.timestep;
+            const mjModel *m = stepper.model();
+            timestep = m->opt.timestep;
+            crank = spin_joint(m, "crank_spin");
+            wheel = spin_joint(m, "rear_wheel_spin");
+            shaft = spin_joint(m, "drive_shaft_spin");
         });
     const int window = static_cast<int>(std::llround(4. / timestep));
 
@@ -306,9 +337,6 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
                     model_access::readonly_buffer(d->qpos, m->nq);
                 const auto qvel =
                     model_access::readonly_buffer(d->qvel, m->nv);
-                const auto crank = spin_joint(m, "crank_spin");
-                const auto wheel = spin_joint(m, "rear_wheel_spin");
-                const auto shaft = spin_joint(m, "drive_shaft_spin");
                 const auto &reposition =
                     stepper.drive().state().pedaling.reposition;
                 const bool active = reposition.has_value() &&
@@ -401,9 +429,8 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
                     " of " + std::to_string(backpedal_clutch_samples) +
                     " sampled backpedal steps; shaft drift " +
                     std::to_string(shaft_at_goal - min_shaft_rad) +
-                    " rad at min rate " +
-                    std::to_string(min_shaft_rad_s) + " rad/s is free-rotor "
-                    "momentum, not crank backdrive)");
+                    " rad, min shaft rate " +
+                    std::to_string(min_shaft_rad_s) + " rad/s)");
     bt::require(backpedal_clutch_torque_samples > 0 &&
                     min_backpedal_clutch_torque_nm >= -1e-6,
                 "the clutch applies no backward torque to the shaft "
@@ -426,6 +453,75 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
                     std::to_string(max_abs_crank_torque_nm) + " N m)");
 }
 
+// test_reposition_request_waits_for_the_advancing_tick — the one-shot
+// contract itself: request_crank_reposition() queues the edge, and only
+// the first advancing control tick consumes it into the pedaling
+// policy's goal — probe_step_inputs() and non-tick advances leave it
+// pending, and restore() (reached through reset()) drops a still-queued
+// edge so it cannot fire after the reset.
+void test_reposition_request_waits_for_the_advancing_tick() {
+    double control_period_s = 0.;
+    // Ticks every other interval (steps_per_period = 2): the welded
+    // profile's physics control_period_s equals one timestep, which
+    // would make every advancing interval a tick and leave nothing for
+    // the non-tick invariant to bite on.
+    auto runtime = reposition_env(&control_period_s, 2);
+    const runtime::RideControl control{.motor_torque_nm = 0.,
+                                       .motor_limit_nm = std::nullopt,
+                                       .human_torque_nm = 0.,
+                                       .crank_target_rate_rad_s =
+                                           std::nullopt,
+                                       .posture = std::nullopt};
+    double timestep = 0.;
+    bike::validation::RuntimeRigAccess::inspect(
+        *runtime, [&](const Stepper &stepper, const runtime::PhysicalStep &) {
+            timestep = stepper.model()->opt.timestep;
+        });
+    const auto period = std::llround(control_period_s / timestep);
+    bt::require(period >= 2,
+                "the control period spans several physics steps");
+
+    const auto goal_engaged = [&] {
+        bool engaged = false;
+        bike::validation::RuntimeRigAccess::inspect(
+            *runtime,
+            [&](const Stepper &stepper, const runtime::PhysicalStep &) {
+                const auto &reposition =
+                    stepper.drive().state().pedaling.reposition;
+                engaged = reposition.has_value() &&
+                          reposition->goal_rad.has_value();
+            });
+        return engaged;
+    };
+
+    // Interval 0 is a control tick, so after advance(1) the next
+    // period - 1 intervals are all non-tick: nothing in between can
+    // legitimately consume the request.
+    (void)runtime->advance(1, control, 0., 0., std::nullopt);
+    bt::require(runtime->snapshot().step == 1 && !goal_engaged(),
+                "the dead-spot plant advances without a goal");
+
+    runtime->request_crank_reposition();
+    // The probe computes the interval's force fold without committing —
+    // the pending exchange never runs on a non-advancing pass.
+    (void)runtime->probe_step_inputs(control, 0., 0.);
+    (void)runtime->advance(period, control, 0., 0., std::nullopt);
+    bt::require(runtime->snapshot().step == period && !goal_engaged(),
+                "probe and the non-tick advances leave the request pending");
+    // The next interval is the control tick: the edge is consumed
+    // there — and only there — and the goal engages.
+    (void)runtime->advance(period + 1, control, 0., 0., std::nullopt);
+    bt::require(goal_engaged(),
+                "the advancing control tick consumes the request");
+
+    // A request queued but never consumed does not survive a reset:
+    // restore() clears the pending edge before the next tick can see it.
+    runtime->request_crank_reposition();
+    runtime->reset();
+    (void)runtime->advance(1, control, 0., 0., std::nullopt);
+    bt::require(!goal_engaged(), "reset clears the queued request");
+}
+
 } // namespace
 
 int main() {
@@ -433,5 +529,6 @@ int main() {
     return bt::run([] {
         test_requested_reposition_reaches_the_lower_power_phase();
         test_reposition_backpedal_respects_the_clutch_topology();
+        test_reposition_request_waits_for_the_advancing_tick();
     });
 }

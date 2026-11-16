@@ -672,8 +672,8 @@ void test_spindle_reposition_backpedals_toward_goal() {
     bt::require(task < 0. && task >= -rider::kRepositionTorqueLimitNm,
                 std::format("reposition task {:.6f} N.m: backward and "
                             "inside the torque limit", task));
-    bt::require(task == -6.,
-                std::format("damping law 2 N.m.s/rad over -3 rad/s at a "
+    bt::require(task == -36.,
+                std::format("damping law 12 N.m.s/rad over -3 rad/s at a "
                             "stopped crank lands exactly, got {:.6f}",
                             task));
     // A weld reading equal to the delivered torque does not cancel the
@@ -709,7 +709,7 @@ void test_spindle_reposition_backpedals_toward_goal() {
                                           .00125, false);
         const auto state = carried.controller->state();
         bt::require(state.coast_hold_nm == 7. &&
-                        state.allocation_diagnostics.crank_task_nm == -6.,
+                        state.allocation_diagnostics.crank_task_nm == -36.,
                     "the carried pedaling hold survives untouched");
     }
 }

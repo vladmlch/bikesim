@@ -1654,11 +1654,17 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                  : std::max(kPedalPressMarginN, f_base[s]);
             }
             std::array<double, 2> f_task_press_max{};
+            // The resting press a foot can lose before the task pulls
+            // the pedal: the <=0 press servo's f_weight target, floored
+            // at zero — a leg the pose reports as unweighted offers no
+            // press to relieve, so any negative task press is a pull.
+            std::array<double, 2> f_rest_n{};
             double crank_press_ceiling_nm =
                 std::numeric_limits<double>::infinity();
             for (const std::size_t s : {0U, 1U}) {
                 f_task_press_max[s] = std::max(
                     0., ps.max_total_press_n - f_min[1U - s] - f_floor[s]);
+                f_rest_n[s] = std::max(f_weight[s], 0.);
                 if (shares[s] > 0. && press_per_nm[s] > 1e-12) {
                     crank_press_ceiling_nm = std::min(
                         crank_press_ceiling_nm,
@@ -1740,6 +1746,19 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                     task_torques[0] *= scale;
                     task_torques[1] *= scale;
                     f_task_press = f_task_press_max[s];
+                } else if (f_task_press < -f_rest_n[s]) {
+                    // The feet only press flat pedals; a pull is
+                    // impossible (simulation decisions). A negative
+                    // crank task may relieve the resting press — the
+                    // <=0 press servo below targets f_weight — but not
+                    // go past it into a pull. Near a dead spot a strong
+                    // reposition demand hits this bound first; the
+                    // delivered torque then grows as the crank arm
+                    // leaves the vertical.
+                    const double scale = -f_rest_n[s] / f_task_press;
+                    task_torques[0] *= scale;
+                    task_torques[1] *= scale;
+                    f_task_press = -f_rest_n[s];
                 }
                 const double delta_f_press =
                     steady_state

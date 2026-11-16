@@ -62,11 +62,14 @@ void controls_and_camera() {
     bt::require(view::action_for_key(view::Mode::physical, 'P') == view::Action::fixed_parameter,
         "physical parameters stay fixed per run");
     // 2026-11-16 plan task 8 / D1: V fires the crank-reposition one-shot
-    // in the physical viewer only; research keeps V unbound.
+    // in the physical viewer only; every replay/inspection mode keeps V
+    // unbound, lowercase included (the a-z fold reaches the same case).
     bt::require(view::action_for_key(view::Mode::physical, 'V') == view::Action::crank_reposition &&
         view::action_for_key(view::Mode::research, 'v') == view::Action::none &&
         view::action_for_key(view::Mode::research, 'V') == view::Action::none &&
-        view::action_for_key(view::Mode::inspection, 'V') == view::Action::none,
+        view::action_for_key(view::Mode::inspection, 'V') == view::Action::none &&
+        view::action_for_key(view::Mode::checked_replay, 'V') == view::Action::none &&
+        view::action_for_key(view::Mode::checked_replay, 'v') == view::Action::none,
         "the reposition request is physical-mode only");
     bt::require(view::help_text(view::Mode::physical).find("V crank reposition") != std::string::npos,
         "physical help text documents the reposition key");
@@ -83,6 +86,16 @@ void controls_and_camera() {
     input.apply(view::Action::normal_speed);
     bt::require(input.scale == 1 && view::speed_for_action(view::Action::slower, 1) == 1,
         "time-scale keys clamp to the declared 1/2/4/8 choices");
+    // The reposition request is a hook, not input state: apply() must be
+    // a strict no-op on every field, on a fully populated state.
+    input.paused = true; input.braking = true; input.telemetry = false;
+    input.markers = true; input.brake_strength = .4; input.scale = 4;
+    const view::InputState held = input;
+    input.apply(view::Action::crank_reposition);
+    bt::require(input.scale == held.scale && input.paused == held.paused &&
+        input.braking == held.braking && input.telemetry == held.telemetry &&
+        input.markers == held.markers && input.brake_strength == held.brake_strength,
+        "the reposition action leaves the input state untouched");
 
     mjvCamera camera{};
     view::Camera tracking;

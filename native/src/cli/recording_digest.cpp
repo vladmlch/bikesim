@@ -114,6 +114,9 @@ int run_recording_digest(int argc, const char *const *argv,
         if (raw.size() > 1) {
             args.reserve(raw.size() - 1);
             for (std::size_t i = 1; i < raw.size(); ++i) {
+                if (raw[i] == nullptr) {
+                    throw ParseError("null argument at index " + std::to_string(i));
+                }
                 args.emplace_back(raw[i]);
             }
         }

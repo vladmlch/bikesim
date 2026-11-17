@@ -136,6 +136,8 @@ void test_digest_and_cli() {
     const auto base_pub = publish_case(tmp.path / "base", 50, std::nullopt, std::nullopt, true);
     const auto mut_qpos_pub = publish_case(tmp.path / "mut_qpos", 50, 42, std::nullopt, true);
     const auto mut_force_pub = publish_case(tmp.path / "mut_force", 50, std::nullopt, 17, true);
+    const auto mut_coupled_pub = publish_case(tmp.path / "mut_coupled", 50, 11, 10, true);
+    const auto mut_tie_pub = publish_case(tmp.path / "mut_tie", 50, 10, 10, true);
     const auto empty_force_pub = publish_case(tmp.path / "empty_force", 50, std::nullopt, std::nullopt, false);
     const auto missing_forces_dir = create_missing_forces_copy(
         {.src_dir = base_pub.directory, .dst_dir = tmp.path / "missing_forces"});
@@ -143,11 +145,15 @@ void test_digest_and_cli() {
     const auto rec_a = rec::open_recording(base_pub.directory);
     const auto rec_b = rec::open_recording(mut_qpos_pub.directory);
     const auto rec_f = rec::open_recording(mut_force_pub.directory);
+    const auto rec_coupled = rec::open_recording(mut_coupled_pub.directory);
+    const auto rec_tie = rec::open_recording(mut_tie_pub.directory);
     const auto rec_empty_f = rec::open_recording(empty_force_pub.directory);
 
     const auto d_a = rec::compute_recording_digest(*rec_a);
     const auto d_b = rec::compute_recording_digest(*rec_b);
     const auto d_f = rec::compute_recording_digest(*rec_f);
+    const auto d_coupled = rec::compute_recording_digest(*rec_coupled);
+    const auto d_tie = rec::compute_recording_digest(*rec_tie);
     const auto d_empty_f = rec::compute_recording_digest(*rec_empty_f);
 
     bt::require(d_a.schema_version == 1, "digest preserves schema_version == 1");
@@ -168,6 +174,21 @@ void test_digest_and_cli() {
     bt::require(diff_force.table == "forces", "1-ULP flip reports forces table");
     bt::require(diff_force.column == "power_w", "1-ULP flip reports power_w column");
     bt::require(diff_force.interval_id == 17, "1-ULP flip reports interval_id 17");
+
+    // Coupled drift: forces diverges at 10 and physics diverges at 11 -> must report forces at 10
+    const auto diff_coupled = rec::compare_recording_digests(d_a, d_coupled);
+    bt::require(!diff_coupled.equal, "coupled forces(10)/physics(11) drift must fail comparison");
+    bt::require(diff_coupled.table == "forces",
+                "earlier forces drift at interval 10 beats later physics drift at interval 11");
+    bt::require(diff_coupled.column == "power_w", "coupled drift reports forces.power_w");
+    bt::require(diff_coupled.interval_id == 10, "coupled drift reports interval_id 10");
+
+    // Equal-interval tie: both forces and physics diverge at 10 -> physics wins tie-break
+    const auto diff_tie = rec::compare_recording_digests(d_a, d_tie);
+    bt::require(!diff_tie.equal, "same-interval tie drift must fail comparison");
+    bt::require(diff_tie.table == "physics", "same-interval tie reports physics first");
+    bt::require(diff_tie.column == "root_z_m", "same-interval tie reports root_z_m");
+    bt::require(diff_tie.interval_id == 10, "same-interval tie reports interval_id 10");
 
     // Column ordering invariance
     auto d_reordered = d_a;
@@ -216,10 +237,22 @@ void test_digest_and_cli() {
     }
 
     const fs::path golden_json = tmp.path / "golden.json";
+    const std::string base_dir_str = base_pub.directory.string();
     const std::string base_duckdb = (base_pub.directory / "run.duckdb").string();
     const std::string mut_duckdb = (mut_qpos_pub.directory / "run.duckdb").string();
     const std::string missing_duckdb = (missing_forces_dir / "run.duckdb").string();
     const std::string golden_str = golden_json.string();
+
+    {
+        std::ostringstream out, err;
+        const std::array<const char *, 3> argv{
+            "bike-recording-digest", "--run", base_dir_str.c_str()};
+        bt::require(bike::cli::run_recording_digest(static_cast<int>(argv.size()), argv.data(), out, err) == 0,
+                    "--run <dir> exits 0");
+        const auto parsed = rec::digest_from_json(io::parse_json(out.str()));
+        bt::require(rec::compare_recording_digests(d_a, parsed).equal,
+                    "--run <dir> prints matching digest JSON to stdout");
+    }
 
     {
         std::ostringstream out, err;

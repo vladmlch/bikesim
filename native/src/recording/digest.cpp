@@ -49,7 +49,7 @@ std::string finish_hex(io::Sha256 &hasher) {
 void hash_length_prefixed(io::Sha256 &hasher, std::string_view text) noexcept {
     const auto len = le_u64(static_cast<std::uint64_t>(text.size()));
     hasher.update(len);
-    const auto bytes = std::as_bytes(std::span<const char>{text.data(), text.size()});
+    const auto bytes = std::as_bytes(std::span{text});
     hasher.update(bytes);
 }
 
@@ -492,29 +492,35 @@ std::string find_first_differing_column(const TableDigest &lhs,
         rhs_map.emplace(col.name, &col);
         names.insert(col.name);
     }
+    std::string first_name;
+    std::size_t diff_count = 0;
     for (const auto name : names) {
         const auto lit = lhs_map.find(name);
         const auto rit = rhs_map.find(name);
+        std::string col_detail;
         if (lit == lhs_map.end()) {
-            detail_out = "column missing in lhs";
-            return std::string(name);
-        }
-        if (rit == rhs_map.end()) {
-            detail_out = "column missing in rhs";
-            return std::string(name);
-        }
-        if (lit->second->rows != rit->second->rows) {
-            detail_out = "row count mismatch (" + std::to_string(lit->second->rows) +
+            col_detail = "column missing in lhs";
+        } else if (rit == rhs_map.end()) {
+            col_detail = "column missing in rhs";
+        } else if (lit->second->rows != rit->second->rows) {
+            col_detail = "row count mismatch (" + std::to_string(lit->second->rows) +
                          " vs " + std::to_string(rit->second->rows) + ")";
-            return std::string(name);
-        }
-        if (lit->second->sha256 != rit->second->sha256) {
-            detail_out = "column sha256 mismatch (" + lit->second->sha256 + " vs " +
+        } else if (lit->second->sha256 != rit->second->sha256) {
+            col_detail = "column sha256 mismatch (" + lit->second->sha256 + " vs " +
                          rit->second->sha256 + ")";
-            return std::string(name);
+        }
+        if (!col_detail.empty()) {
+            if (first_name.empty()) {
+                first_name = std::string(name);
+                detail_out = std::move(col_detail);
+            }
+            ++diff_count;
         }
     }
-    return {};
+    if (diff_count > 1) {
+        detail_out += " (+" + std::to_string(diff_count - 1) + " other differing columns)";
+    }
+    return first_name;
 }
 
 double extract_json_double(const io::Value &value, std::string_view field) {
@@ -594,6 +600,18 @@ DigestDiff compare_recording_digests(const DigestReport &lhs, const DigestReport
         std::sort(ordered_names.begin() + 2, ordered_names.end());
     }
 
+    std::optional<DigestDiff> best_diff;
+    const auto consider_diff = [&](DigestDiff candidate) {
+        if (!best_diff) {
+            best_diff = std::move(candidate);
+            return;
+        }
+        if (candidate.interval_id >= 0 &&
+            (best_diff->interval_id < 0 || candidate.interval_id < best_diff->interval_id)) {
+            best_diff = std::move(candidate);
+        }
+    };
+
     for (const auto &tname : ordered_names) {
         const auto lit = lhs_tables.find(tname);
         const auto rit = rhs_tables.find(tname);
@@ -601,38 +619,44 @@ DigestDiff compare_recording_digests(const DigestReport &lhs, const DigestReport
             continue;
         }
         if (lit == lhs_tables.end() || rit == rhs_tables.end()) {
-            return DigestDiff{
+            consider_diff(DigestDiff{
                 .equal = false,
                 .table = tname,
                 .column = {},
                 .interval_id = -1,
                 .detail = lit == lhs_tables.end() ? "table missing in lhs" : "table missing in rhs",
-            };
+            });
+            continue;
         }
         std::string col_detail;
         const std::string diff_col = find_first_differing_column(*lit->second, *rit->second, col_detail);
         if (!diff_col.empty()) {
             const std::int64_t diff_interval =
                 find_first_differing_interval(*lit->second, *rit->second);
-            return DigestDiff{
+            consider_diff(DigestDiff{
                 .equal = false,
                 .table = tname,
                 .column = diff_col,
                 .interval_id = diff_interval,
                 .detail = std::move(col_detail),
-            };
+            });
+            continue;
         }
         if (lit->second->row_count != rit->second->row_count) {
             const std::int64_t diff_interval =
                 find_first_differing_interval(*lit->second, *rit->second);
-            return DigestDiff{
+            consider_diff(DigestDiff{
                 .equal = false,
                 .table = tname,
                 .column = {},
                 .interval_id = diff_interval,
                 .detail = "table row_count mismatch",
-            };
+            });
         }
+    }
+
+    if (best_diff) {
+        return *best_diff;
     }
 
     const std::string lhs_overall =

@@ -730,6 +730,27 @@ if(BUILD_TESTING)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE
       "-framework Metal" "-framework Foundation")
   endif()
+
+  # Subproject 1 Stage 1 gate: 4 × 30 s golden episode digests. Registered at
+  # root scope (outside native/tests/recording/) so the test binary links only
+  # bike_test_fixtures + bike_recording_digest_cli + bike_platform without any
+  # libmujoco edge and drives bike-ride via subprocess.
+  add_executable(golden_episode_digest
+    "${_bike_native_tests_dir}/recording/test_golden_episode_digest.cpp")
+  bike_apply_native_policy(golden_episode_digest)
+  target_include_directories(golden_episode_digest SYSTEM PRIVATE
+    "${_bike_native_dir}/src")
+  # bike_platform reaches the link line transitively through
+  # bike_recording_digest_cli -> bike_recording_reader; listing it again
+  # only draws a duplicate-library warning from ld.
+  target_link_libraries(golden_episode_digest PRIVATE
+    bike_test_fixtures bike_recording_digest_cli)
+  add_dependencies(golden_episode_digest bike-ride)
+  add_test(NAME golden_episode_digest
+    COMMAND golden_episode_digest "$<TARGET_FILE:bike-ride>" "${CMAKE_SOURCE_DIR}")
+  set_tests_properties(golden_episode_digest PROPERTIES
+    LABELS "recording;golden;slow"
+    TIMEOUT 1200)
 endif()
 
 # ---------------------------------------------------------------------------

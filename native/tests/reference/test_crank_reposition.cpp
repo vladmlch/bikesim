@@ -35,6 +35,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <limits>
 #include <numbers>
 #include <optional>
@@ -59,7 +60,9 @@ std::filesystem::path repo_file(std::string_view relative) {
 // around the advancing control ticks. control_period_steps widens the
 // profile's 1-step cadence for tests that need non-tick intervals.
 std::unique_ptr<runtime::NativeRideRuntime> reposition_env(
-    double *control_period_s = nullptr, int control_period_steps = 0) {
+    double *control_period_s = nullptr, int control_period_steps = 0,
+    const std::function<void(cfg::SimulationPhysicsConfig &)> &mutate =
+        nullptr) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     request.setup.model.physics = cfg::load_physics(
@@ -68,6 +71,8 @@ std::unique_ptr<runtime::NativeRideRuntime> reposition_env(
     request.setup.model.crank_joint = true;
     request.setup.model.rider =
         bike::model::rider_from_args("articulated_planar");
+    if (mutate)
+        mutate(*request.setup.model.physics);
     if (control_period_steps > 0)
         request.setup.model.physics->control_period_s =
             control_period_steps *
@@ -529,6 +534,52 @@ void test_reposition_request_waits_for_the_advancing_tick() {
     bt::require(!goal_engaged(), "reset clears the queued request");
 }
 
+// 2026-11-16 plan task 3: manual crank reposition requires the spindle pedal
+// attachment and an engaged motor clutch. Without the clutch, backpedal would
+// drag the motor backward; without the spindle, the request is silently lost.
+void test_reposition_request_requires_spindle_and_clutch() {
+    // 1. Spindle + clutch (default welded profile): accepted.
+    {
+        auto runtime = reposition_env();
+        runtime->request_crank_reposition();
+    }
+    // 2. Non-spindle pedal attachment (weld): rejected with invalid_argument.
+    {
+        auto runtime = reposition_env(
+            nullptr, 0, [](cfg::SimulationPhysicsConfig &p) {
+                p.articulated.pedal_attachment = "weld";
+                p.articulated.active_positive_power_limit_w = std::nullopt;
+            });
+        std::string err;
+        try {
+            runtime->request_crank_reposition();
+        } catch (const std::invalid_argument &e) {
+            err = e.what();
+        }
+        bt::require(err.find("pedal_attachment") != std::string::npos &&
+                        err.find("spindle") != std::string::npos,
+                    "reposition request rejects non-spindle pedal attachment "
+                    "(got: " +
+                        err + ")");
+    }
+    // 3. No motor clutch: rejected with invalid_argument.
+    {
+        auto runtime = reposition_env(
+            nullptr, 0, [](cfg::SimulationPhysicsConfig &p) {
+                p.drive.motor_clutch = false;
+            });
+        std::string err;
+        try {
+            runtime->request_crank_reposition();
+        } catch (const std::invalid_argument &e) {
+            err = e.what();
+        }
+        bt::require(err.find("motor_clutch") != std::string::npos,
+                    "reposition request rejects missing motor clutch (got: " +
+                        err + ")");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -537,5 +588,6 @@ int main() {
         test_requested_reposition_reaches_the_lower_power_phase();
         test_reposition_backpedal_respects_the_clutch_topology();
         test_reposition_request_waits_for_the_advancing_tick();
+        test_reposition_request_requires_spindle_and_clutch();
     });
 }

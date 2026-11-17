@@ -833,6 +833,27 @@ void NativeRideRuntime::request_crank_reposition() {
     // step's own thread.
     const AdvancementGuard guard(advancing_);
     require_open();
+
+    std::string pedal_attachment;
+    if (const auto *obj =
+            std::get_if<bio::Value::Object>(&config_.rider_controller.data)) {
+        for (const auto &[key, val] : *obj) {
+            if (key == "pedal_attachment") {
+                if (const auto *str = std::get_if<std::string>(&val.data))
+                    pedal_attachment = *str;
+                break;
+            }
+        }
+    }
+    if (pedal_attachment != "spindle")
+        throw std::invalid_argument(
+            "crank reposition requires articulated.pedal_attachment = 'spindle'; got '" +
+            (pedal_attachment.empty() ? "none" : pedal_attachment) + "'");
+
+    if (!stepper_->has_drive() || !stepper_->drive().config().motor_clutch)
+        throw std::invalid_argument(
+            "crank reposition requires drive.motor_clutch = true");
+
     physical_->request_crank_reposition();
 }
 

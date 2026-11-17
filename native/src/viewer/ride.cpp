@@ -176,7 +176,13 @@ RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options
     hooks.terminal=[&]{return ride.snapshot().outcome.has_value();};
     hooks.reset=[&]{if(lifecycle.before_reset)lifecycle.before_reset();ride.reset();if(lifecycle.after_reset)lifecycle.after_reset();};
     hooks.brakes=[&](double f,double r){front=f;rear=r;};
-    hooks.crank_reposition=[&]{ride.request_crank_reposition();};
+    hooks.crank_reposition=[&]{
+        try {
+            ride.request_crank_reposition();
+        } catch(const std::exception& error) {
+            std::cerr << "crank reposition rejected: " << error.what() << '\n';
+        }
+    };
     hooks.operator_event=lifecycle.operator_event;
     hooks.close_requested=lifecycle.close_requested;
     return run(std::move(hooks),ride.model_image(),options);

@@ -55,7 +55,7 @@ inline bike::io::Value projected_writer(const cfg::AssistConfig& assist) {
     drive.pedaling.reposition_stall_window_s = 1.;
     drive.pedaling.reposition_stall_progress_rad = .5;
     drive.pedaling.reposition_cooldown_s = 1.;
-    drive.pedaling.reposition_back_rate_rad_s = 3.;
+    drive.pedaling.reposition_back_rate_rad_s = 3.;drive.pedaling.reposition_damping_nms_rad = 12.;
     drive.pedaling.reposition_timeout_s = 3.;
     drive.pedaling.reposition_phase_tolerance_rad = .05;
     drive.pedaling.reposition_noop_rad = .12;
@@ -116,7 +116,7 @@ inline drivetrain::PedalingConfig pedaling_config(double tau = 0.) {
         .rollback_engage_mps = .25, .rollback_release_mps = 0., .rollback_demand = 1.,
         .reposition_on_stall = false, .reposition_min_effort_nm = 20.,
         .reposition_stall_window_s = 1., .reposition_stall_progress_rad = .5,
-        .reposition_cooldown_s = 1., .reposition_back_rate_rad_s = 3.,
+        .reposition_cooldown_s = 1., .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12.,
         .reposition_timeout_s = 3., .reposition_phase_tolerance_rad = .05,
         .reposition_noop_rad = .12};
 }

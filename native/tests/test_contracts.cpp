@@ -77,7 +77,7 @@ namespace {
             .effort_slew_nm_s = 0.,
             .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
             .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
-            .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+            .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12., .reposition_timeout_s = 3.,
             .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12,
         };
         drivetrain::PedalingPolicy policy(config);
@@ -109,7 +109,7 @@ namespace {
             .mash_torque_nm = 25., .effort_slew_nm_s = 0.,
             .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
             .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
-            .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+            .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12., .reposition_timeout_s = 3.,
             .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12
         };
     }
@@ -163,7 +163,7 @@ namespace {
         invalid([](auto &c) { c.mash_cadence_rpm = -1.; });
         invalid([](auto &c) { c.mash_cadence_rpm = 0.; }); // nonzero mash torque needs cadence
         invalid([](auto &c) { c.effort_slew_nm_s = -1.; });
-        // The nine reposition knobs gate at the same domain the wire
+        // The ten reposition knobs gate at the same domain the wire
         // decoder admits — a programmatic config gets no wider a door.
         invalid([](auto &c) { c.reposition_min_effort_nm = -1.; });
         invalid([](auto &c) { c.reposition_stall_window_s = 0.; });
@@ -171,6 +171,7 @@ namespace {
         invalid([](auto &c) { c.reposition_stall_progress_rad = std::numbers::pi; });
         invalid([](auto &c) { c.reposition_cooldown_s = -1.; });
         invalid([](auto &c) { c.reposition_back_rate_rad_s = 0.; });
+        invalid([](auto &c) { c.reposition_damping_nms_rad = 0.; });
         invalid([](auto &c) { c.reposition_timeout_s = 0.; });
         invalid([](auto &c) { c.reposition_phase_tolerance_rad = -1.; });
         invalid([](auto &c) { c.reposition_noop_rad = -1.; });

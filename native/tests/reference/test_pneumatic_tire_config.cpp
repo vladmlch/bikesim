@@ -155,6 +155,7 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
                     {"reposition_stall_progress_rad", io::Value{io::Number{"0.5"}}},
                     {"reposition_cooldown_s", io::Value{io::Number{window}}},
                     {"reposition_back_rate_rad_s", io::Value{io::Number{"3.0"}}},
+                    {"reposition_damping_nms_rad", io::Value{io::Number{"12.0"}}},
                     {"reposition_timeout_s", io::Value{io::Number{timeout}}},
                     {"reposition_phase_tolerance_rad", io::Value{io::Number{"0.05"}}},
                     {"reposition_noop_rad", io::Value{io::Number{"0.12"}}},

@@ -239,7 +239,7 @@ namespace cfg = bike::configuration;
                 "[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
                 "stop_time_s = 0.35\n"
                 "[drive.shifting]\nshift_cooldown_s = 0.4\nshift_cut_duration_s = 0.2\n"

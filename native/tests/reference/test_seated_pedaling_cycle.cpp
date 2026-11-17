@@ -145,7 +145,7 @@ void test_first_pedal_command_and_restart_respect_configured_effort_slew() {
         .rollback_release_mps = 0., .rollback_demand = 1.,
         .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
         .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
-        .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+        .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12., .reposition_timeout_s = 3.,
         .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12};
     drivetrain::PedalingPolicy policy(config);
     (void)policy.update(0., 0., 0., 0., .0005, false);
@@ -178,7 +178,7 @@ void test_shift_cut_drop_and_return_respect_configured_effort_slew() {
         .rollback_release_mps = 0., .rollback_demand = 1.,
         .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
         .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
-        .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+        .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12., .reposition_timeout_s = 3.,
         .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12};
     for (const double factor : {.3, .8}) {
         drivetrain::PedalingPolicy policy(config);
@@ -242,7 +242,7 @@ void test_falling_effort_ceiling_goes_through_the_configured_slew() {
             .rollback_release_mps = 0., .rollback_demand = 1.,
             .reposition_min_effort_nm = 20., .reposition_stall_window_s = 1.,
             .reposition_stall_progress_rad = .5, .reposition_cooldown_s = 1.,
-            .reposition_back_rate_rad_s = 3., .reposition_timeout_s = 3.,
+            .reposition_back_rate_rad_s = 3., .reposition_damping_nms_rad = 12., .reposition_timeout_s = 3.,
             .reposition_phase_tolerance_rad = .05, .reposition_noop_rad = .12};
     };
     { // effort_slew_nm_s = 300: a 60 -> 0 ceiling step ramps down.

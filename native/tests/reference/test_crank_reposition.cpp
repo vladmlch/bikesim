@@ -260,7 +260,7 @@ void test_requested_reposition_reaches_the_lower_power_phase() {
                     std::to_string(phase_at_clear) + " rad)");
     // Clear fires at remaining <= tolerance (0.05 rad) or at the 3 s
     // timeout. The reposition branch's rate damper
-    // (kRepositionDampNmSRad) holds a ~0.014 rad steady-state residual
+    // (drive.pedaling.reposition_damping_nms_rad) holds a ~0.014 rad steady-state residual
     // against the leg-weight lever at the horizontal pose — inside the
     // tolerance — so the manoeuvre clears by arrival, ~0.7-0.9 s on
     // this plant. The first require pins the plan's 0.05 rad
@@ -294,6 +294,13 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
     bt::require(runtime->snapshot().step == 40,
                 "the dead-spot plant reaches the request step");
     runtime->request_crank_reposition();
+
+    // The reposition torque cap is the profile's seated_climb crank
+    // torque ceiling (2026-11-16 plan task 2), not a code constant.
+    const double crank_torque_cap_nm =
+        cfg::load_physics(
+            repo_file("examples/research/viewer_physics_welded.toml"))
+            .seated_climb.max_crank_torque_nm;
 
     // Joint addresses are model constants — resolve them once outside
     // the inspected-step loop instead of paying an mj_name2id (and a
@@ -444,10 +451,10 @@ void test_reposition_backpedal_respects_the_clutch_topology() {
     bt::require(min_pedal_normal_n >= -20.,
                 "the pedal weld normals never pull past 20 N "
                 "(min " + std::to_string(min_pedal_normal_n) + " N)");
-    // The plan names coasting_brake_limit_nm; the 2026-11-10 ruling
-    // removed those knobs and task 6 carries the same bound as
-    // kRepositionTorqueLimitNm.
-    bt::require(max_abs_crank_torque_nm <= rider::kRepositionTorqueLimitNm,
+    // The cap is the rider's crank torque ceiling
+    // seated_climb.max_crank_torque_nm (decision 11), carried into the
+    // reposition branch by SpindleConfig (2026-11-16 plan task 2).
+    bt::require(max_abs_crank_torque_nm <= crank_torque_cap_nm,
                 "the delivered crank torque stays inside the reposition "
                 "bound (max |tau| " +
                     std::to_string(max_abs_crank_torque_nm) + " N m)");

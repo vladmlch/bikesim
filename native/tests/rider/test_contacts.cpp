@@ -60,7 +60,10 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         auto writer=r::make_support_writer(*model,contacts(a));writer->reset(data.get());
         const auto dispatch=r::support_dispatch(contacts(a));bt::require(dispatch.closed_form_spindle==(a.pedal_attachment=="spindle"),"source spindle selection depends on pedal topology");
         const auto pose=mdl::geometry_pose(*request.rider,request.bike);
-        auto controller=std::make_unique<::rider::SpindleController>(model.get(),::rider::decode_spindle_pose(runtime::project_articulated_pose(pose),"pose"),::rider::decode_spindle_config(runtime::project_rider_controller(*request.physics,*model,pose)),request.bike.crank_length/1000.);
+        auto spindle_cfg=::rider::decode_spindle_config(runtime::project_rider_controller(*request.physics,*model,pose));
+        spindle_cfg.reposition_damping_nms_rad=request.physics->drive.pedaling.reposition_damping_nms_rad;
+        spindle_cfg.reposition_torque_limit_nm=request.physics->seated_climb.max_crank_torque_nm;
+        auto controller=std::make_unique<::rider::SpindleController>(model.get(),::rider::decode_spindle_pose(runtime::project_articulated_pose(pose),"pose"),std::move(spindle_cfg),request.bike.crank_length/1000.);
         bt::require(controller->spindle()==dispatch.closed_form_spindle&&controller->welded()==(a.pedal_attachment=="weld"),"controller and force writer agree on attachments");
         const auto state=controller->state();controller->restore(::rider::decode_spindle_state(::rider::encode_spindle_state(state),"rider"));
         if(a.grip_attachment=="spring")bt::require(!r::set_spring_grip_enabled(*writer,false)&&!writer->state().enabled[writers::kGripIndex],"spring grip releases through owner");

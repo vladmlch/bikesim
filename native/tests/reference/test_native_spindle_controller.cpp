@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <format>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <numbers>
@@ -115,7 +116,8 @@ void set_string(bio::Value &value, std::string_view key, // NOLINT(bugprone-easi
                              std::string(key));
 }
 
-Plant make_plant(std::string_view pedal_attachment = {}) {
+Plant make_plant(std::string_view pedal_attachment = {},
+                 const std::function<void(rider::SpindleConfig &)> &tune = {}) {
     Plant plant;
     const auto mjb = bt::fixture("spindle/pinned/model.mjb");
     plant.model = mj_loadModel(mjb.c_str(), nullptr);
@@ -127,10 +129,18 @@ Plant make_plant(std::string_view pedal_attachment = {}) {
     bio::Value rider_doc = member(doc, "rider_controller");
     if (!pedal_attachment.empty())
         set_string(rider_doc, "pedal_attachment", pedal_attachment);
+    rider::SpindleConfig config = rider::decode_spindle_config(rider_doc);
+    // The reposition law's profile inputs do not cross the rider_controller
+    // wire; the runtime assembly injects them from drive.pedaling and
+    // seated_climb. The pinned plant declares the calibrated 12/60 baseline.
+    config.reposition_damping_nms_rad = 12.;
+    config.reposition_torque_limit_nm = 60.;
+    if (tune)
+        tune(config);
     plant.controller = std::make_unique<rider::SpindleController>(
         plant.model,
         rider::decode_spindle_pose(member(doc, "pose"), "config.pose"),
-        rider::decode_spindle_config(rider_doc),
+        std::move(config),
         bio::number_double(
             bio::as_number(member(doc, "crank_length_m"),
                            "config.crank_length_m"),
@@ -652,8 +662,8 @@ void test_spindle_coasting_applies_no_crank_torque() {
 // The crank-reposition manoeuvre's dedicated branch (2026-11-16 plan
 // task 6): a zero-effort command carrying crank_reposition backpedals
 // the crank toward its negative rate goal —
-// raw = kRepositionDampNmSRad * (crank_target_rate_rad_s - rate),
-// clamped inside ±kRepositionTorqueLimitNm. The coasting press servo
+// raw = config.reposition_damping_nms_rad * (crank_target_rate_rad_s - rate),
+// clamped inside ±config.reposition_torque_limit_nm. The coasting press servo
 // would drive that same torque to zero, so the branch never consults
 // it: the weld reading changes nothing and the carried pedaling hold
 // survives untouched for the resume.
@@ -669,7 +679,8 @@ void test_spindle_reposition_backpedals_toward_goal() {
                                     .00125, false);
     const double task = plant.controller->state()
                             .allocation_diagnostics.crank_task_nm;
-    bt::require(task < 0. && task >= -rider::kRepositionTorqueLimitNm,
+    bt::require(task < 0. &&
+                    task >= -plant.controller->config().reposition_torque_limit_nm,
                 std::format("reposition task {:.6f} N.m: backward and "
                             "inside the torque limit", task));
     bt::require(task == -36.,
@@ -694,7 +705,7 @@ void test_spindle_reposition_backpedals_toward_goal() {
                                        .00125, false);
         bt::require(fast.controller->state()
                             .allocation_diagnostics.crank_task_nm ==
-                        -rider::kRepositionTorqueLimitNm,
+                        -fast.controller->config().reposition_torque_limit_nm,
                     "the reposition torque clamps at the limit");
     }
     // The pedaling hold is carried through untouched — the branch
@@ -1350,6 +1361,60 @@ void test_spindle_probe_rejects_bad_input() {
 // cppcheck-suppress throwInEntryPoint
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+// The reposition law takes its gain and torque cap from SpindleConfig
+// (2026-11-16 plan task 2): the cap is the rider's crank torque ceiling
+// seated_climb.max_crank_torque_nm, the gain is the profile field
+// drive.pedaling.reposition_damping_nms_rad. A configured cap of 30 N m
+// bounds the saturated backpedal task at 30, and halving the gain halves
+// the unsaturated task.
+void test_spindle_reposition_gain_and_cap_come_from_config() {
+    rider::RiderCommand command;
+    command.mean_crank_torque_nm = 0.;
+    command.crank_target_phase_rad = 0.;
+    command.crank_target_rate_rad_s = -3.;
+    command.crank_reposition = true;
+    // A fast forward crank drives the raw damper far past the bound, so
+    // the delivered task pins the configured cap, not a code constant.
+    {
+        Plant capped = make_plant({}, [](rider::SpindleConfig &c) {
+            c.reposition_torque_limit_nm = 30.;
+        });
+        stage(capped, .35, 40.);
+        (void)capped.controller->compute(capped.data, command, true,
+                                         .00125, false);
+        const double task = capped.controller->state()
+                                .allocation_diagnostics.crank_task_nm;
+        bt::require(task == -30.,
+                    std::format("a 30 N m configured cap clamps the "
+                                "saturated reposition task at -30, got "
+                                "{:.6f}", task));
+    }
+    // At a stopped crank the raw task is gain * (-3 rad/s), below either
+    // cap: gain 6 delivers exactly half the gain-12 task.
+    {
+        Plant twelve = make_plant();
+        Plant six = make_plant({}, [](rider::SpindleConfig &c) {
+            c.reposition_damping_nms_rad = 6.;
+        });
+        stage(twelve, .35, 0.);
+        stage(six, .35, 0.);
+        (void)twelve.controller->compute(twelve.data, command, true,
+                                         .00125, false);
+        (void)six.controller->compute(six.data, command, true,
+                                      .00125, false);
+        const double task12 = twelve.controller->state()
+                                  .allocation_diagnostics.crank_task_nm;
+        const double task6 = six.controller->state()
+                                 .allocation_diagnostics.crank_task_nm;
+        bt::require(task12 == -36.,
+                    std::format("gain 12 over -3 rad/s lands at -36, got "
+                                "{:.6f}", task12));
+        bt::require(task6 == -18. && task6 == .5 * task12,
+                    std::format("gain 6 halves the unsaturated task: "
+                                "{:.6f} vs {:.6f}", task6, task12));
+    }
+}
+
 int main() {
     return bt::run([] {
         test_spindle_waveform_matches_python();
@@ -1359,6 +1424,7 @@ int main() {
         test_free_crank_stays_held_under_balanced_leg_weights();
         test_spindle_coasting_applies_no_crank_torque();
         test_spindle_reposition_backpedals_toward_goal();
+        test_spindle_reposition_gain_and_cap_come_from_config();
         test_spindle_reposition_command_wire();
         test_spindle_coasting_leg_rests_with_own_weight();
         test_legacy_coasting_leg_rests_with_own_weight();

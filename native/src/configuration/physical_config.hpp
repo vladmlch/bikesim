@@ -280,6 +280,7 @@ struct PedalingConfig {
     double reposition_stall_progress_rad = -1.;
     double reposition_cooldown_s = -1.;
     double reposition_back_rate_rad_s = -1.;
+    double reposition_damping_nms_rad = -1.;
     double reposition_timeout_s = -1.;
     double reposition_phase_tolerance_rad = -1.;
     double reposition_noop_rad = -1.;
@@ -779,6 +780,7 @@ inline constexpr auto kPedalingConfigFields = std::to_array<FieldDecl>({
     REQ_REAL(PedalingConfig, reposition_stall_progress_rad),
     REQ_REAL(PedalingConfig, reposition_cooldown_s),
     REQ_REAL(PedalingConfig, reposition_back_rate_rad_s),
+    REQ_REAL(PedalingConfig, reposition_damping_nms_rad),
     REQ_REAL(PedalingConfig, reposition_timeout_s),
     REQ_REAL(PedalingConfig, reposition_phase_tolerance_rad),
     REQ_REAL(PedalingConfig, reposition_noop_rad),

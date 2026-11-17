@@ -599,6 +599,7 @@ void post_init(const PedalingConfig &config) {
     scalar(config.reposition_cooldown_s, "reposition cooldown", 0.);
     scalar(config.reposition_noop_rad, "reposition no-op band", 0.);
     scalar(config.reposition_back_rate_rad_s, "reposition back rate", std::nullopt, true);
+    scalar(config.reposition_damping_nms_rad, "reposition damping", std::nullopt, true);
     scalar(config.reposition_timeout_s, "reposition timeout", std::nullopt, true);
     scalar(config.reposition_phase_tolerance_rad, "reposition phase tolerance", std::nullopt, true);
     scalar(config.reposition_stall_window_s, "reposition stall window", std::nullopt, true);
@@ -1449,6 +1450,7 @@ SimulationPhysicsConfig default_physics() {
     config.drive.pedaling.reposition_stall_progress_rad = .5;
     config.drive.pedaling.reposition_cooldown_s = 1.;
     config.drive.pedaling.reposition_back_rate_rad_s = 3.;
+    config.drive.pedaling.reposition_damping_nms_rad = 12.;
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;

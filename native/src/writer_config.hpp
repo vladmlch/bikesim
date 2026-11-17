@@ -933,7 +933,7 @@ namespace nativecfg {
             exact(p, keys("enabled","coast_above_rpm","resume_below_rpm","stop_time_s","coast_cadence_tau_s","mash_cadence_rpm","mash_torque_nm","effort_slew_nm_s",
                          "reposition_on_stall","reposition_min_effort_nm","reposition_stall_window_s",
                          "reposition_stall_progress_rad","reposition_cooldown_s","reposition_back_rate_rad_s",
-                         "reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"),
+                         "reposition_damping_nms_rad","reposition_timeout_s","reposition_phase_tolerance_rad","reposition_noop_rad"),
                     keys("rollback_brake","rollback_engage_mps","rollback_release_mps","rollback_demand"));
             exact(s, keys("enabled","cassette","target_cadence_min_rpm","target_cadence_max_rpm","shift_cooldown_s","shift_cut_duration_s","torque_factor_larger_cog","torque_factor_smaller_cog","cadence_smoothing_tau_s","upshift_slip_limit_mps","upshift_slip_mode"), keys());
             exact(a, keys("gain","max_torque","max_power","tau","slew","engage_torque_nm","release_hold_s","cutoff_mps","taper_width_mps","mode"), keys("profile","torque_curve"));
@@ -965,6 +965,7 @@ namespace nativecfg {
                 .reposition_stall_progress_rad = positive(num(p, "reposition_stall_progress_rad"), p.child("reposition_stall_progress_rad")),
                 .reposition_cooldown_s = nonnegative(num(p, "reposition_cooldown_s"), p.child("reposition_cooldown_s")),
                 .reposition_back_rate_rad_s = positive(num(p, "reposition_back_rate_rad_s"), p.child("reposition_back_rate_rad_s")),
+                .reposition_damping_nms_rad = positive(num(p, "reposition_damping_nms_rad"), p.child("reposition_damping_nms_rad")),
                 .reposition_timeout_s = positive(num(p, "reposition_timeout_s"), p.child("reposition_timeout_s")),
                 .reposition_phase_tolerance_rad = positive(num(p, "reposition_phase_tolerance_rad"), p.child("reposition_phase_tolerance_rad")),
                 .reposition_noop_rad = nonnegative(num(p, "reposition_noop_rad"), p.child("reposition_noop_rad"))

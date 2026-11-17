@@ -87,6 +87,13 @@ struct SpindleConfig {
     // consumes them.
     double weld_servo_gain = 0.;
     double weld_servo_limit_nm = 0.;
+    // Reposition backpedal law (2026-11-16 plan task 2): the rate-damper
+    // gain is drive.pedaling.reposition_damping_nms_rad and the hard bound
+    // is the rider's crank torque ceiling seated_climb.max_crank_torque_nm
+    // (decision 11). Both are profile-owned — the assembly sites inject
+    // them and the constructor rejects an unset (non-positive) value.
+    double reposition_damping_nms_rad = 0.;
+    double reposition_torque_limit_nm = 0.;
     double joint_envelope_soft_k_nm_rad = 0.;
     double joint_envelope_soft_margin_rad = 0.;
     double arm_reach_fraction = 0.;
@@ -125,21 +132,6 @@ struct RiderCommand {
     // crank_target_rate_rad_s, which the command decoder enforces.
     bool crank_reposition = false;
 };
-
-// The reposition branch's dedicated torque law: a rate damper toward
-// the backpedal goal inside a hard torque bound. The bound is the value
-// the removed coasting_brake_limit_nm used to carry (2026-11-10
-// 29dd2d1c); the damping gain is not — the policy's approach rate
-// (-remaining / 0.05 s) turns the damper into a position servo of
-// stiffness kRepositionDampNmSRad / 0.05 N m/rad near the goal, so the
-// leg-weight lever torque (~3.4 N m at the horizontal pose, where the
-// lever is longest) leaves a steady-state residual of
-// ~0.05 * tau_g / D rad. 12.0 puts the residual at ~0.014 rad — under
-// 0.02 rad, comfortably inside the 0.05 rad arrival tolerance; the
-// carried 2.0 stalled at ~0.085 rad and burned the whole 3 s timeout
-// (review 2026-11-16 I1).
-inline constexpr double kRepositionDampNmSRad = 12.0;
-inline constexpr double kRepositionTorqueLimitNm = 60.0;
 
 // Insertion-ordered name->T pairs — mirrors Python dict ordering on the
 // wire (alphabetical std::map order would reorder the anatomical joint

@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "close",
   "label": "export.summary.values",
-  "nbytes": 4744,
+  "nbytes": 4752,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
   "offset": 798,
   "rtol": 1e-09,
   "shape": [
-   593
+   594
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "export.summary.other",
   "nbytes": 12188,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 5542,
+  "offset": 5550,
   "rtol": null,
   "shape": [
    12188
@@ -91,7 +91,7 @@
   "label": "export.observations.jsonl.values",
   "nbytes": 264,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 17730,
+  "offset": 17738,
   "rtol": 1e-09,
   "shape": [
    33
@@ -105,7 +105,7 @@
   "label": "export.observations.jsonl.other",
   "nbytes": 74,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 17994,
+  "offset": 18002,
   "rtol": null,
   "shape": [
    74
@@ -119,7 +119,7 @@
   "label": "export.transitions.jsonl.values",
   "nbytes": 448,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18068,
+  "offset": 18076,
   "rtol": 1e-09,
   "shape": [
    56
@@ -133,7 +133,7 @@
   "label": "export.transitions.jsonl.other",
   "nbytes": 509,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 18516,
+  "offset": 18524,
   "rtol": null,
   "shape": [
    509
@@ -147,7 +147,7 @@
   "label": "export.commands_requested.jsonl.values",
   "nbytes": 80,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 19025,
+  "offset": 19033,
   "rtol": 1e-09,
   "shape": [
    10
@@ -161,7 +161,7 @@
   "label": "export.commands_requested.jsonl.other",
   "nbytes": 415,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 19105,
+  "offset": 19113,
   "rtol": null,
   "shape": [
    415
@@ -175,7 +175,7 @@
   "label": "export.commands_applied.jsonl.values",
   "nbytes": 24,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 19520,
+  "offset": 19528,
   "rtol": 1e-09,
   "shape": [
    3
@@ -189,7 +189,7 @@
   "label": "export.commands_applied.jsonl.other",
   "nbytes": 208,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 19544,
+  "offset": 19552,
   "rtol": null,
   "shape": [
    208
@@ -203,7 +203,7 @@
   "label": "export.intervals.jsonl.values",
   "nbytes": 30336,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 19752,
+  "offset": 19760,
   "rtol": 1e-09,
   "shape": [
    3792
@@ -217,7 +217,7 @@
   "label": "export.intervals.jsonl.other",
   "nbytes": 37159,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 50088,
+  "offset": 50096,
   "rtol": null,
   "shape": [
    37159
@@ -231,7 +231,7 @@
   "label": "export.episode_metrics.values",
   "nbytes": 184,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 87247,
+  "offset": 87255,
   "rtol": 1e-09,
   "shape": [
    23
@@ -245,7 +245,7 @@
   "label": "export.episode_metrics.other",
   "nbytes": 534,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 87431,
+  "offset": 87439,
   "rtol": null,
   "shape": [
    534
@@ -259,7 +259,7 @@
   "label": "states.npz initial",
   "nbytes": 2336,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 87965,
+  "offset": 87973,
   "rtol": null,
   "shape": [
    292
@@ -273,7 +273,7 @@
   "label": "states.npz final",
   "nbytes": 2336,
   "node": "native_research_recording/shared_export_native_rows_and_complete_provenance",
-  "offset": 90301,
+  "offset": 90309,
   "rtol": null,
   "shape": [
    292

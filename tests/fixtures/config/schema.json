@@ -880,6 +880,12 @@
             {
               "default": null,
               "default_factory": null,
+              "name": "reposition_damping_nms_rad",
+              "type": "<class 'float'>"
+            },
+            {
+              "default": null,
+              "default_factory": null,
               "name": "reposition_timeout_s",
               "type": "<class 'float'>"
             },

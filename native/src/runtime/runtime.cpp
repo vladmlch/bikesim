@@ -409,14 +409,24 @@ build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
                                             stepper.data(), "terrain");
     std::optional<rider::SpindlePose> pose;
     std::optional<rider::SpindleConfig> rider_cfg;
+    StepConfig step_cfg = step_config(config);
     if (!bio::is_null(config.geometry.pose)) {
         pose = rider::decode_spindle_pose(config.geometry.pose,
                                           "config.geometry.pose");
         rider_cfg = rider::decode_spindle_config(
             config.rider_controller);
+        // The reposition law's gain and cap are profile-owned (2026-11-16
+        // plan task 2): inject them from the decoded drive pedaling and
+        // seated-climb intent instead of carrying them on the
+        // rider_controller wire.
+        rider_cfg->reposition_damping_nms_rad =
+            stepper.drive().config().policies.pedaling
+                .reposition_damping_nms_rad;
+        rider_cfg->reposition_torque_limit_nm =
+            step_cfg.intent.max_crank_torque_nm;
     }
     return std::make_unique<PhysicalStep>(
-        stepper, step_config(config), std::move(vertices),
+        stepper, std::move(step_cfg), std::move(vertices),
         static_brake(config, *stepper.model(), stepper), pose, rider_cfg);
 }
 

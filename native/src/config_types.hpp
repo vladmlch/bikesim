@@ -23,12 +23,12 @@ namespace drivetrain {
         bool rollback_brake{};
         double rollback_engage_mps{}, rollback_release_mps{}, rollback_demand{};
         // Crank-reposition knobs (physical_config.py PedalingConfig, restored
-        // 2026-11-03) — the manoeuvre in PedalingPolicy reads them. All nine
+        // 2026-11-03) — the manoeuvre in PedalingPolicy reads them. All ten
         // are required wire keys, so the projected pedaling section always
         // carries them.
         bool reposition_on_stall{};
         double reposition_min_effort_nm{}, reposition_stall_window_s{}, reposition_stall_progress_rad{},
-            reposition_cooldown_s{}, reposition_back_rate_rad_s{}, reposition_timeout_s{},
+            reposition_cooldown_s{}, reposition_back_rate_rad_s{}, reposition_damping_nms_rad{}, reposition_timeout_s{},
             reposition_phase_tolerance_rad{}, reposition_noop_rad{};
     };
 

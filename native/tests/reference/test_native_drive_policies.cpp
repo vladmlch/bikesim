@@ -228,7 +228,7 @@ struct Mutation { std::string_view id, section, key, json; };
     const auto document = config(input);
     bt::require(sorted_keys(field(document, "pedaling")) == std::vector<std::string>{
         "coast_above_rpm", "coast_cadence_tau_s", "effort_slew_nm_s", "enabled", "mash_cadence_rpm", "mash_torque_nm",
-        "reposition_back_rate_rad_s", "reposition_cooldown_s", "reposition_min_effort_nm", "reposition_noop_rad",
+        "reposition_back_rate_rad_s", "reposition_cooldown_s", "reposition_damping_nms_rad", "reposition_min_effort_nm", "reposition_noop_rad",
         "reposition_on_stall", "reposition_phase_tolerance_rad", "reposition_stall_progress_rad",
         "reposition_stall_window_s", "reposition_timeout_s",
         "resume_below_rpm", "rollback_brake", "rollback_demand", "rollback_engage_mps", "rollback_release_mps", "stop_time_s"},

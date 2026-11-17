@@ -494,7 +494,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
                 "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
@@ -514,7 +514,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
                 "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
@@ -534,7 +534,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
             "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
     });
@@ -551,7 +551,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
             "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
     });
@@ -660,7 +660,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
@@ -675,7 +675,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     invalid_with(
@@ -691,7 +691,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
                 "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
         });
     // A disabled intent never ticks: its delay/smoothing carry no
@@ -710,7 +710,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
             "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-            "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection)));
         bt::require(!disabled.seated_climb.enabled &&
                         disabled.seated_climb.reaction_delay_s == 0.151,
@@ -746,7 +746,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "reposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\n"
         "reposition_cooldown_s = 1.0\n"
-        "reposition_back_rate_rad_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
         "reposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\n"
         "reposition_noop_rad = 0.12\n"
@@ -756,6 +756,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                               "reposition_stall_progress_rad",
                               "reposition_cooldown_s",
                               "reposition_back_rate_rad_s",
+                              "reposition_damping_nms_rad",
                               "reposition_timeout_s",
                               "reposition_phase_tolerance_rad",
                               "reposition_noop_rad", "stop_time_s"}) {
@@ -787,7 +788,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = true\n"
         "reposition_min_effort_nm = 20.0\n"
         "reposition_stall_progress_rad = 0.5\n"
-        "reposition_back_rate_rad_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
         "reposition_phase_tolerance_rad = 0.05\n"
         "reposition_noop_rad = 0.12\n"
         "stop_time_s = 0.35\n";
@@ -834,7 +835,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_stall_window_s = 1.0005\n"
                 "reposition_stall_progress_rad = 0.5\n"
                 "reposition_cooldown_s = 1.0005\n"
-                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
                 "reposition_timeout_s = 3.0005\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
                 "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
@@ -850,7 +851,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\n"
             "reposition_cooldown_s = 1.0\n"
-            "reposition_back_rate_rad_s = -3.0\n"
+            "reposition_back_rate_rad_s = -3.0\nreposition_damping_nms_rad = 12.0\n"
             "reposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\n"
             "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
@@ -864,7 +865,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 0.5\n"
                 "reposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
                 "reposition_noop_rad = 1.6\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
@@ -878,7 +879,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_stall_window_s = 1.0\n"
                 "reposition_stall_progress_rad = 3.2\n"
                 "reposition_cooldown_s = 1.0\n"
-                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
                 "reposition_noop_rad = 0.12\nstop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection))));
@@ -925,7 +926,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
         "stop_time_s = 0.35\n"
         "[research]\n";
@@ -1035,7 +1036,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n";
     // `middle` lands inside the still-open [drive.pedaling] table until the
     // first [table] header; kResearchSection closes the document.
@@ -1156,7 +1157,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
                 "reposition_stall_window_s = 0.99\n"
                 "reposition_stall_progress_rad = 0.5\n"
                 "reposition_cooldown_s = 0.99\n"
-                "reposition_back_rate_rad_s = 3.0\n"
+                "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
                 "reposition_timeout_s = 3.0\n"
                 "reposition_phase_tolerance_rad = 0.05\n"
                 "reposition_noop_rad = 0.12\n"
@@ -1184,7 +1185,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[drive]\nmotor_clutch = true\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
         "stop_time_s = 0.35\n"
         "[seated_climb]\nenabled = true\nperiod_s = 0.00125\n"
@@ -1225,7 +1226,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
             "reposition_stall_window_s = 1.0\n"
             "reposition_stall_progress_rad = 0.5\n"
             "reposition_cooldown_s = 1.0\n"
-            "reposition_back_rate_rad_s = 3.0\n"
+            "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
             "reposition_timeout_s = 3.0\n"
             "reposition_phase_tolerance_rad = 0.05\n"
             "reposition_noop_rad = 0.12\n"
@@ -1290,7 +1291,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = false\n"
         "reposition_min_effort_nm = 20.0\nreposition_stall_window_s = 1.0\n"
         "reposition_stall_progress_rad = 0.5\nreposition_cooldown_s = 1.0\n"
-        "reposition_back_rate_rad_s = 3.0\nreposition_timeout_s = 3.0\n"
+        "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\nreposition_timeout_s = 3.0\n"
         "reposition_phase_tolerance_rad = 0.05\nreposition_noop_rad = 0.12\n"
         "stop_time_s = 0.35\n" + std::string(kAuxTimings) + std::string(kResearchSection);
     for (const auto& [record, missing] : {
@@ -1472,7 +1473,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         unresolved_base.drive.pedaling.reposition_stall_window_s = 1.;
         unresolved_base.drive.pedaling.reposition_stall_progress_rad = .5;
         unresolved_base.drive.pedaling.reposition_cooldown_s = 1.;
-        unresolved_base.drive.pedaling.reposition_back_rate_rad_s = 3.;
+        unresolved_base.drive.pedaling.reposition_back_rate_rad_s = 3.;unresolved_base.drive.pedaling.reposition_damping_nms_rad = 12.;
         unresolved_base.drive.pedaling.reposition_timeout_s = 3.;
         unresolved_base.drive.pedaling.reposition_phase_tolerance_rad = .05;
         unresolved_base.drive.pedaling.reposition_noop_rad = .12;

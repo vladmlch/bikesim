@@ -124,7 +124,7 @@ namespace drivetrain {
         validation::nonnegative(s.effort_slew_nm_s, "config.drive.pedaling.effort_slew_nm_s");
         if (s.resume_below_rpm >= s.coast_above_rpm || (s.mash_torque_nm > 0. && s.mash_cadence_rpm <= 0.))
             throw std::invalid_argument("config.drive.pedaling.cadence_band");
-        // The nine reposition knobs mirror the wire decode domains
+        // The ten reposition knobs mirror the wire decode domains
         // (writer_config.hpp pedaling section): a C++-built config must
         // meet the same gate the document does.
         validation::nonnegative(s.reposition_min_effort_nm, "config.drive.pedaling.reposition_min_effort_nm");
@@ -132,6 +132,7 @@ namespace drivetrain {
         validation::positive(s.reposition_stall_progress_rad, "config.drive.pedaling.reposition_stall_progress_rad");
         validation::nonnegative(s.reposition_cooldown_s, "config.drive.pedaling.reposition_cooldown_s");
         validation::positive(s.reposition_back_rate_rad_s, "config.drive.pedaling.reposition_back_rate_rad_s");
+        validation::positive(s.reposition_damping_nms_rad, "config.drive.pedaling.reposition_damping_nms_rad");
         validation::positive(s.reposition_timeout_s, "config.drive.pedaling.reposition_timeout_s");
         validation::positive(s.reposition_phase_tolerance_rad, "config.drive.pedaling.reposition_phase_tolerance_rad");
         validation::nonnegative(s.reposition_noop_rad, "config.drive.pedaling.reposition_noop_rad");

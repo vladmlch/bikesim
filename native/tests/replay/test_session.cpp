@@ -88,7 +88,7 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     physics.drive.pedaling.stop_time_s = .35;
     physics.drive.pedaling.reposition_on_stall=false; physics.drive.pedaling.reposition_min_effort_nm=20.;
     physics.drive.pedaling.reposition_stall_window_s=1.; physics.drive.pedaling.reposition_stall_progress_rad=.5;
-    physics.drive.pedaling.reposition_cooldown_s=1.; physics.drive.pedaling.reposition_back_rate_rad_s=3.;
+    physics.drive.pedaling.reposition_cooldown_s=1.; physics.drive.pedaling.reposition_back_rate_rad_s=3.;physics.drive.pedaling.reposition_damping_nms_rad=12.;
     physics.drive.pedaling.reposition_timeout_s=3.; physics.drive.pedaling.reposition_phase_tolerance_rad=.05;
     physics.drive.pedaling.reposition_noop_rad=.12;
     physics.drive.shifting.shift_cooldown_s=.4; physics.drive.shifting.shift_cut_duration_s=.2;

@@ -222,6 +222,7 @@ cfg::SimulationPhysicsConfig welded_profile() {
     pedaling.reposition_stall_progress_rad = 0.5;
     pedaling.reposition_cooldown_s = 1.0;
     pedaling.reposition_back_rate_rad_s = 3.0;
+    pedaling.reposition_damping_nms_rad = 12.0;
     pedaling.reposition_timeout_s = 3.0;
     pedaling.reposition_phase_tolerance_rad = 0.05;
     pedaling.reposition_noop_rad = 0.12;

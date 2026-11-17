@@ -613,7 +613,7 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "reposition_on_stall reposition_min_effort_nm "
           "reposition_stall_window_s reposition_stall_progress_rad "
           "reposition_cooldown_s reposition_back_rate_rad_s "
-          "reposition_timeout_s reposition_phase_tolerance_rad "
+          "reposition_damping_nms_rad reposition_timeout_s reposition_phase_tolerance_rad "
           "reposition_noop_rad",
           .optional = ""}},
         {.name = "drive.shifting", .entry =

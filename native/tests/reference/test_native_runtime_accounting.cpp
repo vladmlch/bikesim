@@ -332,10 +332,18 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
     const rider::SpindlePose pose = rider::decode_spindle_pose(
         runtime_config.geometry.pose, "config.geometry.pose");
     const double crank_m = runtime_config.geometry.crank_length_m;
+    // The reposition law's profile inputs do not cross the rider_controller
+    // wire; the accounting plant declares the calibrated 12/60 baseline
+    // (effort accounting never exercises the reposition branch).
+    const auto spindle_config = [&] {
+        auto cfg = rider::decode_spindle_config(
+            member(docs.config, "rider_controller"));
+        cfg.reposition_damping_nms_rad = 12.;
+        cfg.reposition_torque_limit_nm = 60.;
+        return cfg;
+    };
     auto probe = std::make_unique<rider::SpindleController>(
-        model, pose,
-        rider::decode_spindle_config(member(docs.config, "rider_controller")),
-        crank_m);
+        model, pose, spindle_config(), crank_m);
     probe->restore(held);
     // The probe's held state must not move across observations — compare
     // the encoded state before the loop, not the round-tripped document.
@@ -343,9 +351,7 @@ void test_inter_tick_effort_uses_each_captured_velocity_and_strength() {
         bio::canonical_json(rider::encode_spindle_state(probe->state()));
     // The oracle-side controller mirrors sim.physical.rider_control.
     auto oracle = std::make_unique<rider::SpindleController>(
-        model, pose,
-        rider::decode_spindle_config(member(docs.config, "rider_controller")),
-        crank_m);
+        model, pose, spindle_config(), crank_m);
     oracle->restore(held);
     // Settled t=0 qpos — the source's np.array(sim.data.qpos) at capture.
     // mjSTATE_INTEGRATION's lane order is TIME|QPOS|QVEL|ACT|WARMSTART per

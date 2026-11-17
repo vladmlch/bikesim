@@ -34,7 +34,7 @@ inline bike::configuration::PhysicalDriveConfig source(bool fixture = true) {
     result.pedaling.reposition_stall_window_s = 1.;
     result.pedaling.reposition_stall_progress_rad = .5;
     result.pedaling.reposition_cooldown_s = 1.;
-    result.pedaling.reposition_back_rate_rad_s = 3.;
+    result.pedaling.reposition_back_rate_rad_s = 3.;result.pedaling.reposition_damping_nms_rad = 12.;
     result.pedaling.reposition_timeout_s = 3.;
     result.pedaling.reposition_phase_tolerance_rad = .05;
     result.pedaling.reposition_noop_rad = .12;

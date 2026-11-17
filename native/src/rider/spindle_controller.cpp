@@ -354,6 +354,13 @@ SpindleController::SpindleController(const mjModel *model,
       coasting_target_data_(nullptr, &mj_deleteData) {
     if (model == nullptr)
         throw std::invalid_argument("spindle controller needs a model");
+    // The reposition law's gain and cap are profile-owned (2026-11-16
+    // plan task 2): an assembly path that forgets to inject them fails
+    // here loudly instead of damping with a zero gain.
+    validation::positive(config_.reposition_damping_nms_rad,
+                         "spindle reposition damping gain");
+    validation::positive(config_.reposition_torque_limit_nm,
+                         "spindle reposition torque limit");
     target_data_.reset(engine::make_data(model));
     previous_target_data_.reset(engine::make_data(model));
     coasting_target_data_.reset(engine::make_data(model));
@@ -1702,17 +1709,19 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                                                                : hold_nm;
                 total = task + applied_hold;
             } else if (command.crank_reposition) {
-                // Reposition backpedal (2026-11-16 plan task 6): damp
-                // toward the negative crank-rate goal the manoeuvre
-                // publishes. The coasting press servo does not run — it
+                // Reposition backpedal: a rate damper toward the negative
+                // crank-rate goal. The cap is the rider's crank torque
+                // ceiling seated_climb.max_crank_torque_nm (decision 11);
+                // the gain is drive.pedaling.reposition_damping_nms_rad
+                // (2026-11-16). The coasting press servo does not run — it
                 // would zero the very torque the manoeuvre needs — and
                 // the carried hold is neither integrated nor applied, so
                 // the pedaling weld servo resumes from its held value.
                 const double raw =
-                    kRepositionDampNmSRad *
+                    config_.reposition_damping_nms_rad *
                     (command.crank_target_rate_rad_s - rate);
-                total = std::clamp(raw, -kRepositionTorqueLimitNm,
-                                   kRepositionTorqueLimitNm);
+                total = std::clamp(raw, -config_.reposition_torque_limit_nm,
+                                   config_.reposition_torque_limit_nm);
             } else {
                 // Coasting is a rider who stops pushing (user ruling
                 // 2026-11-10): the coast branch applies no crank torque —

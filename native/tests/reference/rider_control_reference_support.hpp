@@ -156,6 +156,12 @@ pinned_model(std::string_view physics_toml =
     auto controller_config = ::rider::decode_spindle_config(
         rcfg::project_rider_controller(*plant.request.physics,
                                        *plant.model, pose));
+    // The reposition law's profile inputs (2026-11-16 plan task 2) do not
+    // cross the rider_controller wire; inject them from the request.
+    controller_config.reposition_damping_nms_rad =
+        plant.request.physics->drive.pedaling.reposition_damping_nms_rad;
+    controller_config.reposition_torque_limit_nm =
+        plant.request.physics->seated_climb.max_crank_torque_nm;
     if (config_patch)
         config_patch(controller_config);
     plant.controller = std::make_unique<rider::SpindleController>(

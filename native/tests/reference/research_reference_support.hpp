@@ -131,7 +131,7 @@ struct Knobs {
     physics.drive.pedaling.reposition_stall_window_s = 1.;
     physics.drive.pedaling.reposition_stall_progress_rad = .5;
     physics.drive.pedaling.reposition_cooldown_s = 1.;
-    physics.drive.pedaling.reposition_back_rate_rad_s = 3.;
+    physics.drive.pedaling.reposition_back_rate_rad_s = 3.;physics.drive.pedaling.reposition_damping_nms_rad = 12.;
     physics.drive.pedaling.reposition_timeout_s = 3.;
     physics.drive.pedaling.reposition_phase_tolerance_rad = .05;
     physics.drive.pedaling.reposition_noop_rad = .12;

@@ -78,7 +78,7 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     config.drive.pedaling.reposition_stall_window_s = 1.;
     config.drive.pedaling.reposition_stall_progress_rad = .5;
     config.drive.pedaling.reposition_cooldown_s = 1.;
-    config.drive.pedaling.reposition_back_rate_rad_s = 3.;
+    config.drive.pedaling.reposition_back_rate_rad_s = 3.;config.drive.pedaling.reposition_damping_nms_rad = 12.;
     config.drive.pedaling.reposition_timeout_s = 3.;
     config.drive.pedaling.reposition_phase_tolerance_rad = .05;
     config.drive.pedaling.reposition_noop_rad = .12;

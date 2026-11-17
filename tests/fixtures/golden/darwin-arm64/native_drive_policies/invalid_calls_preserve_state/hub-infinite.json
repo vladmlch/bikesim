@@ -348,7 +348,7 @@
   "dtype": "<f8",
   "index": 27,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_min_effort_nm",
+  "label": "$.pedaling.reposition_damping_nms_rad",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 657,
@@ -360,7 +360,7 @@
   "dtype": "<f8",
   "index": 28,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_noop_rad",
+  "label": "$.pedaling.reposition_min_effort_nm",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 665,
@@ -369,11 +369,11 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 29,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_on_stall",
-  "nbytes": 1,
+  "label": "$.pedaling.reposition_noop_rad",
+  "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 673,
   "rtol": null,
@@ -381,13 +381,13 @@
  },
  {
   "atol": null,
-  "dtype": "<f8",
+  "dtype": "|u1",
   "index": 30,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_phase_tolerance_rad",
-  "nbytes": 8,
+  "label": "$.pedaling.reposition_on_stall",
+  "nbytes": 1,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 674,
+  "offset": 681,
   "rtol": null,
   "shape": []
  },
@@ -396,7 +396,7 @@
   "dtype": "<f8",
   "index": 31,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_stall_progress_rad",
+  "label": "$.pedaling.reposition_phase_tolerance_rad",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 682,
@@ -408,7 +408,7 @@
   "dtype": "<f8",
   "index": 32,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_stall_window_s",
+  "label": "$.pedaling.reposition_stall_progress_rad",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 690,
@@ -420,7 +420,7 @@
   "dtype": "<f8",
   "index": 33,
   "kind": "bitwise",
-  "label": "$.pedaling.reposition_timeout_s",
+  "label": "$.pedaling.reposition_stall_window_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 698,
@@ -432,7 +432,7 @@
   "dtype": "<f8",
   "index": 34,
   "kind": "bitwise",
-  "label": "$.pedaling.resume_below_rpm",
+  "label": "$.pedaling.reposition_timeout_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 706,
@@ -441,13 +441,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 35,
+  "kind": "bitwise",
+  "label": "$.pedaling.resume_below_rpm",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 714,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 36,
   "kind": "bitwise",
   "label": "$.pedaling.rollback_brake",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 714,
+  "offset": 722,
   "rtol": null,
   "shape": [
    4
@@ -456,21 +468,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 36,
-  "kind": "bitwise",
-  "label": "$.pedaling.rollback_demand",
-  "nbytes": 8,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 718,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 37,
   "kind": "bitwise",
-  "label": "$.pedaling.rollback_engage_mps",
+  "label": "$.pedaling.rollback_demand",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 726,
@@ -482,7 +482,7 @@
   "dtype": "<f8",
   "index": 38,
   "kind": "bitwise",
-  "label": "$.pedaling.rollback_release_mps",
+  "label": "$.pedaling.rollback_engage_mps",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 734,
@@ -494,7 +494,7 @@
   "dtype": "<f8",
   "index": 39,
   "kind": "bitwise",
-  "label": "$.pedaling.stop_time_s",
+  "label": "$.pedaling.rollback_release_mps",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 742,
@@ -503,13 +503,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 40,
+  "kind": "bitwise",
+  "label": "$.pedaling.stop_time_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 750,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 41,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 201,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 750,
+  "offset": 758,
   "rtol": null,
   "shape": [
    201
@@ -518,77 +530,21 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 41,
+  "index": 42,
   "kind": "bitwise",
   "label": "$.shifting.cadence_smoothing_tau_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 951,
+  "offset": 959,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 42,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette#length",
-  "nbytes": 2,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 959,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
   "index": 43,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[0]",
-  "nbytes": 2,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 961,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 44,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[1]",
-  "nbytes": 2,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 963,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 45,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[2]",
-  "nbytes": 2,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 965,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 46,
-  "kind": "bitwise",
-  "label": "$.shifting.cassette[3]",
+  "label": "$.shifting.cassette#length",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 967,
@@ -600,9 +556,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 47,
+  "index": 44,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[4]",
+  "label": "$.shifting.cassette[0]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 969,
@@ -614,9 +570,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 48,
+  "index": 45,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[5]",
+  "label": "$.shifting.cassette[1]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 971,
@@ -628,9 +584,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 49,
+  "index": 46,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[6]",
+  "label": "$.shifting.cassette[2]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 973,
@@ -642,9 +598,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 50,
+  "index": 47,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[7]",
+  "label": "$.shifting.cassette[3]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 975,
@@ -656,9 +612,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 51,
+  "index": 48,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[8]",
+  "label": "$.shifting.cassette[4]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 977,
@@ -670,9 +626,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 52,
+  "index": 49,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[9]",
+  "label": "$.shifting.cassette[5]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 979,
@@ -684,9 +640,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 53,
+  "index": 50,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[10]",
+  "label": "$.shifting.cassette[6]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 981,
@@ -698,9 +654,9 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 54,
+  "index": 51,
   "kind": "bitwise",
-  "label": "$.shifting.cassette[11]",
+  "label": "$.shifting.cassette[7]",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 983,
@@ -712,12 +668,68 @@
  {
   "atol": null,
   "dtype": "|u1",
+  "index": 52,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[8]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 985,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 53,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[9]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 987,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 54,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[10]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 989,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
   "index": 55,
+  "kind": "bitwise",
+  "label": "$.shifting.cassette[11]",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 991,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 56,
   "kind": "bitwise",
   "label": "$.shifting.enabled",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 985,
+  "offset": 993,
   "rtol": null,
   "shape": [
    4
@@ -726,21 +738,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 56,
-  "kind": "bitwise",
-  "label": "$.shifting.shift_cooldown_s",
-  "nbytes": 8,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 989,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 57,
   "kind": "bitwise",
-  "label": "$.shifting.shift_cut_duration_s",
+  "label": "$.shifting.shift_cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 997,
@@ -752,7 +752,7 @@
   "dtype": "<f8",
   "index": 58,
   "kind": "bitwise",
-  "label": "$.shifting.target_cadence_max_rpm",
+  "label": "$.shifting.shift_cut_duration_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1005,
@@ -764,7 +764,7 @@
   "dtype": "<f8",
   "index": 59,
   "kind": "bitwise",
-  "label": "$.shifting.target_cadence_min_rpm",
+  "label": "$.shifting.target_cadence_max_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1013,
@@ -776,7 +776,7 @@
   "dtype": "<f8",
   "index": 60,
   "kind": "bitwise",
-  "label": "$.shifting.torque_factor_larger_cog",
+  "label": "$.shifting.target_cadence_min_rpm",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1021,
@@ -788,7 +788,7 @@
   "dtype": "<f8",
   "index": 61,
   "kind": "bitwise",
-  "label": "$.shifting.torque_factor_smaller_cog",
+  "label": "$.shifting.torque_factor_larger_cog",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1029,
@@ -800,7 +800,7 @@
   "dtype": "<f8",
   "index": 62,
   "kind": "bitwise",
-  "label": "$.shifting.upshift_slip_limit_mps",
+  "label": "$.shifting.torque_factor_smaller_cog",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1037,
@@ -809,13 +809,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 63,
+  "kind": "bitwise",
+  "label": "$.shifting.upshift_slip_limit_mps",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 1045,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 64,
   "kind": "bitwise",
   "label": "$.shifting.upshift_slip_mode",
   "nbytes": 15,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1045,
+  "offset": 1053,
   "rtol": null,
   "shape": [
    15
@@ -824,12 +836,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 64,
+  "index": 65,
   "kind": "bitwise",
   "label": "$#keys",
   "nbytes": 38,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1060,
+  "offset": 1068,
   "rtol": null,
   "shape": [
    38
@@ -838,12 +850,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 65,
+  "index": 66,
   "kind": "bitwise",
   "label": "$.assist#keys",
   "nbytes": 33,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1098,
+  "offset": 1106,
   "rtol": null,
   "shape": [
    33
@@ -852,21 +864,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 66,
-  "kind": "bitwise",
-  "label": "$.assist.hold_power_w",
-  "nbytes": 8,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1131,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 67,
   "kind": "bitwise",
-  "label": "$.assist.hold_torque_nm",
+  "label": "$.assist.hold_power_w",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1139,
@@ -878,7 +878,7 @@
   "dtype": "<f8",
   "index": 68,
   "kind": "bitwise",
-  "label": "$.assist.last_gain",
+  "label": "$.assist.hold_torque_nm",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1147,
@@ -887,13 +887,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 69,
+  "kind": "bitwise",
+  "label": "$.assist.last_gain",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 1155,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 70,
   "kind": "bitwise",
   "label": "$.assist.pedaling",
   "nbytes": 5,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1155,
+  "offset": 1163,
   "rtol": null,
   "shape": [
    5
@@ -902,21 +914,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 70,
-  "kind": "bitwise",
-  "label": "$.assist.release_hold_left_s",
-  "nbytes": 8,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1160,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 71,
   "kind": "bitwise",
-  "label": "$.assist.torque",
+  "label": "$.assist.release_hold_left_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1168,
@@ -925,13 +925,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 72,
+  "kind": "bitwise",
+  "label": "$.assist.torque",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 1176,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 73,
   "kind": "bitwise",
   "label": "$.pedaling#keys",
   "nbytes": 98,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1176,
+  "offset": 1184,
   "rtol": null,
   "shape": [
    98
@@ -940,12 +952,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 73,
+  "index": 74,
   "kind": "bitwise",
   "label": "$.pedaling._cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1274,
+  "offset": 1282,
   "rtol": null,
   "shape": [
    4
@@ -954,24 +966,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 74,
+  "index": 75,
   "kind": "bitwise",
   "label": "$.pedaling._effort",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1278,
+  "offset": 1286,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 75,
+  "index": 76,
   "kind": "bitwise",
   "label": "$.pedaling.coasting",
   "nbytes": 5,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1286,
+  "offset": 1294,
   "rtol": null,
   "shape": [
    5
@@ -980,24 +992,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 76,
+  "index": 77,
   "kind": "bitwise",
   "label": "$.pedaling.deceleration_rad_s2",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1291,
+  "offset": 1299,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 77,
+  "index": 78,
   "kind": "bitwise",
   "label": "$.pedaling.target_phase_rad",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1299,
+  "offset": 1307,
   "rtol": null,
   "shape": [
    4
@@ -1006,24 +1018,24 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 78,
+  "index": 79,
   "kind": "bitwise",
   "label": "$.pedaling.target_rate_rad_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1303,
+  "offset": 1311,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 79,
+  "index": 80,
   "kind": "bitwise",
   "label": "$.shifting#keys",
   "nbytes": 113,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1311,
+  "offset": 1319,
   "rtol": null,
   "shape": [
    113
@@ -1032,12 +1044,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 80,
+  "index": 81,
   "kind": "bitwise",
   "label": "$.shifting.cadence_ema",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1424,
+  "offset": 1432,
   "rtol": null,
   "shape": [
    4
@@ -1046,21 +1058,9 @@
  {
   "atol": null,
   "dtype": "<f8",
-  "index": 81,
-  "kind": "bitwise",
-  "label": "$.shifting.cooldown_s",
-  "nbytes": 8,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1428,
-  "rtol": null,
-  "shape": []
- },
- {
-  "atol": null,
-  "dtype": "<f8",
   "index": 82,
   "kind": "bitwise",
-  "label": "$.shifting.cut_remaining_s",
+  "label": "$.shifting.cooldown_s",
   "nbytes": 8,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
   "offset": 1436,
@@ -1069,13 +1069,25 @@
  },
  {
   "atol": null,
-  "dtype": "|u1",
+  "dtype": "<f8",
   "index": 83,
+  "kind": "bitwise",
+  "label": "$.shifting.cut_remaining_s",
+  "nbytes": 8,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 1444,
+  "rtol": null,
+  "shape": []
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 84,
   "kind": "bitwise",
   "label": "$.shifting.direction",
   "nbytes": 6,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1444,
+  "offset": 1452,
   "rtol": null,
   "shape": [
    6
@@ -1084,26 +1096,12 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 84,
+  "index": 85,
   "kind": "bitwise",
   "label": "$.shifting.from_teeth",
   "nbytes": 2,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1450,
-  "rtol": null,
-  "shape": [
-   2
-  ]
- },
- {
-  "atol": null,
-  "dtype": "|u1",
-  "index": 85,
-  "kind": "bitwise",
-  "label": "$.shifting.rear_teeth",
-  "nbytes": 2,
-  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1452,
+  "offset": 1458,
   "rtol": null,
   "shape": [
    2
@@ -1114,10 +1112,24 @@
   "dtype": "|u1",
   "index": 86,
   "kind": "bitwise",
+  "label": "$.shifting.rear_teeth",
+  "nbytes": 2,
+  "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
+  "offset": 1460,
+  "rtol": null,
+  "shape": [
+   2
+  ]
+ },
+ {
+  "atol": null,
+  "dtype": "|u1",
+  "index": 87,
+  "kind": "bitwise",
   "label": "$.shifting.required_ema",
   "nbytes": 4,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1454,
+  "offset": 1462,
   "rtol": null,
   "shape": [
    4
@@ -1126,24 +1138,24 @@
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 87,
+  "index": 88,
   "kind": "bitwise",
   "label": "$.shifting.rider_response",
   "nbytes": 1,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1458,
+  "offset": 1466,
   "rtol": null,
   "shape": []
  },
  {
   "atol": null,
   "dtype": "|u1",
-  "index": 88,
+  "index": 89,
   "kind": "bitwise",
   "label": "$.shifting.shift_count",
   "nbytes": 1,
   "node": "native_drive_policies/invalid_calls_preserve_state/hub-infinite",
-  "offset": 1459,
+  "offset": 1467,
   "rtol": null,
   "shape": [
    1

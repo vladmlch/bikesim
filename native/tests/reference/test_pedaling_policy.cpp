@@ -66,7 +66,7 @@ drivetrain::PedalingConfig reposition_config() {
     c.reposition_stall_window_s = 1.;
     c.reposition_stall_progress_rad = .5;
     c.reposition_cooldown_s = 1.;
-    c.reposition_back_rate_rad_s = 3.;
+    c.reposition_back_rate_rad_s = 3.;c.reposition_damping_nms_rad = 12.;
     c.reposition_timeout_s = 3.;
     c.reposition_phase_tolerance_rad = .05;
     c.reposition_noop_rad = .12;

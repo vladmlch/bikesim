@@ -13,6 +13,18 @@ if(BUILD_TESTING)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:recording_catalog>")
 endif()
 
+add_executable(recording_digest test_recording_digest.cpp)
+bike_startup_target_policy(recording_digest "${_test_repo_root}/native")
+target_link_libraries(recording_digest PRIVATE
+  bike_test_fixtures bike_recording bike_recording_digest_cli)
+bike_rewrite_mujoco_load_name(recording_digest "${BIKE_DEP_mujoco_LIBRARY}")
+add_dependencies(recording_digest bike-recording-digest)
+if(BUILD_TESTING)
+  add_test(NAME recording_digest COMMAND recording_digest)
+  set_tests_properties(recording_digest PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:recording_digest>")
+endif()
+
 foreach(_recording_test IN ITEMS recording_encoding recording_capture
     recording_database recording_publish recording_reader
     recording_reports)

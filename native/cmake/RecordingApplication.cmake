@@ -210,6 +210,19 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
   set_target_properties(bike-recording PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   install(TARGETS bike-recording RUNTIME DESTINATION bin OPTIONAL)
     bike_install_relocate_mujoco(bike-recording)
+
+  add_library(bike_recording_digest_cli STATIC
+    "${native_dir}/src/recording/digest.cpp"
+    "${native_dir}/src/cli/recording_digest.cpp")
+  bike_startup_target_policy(bike_recording_digest_cli "${native_dir}")
+  target_link_libraries(bike_recording_digest_cli PUBLIC bike_recording_reader bike_io)
+
+  add_executable(bike-recording-digest
+    "${native_dir}/src/cli/recording_digest_main.cpp")
+  bike_startup_target_policy(bike-recording-digest "${native_dir}")
+  target_link_libraries(bike-recording-digest PRIVATE bike_recording_digest_cli)
+  set_target_properties(bike-recording-digest PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   add_executable(bike-research-sweep "${native_dir}/src/tools/research_sweep_main.cpp")
   bike_startup_target_policy(bike-research-sweep "${native_dir}")
   target_link_libraries(bike-research-sweep PRIVATE bike_batch)

@@ -19,4 +19,16 @@ namespace bike::platform {
 #endif
     return arguments;
 }
+[[nodiscard]] inline std::span<const char* const> main_arguments(int argc,const char* const* argv) {
+    if(argc<0||(argc>0&&argv==nullptr))throw std::invalid_argument("invalid native argument envelope");
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-container"
+#endif
+    const std::span<const char* const> arguments{argv,static_cast<std::size_t>(argc)};
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+    return arguments;
+}
 } // namespace bike::platform

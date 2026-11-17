@@ -1,9 +1,12 @@
 #include "application.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
+#include "../model_access.hpp"
 #include "../platform/signals.hpp"
+#include "../replay/golden_overlay.hpp"
 #include "../replay/playback.hpp"
 #include "../replay/session.hpp"
+#include "../replay/trajectory.hpp"
 #include "../viewer/session.hpp"
 #include <algorithm>
 #include <cmath>
@@ -17,7 +20,46 @@ namespace {
 int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
     const double fps = args.real("fps", 60.);
     if (fps <= 0.) throw ArgumentError("--fps must be positive");
-    replay::PlaybackSession playback(args.text("recording"), episode);
+    std::optional<replay::ExternalTrajectory> external;
+    std::optional<replay::PlaybackData> ghost;
+    std::vector<std::string> dof_names;
+    const replay::ExternalTrajectory* ext_ptr = nullptr;
+    const replay::PlaybackData* ghost_ptr = nullptr;
+    if (args.has("trajectory")) {
+        external.emplace(replay::load_external_trajectory(args.text("trajectory")));
+        ghost.emplace(replay::load_playback(args.text("recording"), episode));
+        ext_ptr = &external.value();
+        ghost_ptr = &ghost.value();
+        if (ghost_ptr->model.sha256 != ext_ptr->playback.model.sha256) {
+            throw ArgumentError("--trajectory model differs from the recording model");
+        }
+        const auto model = replay::make_playback_model(ext_ptr->playback);
+        const auto nq = static_cast<std::size_t>(model->nq);
+        dof_names.resize(nq);
+        const auto types = model_access::readonly_buffer(model->jnt_type, model->njnt);
+        const auto qpos_adr = model_access::readonly_buffer(model->jnt_qposadr, model->njnt);
+        for (int j = 0; j < model->njnt; ++j) {
+            const char* raw_name = mj_id2name(model.get(), mjOBJ_JOINT, j);
+            const std::string jname = raw_name ? raw_name : ("joint_" + std::to_string(j));
+            const int adr = qpos_adr[static_cast<std::size_t>(j)];
+            const int type = types[static_cast<std::size_t>(j)];
+            const int width = type == mjJNT_FREE ? 7 : type == mjJNT_BALL ? 4 : 1;
+            for (int k = 0; k < width; ++k) {
+                if (adr >= 0) {
+                    const auto idx = static_cast<std::size_t>(adr) + static_cast<std::size_t>(k);
+                    if (idx < dof_names.size()) dof_names[idx] = jname;
+                }
+            }
+        }
+        for (std::size_t i = 0; i < nq; ++i) {
+            if (dof_names[i].empty()) dof_names[i] = "q" + std::to_string(i);
+        }
+    }
+    std::optional<replay::PlaybackSession> playback_owner;
+    if (ext_ptr) playback_owner.emplace(ext_ptr->playback);
+    else playback_owner.emplace(args.text("recording"), episode);
+    auto& playback = playback_owner.value();
+    double running_max = 0.;
     platform::InterruptShield interrupt;
     if (args.flag("dry_run")) {
         const double count = std::floor(playback.duration_s() * fps) + 1.;
@@ -26,7 +68,12 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
         const auto frames = static_cast<std::int64_t>(count);
         for (std::int64_t index = 0; index < frames; ++index) {
             if (interrupt.deferred()) return 130;
-            (void)playback.frame(static_cast<double>(index) / fps);
+            const double t = static_cast<double>(index) / fps;
+            (void)playback.frame(t);
+            if (ext_ptr && ghost_ptr) {
+                (void)replay::golden_decorations(
+                    ext_ptr->playback, *ghost_ptr, ext_ptr->wheels, dof_names, t, running_max);
+            }
         }
         std::cout << "frames=" << frames << " duration=" << std::fixed << std::setprecision(3)
                   << playback.duration_s() << "s ok\n";
@@ -60,7 +107,13 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
     hooks.terminal = [&] { return !loop && (speed > 0. ? time >= playback.duration_s() : speed < 0. && time <= 0.); };
     hooks.close_requested = [&] { return interrupt.deferred() != 0; };
     hooks.stop = [] {};
-    hooks.reset = [&] { time = 0.; rebase(); };
+    hooks.reset = [&] { time = 0.; running_max = 0.; rebase(); };
+    if (ext_ptr && ghost_ptr) {
+        hooks.decorations = [&, ext_ptr, ghost_ptr](const runtime::RenderFrame&) {
+            return replay::golden_decorations(
+                ext_ptr->playback, *ghost_ptr, ext_ptr->wheels, dof_names, time, running_max);
+        };
+    }
     hooks.key_event = [&](int key, int modifiers) {
         if (key == 262 || key == 263) {
             const double delta = (static_cast<unsigned>(modifiers) & 1U) != 0 ? .1 : 1.;
@@ -83,6 +136,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
 int replay_command(const Arguments& args) {
     if (args.has("time_scale") && !args.flag("viewer")) throw ArgumentError("--time-scale requires --viewer");
     if (args.flag("viewer") && args.flag("view")) throw ArgumentError("--viewer and --view are mutually exclusive");
+    if (args.has("trajectory") && !args.flag("view")) throw ArgumentError("--trajectory requires --view");
     const auto episode = args.has("episode") ? std::optional(args.integer("episode")) : std::nullopt;
     try {
         if (args.flag("view")) return inspect(args, episode);

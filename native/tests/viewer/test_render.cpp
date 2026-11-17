@@ -90,6 +90,22 @@ void replica_contracts() {
     frame.state.generation = 1;
     renderer.apply(frame);
     bt::require(renderer.integration_state() == captured, "new generation permits reset to step zero");
+
+    bike::viewer::Decorations decorations;
+    decorations.ghost_qpos = std::vector<double>(static_cast<std::size_t>(frame.state.integration_state.size() > 1 ? 1 : 0), .25);
+    decorations.arrows = {{.from = {0., 0., 0.}, .to = {0., 0., .5}, .rgba = {1.f, .4f, .1f, 1.f}}};
+    decorations.overlay = "GPU vs CPU  max|Δq| 0.000e+00 (root_x)  run max 0.000e+00";
+    auto bad_dec = decorations;
+    renderer.set_decorations(std::move(decorations));
+    bad_dec.ghost_qpos = std::vector<double>{0., 1.};
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.ghost_qpos = std::vector<double>{std::numeric_limits<double>::quiet_NaN()};
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.ghost_qpos = std::vector<double>{.25};
+    bad_dec.arrows.front().to[2] = std::numeric_limits<double>::infinity();
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    renderer.set_decorations({});
+
     renderer.set_markers(true); renderer.set_markers(false);
     renderer.set_camera(bike::viewer::CameraMode::chase); renderer.reset_camera();
     renderer.draw(0, 0); // minimized/no-context path must remain display independent

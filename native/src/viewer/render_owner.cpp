@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <thread>
@@ -22,8 +23,10 @@ bool finite(std::span<const double> values) {
 struct RenderOwner::Impl {
     std::unique_ptr<mjModel, ModelDelete> model;
     std::unique_ptr<mjData, DataDelete> data;
+    std::unique_ptr<mjData, DataDelete> ghost;
     std::thread::id thread = std::this_thread::get_id();
     std::string digest, overlay;
+    Decorations decorations;
     std::optional<runtime::RenderFrame> frame;
     Camera tracking;
     mjvCamera camera{};
@@ -119,10 +122,10 @@ void RenderOwner::draw(int width, int height) {
     // const-correctness fix there broke the GUI build.
     auto& p = *impl_;
     if (!p.frame) throw std::runtime_error("render owner has no frame");
-    struct Draw { Impl* p; int width, height; } draw{&p, width, height};
+    struct Draw { Impl* p; int width, height; } draw{.p = &p, .width = width, .height = height};
     engine::ErrorBuffer error;
     const bool ok = engine::invoke([](void* opaque) noexcept {
-        auto* draw_state = static_cast<Draw*>(opaque);
+        const auto* draw_state = static_cast<const Draw*>(opaque);
         auto* owner = draw_state->p;
         if (!owner->graphics) {
             // Mark first: cleanup must also free a partially initialized scene.
@@ -132,7 +135,40 @@ void RenderOwner::draw(int width, int height) {
         }
         mjv_updateScene(owner->model.get(), owner->data.get(), &owner->option, nullptr,
             &owner->camera, mjCAT_ALL, &owner->scene);
-        const mjrRect viewport{0, 0, draw_state->width, draw_state->height};
+        if (const auto& ghost_q = owner->decorations.ghost_qpos; ghost_q.has_value() && owner->ghost) {
+            auto* g = owner->ghost.get();
+            if (owner->model->nq > 0 && g->qpos != nullptr) {
+                const auto count = static_cast<std::size_t>(owner->model->nq);
+                const auto dst = std::views::counted(g->qpos, static_cast<std::ptrdiff_t>(count));
+                for (std::size_t i = 0; i < count && i < ghost_q->size(); ++i) {
+                    dst[i] = (*ghost_q)[i];
+                }
+            }
+            mj_kinematics(owner->model.get(), g);
+            mj_comPos(owner->model.get(), g);
+            const int first = owner->scene.ngeom;
+            mjv_addGeoms(owner->model.get(), g, &owner->option, nullptr,
+                mjCAT_DYNAMIC, &owner->scene);
+            if (owner->scene.geoms != nullptr && owner->scene.ngeom > first && first >= 0) {
+                const auto geoms = std::views::counted(
+                    owner->scene.geoms, static_cast<std::ptrdiff_t>(owner->scene.ngeom));
+                for (int i = first; i < owner->scene.ngeom; ++i) {
+                    geoms[static_cast<std::size_t>(i)].rgba[3] *= .35f;
+                }
+            }
+        }
+        if (owner->scene.geoms != nullptr && owner->scene.maxgeom > 0 && owner->scene.ngeom >= 0) {
+            const auto geoms = std::views::counted(
+                owner->scene.geoms, static_cast<std::ptrdiff_t>(owner->scene.maxgeom));
+            for (const auto& a : owner->decorations.arrows) {
+                if (owner->scene.ngeom >= owner->scene.maxgeom) break;
+                mjvGeom* geom = &geoms[static_cast<std::size_t>(owner->scene.ngeom)];
+                mjv_initGeom(geom, mjGEOM_ARROW, nullptr, nullptr, nullptr, a.rgba.data());
+                mjv_connector(geom, mjGEOM_ARROW, .01, a.from.data(), a.to.data());
+                ++owner->scene.ngeom;
+            }
+        }
+        const mjrRect viewport{.left = 0, .bottom = 0, .width = draw_state->width, .height = draw_state->height};
         mjr_render(viewport, &owner->scene, &owner->context);
         if (!owner->overlay.empty()) mjr_overlay(mjFONT_NORMAL, mjGRID_TOPLEFT, viewport,
             owner->overlay.c_str(), nullptr, &owner->context);
@@ -162,11 +198,41 @@ void RenderOwner::set_markers(bool visible) {
     }
 }
 void RenderOwner::set_overlay(std::string text) { impl_->require_live(); impl_->overlay = std::move(text); }
+void RenderOwner::set_decorations(Decorations next) {
+    auto& p = *impl_;
+    p.require_live();
+    if (next.ghost_qpos.has_value()) {
+        if (p.model->nq < 0 || next.ghost_qpos->size() != static_cast<std::size_t>(p.model->nq)) {
+            throw std::invalid_argument("ghost pose size");
+        }
+        if (!finite(*next.ghost_qpos)) {
+            throw std::invalid_argument("ghost pose contains nonfinite value");
+        }
+    }
+    for (const auto& arrow : next.arrows) {
+        if (!finite(arrow.from) || !finite(arrow.to)) {
+            throw std::invalid_argument("decoration arrow endpoint is nonfinite");
+        }
+        for (const float channel : arrow.rgba) {
+            if (!std::isfinite(channel)) {
+                throw std::invalid_argument("decoration arrow color is nonfinite");
+            }
+        }
+    }
+    if (next.ghost_qpos.has_value() && !p.ghost) {
+        p.ghost.reset(engine::make_data(p.model.get()));
+        if (!p.ghost) {
+            throw std::runtime_error("cannot allocate ghost render state");
+        }
+    }
+    p.decorations = std::move(next);
+}
 void RenderOwner::close() noexcept {
     auto& p = *impl_;
     if (p.is_closed) return;
     if (p.thread != std::this_thread::get_id()) std::terminate();
     if (p.graphics) { mjr_freeContext(&p.context); mjv_freeScene(&p.scene); p.graphics = false; }
+    p.ghost.reset(); p.decorations = {};
     p.data.reset(); p.model.reset(); p.frame.reset(); p.is_closed = true;
 }
 bool RenderOwner::closed() const noexcept { return impl_->is_closed; }

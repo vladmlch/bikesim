@@ -141,7 +141,10 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         const auto achieved = options.mode==Mode::inspection?std::optional<double>{}:rate.update(Clock::now(),frame.state.time_s);
         if (request_frame || decision.request_frame) {
             renderer->apply(frame);
-            renderer->set_overlay(overlay_text(frame,input,achieved,options.mode));
+            Decorations decorations = hooks.decorations ? hooks.decorations(frame) : Decorations{};
+            const std::string extra = decorations.overlay;
+            renderer->set_decorations(std::move(decorations));
+            renderer->set_overlay(overlay_text(frame, input, achieved, options.mode) + (extra.empty() ? "" : "\n" + extra));
             const auto [width,height]=window.framebuffer_size();renderer->draw(width,height);
             if(width>0&&height>0)window.swap();
             if(hooks.presented)hooks.presented(frame,achieved);

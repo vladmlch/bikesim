@@ -415,6 +415,7 @@ public:
     [[nodiscard]] bool is_spatial() const noexcept {
         return spatial_ != nullptr;
     }
+    [[nodiscard]] bool has_steer_balance() const noexcept;
     void set_direct_steer_torque_nm(double torque_nm);
     [[nodiscard]] double direct_steer_torque_nm() const noexcept;
     [[nodiscard]] int steer_qposadr() const noexcept;

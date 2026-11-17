@@ -186,7 +186,9 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     // legacy branch keeps its historical payload byte-for-byte.
     if(!legacy){payload.emplace_back("native_equilibrium_schema",io::Value{io::Number{"2"}});payload.emplace_back("provider_identity",io::Value{context.provider_identity});payload.emplace_back("model_sha256",io::Value{context.model_sha256});
         payload.emplace_back("equilibrium_max_steps",context.equilibrium_options.max_steps?io::Value{io::Number{std::to_string(*context.equilibrium_options.max_steps)}}:io::Value{});
-        payload.emplace_back("equilibrium_tolerance",number(context.equilibrium_options.tolerance));}
+        payload.emplace_back("equilibrium_tolerance",number(context.equilibrium_options.tolerance));
+        if(const auto* spatial_member=io::find_member(identity,"spatial"))
+            payload.emplace_back("spatial",plain(*spatial_member));}
     const io::Value identity_payload{std::move(payload)};
     const auto json=legacy?detail::source_json(identity_payload):io::canonical_json(identity_payload);io::Sha256 digest;digest.update(std::as_bytes(std::span{json}));
     const mjModel* m=context.stepper.model();

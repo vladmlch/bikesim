@@ -96,3 +96,14 @@ if(BUILD_TESTING)
   set_tests_properties(runtime_spatial_step_energy PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_step_energy>")
 endif()
+
+add_executable(runtime_spatial_ride test_spatial_ride.cpp)
+bike_startup_target_policy(runtime_spatial_ride "${_test_repo_root}/native")
+target_link_libraries(runtime_spatial_ride PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(runtime_spatial_ride
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME runtime_spatial_ride COMMAND runtime_spatial_ride)
+  set_tests_properties(runtime_spatial_ride PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_ride>")
+endif()

@@ -13,7 +13,9 @@
 #include "../io/npy.hpp"
 #include "../platform/provenance.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../spatial/config.hpp"
 #include "../terrain/trackfile.hpp"
+#include "writers/compliant_3d_tire.hpp"
 
 namespace bike::initialization {
 namespace {
@@ -61,11 +63,47 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
         if (io::as_int64(field(document, "request_schema"), "request_schema") != 1)
             throw std::invalid_argument("unsupported request_schema");
         const auto base = std::filesystem::absolute(file).parent_path();
-        auto physics = configuration::load_physics(path(document, "physics_file", base));
-        if (const auto* overrides = find(document, "overrides")) {
-            auto owned = *overrides;
-            configuration::detail::resolve_config_paths(owned, base);
-            physics = configuration::resolve_physics(owned, physics);
+        const auto physics_file = path(document, "physics_file", base);
+        const auto* overrides = find(document, "overrides");
+        auto physics_doc = configuration::detail::parse_toml_file(physics_file);
+        const auto& physics_root = io::as_object(physics_doc, "physics");
+        const Value* doc_spatial = io::find_member(physics_root, "spatial");
+        const Value* ov_spatial = overrides != nullptr
+            ? io::find_member(io::as_object(*overrides, "overrides"), "spatial")
+            : nullptr;
+
+        configuration::SimulationPhysicsConfig physics{};
+        std::optional<Value> spatial_value;
+        if (doc_spatial == nullptr && ov_spatial == nullptr) {
+            physics = configuration::load_physics(physics_file);
+            if (overrides != nullptr) {
+                auto owned = *overrides;
+                configuration::detail::resolve_config_paths(owned, base);
+                physics = configuration::resolve_physics(owned, physics);
+            }
+        } else {
+            if (doc_spatial != nullptr && ov_spatial != nullptr) {
+                spatial_value = configuration::detail::merge_values(*doc_spatial, *ov_spatial);
+            } else if (ov_spatial != nullptr) {
+                spatial_value = *ov_spatial;
+            } else {
+                spatial_value = *doc_spatial;
+            }
+            if (auto* obj = std::get_if<Value::Object>(&physics_doc.data)) {
+                std::erase_if(*obj, [](const auto& p) { return p.first == "spatial"; });
+            }
+            configuration::detail::resolve_config_paths(physics_doc, physics_file.parent_path());
+            configuration::detail::reject_computed_members(physics_doc);
+            physics = configuration::detail::construct_config(
+                configuration::detail::with_flat_start(std::move(physics_doc)));
+            if (overrides != nullptr) {
+                auto owned = *overrides;
+                if (auto* ov_obj = std::get_if<Value::Object>(&owned.data)) {
+                    std::erase_if(*ov_obj, [](const auto& p) { return p.first == "spatial"; });
+                }
+                configuration::detail::resolve_config_paths(owned, base);
+                physics = configuration::resolve_physics(owned, physics);
+            }
         }
         SetupRequest out;
         out.origin = std::filesystem::absolute(file).string();
@@ -115,7 +153,17 @@ SetupRequest read_setup_request(const std::filesystem::path& file, bool skip_ini
             } else physics.equilibrium_state_file = state_file.string();
         }
         configuration::post_init(physics);
-        if (physics.tires.backend == "pneumatic") {
+        if (spatial_value.has_value()) {
+            const io::Value::Object spatial_root{{"spatial", std::move(*spatial_value)}};
+            auto parsed_spatial = bike::spatial::parse_spatial_config(spatial_root, physics.timestep_s);
+            if (!parsed_spatial.has_value())
+                throw std::invalid_argument("spatial: expected spatial configuration table");
+            const auto tire_cfg = make_compliant_3d_tire_config(parsed_spatial->tire_preset);
+            out.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+            out.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+            out.spatial = parsed_spatial;
+            out.model.spatial = parsed_spatial;
+        } else if (physics.tires.backend == "pneumatic") {
             out.model.bike.front_wheel_radius = physics.tires.pneumatic.front.outer_radius_mm;
             out.model.bike.rear_wheel_radius = physics.tires.pneumatic.rear.outer_radius_mm;
         }

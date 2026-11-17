@@ -4,6 +4,7 @@
 #include "../numeric_sum.hpp"
 #include "../runtime/config.hpp"
 #include "../runtime/step.hpp"
+#include "../spatial/types.hpp"
 #include "../stepper.hpp"
 #include "../writers/drivetrain.hpp"
 
@@ -15,8 +16,254 @@
 
 namespace bike::initialization {
 namespace {
-void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshots){
-    mjModel const* m=context.stepper.model();mjData* d=context.stepper.data();auto const velocity=std::views::counted(d->qvel,m->nv);
+
+double dot3(const std::array<double, 3>& a, const std::array<double, 3>& b) noexcept {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+std::array<double, 3> cross3(const std::array<double, 3>& a,
+                             const std::array<double, 3>& b) noexcept {
+    return {a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]};
+}
+
+struct FallbackDir {
+    std::array<double, 3> value{};
+};
+
+std::array<double, 3> normalize3(const std::array<double, 3>& v,
+                                 FallbackDir fallback) noexcept {
+    const double len = std::sqrt(dot3(v, v));
+    if (len > 1e-12) return {v[0] / len, v[1] / len, v[2] / len};
+    return fallback.value;
+}
+
+struct BodyColumn {
+    int body_id{};
+    std::size_t col{};
+};
+
+std::array<double, 3> body_xmat_col(std::span<const double> xmat, BodyColumn index) noexcept {
+    const std::size_t off = static_cast<std::size_t>(index.body_id) * 9U;
+    return {xmat[off + index.col], xmat[off + 3U + index.col], xmat[off + 6U + index.col]};
+}
+
+struct InitialCogQuery {
+    double rear_omega_rad_s{};
+    double speed_mps{};
+};
+
+int select_initial_cog(const drivetrain::DriveConfig& drive, InitialCogQuery query) {
+    if (!drive.policies.shifting.enabled || drive.policies.shifting.cassette.empty() || !(query.speed_mps > 0.))
+        return drive.policies.gearing.rear_teeth;
+    const double front = static_cast<double>(drive.policies.gearing.front_teeth);
+    const double min_rpm = drive.policies.shifting.target_cadence_min_rpm;
+    const double max_rpm = drive.policies.shifting.target_cadence_max_rpm;
+    const double target_rpm = 0.5 * (min_rpm + max_rpm);
+    int best_teeth = drive.policies.gearing.rear_teeth;
+    bool best_in_band = false;
+    double best_dist = std::numeric_limits<double>::infinity();
+    for (const int teeth : drive.policies.shifting.cassette) {
+        const double ratio = front / static_cast<double>(teeth);
+        const double cadence_rpm = std::abs(query.rear_omega_rad_s / ratio) * 60. / (2. * std::numbers::pi);
+        const bool in_band = cadence_rpm >= min_rpm && cadence_rpm <= max_rpm;
+        const double dist = std::abs(cadence_rpm - target_rpm);
+        if ((in_band && !best_in_band) || (in_band == best_in_band && dist < best_dist)) {
+            best_in_band = in_band;
+            best_dist = dist;
+            best_teeth = teeth;
+        }
+    }
+    return best_teeth;
+}
+
+void initial_speed_spatial(SetupContext& context,
+                           const runtime::WheelSnapshots& snapshots,
+                           const std::optional<bike::spatial::SpatialConfig>& spatial,
+                           int root_free_id) {
+    mjModel const* m = context.stepper.model();
+    mjData* d = context.stepper.data();
+    const auto jtypes = std::views::counted(m->jnt_type, m->njnt);
+    if (jtypes[static_cast<std::size_t>(root_free_id)] != mjJNT_FREE)
+        throw std::invalid_argument("root_free must be a freejoint");
+    if (spatial.has_value() && spatial->start_mode == bike::spatial::SpatialStartMode::moving &&
+        (!std::isfinite(context.physics.initial_speed_mps) || context.physics.initial_speed_mps < 2.5)) {
+        throw std::invalid_argument("spatial moving start requires initial_speed_mps >= 2.5");
+    }
+    if (context.frame_body_id < 0 || context.frame_body_id >= m->nbody)
+        throw std::invalid_argument("initial speed requires a valid frame body");
+
+    auto const velocity = std::views::counted(d->qvel, m->nv);
+    const auto free_dof = static_cast<std::size_t>(
+        std::views::counted(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(root_free_id)]);
+
+    std::array<double, 3> normal_sum{};
+    for (const auto& snapshot : snapshots) {
+        if (!snapshot) continue;
+        for (const auto& p : snapshot->patches) {
+            if (p.working_surface) {
+                normal_sum[0] += p.normal_load_n * p.normal[0];
+                normal_sum[1] += p.normal_load_n * p.normal[1];
+                normal_sum[2] += p.normal_load_n * p.normal[2];
+            }
+        }
+    }
+    const std::array<double, 3> n_hat = normalize3(normal_sum, {{0., 0., 1.}});
+    const auto xmat = std::views::counted(d->xmat, 9 * m->nbody);
+    const std::array<double, 3> fwd = normalize3(
+        body_xmat_col(xmat, {.body_id = context.frame_body_id, .col = 0}), {{1., 0., 0.}});
+    const double fn = dot3(fwd, n_hat);
+    const std::array<double, 3> fwd_tangent = normalize3(
+        {fwd[0] - fn * n_hat[0], fwd[1] - fn * n_hat[1], fwd[2] - fn * n_hat[2]},
+        {{1., 0., 0.}});
+    const std::array<double, 3> y_frame_axis = normalize3(
+        body_xmat_col(xmat, {.body_id = context.frame_body_id, .col = 1}), {{0., 1., 0.}});
+    const std::array<double, 3> roll_tan = cross3(y_frame_axis, n_hat);
+    const std::array<double, 3> t_tangent = dot3(roll_tan, fwd) > 1e-8
+        ? normalize3(roll_tan, {fwd_tangent})
+        : fwd_tangent;
+
+    const double v0 = context.physics.initial_speed_mps;
+    for (std::size_t k = 0; k < 3; ++k) {
+        velocity[free_dof + k] = v0 * t_tangent[k];
+        velocity[free_dof + 3U + k] = 0.;
+    }
+    const int rider_free_id = mj_name2id(m, mjOBJ_JOINT, "rider_root_free");
+    if (rider_free_id >= 0 && jtypes[static_cast<std::size_t>(rider_free_id)] == mjJNT_FREE) {
+        const auto r_dof = static_cast<std::size_t>(
+            std::views::counted(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(rider_free_id)]);
+        for (std::size_t k = 0; k < 3; ++k) {
+            velocity[r_dof + k] = v0 * t_tangent[k];
+            velocity[r_dof + 3U + k] = 0.;
+        }
+    }
+    context.stepper.note_posvel_stale();
+    context.stepper.forward();
+
+    const auto bodies = std::views::counted(m->geom_bodyid, m->ngeom);
+    const auto centers = std::views::counted(d->geom_xpos, 3 * m->ngeom);
+    const auto sizes = std::views::counted(m->geom_size, 3 * m->ngeom);
+    const auto xmat_after = std::views::counted(d->xmat, 9 * m->nbody);
+    for (std::size_t side = 0; side < 2; ++side) {
+        const auto& snap = snapshots[side];
+        if (!snap) throw std::invalid_argument("initial speed requires both physical tire snapshots");
+        const auto geom = static_cast<std::size_t>(side == 0 ? context.front_geom_id : context.rear_geom_id);
+        const int body = bodies[geom];
+        const std::array<double, 3> p_hub{centers[3 * geom], centers[3 * geom + 1], centers[3 * geom + 2]};
+        const std::array<double, 3> a_w = normalize3(
+            body_xmat_col(xmat_after, {.body_id = body, .col = 1}), {{0., 1., 0.}});
+
+        std::array<double, 3> nw_sum{};
+        std::array<double, 3> pc_sum{};
+        double weight_sum = 0.;
+        for (const auto& p : snap->patches) {
+            const double w = p.normal_load_n > 0. ? p.normal_load_n : 1.;
+            for (std::size_t k = 0; k < 3; ++k) {
+                nw_sum[k] += w * p.normal[k];
+                pc_sum[k] += w * p.point_m[k];
+            }
+            weight_sum += w;
+        }
+        const std::array<double, 3> n_w = weight_sum > 0.
+            ? normalize3(nw_sum, {n_hat}) : n_hat;
+        const std::array<double, 3> d_w = normalize3(cross3(a_w, n_w), {t_tangent});
+        const double radius = snap->effective_radius_m > 0. ? snap->effective_radius_m : sizes[3 * geom];
+        const std::array<double, 3> p_c = weight_sum > 0.
+            ? std::array<double, 3>{pc_sum[0] / weight_sum, pc_sum[1] / weight_sum, pc_sum[2] / weight_sum}
+            : std::array<double, 3>{p_hub[0] - radius * n_w[0], p_hub[1] - radius * n_w[1], p_hub[2] - radius * n_w[2]};
+        const std::array<double, 3> r_vec{p_c[0] - p_hub[0], p_c[1] - p_hub[1], p_c[2] - p_hub[2]};
+        const auto v_c = model::point_velocity(*m, *d, body, p_c);
+        const double lever = dot3(cross3(a_w, r_vec), d_w);
+        const auto dof = static_cast<std::size_t>(
+            joint_address(context, side == 0 ? "front_wheel_spin" : "rear_wheel_spin").dof);
+        if (std::abs(lever) > 1e-9) {
+            velocity[dof] -= dot3(v_c, d_w) / lever;
+        } else {
+            const auto v_hub = model::point_velocity(*m, *d, body, p_hub);
+            const auto omega = model::body_angular_velocity(*m, *d, body);
+            const double roll = dot3(v_hub, d_w);
+            const double parent_omega = dot3(omega, a_w) - velocity[dof];
+            velocity[dof] = roll / radius - parent_omega;
+        }
+    }
+
+    const auto& drive_cfg = context.physics.drive;
+    const double rear_omega = velocity[static_cast<std::size_t>(joint_address(context, "rear_wheel_spin").dof)];
+    int rear_teeth = drive_cfg.gearing.rear_teeth;
+    if (context.stepper.has_drive()) {
+        const auto& writer_cfg = context.stepper.drive().config();
+        rear_teeth = select_initial_cog(writer_cfg, {.rear_omega_rad_s = rear_omega, .speed_mps = v0});
+        if (rear_teeth != writer_cfg.policies.gearing.rear_teeth) {
+            auto snap = context.stepper.drive().state();
+            const double new_ratio = static_cast<double>(writer_cfg.policies.gearing.front_teeth) /
+                                     static_cast<double>(rear_teeth);
+            snap.shifting.rear_teeth = rear_teeth;
+            snap.shifting.from_teeth = rear_teeth;
+            snap.shifting.shift_count = 0;
+            snap.shifting.direction = "none";
+            snap.shifting.cooldown_s = 0.;
+            snap.shifting.cut_remaining_s = 0.;
+            if (snap.ideal_hub.has_value()) {
+                snap.ideal_hub->ratio = new_ratio;
+                if (!snap.ideal_hub->coefficients.empty()) {
+                    snap.ideal_hub->coefficients[0] = new_ratio;
+                }
+                if (snap.ideal_hub->boundary.has_value()) {
+                    const char* driver_name = writer_cfg.motor_clutch ? "drive_shaft_spin" : "crank_spin";
+                    const auto driver_qpos = static_cast<std::size_t>(joint_address(context, driver_name).qpos);
+                    const auto driven_qpos = static_cast<std::size_t>(joint_address(context, "rear_wheel_spin").qpos);
+                    const auto q = std::views::counted(d->qpos, m->nq);
+                    const double b = new_ratio * q[driver_qpos] - q[driven_qpos];
+                    snap.ideal_hub->boundary = b;
+                    snap.ideal_hub->range = {snap.ideal_hub->range[0], b};
+                }
+            }
+            context.stepper.mutate([&] { context.stepper.drive().restore(snap); });
+            if (context.stepper.drive().take_model_dirty()) {
+                context.stepper.note_posvel_stale();
+                context.stepper.forward();
+            }
+        }
+    }
+
+    const double ratio = static_cast<double>(drive_cfg.gearing.front_teeth) / static_cast<double>(rear_teeth);
+    const double rate = rear_omega / ratio;
+    bool pedaling = (context.physics.drive_mode == "crank_effort" ||
+                     context.physics.drive_mode == "articulated_effort") &&
+                    drive_cfg.human_torque_nm > 0.;
+    if (drive_cfg.pedaling.enabled &&
+        std::abs(rate) * 60. / (2. * std::numbers::pi) >= drive_cfg.pedaling.coast_above_rpm) {
+        pedaling = false;
+    }
+    if (pedaling) {
+        velocity[static_cast<std::size_t>(joint_address(context, "crank_spin").dof)] = rate;
+        if (mj_name2id(m, mjOBJ_JOINT, "drive_shaft_spin") >= 0) {
+            velocity[static_cast<std::size_t>(joint_address(context, "drive_shaft_spin").dof)] = rate;
+        }
+        const auto xmat_frame = std::views::counted(d->xmat, 9 * m->nbody);
+        const std::array<double, 3> y_frame = normalize3(
+            body_xmat_col(xmat_frame, {.body_id = context.frame_body_id, .col = 1}), {{0., 1., 0.}});
+        const double frame_rate = dot3(model::body_angular_velocity(*m, *d, context.frame_body_id), y_frame);
+        velocity[static_cast<std::size_t>(joint_address(context, "pedal_front_spin").dof)] = -rate - frame_rate;
+        velocity[static_cast<std::size_t>(joint_address(context, "pedal_rear_spin").dof)] = -rate - frame_rate;
+        if (context.physical.rider_present()) {
+            context.stepper.mutate([&] { context.physical.rider_control().initialize_velocity(d); });
+        }
+    }
+    context.stepper.note_posvel_stale();
+    context.stepper.forward();
+}
+
+void initial_speed(SetupContext& context, const runtime::WheelSnapshots& snapshots,
+                   const std::optional<bike::spatial::SpatialConfig>& spatial) {
+    mjModel const* m = context.stepper.model();
+    const int root_free_id = mj_name2id(m, mjOBJ_JOINT, "root_free");
+    if (root_free_id >= 0) {
+        initial_speed_spatial(context, snapshots, spatial, root_free_id);
+        return;
+    }
+    mjData* d = context.stepper.data();auto const velocity=std::views::counted(d->qvel,m->nv);
     std::array<double,3> tangent{};
     for(const auto& snapshot:snapshots)if(snapshot)for(const auto& p:snapshot->patches)if(p.working_surface){tangent[0]+=p.normal_load_n*p.normal[2];tangent[2]-=p.normal_load_n*p.normal[0];}
     const double length=std::sqrt(tangent[0]*tangent[0]+tangent[2]*tangent[2]);
@@ -62,6 +309,16 @@ void initial_speed(SetupContext& context,const runtime::WheelSnapshots& snapshot
 void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& config){
     require_initializing(context);
     if(!context.equilibrium)throw std::invalid_argument("cannot finalize an incomplete equilibrium");
+    const auto& spatial = context.physical.config_.spatial.has_value()
+        ? context.physical.config_.spatial
+        : config.spatial;
+    if(mj_name2id(context.stepper.model(), mjOBJ_JOINT, "root_free") >= 0 &&
+       spatial.has_value() &&
+       spatial->start_mode == bike::spatial::SpatialStartMode::moving &&
+       (!std::isfinite(context.physics.initial_speed_mps) ||
+        context.physics.initial_speed_mps < 2.5)) {
+        throw std::invalid_argument("spatial moving start requires initial_speed_mps >= 2.5");
+    }
     auto& physical=context.physical;auto& stepper=context.stepper;mjData* d=stepper.data();mjModel* m=stepper.model();
     d->time=0.;physical.step_=0;physical.generation_=1;physical.initializing_=false;
     physical.control_clock_.reset();physical.contact_query_.restore({});physical.probe_query_.restore({});
@@ -98,7 +355,7 @@ void finalize_initial_state(SetupContext& context,const runtime::RuntimeConfig& 
         else context.equilibrium->static_rear_load_n=normal.total();
         context.equilibrium->total_vertical_force_n+=vertical.total();
     }
-    initial_speed(context,physical.snapshots_);stepper.forward();
+    initial_speed(context,physical.snapshots_,spatial);stepper.forward();
     if(context.initial_state)context.initial_state->restore(context);
     if(stepper.has_rider_contacts())stepper.mutate([&]{(void)stepper.rider_contacts_settle(std::nullopt,false,nullptr);});
     stepper.mutate([&]{

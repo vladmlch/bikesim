@@ -10,6 +10,7 @@
 
 #include "../cblas_abi.hpp"
 #include "../numeric_sum.hpp"
+#include "../spatial/frames.hpp"
 
 namespace runtime {
 namespace sample_wire {
@@ -301,9 +302,38 @@ PhysicalSampleData::flat_columns(const ColumnLayout &layout) const {
     // inserts, statement order deciding repeats.
     FlatColumns assigned;
     assigned.reserve(qpos.size() + qvel.size() + 2 * powers_w.size() + 16);
-    assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
-    assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));
-    assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
+    const bool is_root_free =
+        qpos.size() > qvel.size() &&
+        layout.root_pitch_qpos == layout.root_x_qpos + 4U &&
+        layout.root_x_qpos + 7U <= qpos.size() &&
+        layout.root_x_dof + 6U <= qvel.size();
+    if (is_root_free) {
+        const bike::spatial::Quat quat{
+            qpos[layout.root_x_qpos + 3U], qpos[layout.root_x_qpos + 4U],
+            qpos[layout.root_x_qpos + 5U], qpos[layout.root_x_qpos + 6U]};
+        const auto heading = bike::spatial::horizontal_heading_unit(quat);
+        double speed_mps = 0.;
+        if (heading.valid) {
+            speed_mps = heading.hx * qvel[layout.root_x_dof] +
+                        heading.hy * qvel[layout.root_x_dof + 1U];
+        } else {
+            const auto fwd = bike::spatial::rotate_body_to_world(
+                bike::spatial::quat_normalized(quat), {1., 0., 0.});
+            speed_mps = fwd[0] * qvel[layout.root_x_dof] +
+                        fwd[1] * qvel[layout.root_x_dof + 1U] +
+                        fwd[2] * qvel[layout.root_x_dof + 2U];
+        }
+        const auto att = bike::spatial::euler_zyx(quat);
+        const double pitch_rad =
+            std::isfinite(att.pitch_rad) ? att.pitch_rad : 0.;
+        assigned.emplace_back("x_m", qpos[layout.root_x_qpos]);
+        assigned.emplace_back("speed_mps", speed_mps);
+        assigned.emplace_back("pitch_rad", pitch_rad);
+    } else {
+        assigned.emplace_back("x_m", qpos.at(layout.root_x_qpos));
+        assigned.emplace_back("speed_mps", qvel.at(layout.root_x_dof));
+        assigned.emplace_back("pitch_rad", qpos.at(layout.root_pitch_qpos));
+    }
     assigned.emplace_back("interval_start_s", time_s);
     assigned.emplace_back("interval_dt_s", dt_s());
     for (std::size_t i = 0; i < qpos.size(); ++i) {

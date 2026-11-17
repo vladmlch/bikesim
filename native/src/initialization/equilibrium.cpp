@@ -1,8 +1,10 @@
 #include "context.hpp"
+#include "refine.hpp"
 #include "state_file.hpp"
 #include "../cblas_abi.hpp"
 #include "../engine_call.hpp"
 #include "../runtime/step.hpp"
+#include "../spatial/frames.hpp"
 #include "../stepper.hpp"
 #include "../writers/suspension.hpp"
 
@@ -113,6 +115,69 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
     };
     // physics.equilibrium_relaxation selects the schedule.
     const bool kinetic=context.physics.equilibrium_relaxation=="kinetic";
+    if (const auto free_root = find_free_root(context.stepper.model())) {
+        const auto fq = static_cast<std::size_t>(free_root->qpos);
+        const double start_x = context.stepper.qpos()[fq];
+        std::int64_t resets = 0;
+        if (!cache_hit) {
+            Segments phase_a_segments(context, dt, cycle, true);
+            const std::int64_t min_phase_a = std::max<std::int64_t>(1, round_even(.5 / dt));
+            const std::int64_t max_phase_a = std::min(budget / 2, std::max(min_phase_a, round_even(2.5 / dt)));
+            {
+                const PhaseAHoldScope phase_a_hold(context);
+                while (steps < max_phase_a) {
+                    steps += phase_a_segments.run(context, relax_step, max_phase_a - steps);
+                    ++resets;
+                    auto const* d = context.stepper.data();
+                    std::ranges::fill(std::views::counted(d->qvel, context.stepper.model()->nv), 0.);
+                    context.stepper.note_posvel_stale();
+                    apply_initial_forces(context, false);
+                    context.stepper.forward();
+                    residual = acceleration_residual(context);
+                    if (steps >= min_phase_a && residual <= .25) break;
+                }
+            }
+            // Phase B: zero external hold wrench.
+            auto const* d = context.stepper.data();
+            std::ranges::fill(std::views::counted(d->qvel, context.stepper.model()->nv), 0.);
+            context.stepper.note_posvel_stale();
+            apply_initial_forces(context, false);
+            context.stepper.forward();
+            residual = refine_equilibrium(context, 40, options.tolerance);
+            const auto moments = spatial_equilibrium_moments(context);
+            const bool moments_ok = std::abs(moments.roll_nm) <= .1 &&
+                                    std::abs(moments.pitch_nm) <= .1 &&
+                                    std::abs(moments.steer_nm) <= .1;
+            if (residual > options.tolerance || !moments_ok)
+                throw EquilibriumFailure(steps, residual, worst(context));
+        }
+        EquilibriumResult result;
+        result.steps = steps;
+        result.residual_qacc = residual;
+        result.cache_hit = cache_hit;
+        const auto q = context.stepper.qpos();
+        result.fork_travel_mm = 1000. * q[static_cast<std::size_t>(context.stepper.suspension().fork_qposadr())];
+        result.shock_stroke_mm = 1000. * q[static_cast<std::size_t>(context.stepper.suspension().shock_qposadr())];
+        if (!context.rear_travel_from_shock_mm)
+            throw std::invalid_argument("equilibrium rear travel requires the source linkage solver");
+        result.rear_travel_mm = context.rear_travel_from_shock_mm(result.shock_stroke_mm);
+        result.root_z_m = q[fq + 2U];
+        const bike::spatial::Quat quat{q[fq + 3U], q[fq + 4U], q[fq + 5U], q[fq + 6U]};
+        result.pitch_rad = bike::spatial::euler_zyx(quat).pitch_rad;
+        result.initial_crank_phase_rad = context.physics.drive.crank_phase_rad;
+        result.settled_crank_phase_rad = q[static_cast<std::size_t>(joint_address(context, "crank_spin").qpos)];
+        result.state_file = explicit_file;
+        if (!cache_hit) {
+            result.relaxation = "kinetic";
+            result.relaxation_resets = resets;
+            result.settle_x_drift_m = q[fq] - start_x;
+        }
+        if (context.physics.equilibrium_cache_enabled && !cache_hit)
+            save_equilibrium_cache(context, capture_state(context, steps, residual));
+        context.equilibrium = result;
+        context.completed = true;
+        return result;
+    }
     Segments segments(context,dt,cycle,kinetic);
     const auto root_x=static_cast<std::size_t>(joint_address(context,"root_x").qpos);
     const double start_x=context.stepper.qpos()[root_x];

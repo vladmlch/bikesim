@@ -18,11 +18,22 @@
 #include "../model/mapping.hpp"
 #include "../platform/provenance.hpp"
 #include "../rider/allocation.hpp"
+#include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/provenance.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../runtime/step.hpp"
+#include "../spatial/config.hpp"
 #include "../stepper.hpp"
+#include "../terrain/extrusion3d.hpp"
+#include "../terrain/generator3d.hpp"
+#include "../terrain/grid3d.hpp"
+#include "../terrain/heightfield3d.hpp"
+#include "../terrain/profile.hpp"
+#include "../terrain/source3d.hpp"
 #include "../terrain/trackfile.hpp"
+#include "writers/compliant_3d_tire.hpp"
+#include "../io/json.hpp"
 
 namespace bike::initialization {
 namespace {
@@ -93,6 +104,166 @@ void length(io::Sha256& digest, std::uint64_t size) {
     digest.update(bytes);
 }
 
+void sync_spatial_config(SetupRequest& request) {
+    if (request.spatial.has_value() && request.model.spatial.has_value()) {
+        const auto a = io::canonical_json(spatial::spatial_config_to_value(*request.spatial));
+        const auto b = io::canonical_json(spatial::spatial_config_to_value(*request.model.spatial));
+        if (a != b)
+            throw std::invalid_argument("SetupRequest.spatial differs from SetupRequest.model.spatial");
+    } else if (request.spatial.has_value()) {
+        request.model.spatial = request.spatial;
+    } else if (request.model.spatial.has_value()) {
+        request.spatial = request.model.spatial;
+    }
+    if (!request.spatial.has_value() && request.terrain_overlay.has_value())
+        throw std::invalid_argument("terrain_overlay requires spatial configuration");
+}
+
+struct SpatialTerrainBundle {
+    std::unique_ptr<terrain::Grid3d> hfield_grid;
+    terrain::HeightField3dBuild hf;
+    std::unique_ptr<terrain::Terrain3dSource> source;
+};
+
+// Callback signature is fixed by Compliant3dTerrainCallbacks::sample_fn.
+terrain::TerrainSample3d sample_terrain3d_cb(
+    const void* c, double x, double y) noexcept { // NOLINT(bugprone-easily-swappable-parameters)
+    return static_cast<const terrain::Terrain3dSource*>(c)->sample(x, y);
+}
+
+terrain::TorusClosestPoint3d closest_terrain3d_cb(const void* c,
+                                                  const terrain::Vec3d& center,
+                                                  double search_radius_m) noexcept {
+    return static_cast<const terrain::Terrain3dSource*>(c)->closest_point(
+        center, search_radius_m);
+}
+
+Compliant3dTerrainCallbacks terrain3d_callbacks(const terrain::Terrain3dSource& src) noexcept {
+    return Compliant3dTerrainCallbacks{
+        .ctx = &src,
+        .sample_fn = &sample_terrain3d_cb,
+        .closest_point_fn = &closest_terrain3d_cb,
+    };
+}
+
+SpatialTerrainBundle build_spatial_terrain(const spatial::SpatialConfig& sp,
+                                           const std::optional<terrain::Terrain3dOverlaySpec>& overlay_spec,
+                                           const terrain::TrackSpec& track,
+                                           double ground_z_m) {
+    SpatialTerrainBundle out;
+    if (overlay_spec.has_value()) {
+        terrain::Terrain3dOverlaySpec overlay = *overlay_spec;
+        if (overlay.datum_z_offset_m == 0.)
+            overlay.datum_z_offset_m = ground_z_m;
+        out.hfield_grid = std::make_unique<terrain::Grid3d>(
+            terrain::build_overlay_grid3d(track, overlay));
+        out.hf = terrain::build_heightfield_3d(*out.hfield_grid, ground_z_m);
+        out.source = std::make_unique<terrain::Terrain3dSource>(*out.hfield_grid);
+    } else {
+        terrain::ExtrudedTrack3d ext(track, sp.corridor_half_width_m, ground_z_m);
+        const int ny_steps = std::max(4, static_cast<int>(std::ceil((2.0 * sp.corridor_half_width_m) / 0.25)));
+        const double dy_m = (2.0 * sp.corridor_half_width_m) / static_cast<double>(ny_steps);
+        const auto gs = terrain::make_grid3d_spec(ext.bounds(), terrain::DEFAULT_RESOLUTION_M, dy_m);
+        out.hfield_grid = std::make_unique<terrain::Grid3d>(terrain::sample_to_grid3d(ext, gs));
+        out.hf = terrain::build_heightfield_3d(*out.hfield_grid, ground_z_m);
+        out.source = std::make_unique<terrain::Terrain3dSource>(std::move(ext));
+    }
+    const auto extent = terrain::profile_extent(track, out.hf.spec.resolution_m());
+    if (extent.first < out.hf.spec.min_profile_m()) {
+        out.hf.spec.datum_z_m = std::max(
+            out.hf.spec.datum_z_m, std::ceil((-extent.first + 1.0) * 10.0) / 10.0);
+    }
+    if (extent.second > out.hf.spec.max_profile_m()) {
+        out.hf.spec.elevation_m = std::max(
+            out.hf.spec.elevation_m,
+            std::ceil((out.hf.spec.datum_z_m + extent.second + 1.0) * 10.0) / 10.0);
+    }
+    out.hf.spec.validate();
+    return out;
+}
+
+std::vector<std::array<double, 2>> spatial_centerline_vertices(
+    const terrain::Terrain3dSource& source, const terrain::HeightFieldSpec& field) {
+    const auto& bounds = source.bounds();
+    const int ncol = field.ncol;
+    const double dx = field.resolution_m();
+    std::vector<std::array<double, 2>> vertices;
+    vertices.reserve(static_cast<std::size_t>(ncol));
+    for (int c = 0; c < ncol; ++c) {
+        const double x = (c + 1 == ncol)
+            ? bounds.x_max_m
+            : std::min(bounds.x_max_m, bounds.x_min_m + static_cast<double>(c) * dx);
+        const auto sample = source.sample(x, 0.0);
+        if (sample.status != terrain::QueryStatus3d::ok)
+            throw std::invalid_argument("spatial centerline sample fell outside terrain bounds");
+        vertices.push_back({x, sample.height_m});
+    }
+    return vertices;
+}
+
+int resolve_brake_dof(const mjModel& model, const runtime::JointReference& ref, const char* what) {
+    const int joint = mj_name2id(&model, mjOBJ_JOINT, ref.joint.c_str());
+    if (joint < 0)
+        throw std::invalid_argument(std::string("unknown ") + what + " brake joint '" + ref.joint + "'");
+    const auto jtypes = std::views::counted(model.jnt_type, model.njnt);
+    const int dof_count = [&] {
+        switch (jtypes[static_cast<std::size_t>(joint)]) {
+        case mjJNT_FREE: return 6;
+        case mjJNT_BALL: return 3;
+        default: return 1;
+        }
+    }();
+    if (ref.dof_index < 0 || ref.dof_index >= dof_count)
+        throw std::invalid_argument(std::string("config.geometry.brake_dofs: ") + what + " dof_index out of range");
+    return std::views::counted(model.jnt_dofadr, model.njnt)[static_cast<std::size_t>(joint)] + ref.dof_index;
+}
+
+std::unique_ptr<runtime::PhysicalStep> make_spatial_physical_step(
+    Stepper& stepper, const runtime::RuntimeConfig& config,
+    const terrain::Terrain3dSource& terrain3d, const terrain::HeightFieldSpec& field) {
+    runtime::StepConfig step_cfg;
+    step_cfg.timestep_s = config.timestep_s;
+    step_cfg.control_period_s = config.control_period_s;
+    step_cfg.measurement_decimation = config.measurement_decimation;
+    step_cfg.strict = config.strict;
+    step_cfg.crank_length_m = config.geometry.crank_length_m;
+    step_cfg.road_lookahead_m = io::as_double(
+        runtime::setupvalue::field(config.rider_controller, "road_lookahead_m"),
+        "config.rider_controller.road_lookahead_m");
+    step_cfg.rider_present = !io::is_null(config.geometry.pose);
+    step_cfg.monitors = config.monitors;
+    step_cfg.intent = ::rider::decode_intent_config(config.rider_intent, "config.rider_intent");
+    step_cfg.reaction = ::rider::decode_reaction_config(config.rider_reaction, "config.rider_reaction");
+    step_cfg.launch = ::rider::decode_launch_config(config.rider_launch, "config.rider_launch");
+    step_cfg.surface_labels = ::rider::decode_surface_labels(config.surface_labels, "config.surface_labels");
+    step_cfg.spatial = config.spatial;
+
+    const auto& drv = stepper.drive().config();
+    const runtime::StaticBrake brake(
+        resolve_brake_dof(*stepper.model(), config.geometry.front_brake, "front"),
+        resolve_brake_dof(*stepper.model(), config.geometry.rear_brake, "rear"),
+        drv.brake_ceiling_nm,
+        runtime::BrakeHoldSpec{
+            .torque_nm = drv.brake_hold_torque_nm,
+            .stiffness_nm_rad = drv.brake_hold_stiffness_nm_rad,
+            .damping_nms_rad = drv.brake_hold_damping_nms_rad,
+            .engage_radps = drv.brake_hold_engage_radps,
+            .release_radps = drv.brake_hold_release_radps,
+            .unified_ceiling = true});
+
+    std::optional<::rider::SpindlePose> pose;
+    std::optional<::rider::SpindleConfig> rider_cfg;
+    if (step_cfg.rider_present) {
+        pose = ::rider::decode_spindle_pose(config.geometry.pose, "config.geometry.pose");
+        rider_cfg = ::rider::decode_spindle_config(config.rider_controller);
+        rider_cfg->reposition_damping_nms_rad = drv.policies.pedaling.reposition_damping_nms_rad;
+        rider_cfg->reposition_torque_limit_nm = step_cfg.intent.max_crank_torque_nm;
+    }
+    auto vertices = spatial_centerline_vertices(terrain3d, field);
+    return std::make_unique<runtime::PhysicalStep>(
+        stepper, std::move(step_cfg), std::move(vertices), brake, pose, rider_cfg);
+}
+
 } // namespace
 
 std::string legacy_source_fingerprint(const std::filesystem::path& root) {
@@ -145,7 +316,8 @@ std::string legacy_source_fingerprint(const std::filesystem::path& root) {
 struct SetupOwner::Impl {
     SetupRequest request;
     runtime::RuntimeConfig config;
-    // Reverse destruction: context, physical step, then model/data/writers.
+    // Reverse destruction: context, physical step, stepper, then terrain3d (callbacks).
+    std::unique_ptr<terrain::Terrain3dSource> terrain3d;
     std::unique_ptr<Stepper> stepper;
     std::unique_ptr<runtime::PhysicalStep> physical;
     std::unique_ptr<SetupContext> context;
@@ -171,6 +343,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!request.model.physics)
         throw std::invalid_argument("native setup requires an explicit physical configuration");
+    sync_spatial_config(request);
     // Launch part 2: the rider prepares the start before anything validates
     // or reads the computed drive members — the cog and pedal angle become
     // drive.gearing.rear_teeth / drive.crank_phase_rad for the model, the
@@ -178,7 +351,14 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     // settle and the intent reset.
     const auto preparation = prepare_request(request);
     configuration::post_init(*request.model.physics);
-    if (request.model.physics->tires.backend == "pneumatic") {
+    if (request.spatial.has_value()) {
+        spatial::validate_spatial_config(*request.spatial, request.model.physics->timestep_s);
+        if (request.spatial->tire_backend != spatial::SpatialTireBackend::compliant_3d)
+            throw std::invalid_argument("native spatial setup currently supports only compliant_3d tire backend");
+        const auto tire_cfg = make_compliant_3d_tire_config(request.spatial->tire_preset);
+        request.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+        request.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+    } else if (request.model.physics->tires.backend == "pneumatic") {
         request.model.bike.front_wheel_radius =
             request.model.physics->tires.pneumatic.front.outer_radius_mm;
         request.model.bike.rear_wheel_radius =
@@ -192,24 +372,53 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     if (!std::isfinite(request.start_x_m))
         throw std::invalid_argument("setup start_x_m must be finite");
     request.track.validate();
+
+    auto impl = std::make_unique<SetupOwner::Impl>();
+    std::unique_ptr<SpatialTerrainBundle> spatial_terrain;
+    const double ground_z_m = geometry::compute_ground_z(request.model.bike) / 1000.;
+    if (request.spatial.has_value()) {
+        spatial_terrain = std::make_unique<SpatialTerrainBundle>(
+            build_spatial_terrain(*request.spatial, request.terrain_overlay, request.track, ground_z_m));
+        request.model.field = spatial_terrain->hf.spec;
+        impl->terrain3d = std::move(spatial_terrain->source);
+    }
+
     request.model.field.validate();
     terrain::assert_track_fits(request.track, request.model.field);
     request.model.rider = resolved_rider;
     request.model.crank_joint = true;
     const auto compiled = model::compile_mjcf(model::generate_mjcf(request.model), request.asset_root);
-    populate_heightfield(*compiled, request);
-    auto impl = std::make_unique<SetupOwner::Impl>();
+    if (spatial_terrain) {
+        terrain::populate_heightfield_3d(
+            *compiled, *spatial_terrain->hfield_grid, spatial_terrain->hf);
+    } else {
+        populate_heightfield(*compiled, request);
+    }
     impl->config = runtime::project_runtime(request.model, *compiled, request.track, request.runtime);
     auto image = capture_model_image(*compiled);
-    impl->stepper = std::make_unique<Stepper>(image.mjb, nativecfg::decode(impl->config.writer_config));
-    impl->physical = runtime::make_physical_step(*impl->stepper, impl->config);
+    if (request.spatial.has_value()) {
+        auto writer_cfg = std::make_unique<nativecfg::WriterConfig>(
+            nativecfg::decode(impl->config.writer_config));
+        writer_cfg->tire.reset();
+        writer_cfg->cruise.reset();
+        writer_cfg->compliant_3d_tire = make_compliant_3d_tire_config(
+            request.spatial->tire_preset, terrain3d_callbacks(*impl->terrain3d));
+        if (writer_cfg->resistance.has_value())
+            writer_cfg->resistance->allow_spatial = true;
+        impl->stepper = std::make_unique<Stepper>(image.mjb, *writer_cfg);
+        impl->physical = make_spatial_physical_step(
+            *impl->stepper, impl->config, *impl->terrain3d, request.model.field);
+    } else {
+        impl->stepper = std::make_unique<Stepper>(image.mjb, nativecfg::decode(impl->config.writer_config));
+        impl->physical = runtime::make_physical_step(*impl->stepper, impl->config);
+    }
     impl->request = std::move(request);
     impl->context = std::make_unique<SetupContext>(SetupContext{
         .stepper=*impl->stepper, .physical=*impl->physical, .physics=*impl->request.model.physics});
     auto& context = *impl->context;
     context.start_x_m = impl->request.start_x_m;
     context.preparation = preparation;
-    context.ground_z_m = geometry::compute_ground_z(impl->request.model.bike) / 1000.;
+    context.ground_z_m = ground_z_m;
     context.frame_body_id = model::required_id(*compiled, mjOBJ_BODY, "frame");
     context.front_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_front_contact");
     context.rear_geom_id = model::required_id(*compiled, mjOBJ_GEOM, "geom_rear_contact");
@@ -227,6 +436,10 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
         {"rider", configuration::detail::plain_document(
             configuration::detail::as_object(configuration::detail::kRiderSpecsSchema, &resolved_rider))},
         {"track", terrain::identity_value(impl->request.track)}}};
+    if (impl->request.spatial.has_value()) {
+        std::get<Object>(context.identity.data).emplace_back(
+            "spatial", spatial::spatial_config_to_value(*impl->request.spatial));
+    }
     context.source_identity = runtime::runtime_identity().native_source_sha256;
     if (impl->request.legacy_source_root) {
         context.legacy_source_identity = legacy_source_fingerprint(*impl->request.legacy_source_root);

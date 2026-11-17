@@ -24,6 +24,7 @@
 #include "../engine_call.hpp"
 #include "../numeric_sum.hpp"
 #include "../rider/rider_posture.hpp"
+#include "../rider/steer_balance.hpp"
 #include "../stepper.hpp"
 #include "../rider/response_codec.hpp"
 #include "../spatial/frames.hpp"
@@ -1066,8 +1067,54 @@ struct SpatialStepExtension {
     int steer_qposadr = -1;
     int steer_dofadr = -1;
     double direct_steer_torque_nm = 0.0;
+    bool direct_steer_override = false;
+    bool steer_balance_seeded = false;
+    std::optional<bike::rider::SteerBalance> steer_balance;
     std::vector<double> steer_qfrc;
 };
+
+namespace {
+struct SpatialSteerStateInput {
+    std::span<const double> qpos;
+    std::span<const double> qvel;
+    double forward_speed_mps = 0.0;
+};
+
+[[nodiscard]] bike::rider::SteerBalanceObservation
+make_steer_balance_observation(const SpatialStepExtension &spatial,
+                               const SpatialSteerStateInput &state) noexcept {
+    const auto qa = static_cast<std::size_t>(spatial.root_free_qposadr);
+    const auto da = static_cast<std::size_t>(spatial.root_free_dofadr);
+    const bike::spatial::Quat quat{
+        state.qpos[qa + 3U], state.qpos[qa + 4U],
+        state.qpos[qa + 5U], state.qpos[qa + 6U]};
+    const bike::spatial::EulerZyx att = bike::spatial::euler_zyx(quat);
+    const bike::spatial::Vec3 omega_body{
+        state.qvel[da + 3U], state.qvel[da + 4U], state.qvel[da + 5U]};
+    const bike::spatial::EulerRatesZyx rates =
+        bike::spatial::body_gyro_to_euler_zyx_rates(att, omega_body);
+    const double roll_rad =
+        std::isfinite(att.roll_rad) ? att.roll_rad : 0.0;
+    const double roll_rate_rad_s =
+        rates.valid ? rates.roll_rate_rad_s : omega_body[0];
+    const double heading_err_rad =
+        std::isfinite(att.yaw_rad)
+            ? std::atan2(std::sin(att.yaw_rad), std::cos(att.yaw_rad))
+            : 0.0;
+    return {
+        .roll_rad = roll_rad,
+        .roll_rate_rad_s = roll_rate_rad_s,
+        .heading_err_rad = heading_err_rad,
+        .lateral_err_m = state.qpos[qa + 1U],
+        .lateral_rate_mps = state.qvel[da + 1U],
+        .steer_angle_rad =
+            state.qpos[static_cast<std::size_t>(spatial.steer_qposadr)],
+        .steer_rate_rad_s =
+            state.qvel[static_cast<std::size_t>(spatial.steer_dofadr)],
+        .forward_speed_mps = state.forward_speed_mps,
+    };
+}
+} // namespace
 
 PhysicalStep::~PhysicalStep() = default;
 
@@ -1136,6 +1183,19 @@ PhysicalStep::PhysicalStep(
             const int steer_df =
                 steer_id >= 0 ? dofadr[static_cast<std::size_t>(steer_id)]
                               : -1;
+            std::optional<bike::rider::SteerBalance> steer_balance;
+            if (config_.spatial.has_value() && steer_qp >= 0 &&
+                steer_df >= 0 && !rider_control_.has_value() &&
+                !config_.rider_present) {
+                const double total_mass_kg =
+                    numpy_sum(buf(m->body_mass, m->nbody));
+                const auto preset =
+                    total_mass_kg > 60.0
+                        ? bike::rider::SteerRiderPreset::lumped
+                        : bike::rider::SteerRiderPreset::none;
+                steer_balance.emplace(*config_.spatial, config_.timestep_s,
+                                      preset);
+            }
             spatial_ = std::make_unique<SpatialStepExtension>(
                 SpatialStepExtension{
                     .root_free_qposadr = free_qpos,
@@ -1143,6 +1203,9 @@ PhysicalStep::PhysicalStep(
                     .steer_qposadr = steer_qp,
                     .steer_dofadr = steer_df,
                     .direct_steer_torque_nm = 0.0,
+                    .direct_steer_override = false,
+                    .steer_balance_seeded = false,
+                    .steer_balance = std::move(steer_balance),
                     .steer_qfrc = std::vector<double>(
                         static_cast<std::size_t>(m->nv), 0.0)});
         } else {
@@ -1237,6 +1300,10 @@ std::string_view PhysicalStep::drive_mode() const {
     return stepper_->drive().config().drive_mode;
 }
 
+bool PhysicalStep::has_steer_balance() const noexcept {
+    return spatial_ != nullptr && spatial_->steer_balance.has_value();
+}
+
 void PhysicalStep::set_direct_steer_torque_nm(double torque_nm) {
     if (!std::isfinite(torque_nm))
         throw std::invalid_argument("direct steer torque must be finite");
@@ -1244,6 +1311,7 @@ void PhysicalStep::set_direct_steer_torque_nm(double torque_nm) {
         throw std::logic_error(
             "direct steer torque requires a spatial model with steer_joint");
     spatial_->direct_steer_torque_nm = torque_nm;
+    spatial_->direct_steer_override = true;
 }
 
 double PhysicalStep::direct_steer_torque_nm() const noexcept {
@@ -1634,12 +1702,46 @@ PhysicalStep::apply_forces_body(
             accumulator_.add(tick.component_names[i],
                              tick.components[i].values);
         stepper_->drive().commit(tick);
-        if (active && spatial_ != nullptr && spatial_->steer_dofadr >= 0 &&
-            spatial_->direct_steer_torque_nm != 0.0) {
-            std::ranges::fill(spatial_->steer_qfrc, 0.0);
-            spatial_->steer_qfrc[static_cast<std::size_t>(
-                spatial_->steer_dofadr)] = spatial_->direct_steer_torque_nm;
-            accumulator_.add("act_rider_steer", spatial_->steer_qfrc);
+        if (active && spatial_ != nullptr && spatial_->steer_dofadr >= 0) {
+            double steer_torque_nm = spatial_->direct_steer_torque_nm;
+            if (!initializing_ && spatial_->steer_balance.has_value() &&
+                !spatial_->direct_steer_override) {
+                if (advance) {
+                    const auto qpos_now = buf(d->qpos, m->nq);
+                    const auto qvel_now = buf(d->qvel, m->nv);
+                    const bike::rider::SteerBalanceObservation obs =
+                        make_steer_balance_observation(
+                            *spatial_,
+                            {.qpos = qpos_now,
+                             .qvel = qvel_now,
+                             .forward_speed_mps =
+                                 forward_speed_mps(qpos_now, qvel_now)});
+                    if (!spatial_->steer_balance_seeded) {
+                        spatial_->steer_balance->reset(
+                            bike::rider::DelayedBalanceSample{
+                                .roll_rad = obs.roll_rad,
+                                .roll_rate_rad_s = obs.roll_rate_rad_s,
+                                .heading_err_rad = obs.heading_err_rad,
+                                .lateral_err_m = obs.lateral_err_m,
+                                .lateral_rate_mps = obs.lateral_rate_mps,
+                            },
+                            0.0);
+                        spatial_->steer_balance_seeded = true;
+                    }
+                    steer_torque_nm =
+                        spatial_->steer_balance->step(step_, obs);
+                    spatial_->direct_steer_torque_nm = steer_torque_nm;
+                } else {
+                    steer_torque_nm =
+                        spatial_->steer_balance->held_torque_nm();
+                }
+            }
+            if (steer_torque_nm != 0.0) {
+                std::ranges::fill(spatial_->steer_qfrc, 0.0);
+                spatial_->steer_qfrc[static_cast<std::size_t>(
+                    spatial_->steer_dofadr)] = steer_torque_nm;
+                accumulator_.add("act_rider_steer", spatial_->steer_qfrc);
+            }
         }
         if (rider_control_.has_value()) {
             std::optional<double> crank_goal = pedaling.target_phase_rad;
@@ -3289,7 +3391,13 @@ void PhysicalStep::restore(const StepState &s) {
     // The queued one-shot is transient input, not serialized state: a
     // restored episode starts with no reposition pending.
     pending_reposition_ = false;
-    if (spatial_ != nullptr) spatial_->direct_steer_torque_nm = 0.0;
+    if (spatial_ != nullptr) {
+        spatial_->direct_steer_torque_nm = 0.0;
+        spatial_->direct_steer_override = false;
+        spatial_->steer_balance_seeded = false;
+        if (spatial_->steer_balance.has_value())
+            spatial_->steer_balance->reset();
+    }
 }
 
 } // namespace runtime

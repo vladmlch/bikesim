@@ -12,6 +12,8 @@
 #include "../model/builder.hpp"
 #include "../runtime/project_config.hpp"
 #include "../runtime/runtime.hpp"
+#include "../spatial/types.hpp"
+#include "../terrain/generator3d.hpp"
 
 namespace bike::initialization {
 
@@ -32,6 +34,11 @@ struct SetupRequest {
     // Research replaces equilibrium holding inputs with the source's safe
     // zero-torque probe before the t=0 bootstrap is captured.
     bool research_startup = false;
+    // Opt-in spatial 3D configuration (nullopt in planar mode).
+    std::optional<bike::spatial::SpatialConfig> spatial{};
+    // Optional 3D terrain overlay (cross-slope / lateral roughness); when nullopt
+    // in spatial mode, defaults to ExtrudedTrack3d using corridor_half_width_m.
+    std::optional<terrain::Terrain3dOverlaySpec> terrain_overlay{};
 };
 
 // Strict request_schema=1 assembly document; referenced files and nested

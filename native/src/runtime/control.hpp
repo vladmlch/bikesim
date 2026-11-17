@@ -373,6 +373,15 @@ public:
     void set_event(std::optional<CrashEvent> event) {
         event_ = std::move(event);
     }
+    [[nodiscard]] bool has_root_free() const noexcept {
+        return has_root_free_;
+    }
+    [[nodiscard]] double capsize_roll_rad() const noexcept {
+        return capsize_roll_rad_;
+    }
+    [[nodiscard]] double corridor_half_width_m() const noexcept {
+        return corridor_half_width_m_;
+    }
 
     // Constructor-resolved model lookups — oracle attribute names.
     // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)

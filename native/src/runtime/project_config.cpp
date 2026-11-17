@@ -23,6 +23,7 @@
 #include "../model/mapping.hpp"
 #include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
+#include "../spatial/config.hpp"
 #include "../terrain/profile.hpp"
 #include "../writer_config.hpp"
 #include "bootstrap.hpp"
@@ -103,8 +104,30 @@ void require_request_model(const mdl::BuildRequest& request, const mjModel& mode
     const auto addresses = std::views::counted(expected->hfield_adr, expected->nhfield);
     if (rows[field_id] != request.field.nrow || columns[field_id] != request.field.ncol)
         throw std::invalid_argument("project_runtime: generated road dimensions differ from BuildRequest");
-    const auto samples = trn::build_field_data(track, request.field);
     const auto offset = addresses[field_id];
+    if (request.spatial.has_value()) {
+        const auto count =
+            static_cast<std::size_t>(request.field.nrow) *
+            static_cast<std::size_t>(request.field.ncol);
+        if (offset < 0 || std::cmp_greater(offset, expected->nhfielddata) ||
+            std::cmp_greater(count, expected->nhfielddata - offset))
+            throw std::invalid_argument("project_runtime: generated road address is outside heightfield storage");
+        if (model.nhfielddata != expected->nhfielddata)
+            throw std::invalid_argument("project_runtime: compiled model differs from BuildRequest and track");
+        const auto source = std::views::counted(model.hfield_data, model.nhfielddata)
+            .subspan(static_cast<std::size_t>(offset), count);
+        auto const target = std::views::counted(expected->hfield_data, expected->nhfielddata)
+            .subspan(static_cast<std::size_t>(offset), count);
+        for (std::size_t i = 0; i < count; ++i) {
+            if (!std::isfinite(source[i]) || source[i] < 0.f || source[i] > 1.f)
+                throw std::invalid_argument("project_runtime: normalized road elevation is outside [0, 1]");
+            target[i] = source[i];
+        }
+        if (immutable_model_image(model) != immutable_model_image(*expected))
+            throw std::invalid_argument("project_runtime: compiled model differs from BuildRequest and track");
+        return;
+    }
+    const auto samples = trn::build_field_data(track, request.field);
     if (offset < 0 || std::cmp_greater(offset, expected->nhfielddata) ||
         samples.size() > static_cast<std::size_t>(expected->nhfielddata - offset))
         throw std::invalid_argument("project_runtime: generated road address is outside heightfield storage");
@@ -520,7 +543,12 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
                 {"front", text("front_wheel")}, {"rear", text("rear_wheel")}}}},
             {"com_marker_site", com < 0 ? Value{} : text("site_CG")},
             {"pose", pose}}}}}};
-    return decode_runtime_config(envelope);
+    RuntimeConfig out = decode_runtime_config(envelope);
+    if (request.spatial.has_value()) {
+        bike::spatial::validate_spatial_config(*request.spatial, config.timestep_s);
+        out.spatial = request.spatial;
+    }
+    return out;
 }
 NATIVE_DIAG_POP
 

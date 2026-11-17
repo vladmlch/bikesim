@@ -355,6 +355,7 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
         config.rider_launch, "config.rider_launch");
     out.surface_labels = rider::decode_surface_labels(
         config.surface_labels, "config.surface_labels");
+    out.spatial = config.spatial;
     return out;
 }
 
@@ -521,8 +522,14 @@ void NativeRideRuntime::init() {
             "state.model_digest: model artifact bytes do not match");
     // The writer-config decode position: exactly where the nanobind
     // adapter decoded the handle — before the model load.
-    const nativecfg::WriterConfig writer_config =
+    nativecfg::WriterConfig writer_config =
         nativecfg::decode(config_.writer_config);
+    if (config_.spatial.has_value()) {
+        if (writer_config.resistance.has_value()) {
+            writer_config.resistance->allow_spatial = true;
+        }
+        writer_config.cruise.reset();
+    }
     stepper_ = std::make_unique<Stepper>(model_image_.mjb, writer_config);
     // Same guarantee the decode gave at compose time — repeated against
     // the live model so a fabricated bootstrap record cannot pass.

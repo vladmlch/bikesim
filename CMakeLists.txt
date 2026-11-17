@@ -143,6 +143,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/rider/perception.cpp"
   "${_bike_native_dir}/src/rider/intent.cpp"
   "${_bike_native_dir}/src/rider/spindle_controller.cpp"
+  "${_bike_native_dir}/src/rider/steer_balance.cpp"
   "${_bike_native_dir}/src/runtime/samples.cpp"
   "${_bike_native_dir}/src/runtime/wire.cpp"
   "${_bike_native_dir}/src/runtime/control.cpp"

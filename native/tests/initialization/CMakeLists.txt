@@ -15,6 +15,28 @@ foreach(_init_test IN ITEMS initialization_setup initialization_sag
       WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_init_test}>")
   endif()
 endforeach()
+add_executable(initialization_spatial_equilibrium test_spatial_equilibrium.cpp)
+bike_startup_target_policy(initialization_spatial_equilibrium "${_test_repo_root}/native")
+target_link_libraries(initialization_spatial_equilibrium PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(initialization_spatial_equilibrium
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME initialization_spatial_equilibrium COMMAND initialization_spatial_equilibrium)
+  set_tests_properties(initialization_spatial_equilibrium PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:initialization_spatial_equilibrium>")
+endif()
+
+add_executable(initialization_spatial_finalize test_spatial_finalize.cpp)
+bike_startup_target_policy(initialization_spatial_finalize "${_test_repo_root}/native")
+target_link_libraries(initialization_spatial_finalize PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(initialization_spatial_finalize
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME initialization_spatial_finalize COMMAND initialization_spatial_finalize)
+  set_tests_properties(initialization_spatial_finalize PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:initialization_spatial_finalize>")
+endif()
+
 # Only the two document-regenerating targets link the record seam.
 target_link_libraries(initialization_pipeline PRIVATE
   bike_test_initial_state_record)

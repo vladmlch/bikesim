@@ -15,6 +15,7 @@
 #include <string_view>
 
 #include "../io/value.hpp"
+#include "../spatial/types.hpp"
 
 namespace runtime {
 
@@ -92,6 +93,8 @@ struct RuntimeConfig {
     // the physical-step assembly. Projected from the track spec on every
     // surface_mode — the senses channel reads labels, never friction.
     bike::io::Value surface_labels;
+    // Opt-in spatial 3D configuration (nullopt in planar mode).
+    std::optional<bike::spatial::SpatialConfig> spatial;
 };
 
 } // namespace runtime

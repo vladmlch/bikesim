@@ -1,8 +1,12 @@
 #include "context.hpp"
+#include "refine.hpp"
+#include "../engine_call.hpp"
 #include "../runtime/step.hpp"
+#include "../spatial/frames.hpp"
 #include "../stepper.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <optional>
 #include <ranges>
@@ -12,6 +16,40 @@
 
 namespace bike::initialization {
 namespace {
+constexpr double kPhaseAKRoll = 4000.;
+constexpr double kPhaseAKY = 15000.;
+constexpr double kPhaseAKPsi = 1500.;
+constexpr double kPhaseAKSteer = 500.;
+
+struct PhaseAHoldState {
+    const SetupContext* owner = nullptr;
+    int free_qpos = -1;
+    int free_dof = -1;
+    int steer_qpos = -1;
+    int steer_dof = -1;
+    double d_roll = 0.;
+    double d_y = 0.;
+    double d_psi = 0.;
+    double d_steer = 0.;
+    double psi0 = 0.;
+};
+
+PhaseAHoldState& phase_a_hold_storage() noexcept {
+    thread_local PhaseAHoldState state{};
+    return state;
+}
+
+struct DampingSpec {
+    double inertia = 0.;
+    double stiffness = 0.;
+    double dt = 0.;
+};
+
+[[nodiscard]] double capped_damping(DampingSpec spec) noexcept {
+    const double m_eff = std::max(0., spec.inertia);
+    return std::min(2. * std::sqrt(m_eff * spec.stiffness), 0.5 * m_eff / spec.dt);
+}
+
 // Launch part 4b (user ruling 2026-11-13): the settle holds crank_spin at
 // the prepared pedal angle, the way it holds the prepared lean — spec
 // 2026-11-11-rider-launch-plan-design.md:38. A stiff PD restoring torque
@@ -30,7 +68,107 @@ double crank_hold_torque(SetupContext const& context) {
     return -context.physics.equilibrium_crank_hold_kp_nm_rad*(qpos[static_cast<std::size_t>(crank.qpos)]-seed)
            -context.physics.equilibrium_crank_hold_kd_nms_rad*qvel[static_cast<std::size_t>(crank.dof)];
 }
+
+void add_phase_a_hold(const SetupContext& context, std::vector<double>& hold) {
+    const auto& state = phase_a_hold_storage();
+    const mjModel* m = context.stepper.model();
+    const mjData* d = context.stepper.data();
+    const auto qpos = std::views::counted(d->qpos, m->nq);
+    const auto qvel = std::views::counted(d->qvel, m->nv);
+    const auto fq = static_cast<std::size_t>(state.free_qpos);
+    const auto fd = static_cast<std::size_t>(state.free_dof);
+    const bike::spatial::Quat q_curr{
+        qpos[fq + 3U], qpos[fq + 4U], qpos[fq + 5U], qpos[fq + 6U]};
+    const auto eul = bike::spatial::euler_zyx(q_curr);
+    const bike::spatial::Vec3 omega_b{qvel[fd + 3U], qvel[fd + 4U], qvel[fd + 5U]};
+    const auto rates = bike::spatial::body_gyro_to_euler_zyx_rates(eul, omega_b);
+    if (!eul.valid || !rates.valid)
+        throw std::runtime_error("spatial Phase A hold encountered gimbal lock");
+
+    // Euler roll axis (phi) is intrinsic body +X -> maps 1-to-1 to free_dof + 3.
+    hold[fd + 3U] += -kPhaseAKRoll * eul.roll_rad - state.d_roll * rates.roll_rate_rad_s;
+    // Euler yaw axis (psi) is world +Z -> covector R^T * (0, 0, tau_psi_w)^T.
+    const double tau_psi_w =
+        -kPhaseAKPsi * (eul.yaw_rad - state.psi0) -
+        state.d_psi * rates.yaw_rate_rad_s;
+    const auto tau_psi_b = bike::spatial::rotate_world_to_body(q_curr, {0., 0., tau_psi_w});
+    hold[fd + 3U] += tau_psi_b[0];
+    hold[fd + 4U] += tau_psi_b[1];
+    hold[fd + 5U] += tau_psi_b[2];
+
+    // Lateral corridor hold (y -> 0) and temporary steer_joint lock (delta -> 0).
+    hold[fd + 1U] += -kPhaseAKY * qpos[fq + 1U] - state.d_y * qvel[fd + 1U];
+    if (state.steer_dof >= 0) {
+        const auto sq = static_cast<std::size_t>(state.steer_qpos);
+        const auto sd = static_cast<std::size_t>(state.steer_dof);
+        hold[sd] += -kPhaseAKSteer * qpos[sq] - state.d_steer * qvel[sd];
+    }
+}
 } // namespace
+
+PhaseAHoldScope::PhaseAHoldScope(SetupContext& context) {
+    require_initializing(context);
+    const mjModel* m = context.stepper.model();
+    const auto free_root = find_free_root(m);
+    if (!free_root) return;
+    auto& state = phase_a_hold_storage();
+    if (state.owner != nullptr)
+        throw std::logic_error("nested spatial PhaseAHoldScope is not supported");
+
+    if (!context.stepper.posvel_fresh()) context.stepper.forward();
+    const mjData* d = context.stepper.data();
+    const double dt = m->opt.timestep;
+    if (!std::isfinite(dt) || !(dt > 0.))
+        throw std::invalid_argument("Phase A hold requires positive finite timestep");
+
+    const JointAddress steer = joint_address(context, "steer_joint");
+    const auto nv = static_cast<std::size_t>(m->nv);
+    std::vector<double> basis(nv, 0.);
+    std::vector<double> col(nv, 0.);
+    const auto diag_inertia = [&](int dof) -> double {
+        const auto idx = static_cast<std::size_t>(dof);
+        basis[idx] = 1.;
+        context.stepper.mutate([&] { engine::mul_m(m, d, col.data(), basis.data()); });
+        basis[idx] = 0.;
+        return col[idx];
+    };
+
+    const double m_yy = diag_inertia(free_root->dof + 1);
+    const double m_phi = diag_inertia(free_root->dof + 3);
+    const double m_psi = diag_inertia(free_root->dof + 5);
+    const double m_delta = diag_inertia(steer.dof);
+
+    const auto qpos = std::views::counted(d->qpos, m->nq);
+    const auto fq = static_cast<std::size_t>(free_root->qpos);
+    const bike::spatial::Quat q_init{
+        qpos[fq + 3U], qpos[fq + 4U], qpos[fq + 5U], qpos[fq + 6U]};
+    const auto eul = bike::spatial::euler_zyx(q_init);
+    if (!eul.valid)
+        throw std::runtime_error("spatial Phase A hold requires non-singular initial pitch");
+
+    state = PhaseAHoldState{
+        .owner = &context,
+        .free_qpos = free_root->qpos,
+        .free_dof = free_root->dof,
+        .steer_qpos = steer.qpos,
+        .steer_dof = steer.dof,
+        .d_roll = capped_damping({.inertia = m_phi, .stiffness = kPhaseAKRoll, .dt = dt}),
+        .d_y = capped_damping({.inertia = m_yy, .stiffness = kPhaseAKY, .dt = dt}),
+        .d_psi = capped_damping({.inertia = m_psi, .stiffness = kPhaseAKPsi, .dt = dt}),
+        .d_steer = capped_damping({.inertia = m_delta, .stiffness = kPhaseAKSteer, .dt = dt}),
+        .psi0 = eul.yaw_rad,
+    };
+    active_ = true;
+}
+
+PhaseAHoldScope::~PhaseAHoldScope() {
+    if (active_) phase_a_hold_storage() = PhaseAHoldState{};
+}
+
+bool phase_a_hold_active(const SetupContext& context) noexcept {
+    return context.initializing && phase_a_hold_storage().owner == &context;
+}
+
 void apply_initial_forces(SetupContext& context,bool advance) {
     require_initializing(context);
     // Launch part 2: an articulated rider holds the prepared start lean
@@ -56,6 +194,11 @@ void apply_initial_forces(SetupContext& context,bool advance) {
         const auto crank=joint_address(context,"crank_spin");
         hold[static_cast<std::size_t>(crank.dof)]=crank_hold_torque(context);
         external=std::move(hold);
+    }
+    if (phase_a_hold_active(context)) {
+        if (!external)
+            external.emplace(static_cast<std::size_t>(context.stepper.model()->nv), 0.);
+        add_phase_a_hold(context, *external);
     }
     (void)context.physical.apply_forces(false,advance,
         context.physics.initial_front_brake,context.physics.initial_rear_brake,

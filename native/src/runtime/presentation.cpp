@@ -7,6 +7,7 @@
 #include "../model_access.hpp"
 #include "../stepper.hpp"
 #include "../drivetrain/pedaling.hpp"
+#include "../spatial/frames.hpp"
 #include "../writers/drivetrain.hpp"
 #include "../writers/suspension.hpp"
 
@@ -122,10 +123,27 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
     const auto v = stepper_->qvel();
     const auto &suspension = stepper_->suspension();
     out.time_s = data->time;
-    out.position_m = q[static_cast<std::size_t>(root_x_qposadr_)];
-    out.speed_mps = v[static_cast<std::size_t>(root_x_dofadr_)];
-    out.root_x_dofadr = root_x_dofadr_;
-    out.pitch_rad = q[static_cast<std::size_t>(root_pitch_qposadr_)];
+    if (spatial_ != nullptr) {
+        const auto qa = static_cast<std::size_t>(root_x_qposadr_);
+        const auto da = static_cast<std::size_t>(root_x_dofadr_);
+        if (root_x_qposadr_ < 0 || qa + 6U >= q.size() ||
+            root_x_dofadr_ < 0 || da + 5U >= v.size())
+            throw std::out_of_range("presentation: root_free state out of range");
+        out.position_m = q[qa];
+        const bike::spatial::Quat quat{
+            q[qa + 3U], q[qa + 4U], q[qa + 5U], q[qa + 6U]};
+        const auto heading = bike::spatial::horizontal_heading_unit(quat);
+        out.speed_mps = heading.valid
+                            ? (heading.hx * v[da] + heading.hy * v[da + 1U])
+                            : forward_speed_mps(q, v);
+        out.root_x_dofadr = root_x_dofadr_;
+        out.pitch_rad = frame_pitch_rad(q);
+    } else {
+        out.position_m = q[static_cast<std::size_t>(root_x_qposadr_)];
+        out.speed_mps = v[static_cast<std::size_t>(root_x_dofadr_)];
+        out.root_x_dofadr = root_x_dofadr_;
+        out.pitch_rad = q[static_cast<std::size_t>(root_pitch_qposadr_)];
+    }
     model_access::require_id(frame_body_, model->nbody, "presentation frame");
     out.z_m = array(data->xpos, model->nbody, 3)[static_cast<std::size_t>(frame_body_) * 3U + 2U];
     out.crank_phase_rad = q[static_cast<std::size_t>(crank_spin_qposadr_)];

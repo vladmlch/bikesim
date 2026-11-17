@@ -7,6 +7,7 @@
 #include "support/temporary_directory.hpp"
 
 #include <array>
+#include <cstdint>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -21,7 +22,7 @@ namespace fs = std::filesystem;
 namespace io = bike::io;
 namespace rec = bike::recording;
 
-enum class EpisodeGroup { all, welded, distributed };
+enum class EpisodeGroup : std::uint8_t { all, welded, distributed };
 
 struct EpisodeSpec {
     std::string_view name;
@@ -105,7 +106,7 @@ ParsedOptions parse_options(std::span<const char *const> raw_args) {
             out.filter = parse_episode_filter(arg.substr(10));
             continue;
         }
-        if (arg.starts_with("-")) {
+        if (arg.starts_with('-')) {
             throw std::invalid_argument("unknown option: " + std::string(arg));
         }
         positional.push_back(arg);
@@ -167,20 +168,25 @@ fs::path find_recording_dir(const fs::path &out_dir) {
     return *found;
 }
 
-fs::path run_headless_bike_ride(const fs::path &bike_ride_bin,
-                                const fs::path &repo_root,
-                                const EpisodeSpec &ep,
-                                const fs::path &episode_tmp) {
-    const fs::path cache_dir = episode_tmp / "cache";
-    const fs::path out_dir = episode_tmp / "out";
+struct RideRunSpec {
+    fs::path bike_ride_bin;
+    fs::path repo_root;
+    EpisodeSpec episode;
+    fs::path episode_tmp;
+};
+
+fs::path run_headless_bike_ride(const RideRunSpec &run_spec) {
+    const fs::path cache_dir = run_spec.episode_tmp / "cache";
+    const fs::path out_dir = run_spec.episode_tmp / "out";
     fs::create_directories(cache_dir);
     fs::create_directories(out_dir);
 
     const std::string track_arg =
-        ep.track == "flat"
+        run_spec.episode.track == "flat"
             ? std::string("flat")
-            : (repo_root / ep.track).string();
-    const std::string phys_arg = (repo_root / ep.physics_config).string();
+            : (run_spec.repo_root / run_spec.episode.track).string();
+    const std::string phys_arg =
+        (run_spec.repo_root / run_spec.episode.physics_config).string();
     const std::string cache_env =
         "BIKE_SIM_EQUILIBRIUM_CACHE_DIR=" + cache_dir.string();
 
@@ -189,7 +195,7 @@ fs::path run_headless_bike_ride(const fs::path &bike_ride_bin,
     const std::vector<std::string> argv{
         "/usr/bin/env",
         cache_env,
-        bike_ride_bin.string(),
+        run_spec.bike_ride_bin.string(),
         "--physics-config",
         phys_arg,
         "--track",
@@ -204,9 +210,11 @@ fs::path run_headless_bike_ride(const fs::path &bike_ride_bin,
         out_dir.string(),
         "--no-plots",
     };
-    const auto result = bike::platform::run(argv, repo_root, options);
+    const auto result =
+        bike::platform::run(argv, run_spec.repo_root, options);
     bt::require(result.exit_code == 0 || result.exit_code == 2,
-                std::string(ep.name) + " bike-ride failed with exit code " +
+                std::string(run_spec.episode.name) +
+                    " bike-ride failed with exit code " +
                     std::to_string(result.exit_code) + ": " + result.err);
     return find_recording_dir(out_dir);
 }
@@ -219,8 +227,12 @@ void verify_episodes(const ParsedOptions &opts) {
 
     const bt::TemporaryDirectory tmp("golden-episode-digest");
     for (const auto &ep : selected_episodes(opts.filter)) {
-        const fs::path rec_dir = run_headless_bike_ride(
-            opts.bike_ride_bin, opts.repo_root, ep, tmp.path() / ep.name);
+        const fs::path rec_dir = run_headless_bike_ride({
+            .bike_ride_bin = opts.bike_ride_bin,
+            .repo_root = opts.repo_root,
+            .episode = ep,
+            .episode_tmp = tmp.path() / ep.name,
+        });
         const auto recording = rec::open_recording(rec_dir);
         const auto live = rec::compute_recording_digest(*recording);
         const auto golden_path = bt::fixture(ep.golden_relative);

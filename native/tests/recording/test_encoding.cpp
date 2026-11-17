@@ -76,7 +76,7 @@ void physical_contract() {
     bt::invalid([&]{(void)runtime::encode_table_native(episode,rec::compile_plan(catalog,"channel_energy"),0,3);});
 }
 void distributed_tires_projection_contract() {
-    auto tire_side = [](std::initializer_list<std::pair<std::string, runtime::Wire>> extra) {
+    const auto tire_side = [](std::initializer_list<std::pair<std::string, runtime::Wire>> extra) {
         runtime::WireObject side{
             {"backend", runtime::Wire{std::string("distributed_2d_reference")}},
             {"unloaded_radius_m", runtime::Wire{0.34}},
@@ -107,7 +107,7 @@ void distributed_tires_projection_contract() {
     const auto catalog = recording_fixture::catalog();
     const auto plan = rec::compile_plan(catalog, "channel_tires");
     auto episode = recording_fixture::episode(1);
-    auto sample = std::make_shared<runtime::PhysicalSampleData>(*episode.samples[0]);
+    const auto sample = std::make_shared<runtime::PhysicalSampleData>(*episode.samples[0]);
     sample->channels.emplace_back("tires", runtime::Wire{runtime::WireObject{
         {"front", runtime::Wire{tire_side({
             {"active_station_count", runtime::Wire{std::int64_t{4}}},

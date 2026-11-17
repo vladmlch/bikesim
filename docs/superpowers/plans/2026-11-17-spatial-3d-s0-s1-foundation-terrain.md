@@ -973,7 +973,7 @@ git commit -m "feat(spatial): add strict SpatialConfig decoder with exact-tick v
 - Consumes: `bike::terrain::{TrackSpec, SurfaceMap, SignedProfile, build_profile, DEFAULT_RESOLUTION_M}`, `rider::SurfaceLabel`, `biketyre::np_interp`, `bike::io::Sha256`.
 - Produces: `bike::terrain::{QueryStatus3d, TerrainSample3d, TorusClosestPoint3d, TerrainBounds3d, ExtrudedTrack3d}` в `bike_terrain`.
 
-- [ ] **Step 1: Создать `terrain3d_types.hpp`, `extrusion3d.hpp` и `test_extrusion3d.cpp`**
+- [x] **Step 1: Создать `terrain3d_types.hpp`, `extrusion3d.hpp` и `test_extrusion3d.cpp`**
 
 Создать `native/src/terrain/terrain3d_types.hpp`:
 ```cpp
@@ -1144,7 +1144,7 @@ int main() {
 }
 ```
 
-- [ ] **Step 2: Зарегистрировать `extrusion3d.cpp` в `NativeStartup.cmake` и `terrain_extrusion3d` в `native/tests/terrain/CMakeLists.txt`**
+- [x] **Step 2: Зарегистрировать `extrusion3d.cpp` в `NativeStartup.cmake` и `terrain_extrusion3d` в `native/tests/terrain/CMakeLists.txt`**
 
 В `native/cmake/NativeStartup.cmake` добавить `"${native_dir}/src/terrain/extrusion3d.cpp"` в `bike_terrain` и `bike_io` в `target_link_libraries(bike_terrain PUBLIC ...)`:
 ```cmake
@@ -1172,7 +1172,7 @@ int main() {
 Run: `cmake --preset release`
 Expected: FAIL (`Cannot find source file: .../native/src/terrain/extrusion3d.cpp`)
 
-- [ ] **Step 3: Написать `native/src/terrain/extrusion3d.cpp`**
+- [x] **Step 3: Написать `native/src/terrain/extrusion3d.cpp`**
 
 ```cpp
 #include "terrain/extrusion3d.hpp"
@@ -1363,7 +1363,7 @@ TorusClosestPoint3d ExtrudedTrack3d::closest_point(const Vec3d& center_world_m,
 } // namespace bike::terrain
 ```
 
-- [ ] **Step 4: Собрать и запустить `terrain_extrusion3d`, закоммитить**
+- [x] **Step 4: Собрать и запустить `terrain_extrusion3d`, закоммитить**
 
 Run:
 ```bash
@@ -1396,7 +1396,7 @@ git commit -m "feat(terrain): add ExtrudedTrack3d with bitwise 1D parity across 
 - Consumes: `bike::terrain::{TerrainSample3d, TorusClosestPoint3d, TerrainBounds3d, ExtrudedTrack3d}`, `bike::io::Sha256`.
 - Produces: `bike::terrain::{MonotoneBicubicCell, evaluate_monotone_bicubic, Grid3d, Terrain3dSource, Terrain3dQueryView}`.
 
-- [ ] **Step 1: Создать заголовки `interpolation3d.hpp`, `grid3d.hpp`, `source3d.hpp` и тест `test_grid3d.cpp`**
+- [x] **Step 1: Создать заголовки `interpolation3d.hpp`, `grid3d.hpp`, `source3d.hpp` и тест `test_grid3d.cpp`**
 
 Создать `native/src/terrain/interpolation3d.hpp`:
 ```cpp
@@ -1630,7 +1630,7 @@ int main() {
 }
 ```
 
-- [ ] **Step 2: Добавить новые файлы в `NativeStartup.cmake` и `native/tests/terrain/CMakeLists.txt`**
+- [x] **Step 2: Добавить новые файлы в `NativeStartup.cmake` и `native/tests/terrain/CMakeLists.txt`**
 
 В `native/cmake/NativeStartup.cmake` добавить в `bike_terrain`:
 ```cmake
@@ -1643,7 +1643,7 @@ int main() {
 Run: `cmake --preset release`
 Expected: FAIL (`Cannot find source file: .../interpolation3d.cpp`)
 
-- [ ] **Step 3: Реализовать `interpolation3d.cpp`, `grid3d.cpp` и `source3d.cpp`**
+- [x] **Step 3: Реализовать `interpolation3d.cpp`, `grid3d.cpp` и `source3d.cpp`**
 
 Создать `native/src/terrain/interpolation3d.cpp`:
 ```cpp
@@ -2079,7 +2079,7 @@ TorusClosestPoint3d Terrain3dQueryView::closest_point(const Vec3d& center_world_
 } // namespace bike::terrain
 ```
 
-- [ ] **Step 4: Собрать и запустить `terrain_grid3d`, закоммитить**
+- [x] **Step 4: Собрать и запустить `terrain_grid3d`, закоммитить**
 
 Run:
 ```bash
@@ -2108,7 +2108,7 @@ git commit -m "feat(terrain): add cache-local Grid3d with Steffen monotone bicub
 - Consumes: `bike::terrain::{TrackSpec, Grid3d, DEFAULT_RESOLUTION_M}`, `bike::random::NumpyRng` (`random/numpy_compat.hpp`).
 - Produces: `bike::terrain::{CrossSlopeSegment3d, Terrain3dOverlaySpec, build_overlay_grid3d}` — строит 3D-рельеф поверх любой из существующих трасс `main` (включая `rough_uphill_savage` и `alpine_rocky`) без потери секций покрытий и с плоскими стартовыми/финишными зонами `lead_in`/`lead_out`.
 
-- [ ] **Step 1: Создать `generator3d.hpp` и `test_generator3d.cpp`**
+- [x] **Step 1: Создать `generator3d.hpp` и `test_generator3d.cpp`**
 
 Создать `native/src/terrain/generator3d.hpp`:
 ```cpp
@@ -2232,7 +2232,7 @@ int main() {
 }
 ```
 
-- [ ] **Step 2: Подключить `generator3d.cpp` в `NativeStartup.cmake` и `terrain_generator3d` в `native/tests/terrain/CMakeLists.txt`**
+- [x] **Step 2: Подключить `generator3d.cpp` в `NativeStartup.cmake` и `terrain_generator3d` в `native/tests/terrain/CMakeLists.txt`**
 
 В `native/cmake/NativeStartup.cmake` добавить `"${native_dir}/src/terrain/generator3d.cpp"` в `bike_terrain`.  
 В `native/tests/terrain/CMakeLists.txt` добавить `terrain_generator3d` в `foreach(_terrain_test IN ITEMS ...)`.
@@ -2240,7 +2240,7 @@ int main() {
 Run: `cmake --preset release`
 Expected: FAIL (`Cannot find source file: .../generator3d.cpp`)
 
-- [ ] **Step 3: Реализовать `native/src/terrain/generator3d.cpp`**
+- [x] **Step 3: Реализовать `native/src/terrain/generator3d.cpp`**
 
 ```cpp
 #include "terrain/generator3d.hpp"
@@ -2378,7 +2378,7 @@ Grid3d build_overlay_grid3d(const TrackSpec& base_track, const Terrain3dOverlayS
 } // namespace bike::terrain
 ```
 
-- [ ] **Step 4: Собрать и запустить все целевые тесты `S0 + S1`, затем выполнить единый гейт Level 1 (`check_change.sh 0502660d`) и закоммитить**
+- [x] **Step 4: Собрать и запустить все целевые тесты `S0 + S1`, затем выполнить единый гейт Level 1 (`check_change.sh 0502660d`) и закоммитить**
 
 Run targeted tests first:
 ```bash

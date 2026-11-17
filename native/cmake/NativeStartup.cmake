@@ -46,9 +46,14 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/terrain/generator.cpp"
     "${native_dir}/src/terrain/alpine.cpp"
     "${native_dir}/src/terrain/presets.cpp"
-    "${native_dir}/src/terrain/trackfile.cpp")
+    "${native_dir}/src/terrain/trackfile.cpp"
+    "${native_dir}/src/terrain/extrusion3d.cpp"
+    "${native_dir}/src/terrain/interpolation3d.cpp"
+    "${native_dir}/src/terrain/grid3d.cpp"
+    "${native_dir}/src/terrain/source3d.cpp"
+    "${native_dir}/src/terrain/generator3d.cpp")
   bike_startup_target_policy(bike_terrain "${native_dir}")
-  target_link_libraries(bike_terrain PUBLIC bike_configuration bike_geometry bike_random)
+  target_link_libraries(bike_terrain PUBLIC bike_configuration bike_geometry bike_random bike_io)
 
   target_sources(bike_model PRIVATE
     "${native_dir}/src/model/builder.cpp"

@@ -32,10 +32,18 @@ void reject_duplicate_and_unknown_keys(const Value::Object& obj,
     std::set<std::string_view> seen;
     for (const auto& [key, _] : obj) {
         if (!seen.insert(key).second) {
-            throw std::invalid_argument(prefix + "." + key + ": duplicate field");
+            std::string msg = prefix;
+            msg += '.';
+            msg += key;
+            msg += ": duplicate field";
+            throw std::invalid_argument(msg);
         }
         if (!allowed.contains(key)) {
-            throw std::invalid_argument(prefix + "." + key + ": unknown field");
+            std::string msg = prefix;
+            msg += '.';
+            msg += key;
+            msg += ": unknown field";
+            throw std::invalid_argument(msg);
         }
     }
 }
@@ -89,7 +97,7 @@ Value vec3_to_value(const Vec3& v, const char* path) {
     return out;
 }
 
-std::string backend_name(SpatialTireBackend backend) {
+std::string_view backend_name(SpatialTireBackend backend) {
     switch (backend) {
     case SpatialTireBackend::compliant_3d: return "compliant_3d";
     case SpatialTireBackend::distributed_3d: return "distributed_3d";
@@ -97,7 +105,7 @@ std::string backend_name(SpatialTireBackend backend) {
     throw std::invalid_argument("spatial.tire_backend: invalid enum value");
 }
 
-std::string preset_name(SpatialTirePreset preset) {
+std::string_view preset_name(SpatialTirePreset preset) {
     switch (preset) {
     case SpatialTirePreset::mtb_2p8_1p2bar: return "2p8_1p2bar";
     case SpatialTirePreset::mtb_2p4_standard: return "2p4_standard";
@@ -105,7 +113,7 @@ std::string preset_name(SpatialTirePreset preset) {
     throw std::invalid_argument("spatial.tire_preset: invalid enum value");
 }
 
-std::string start_mode_name(SpatialStartMode mode) {
+std::string_view start_mode_name(SpatialStartMode mode) {
     switch (mode) {
     case SpatialStartMode::moving: return "moving";
     case SpatialStartMode::standstill: return "standstill";
@@ -115,6 +123,7 @@ std::string start_mode_name(SpatialStartMode mode) {
 
 } // namespace
 
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (duration_s, step_s, min_ticks) matches public require_exact_ticks contract
 std::int64_t require_exact_ticks(double duration_s, double step_s, std::int64_t min_ticks,
                                  const char* field_path) {
     if (!std::isfinite(duration_s) || !std::isfinite(step_s) || !(step_s > 0.)) {
@@ -329,9 +338,9 @@ Value spatial_config_to_value(const SpatialConfig& config) {
     }};
 
     Value::Object out{{
-        {"tire_backend", make_string(backend_name(config.tire_backend))},
-        {"tire_preset", make_string(preset_name(config.tire_preset))},
-        {"start_mode", make_string(start_mode_name(config.start_mode))},
+        {"tire_backend", make_string(std::string(backend_name(config.tire_backend)))},
+        {"tire_preset", make_string(std::string(preset_name(config.tire_preset)))},
+        {"start_mode", make_string(std::string(start_mode_name(config.start_mode)))},
         {"corridor_half_width_m",
          make_number(config.corridor_half_width_m, "spatial.corridor_half_width_m")},
         {"capsize_roll_rad", make_number(config.capsize_roll_rad, "spatial.capsize_roll_rad")},

@@ -40,6 +40,7 @@ class GpuModelIndicesStruct(ctypes.Structure):
         ("front_wheel_spin_qpos", ctypes.c_int),
         ("rear_wheel_spin_qpos", ctypes.c_int),
         ("shock_stroke_qpos", ctypes.c_int),
+        ("drive_shaft_spin_qpos", ctypes.c_int),
         ("rider_qpos", ctypes.c_int * 9),
         # Joint dof addresses
         ("root_x_dof", ctypes.c_int),
@@ -50,14 +51,16 @@ class GpuModelIndicesStruct(ctypes.Structure):
         ("front_wheel_spin_dof", ctypes.c_int),
         ("rear_wheel_spin_dof", ctypes.c_int),
         ("shock_stroke_dof", ctypes.c_int),
+        ("drive_shaft_spin_dof", ctypes.c_int),
         ("rider_dof", ctypes.c_int * 9),
         # Actuator ctrl addresses
         ("rider_ctrl", ctypes.c_int * 9),
-        # Suspension pivot DOFs in model.xml (main_pivot=8, horst_pivot=9)
+        # Suspension pivot DOFs in welded.xml (main_pivot=8, horst_pivot=9)
         ("main_pivot_dof", ctypes.c_int),
         ("horst_pivot_dof", ctypes.c_int),
-        # Tendon index in model.xml (ideal_mid_drive_freehub=0)
+        # Tendon indices in welded.xml (ideal_mid_drive_freehub=0, crank_clutch=1)
         ("freehub_tendon", ctypes.c_int),
+        ("crank_clutch_tendon", ctypes.c_int),
     ]
 
     @property
@@ -292,10 +295,10 @@ def _lookup_tendon_id(m: Any, candidate_names: Sequence[str], default_id: int) -
 
 def resolve_gpu_model_indices(m: Any) -> bytes:
     """Populate the ``GpuModelIndices`` C struct from a ``mujoco.MjModel`` and return its raw bytes."""
-    nq = int(getattr(m, "nq", 26)) if m is not None else 26
-    nv = int(getattr(m, "nv", 26)) if m is not None else 26
+    nq = int(getattr(m, "nq", 27)) if m is not None else 27
+    nv = int(getattr(m, "nv", 27)) if m is not None else 27
     nu = int(getattr(m, "nu", 12)) if m is not None else 12
-    nbody = int(getattr(m, "nbody", 28)) if m is not None else 28
+    nbody = int(getattr(m, "nbody", 29)) if m is not None else 29
 
     frame_body = _lookup_body_id(m, ("frame", "main_frame", "chassis"), 1)
     steer_body = _lookup_body_id(m, ("steer", "fork_upper", "steering"), 5)
@@ -319,10 +322,14 @@ def resolve_gpu_model_indices(m: Any) -> bytes:
     shock_stroke_qpos, shock_stroke_dof = _lookup_joint_addrs(
         m, ("shock_stroke",), 13, 13
     )
+    drive_shaft_spin_qpos, drive_shaft_spin_dof = _lookup_joint_addrs(
+        m, ("drive_shaft_spin",), -1 if m is not None else 14, -1 if m is not None else 14
+    )
 
     _, main_pivot_dof = _lookup_joint_addrs(m, ("main_pivot",), 8, 8)
     _, horst_pivot_dof = _lookup_joint_addrs(m, ("horst_pivot",), 9, 9)
-    freehub_tendon = _lookup_tendon_id(m, ("ideal_mid_drive_freehub",), 0)
+    freehub_tendon = _lookup_tendon_id(m, ("ideal_mid_drive_freehub",), 0 if m is None else -1)
+    crank_clutch_tendon = _lookup_tendon_id(m, ("crank_clutch",), 1 if m is None else -1)
 
     joint_candidates = [
         ("rider_hip_front", "rider_hip", "hip_pitch", "rider_hip_pitch", "hip"),
@@ -346,8 +353,8 @@ def resolve_gpu_model_indices(m: Any) -> bytes:
         ("act_rider_shoulder_right", "rider_shoulder_motor", "act_rider_shoulder_pitch", "shoulder_motor", "shoulder_pitch"),
         ("act_rider_elbow_right", "rider_elbow_motor", "act_rider_elbow", "elbow_motor", "elbow"),
     ]
-    default_qpos = (22, 23, 24, 25, 17, 18, 19, 20, 21)
-    default_dof = (22, 23, 24, 25, 17, 18, 19, 20, 21)
+    default_qpos = (23, 24, 25, 26, 18, 19, 20, 21, 22)
+    default_dof = (23, 24, 25, 26, 18, 19, 20, 21, 22)
     default_ctrl = (8, 9, 10, 11, 3, 4, 5, 6, 7)
 
     rider_qpos_list: list[int] = []
@@ -383,6 +390,7 @@ def resolve_gpu_model_indices(m: Any) -> bytes:
         front_wheel_spin_qpos=front_wheel_spin_qpos,
         rear_wheel_spin_qpos=rear_wheel_spin_qpos,
         shock_stroke_qpos=shock_stroke_qpos,
+        drive_shaft_spin_qpos=drive_shaft_spin_qpos,
         rider_qpos=(ctypes.c_int * 9)(*rider_qpos_list),
         root_x_dof=root_x_dof,
         root_z_dof=root_z_dof,
@@ -392,11 +400,13 @@ def resolve_gpu_model_indices(m: Any) -> bytes:
         front_wheel_spin_dof=front_wheel_spin_dof,
         rear_wheel_spin_dof=rear_wheel_spin_dof,
         shock_stroke_dof=shock_stroke_dof,
+        drive_shaft_spin_dof=drive_shaft_spin_dof,
         rider_dof=(ctypes.c_int * 9)(*rider_dof_list),
         rider_ctrl=(ctypes.c_int * 9)(*rider_ctrl_list),
         main_pivot_dof=main_pivot_dof,
         horst_pivot_dof=horst_pivot_dof,
         freehub_tendon=freehub_tendon,
+        crank_clutch_tendon=crank_clutch_tendon,
     )
     return bytes(idx_struct)
 

@@ -5,6 +5,7 @@
 //        (the model is located relative to BIKE_REPO_ROOT or the cwd)
 
 #include "../../src/gpu/batch_step.hpp"
+#include "../../src/gpu/model_assets.hpp"
 #include "../../src/platform/argv.hpp"
 
 #include <array>
@@ -13,6 +14,7 @@
 #include <exception>
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -214,7 +216,8 @@ void test_metal_shader_and_buffer_reuse() {
     const std::span<float> qpos_rows{qpos};
     for (int w = 0; w < kNWorld; ++w) {
         const std::span<float> qpos_w = qpos_rows.subspan(to_index(w) * nq, nq);
-        qpos_w[to_index(idx.crank_spin_qpos)] = 1.0f;
+        qpos_w[to_index(idx.drive_shaft_spin_qpos)] = 1.0f;
+        qpos_w[to_index(idx.crank_spin_qpos)] = 4.0f;
         qpos_w[to_index(idx.rear_wheel_spin_qpos)] = 0.0f;
     }
     require(bike_metal_launch_init_states(
@@ -224,12 +227,12 @@ void test_metal_shader_and_buffer_reuse() {
     for (int w = 0; w < kNWorld; ++w) {
         require_near(states[to_index(w)].drivetrain.freehub_boundary_rad,
                      1.0f * ratio, 1e-5f,
-                     "freehub boundary initialized from crank qpos");
+                     "freehub boundary initialized from drive_shaft_spin qpos");
     }
 
     // Mutate in place at the exact same address and re-launch
     for (int w = 0; w < kNWorld; ++w) {
-        qpos_rows.subspan(to_index(w) * nq, nq)[to_index(idx.crank_spin_qpos)] = 10.0f;
+        qpos_rows.subspan(to_index(w) * nq, nq)[to_index(idx.drive_shaft_spin_qpos)] = 10.0f;
     }
     require(bike_metal_launch_init_states(
                 kNWorld, &idx, configs.data(), 1, states.data(), qpos.data()) == 0,
@@ -336,6 +339,20 @@ void test_metal_launch_argument_validation() {
                 2, 0.001f, &idx, nullptr, 0, 0.0f, 0.01f, &cfg, 1, states.data(),
                 nullptr, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
             "writers rejects a null qpos pointer");
+    {
+        GpuModelIndices bad_idx = idx;
+        bad_idx.nq = kMaxNq + 1;
+        require(bike_metal_launch_writers(
+                    2, 0.001f, &bad_idx, nullptr, 0, 0.0f, 0.01f, &cfg, 1, states.data(),
+                    qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                "writers rejects nq > kMaxNq");
+        GpuModelIndices stride_idx = idx;
+        stride_idx.freehub_tendon = 1;
+        require(bike_metal_launch_writers(
+                    2, 0.001f, &stride_idx, nullptr, 0, 0.0f, 0.01f, &cfg, 1, states.data(),
+                    qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                "writers rejects tendon_range_world_stride <= 2 * freehub_tendon + 1");
+    }
     for (const auto &s : states) {
         require(s.drivetrain.freehub_boundary_rad == kSentinel,
                 "rejected writers leaves the state buffer untouched");
@@ -355,7 +372,14 @@ void test_cpu_and_metal_hybrid_rollouts() {
 
     constexpr int kNWorld = 4;
     constexpr int kSteps = 400;
-    const GpuModelIndices idx{};
+    std::array<char, 1024> mj_err{};
+    const std::unique_ptr<mjModel, decltype(&mj_deleteModel)> m_probe(
+        mj_loadXML(xml_str.c_str(), nullptr, mj_err.data(), static_cast<int>(mj_err.size())),
+        &mj_deleteModel);
+    require(m_probe != nullptr, std::string("mj_loadXML failed: ") + mj_err.data());
+    const GpuModelIndices idx = bike::gpu::assets::resolve_gpu_model_indices(m_probe.get());
+    require(idx.nq == 26 && idx.drive_shaft_spin_qpos == -1 && idx.crank_clutch_tendon == -1,
+            "resolve_gpu_model_indices resolves legacy nq = 26 probe model dynamically");
     std::vector<GpuWorldConfig> configs(static_cast<std::size_t>(kNWorld));
     for (int w = 0; w < kNWorld; ++w) {
         bike_gpu_init_default_config(&configs[to_index(w)]);

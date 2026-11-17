@@ -10,7 +10,12 @@
 //        (an argument ending in ".xml" selects the model file; without one the model is
 //         located relative to BIKE_REPO_ROOT or the cwd)
 
+#include "../../src/config_types.hpp"
 #include "../../src/gpu/common.hpp"
+#include "../../src/physics_core/cpu_exact_toolkit.hpp"
+#include "../../src/physics_core/gpu_toolkit.hpp"
+#include "../../src/physics_core/kinematics.hpp"
+#include "../../src/physics_core/tyre_upload.hpp"
 #include "../../src/platform/argv.hpp"
 
 #include <mujoco/mujoco.h>
@@ -86,7 +91,9 @@ std::span<const mjtNum> row3(std::span<const mjtNum> values, int row) {
     return values.subspan(3 * to_index(row), 3);
 }
 
-constexpr const char *kRelModelPath = "tools/fp32_probe/artifacts/common/model.xml";
+static_assert(sizeof(GpuModelIndices) == 240, "GpuModelIndices must be 240 bytes");
+
+constexpr const char *kRelModelPath = "tests/fixtures/model/welded.xml";
 
 // Joint names for the rider slots, in the same order as GpuModelIndices::rider_qpos/rider_dof.
 constexpr std::array<const char *, kNumRiderJoints> kRiderJointNames = {
@@ -219,6 +226,7 @@ struct ModelIds {
     int front_wheel_spin = -1;
     int rear_wheel_spin = -1;
     int shock_stroke = -1;
+    int drive_shaft_spin = -1;
     int main_pivot = -1;
     int horst_pivot = -1;
     std::array<int, kNumRiderJoints> rider_joint{};
@@ -227,8 +235,11 @@ struct ModelIds {
     // Geoms
     int front_tire = -1;
     int rear_tire = -1;
-    // Tendon
+    int front_contact = -1;
+    int rear_contact = -1;
+    // Tendons
     int freehub = -1;
+    int crank_clutch = -1;
 };
 
 ModelIds resolve_ids(const mjModel *m) {
@@ -249,6 +260,7 @@ ModelIds resolve_ids(const mjModel *m) {
     ids.front_wheel_spin = named(m, mjOBJ_JOINT, "joint", "front_wheel_spin");
     ids.rear_wheel_spin = named(m, mjOBJ_JOINT, "joint", "rear_wheel_spin");
     ids.shock_stroke = named(m, mjOBJ_JOINT, "joint", "shock_stroke");
+    ids.drive_shaft_spin = named(m, mjOBJ_JOINT, "joint", "drive_shaft_spin");
     ids.main_pivot = named(m, mjOBJ_JOINT, "joint", "main_pivot");
     ids.horst_pivot = named(m, mjOBJ_JOINT, "joint", "horst_pivot");
     for (int j = 0; j < kNumRiderJoints; ++j) {
@@ -259,7 +271,10 @@ ModelIds resolve_ids(const mjModel *m) {
 
     ids.front_tire = named(m, mjOBJ_GEOM, "geom", "geom_front_tire");
     ids.rear_tire = named(m, mjOBJ_GEOM, "geom", "geom_rear_tire");
+    ids.front_contact = named(m, mjOBJ_GEOM, "geom", "geom_front_contact");
+    ids.rear_contact = named(m, mjOBJ_GEOM, "geom", "geom_rear_contact");
     ids.freehub = named(m, mjOBJ_TENDON, "tendon", "ideal_mid_drive_freehub");
+    ids.crank_clutch = named(m, mjOBJ_TENDON, "tendon", "crank_clutch");
     return ids;
 }
 
@@ -395,7 +410,7 @@ void check_indices(const Fixture &f, CheckTable &table) {
         int dof_const;
         int joint_id;
     };
-    const std::array<JointEntry, 8> joints{{
+    const std::array<JointEntry, 9> joints{{
         {.qpos_field = "root_x_qpos", .dof_field = "root_x_dof", .joint = "root_x",
          .qpos_const = f.idx.root_x_qpos, .dof_const = f.idx.root_x_dof, .joint_id = f.ids.root_x},
         {.qpos_field = "root_z_qpos", .dof_field = "root_z_dof", .joint = "root_z",
@@ -418,6 +433,9 @@ void check_indices(const Fixture &f, CheckTable &table) {
         {.qpos_field = "shock_stroke_qpos", .dof_field = "shock_stroke_dof", .joint = "shock_stroke",
          .qpos_const = f.idx.shock_stroke_qpos, .dof_const = f.idx.shock_stroke_dof,
          .joint_id = f.ids.shock_stroke},
+        {.qpos_field = "drive_shaft_spin_qpos", .dof_field = "drive_shaft_spin_dof",
+         .joint = "drive_shaft_spin", .qpos_const = f.idx.drive_shaft_spin_qpos,
+         .dof_const = f.idx.drive_shaft_spin_dof, .joint_id = f.ids.drive_shaft_spin},
     }};
     for (const JointEntry &e : joints) {
         const std::string joint = "joint " + std::string(e.joint);
@@ -431,6 +449,8 @@ void check_indices(const Fixture &f, CheckTable &table) {
                 f.mv.jnt_dofadr[to_index(f.ids.horst_pivot)]);
     check_index(table, "freehub_tendon", "tendon ideal_mid_drive_freehub", f.idx.freehub_tendon,
                 f.ids.freehub);
+    check_index(table, "crank_clutch_tendon", "tendon crank_clutch", f.idx.crank_clutch_tendon,
+                f.ids.crank_clutch);
 
     const auto rider_qpos = std::span{f.idx.rider_qpos};
     const auto rider_dof = std::span{f.idx.rider_dof};
@@ -827,6 +847,390 @@ void test_wheel_force_qfrc(const Fixture &f) {
     finish_checks(table);
 }
 
+void test_wheel_chain_and_jacobian(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    const GpuWheelChain front_chain = build_wheel_chain(f.m.get(), f.ids.front_wheel);
+    const GpuWheelChain rear_chain = build_wheel_chain(f.m.get(), f.ids.rear_wheel);
+    require(front_chain.joint_count == 5, "welded.xml front_wheel must have 5-DOF chain");
+    require(rear_chain.joint_count == 6, "welded.xml rear_wheel must have 6-DOF chain");
+    require(front_chain.njnt == f.counts.njnt && rear_chain.njnt == f.counts.njnt,
+            "chain njnt must equal model njnt");
+
+    const std::span<const GpuChainJoint, kMaxChainJoints> front_joints(front_chain.joints);
+    const std::array<int, 5> expected_front_jids = {
+        f.ids.root_x, f.ids.root_z, f.ids.root_pitch, f.ids.fork_travel, f.ids.front_wheel_spin};
+    for (std::size_t k = 0; k < expected_front_jids.size(); ++k) {
+        require(front_joints[k].joint_id == expected_front_jids[k],
+                "front_wheel chain joint order mismatch");
+    }
+
+    const std::span<const GpuChainJoint, kMaxChainJoints> rear_joints(rear_chain.joints);
+    const std::array<int, 6> expected_rear_jids = {
+        f.ids.root_x, f.ids.root_z, f.ids.root_pitch, f.ids.main_pivot, f.ids.horst_pivot,
+        f.ids.rear_wheel_spin};
+    for (std::size_t k = 0; k < expected_rear_jids.size(); ++k) {
+        require(rear_joints[k].joint_id == expected_rear_jids[k],
+                "rear_wheel chain joint order mismatch");
+    }
+
+    const int nv = f.counts.nv;
+    const std::size_t jac_size = 3 * to_index(nv);
+    std::vector<double> ref_jp(jac_size, 0.0);
+    std::vector<double> ref_jr(jac_size, 0.0);
+    std::vector<double> got_jp_no_jr(jac_size, 0.0);
+    std::vector<double> got_jp(jac_size, 0.0);
+    std::vector<double> got_jr(jac_size, 0.0);
+    std::vector<float> got_jp_f(jac_size, 0.0f);
+    std::vector<float> got_jr_f(jac_size, 0.0f);
+
+    std::vector<float> xpos_f32(f.dv.xpos.size(), 0.0f);
+    std::vector<float> xanchor_f32(f.dv.xanchor.size(), 0.0f);
+    std::vector<float> xaxis_f32(f.dv.xaxis.size(), 0.0f);
+
+    double max_err_f64 = 0.0;
+    double max_err_f32 = 0.0;
+
+    for (const Pose &pose : kPoses) {
+        apply_pose(f, pose);
+        for (std::size_t i = 0; i < xpos_f32.size(); ++i) {
+            xpos_f32[i] = static_cast<float>(f.dv.xpos[i]);
+        }
+        for (std::size_t i = 0; i < xanchor_f32.size(); ++i) {
+            xanchor_f32[i] = static_cast<float>(f.dv.xanchor[i]);
+            xaxis_f32[i] = static_cast<float>(f.dv.xaxis[i]);
+        }
+
+        const std::array<std::pair<const GpuWheelChain *, int>, 2> wheels{{
+            {&front_chain, f.ids.front_wheel},
+            {&rear_chain, f.ids.rear_wheel},
+        }};
+        for (const auto &[chain_ptr, body_id] : wheels) {
+            const std::span<const mjtNum> center = row3(f.dv.xpos, body_id);
+            const std::array<std::array<double, 3>, 3> points{{
+                {center[0], center[1], center[2]},
+                {center[0] + 0.12, center[1], center[2] - 0.35},
+                {center[0] - 0.20, center[1] + 0.04, center[2] - 0.31},
+            }};
+            for (const auto &pt : points) {
+                std::ranges::fill(ref_jp, 0.0);
+                std::ranges::fill(ref_jr, 0.0);
+                mj_jac(f.m.get(), f.d.get(), ref_jp.data(), ref_jr.data(), pt.data(), body_id);
+
+                ErrCode err = ErrCode::none;
+                const Status st_no_jr = chain_point_jacobian<double, CpuExactToolkit, false>(
+                    *chain_ptr, f.dv.xpos.data(), f.dv.xanchor.data(), f.dv.xaxis.data(),
+                    body_id, nv, pt.data(), got_jp_no_jr.data(), nullptr, err);
+                require(st_no_jr == Status::ok && err == ErrCode::none,
+                        "chain_point_jacobian<double, false> must succeed");
+
+                const Status st_jr = chain_point_jacobian<double, CpuExactToolkit, true>(
+                    *chain_ptr, f.dv.xpos.data(), f.dv.xanchor.data(), f.dv.xaxis.data(),
+                    body_id, nv, pt.data(), got_jp.data(), got_jr.data(), err);
+                require(st_jr == Status::ok && err == ErrCode::none,
+                        "chain_point_jacobian<double, true> must succeed");
+
+                const std::array<float, 3> pt_f = {
+                    static_cast<float>(pt[0]), static_cast<float>(pt[1]), static_cast<float>(pt[2])};
+                const Status st_f32 = chain_point_jacobian<float, GpuToolkit, true>(
+                    *chain_ptr, xpos_f32.data(), xanchor_f32.data(), xaxis_f32.data(),
+                    body_id, nv, pt_f.data(), got_jp_f.data(), got_jr_f.data(), err);
+                require(st_f32 == Status::ok && err == ErrCode::none,
+                        "chain_point_jacobian<float, true> must succeed");
+
+                for (std::size_t idx = 0; idx < jac_size; ++idx) {
+                    require(got_jp_no_jr[idx] == got_jp[idx],
+                            "ComputeJr=false and ComputeJr=true jp must match identically");
+                    max_err_f64 = std::max(max_err_f64, std::abs(got_jp[idx] - ref_jp[idx]));
+                    max_err_f64 = std::max(max_err_f64, std::abs(got_jr[idx] - ref_jr[idx]));
+                    max_err_f32 = std::max(
+                        max_err_f32, std::abs(static_cast<double>(got_jp_f[idx]) - ref_jp[idx]));
+                    max_err_f32 = std::max(
+                        max_err_f32, std::abs(static_cast<double>(got_jr_f[idx]) - ref_jr[idx]));
+                }
+            }
+        }
+    }
+    require(max_err_f64 <= 1e-12,
+            std::format("FP64 chain_point_jacobian max_err {:.3e} > 1e-12", max_err_f64));
+    require(max_err_f32 <= 1e-5,
+            std::format("FP32 chain_point_jacobian max_err {:.3e} > 1e-5", max_err_f32));
+
+    // Bounds rejections in chain_point_jacobian
+    const std::array<double, 3> dummy_pt = {0.0, 0.0, 0.0};
+    ErrCode err = ErrCode::none;
+    {
+        GpuWheelChain bad = front_chain;
+        bad.joint_count = kMaxChainJoints + 1;
+        require(chain_point_jacobian<double, CpuExactToolkit, false>(
+                    bad, f.dv.xpos.data(), f.dv.xanchor.data(), f.dv.xaxis.data(),
+                    f.ids.front_wheel, nv, dummy_pt.data(), got_jp.data(), nullptr, err) ==
+                    Status::out_of_bounds &&
+                err == ErrCode::out_of_bounds_chain,
+                "chain_point_jacobian rejects joint_count > kMaxChainJoints");
+    }
+    {
+        GpuWheelChain bad = front_chain;
+        std::span<GpuChainJoint, kMaxChainJoints>(bad.joints)[0].joint_id = f.counts.njnt;
+        require(chain_point_jacobian<double, CpuExactToolkit, false>(
+                    bad, f.dv.xpos.data(), f.dv.xanchor.data(), f.dv.xaxis.data(),
+                    f.ids.front_wheel, nv, dummy_pt.data(), got_jp.data(), nullptr, err) ==
+                    Status::out_of_bounds &&
+                err == ErrCode::out_of_bounds_chain,
+                "chain_point_jacobian rejects joint_id >= njnt");
+    }
+    {
+        GpuWheelChain bad = front_chain;
+        std::span<GpuChainJoint, kMaxChainJoints>(bad.joints)[0].dof_adr = nv;
+        require(chain_point_jacobian<double, CpuExactToolkit, false>(
+                    bad, f.dv.xpos.data(), f.dv.xanchor.data(), f.dv.xaxis.data(),
+                    f.ids.front_wheel, nv, dummy_pt.data(), got_jp.data(), nullptr, err) ==
+                    Status::out_of_bounds &&
+                err == ErrCode::out_of_bounds_chain,
+                "chain_point_jacobian rejects dof_adr >= nv");
+    }
+}
+
+nativecfg::TireConfig make_valid_compliant_cfg() {
+    nativecfg::TireMaterial mat{};
+    mat.radial_k_n_m = 110000.0;
+    mat.loss_factor = 0.05;
+    mat.hysteresis_rate_eps_mps = 0.01;
+    mat.pressure_pa_gauge = 150000.0;
+    mat.provenance = "test";
+    mat.valid_load_range_n = {0.0, 4000.0};
+
+    nativecfg::TireParams side{};
+    side.material = mat;
+    side.tangent_k_n_m = 60000.0;
+    side.mu = 1.1;
+    side.relaxation_length_m = 0.05;
+
+    nativecfg::TireConfig cfg{};
+    cfg.backend = "compliant_2d";
+    cfg.surface_mode = "configured";
+    cfg.front = side;
+    cfg.rear = std::move(side);
+    cfg.significant_delta_m = 0.002;
+    cfg.significance_fraction = 0.25;
+    cfg.distinct_normal_deg = 12.0;
+    return cfg;
+}
+
+template <class Fn>
+void require_invalid_arg(
+    const Fn &fn,
+    std::string_view label,
+    const char *substr = ""
+) {
+    try {
+        fn();
+    } catch (const std::invalid_argument &e) {
+        const std::string_view expected(substr);
+        if (!expected.empty() && std::string_view(e.what()).find(expected) == std::string_view::npos) {
+            throw std::runtime_error(
+                std::string(label) + ": wrong invalid_argument message: " + e.what());
+        }
+        return;
+    }
+    throw std::runtime_error(std::string(label) + ": expected std::invalid_argument");
+}
+
+void test_tyre_upload_compliant(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    const nativecfg::TireConfig compliant_cfg = make_valid_compliant_cfg();
+    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        f.m.get(), f.d.get(), compliant_cfg, f.ids.front_contact, f.ids.rear_contact));
+    require(bundle->gpu_model.nq == 27 && bundle->gpu_model.nv == 27 &&
+                bundle->gpu_model.njnt == 27,
+            "uploaded GpuTyreModel dimensions must match welded.xml nq=27");
+    const std::span<const TyreWheelSpec<float>, 2> wheels(bundle->gpu_model.wheels);
+    require(wheels[0].chain.joint_count == 5 && wheels[1].chain.joint_count == 6,
+            "uploaded GpuTyreModel wheel chains must have 5 and 6 joints");
+    require(bundle->polyline_view.num_vertices >= 2 &&
+                bundle->signed_profile_view.num_vertices >= 2,
+            "uploaded terrain views must be populated");
+    require(bundle->polyline_view.px == bundle->pl_px.data(),
+            "HostTyreUploadBundle polyline_view.px must point into owned pl_px");
+    const auto copied = std::make_unique<HostTyreUploadBundle>(*bundle);
+    require(copied->polyline_view.px == copied->pl_px.data() &&
+                copied->polyline_view.px != bundle->pl_px.data(),
+            "HostTyreUploadBundle copy must rebind view pointers");
+}
+
+void test_tyre_upload_distributed(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    nativecfg::TireConfig dist_cfg = make_valid_compliant_cfg();
+    dist_cfg.backend = "distributed_2d_reference";
+    nativecfg::HingeDensity hd{};
+    hd.knots_m = {0.0, 0.02};
+    hd.stiffness_n_m = {50000.0, 80000.0};
+    hd.loss_factor = 0.05;
+    hd.hysteresis_rate_eps_mps = 0.01;
+    hd.provenance = "test";
+    nativecfg::DistributedMaterial dm{};
+    dm.density = hd;
+    dm.valid_load_range_n = {0.0, 4000.0};
+    dm.valid_deflection_range_m = {0.0, 0.1};
+    dist_cfg.distributed = nativecfg::DistributedConfig{
+        .station_count = 64,
+        .density = hd,
+        .front = dm,
+        .rear = dm,
+    };
+    const auto dist_bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        f.m.get(), f.d.get(), dist_cfg, f.ids.front_contact, f.ids.rear_contact));
+    require(dist_bundle->gpu_model.station_count == 64, "distributed station_count == 64");
+}
+
+void test_tyre_upload_reject_tabulated(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    nativecfg::TireConfig tab_cfg = make_valid_compliant_cfg();
+    require(tab_cfg.front.material.has_value(), "compliant cfg must have front material");
+    if (tab_cfg.front.material.has_value()) {
+        tab_cfg.front.material->table = nativecfg::TireTable{
+            .deflection_m = {0.0, 0.05},
+            .force_n = {0.0, 5000.0},
+        };
+    }
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                f.m.get(), f.d.get(), tab_cfg, f.ids.front_contact, f.ids.rear_contact);
+        },
+        "reject TabulatedRadial", "TabulatedRadial");
+}
+
+void test_tyre_upload_reject_pneumatic(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    nativecfg::TireConfig pneu_cfg = make_valid_compliant_cfg();
+    pneu_cfg.backend = "pneumatic";
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                f.m.get(), f.d.get(), pneu_cfg, f.ids.front_contact, f.ids.rear_contact);
+        },
+        "reject pneumatic backend");
+}
+
+void test_tyre_upload_reject_station_count(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    nativecfg::TireConfig bad_dist = make_valid_compliant_cfg();
+    bad_dist.backend = "distributed_2d_reference";
+    nativecfg::HingeDensity hd{};
+    hd.knots_m = {0.0, 0.02};
+    hd.stiffness_n_m = {50000.0, 80000.0};
+    hd.loss_factor = 0.05;
+    hd.hysteresis_rate_eps_mps = 0.01;
+    hd.provenance = "test";
+    nativecfg::DistributedMaterial dm{};
+    dm.density = hd;
+    dm.valid_load_range_n = {0.0, 4000.0};
+    dm.valid_deflection_range_m = {0.0, 0.1};
+    bad_dist.distributed = nativecfg::DistributedConfig{
+        .station_count = 129,
+        .density = hd,
+        .front = dm,
+        .rear = dm,
+    };
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                f.m.get(), f.d.get(), bad_dist, f.ids.front_contact, f.ids.rear_contact);
+        },
+        "reject station_count > 128");
+}
+
+void test_tyre_upload_reject_body_mismatch(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    const nativecfg::TireConfig compliant_cfg = make_valid_compliant_cfg();
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                f.m.get(), f.d.get(), compliant_cfg, f.ids.front_contact, f.ids.rear_contact,
+                f.ids.rear_wheel, f.ids.rear_wheel);
+        },
+        "reject geom_bodyid != wheel_body");
+}
+
+void test_tyre_upload_reject_geom_pos(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    const nativecfg::TireConfig compliant_cfg = make_valid_compliant_cfg();
+    const ModelPtr m_copy(mj_copyModel(nullptr, f.m.get()), &mj_deleteModel);
+    const std::span<mjtNum> gpos =
+        model_span(m_copy->geom_pos, 3 * static_cast<std::size_t>(m_copy->ngeom));
+    gpos[3 * to_index(f.ids.front_contact) + 0] = 1e-4;
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                m_copy.get(), f.d.get(), compliant_cfg, f.ids.front_contact, f.ids.rear_contact);
+        },
+        "reject non-zero geom_pos");
+}
+
+void test_tyre_upload_reject_geom_quat(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    const nativecfg::TireConfig compliant_cfg = make_valid_compliant_cfg();
+    const ModelPtr m_copy(mj_copyModel(nullptr, f.m.get()), &mj_deleteModel);
+    const std::span<mjtNum> gquat =
+        model_span(m_copy->geom_quat, 4 * static_cast<std::size_t>(m_copy->ngeom));
+    gquat[4 * to_index(f.ids.front_contact) + 0] = 0.0;
+    gquat[4 * to_index(f.ids.front_contact) + 1] = 1.0;
+    require_invalid_arg(
+        [&]() {
+            (void)build_gpu_tyre_model(
+                m_copy.get(), f.d.get(), compliant_cfg, f.ids.front_contact, f.ids.rear_contact);
+        },
+        "reject non-identity geom_quat");
+}
+
+void test_tyre_upload_reject_bad_chain(const Fixture &f) {
+    using namespace bike::physics_core;
+
+    apply_pose(f, kPoses[0]);
+    const nativecfg::TireConfig compliant_cfg = make_valid_compliant_cfg();
+    {
+        const ModelPtr m_copy(mj_copyModel(nullptr, f.m.get()), &mj_deleteModel);
+        const std::span<int> bjadr =
+            model_span(m_copy->body_jntadr, static_cast<std::size_t>(m_copy->nbody));
+        bjadr[to_index(f.ids.front_wheel)] = static_cast<int>(m_copy->njnt);
+        require_invalid_arg(
+            [&]() { (void)build_wheel_chain(m_copy.get(), f.ids.front_wheel); },
+            "reject joint_id >= njnt in build_wheel_chain");
+        require_invalid_arg(
+            [&]() {
+                (void)build_gpu_tyre_model(
+                    m_copy.get(), f.d.get(), compliant_cfg, f.ids.front_contact, f.ids.rear_contact);
+            },
+            "reject joint_id >= njnt in build_gpu_tyre_model");
+    }
+    {
+        const ModelPtr m_copy(mj_copyModel(nullptr, f.m.get()), &mj_deleteModel);
+        const std::span<int> jtype =
+            model_span(m_copy->jnt_type, static_cast<std::size_t>(m_copy->njnt));
+        jtype[0] = mjJNT_FREE;
+        require_invalid_arg(
+            [&]() { (void)build_wheel_chain(m_copy.get(), f.ids.front_wheel); },
+            "reject mjJNT_FREE in build_wheel_chain");
+    }
+}
+
 std::filesystem::path resolve_model_xml(std::string_view arg) {
     namespace fs = std::filesystem;
     if (!arg.empty()) {
@@ -848,13 +1252,23 @@ std::filesystem::path resolve_model_xml(std::string_view arg) {
     return {};
 }
 
-constexpr std::array<TestCase, 6> cases{{
+constexpr std::array<TestCase, 16> cases{{
     {.name = "indices", .run = test_indices},
     {.name = "root_pitch_anchor", .run = test_root_pitch_anchor},
     {.name = "fork_axis", .run = test_fork_axis},
     {.name = "main_pivot_anchor", .run = test_main_pivot_anchor},
     {.name = "horst_pivot_anchor", .run = test_horst_pivot_anchor},
     {.name = "wheel_force_qfrc", .run = test_wheel_force_qfrc},
+    {.name = "wheel_chain_and_jacobian", .run = test_wheel_chain_and_jacobian},
+    {.name = "tyre_upload_compliant", .run = test_tyre_upload_compliant},
+    {.name = "tyre_upload_distributed", .run = test_tyre_upload_distributed},
+    {.name = "tyre_upload_reject_tabulated", .run = test_tyre_upload_reject_tabulated},
+    {.name = "tyre_upload_reject_pneumatic", .run = test_tyre_upload_reject_pneumatic},
+    {.name = "tyre_upload_reject_station_count", .run = test_tyre_upload_reject_station_count},
+    {.name = "tyre_upload_reject_body_mismatch", .run = test_tyre_upload_reject_body_mismatch},
+    {.name = "tyre_upload_reject_geom_pos", .run = test_tyre_upload_reject_geom_pos},
+    {.name = "tyre_upload_reject_geom_quat", .run = test_tyre_upload_reject_geom_quat},
+    {.name = "tyre_upload_reject_bad_chain", .run = test_tyre_upload_reject_bad_chain},
 }};
 
 int run_case(const TestCase &test_case, const Fixture &fixture) {

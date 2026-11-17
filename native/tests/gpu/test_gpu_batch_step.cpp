@@ -185,6 +185,7 @@ BatchScenario make_batch_scenario() {
         qpos_w[to_index(idx.root_z_qpos)] = 0.55f;
         qpos_w[to_index(idx.root_pitch_qpos)] = 0.02f;
         qpos_w[to_index(idx.crank_spin_qpos)] = 0.40f;
+        qpos_w[to_index(idx.drive_shaft_spin_qpos)] = 0.40f;
         qpos_w[to_index(idx.fork_travel_qpos)] = 0.045f;   // 45 mm fork compression
         qpos_w[to_index(idx.front_wheel_spin_qpos)] = 1.10f;
         qpos_w[to_index(idx.rear_wheel_spin_qpos)] = 0.70f;
@@ -240,7 +241,7 @@ BatchScenario make_batch_scenario() {
         gpu_init_world_state(
             sc.states[wi],
             sc.configs[wi].drivetrain,
-            qpos_w[to_index(idx.crank_spin_qpos)],
+            qpos_w[to_index(idx.drive_shaft_spin_qpos)],
             qpos_w[to_index(idx.rear_wheel_spin_qpos)]
         );
     }
@@ -293,13 +294,15 @@ BatchScenario make_batch_scenario() {
                 r_ground + sc.configs[wi].rear_tire.nominal_radius_m - 0.016f;
 
             if (step < 5) {
-                // Coasting: rear wheel spins faster than ratio * crank
+                // Coasting: rear wheel spins faster than ratio * drive_shaft
                 qpos_w[to_index(idx.crank_spin_qpos)] += 2.0f * kDt;
+                qpos_w[to_index(idx.drive_shaft_spin_qpos)] += 2.0f * kDt;
                 qpos_w[to_index(idx.rear_wheel_spin_qpos)] += 20.0f * kDt;
             } else {
-                // Pedaling: crank advances faster than rear_wheel / ratio
+                // Pedaling: drive_shaft advances faster than rear_wheel / ratio
                 // (ratio = 22/51) to engage pawls
                 qpos_w[to_index(idx.crank_spin_qpos)] += 28.0f * kDt;
+                qpos_w[to_index(idx.drive_shaft_spin_qpos)] += 28.0f * kDt;
                 qpos_w[to_index(idx.rear_wheel_spin_qpos)] += 8.0f * kDt;
             }
         }
@@ -316,23 +319,29 @@ void test_api_sizes_and_model_defaults() {
     require(bike_gpu_sizeof_world_state() ==
                 static_cast<int>(sizeof(GpuWorldState)),
             "C API world state size matches sizeof(GpuWorldState)");
+    static_assert(sizeof(GpuModelIndices) == 240, "GpuModelIndices must be 240 bytes");
+    require(bike_gpu_sizeof_model_indices() == 240,
+            "C API model indices size is 240 bytes");
     require(bike_gpu_sizeof_model_indices() ==
                 static_cast<int>(sizeof(GpuModelIndices)),
             "C API model indices size matches sizeof(GpuModelIndices)");
 
     const GpuModelIndices idx{};
-    require(idx.nq == 26, "model has 26 qpos slots");
-    require(idx.nv == 26, "model has 26 qvel DOFs");
+    require(idx.nq == 27, "model has 27 qpos slots");
+    require(idx.nv == 27, "model has 27 qvel DOFs");
     require(idx.nu == 12, "model has 12 actuators");
-    require(idx.nbody == 28, "model has 28 bodies");
+    require(idx.nbody == 29, "model has 29 bodies");
+    require(idx.drive_shaft_spin_qpos == 14, "drive_shaft_spin qpos is 14");
+    require(idx.drive_shaft_spin_dof == 14, "drive_shaft_spin dof is 14");
     require(idx.main_pivot_dof == 8, "main pivot DOF address is 8");
     require(idx.horst_pivot_dof == 9, "horst pivot DOF address is 9");
     require(idx.freehub_tendon == 0, "freehub tendon index is 0");
+    require(idx.crank_clutch_tendon == 1, "crank clutch tendon index is 1");
 
     constexpr std::array<int, kNumRiderJoints> kExpectedRiderQpos{
-        {22, 23, 24, 25, 17, 18, 19, 20, 21}};
+        {23, 24, 25, 26, 18, 19, 20, 21, 22}};
     constexpr std::array<int, kNumRiderJoints> kExpectedRiderDof{
-        {22, 23, 24, 25, 17, 18, 19, 20, 21}};
+        {23, 24, 25, 26, 18, 19, 20, 21, 22}};
     constexpr std::array<int, kNumRiderJoints> kExpectedRiderCtrl{
         {8, 9, 10, 11, 3, 4, 5, 6, 7}};
     const auto rider_qpos = std::span{idx.rider_qpos};
@@ -643,6 +652,42 @@ void test_launch_wrappers_and_bounds() {
     require(sc.qfrc_batch[to_index(idx.root_z_dof)] == -12345.0f,
             "rejected launch leaves qfrc_batch unmodified");
     sc.qfrc_batch[to_index(idx.root_z_dof)] = saved_root_z;
+
+    // Verify tendon_range_batch writes to 2 * freehub_tendon + 1 with stride 4 (ntendon = 2)
+    // and leaves neighboring tendon slots untouched, while rejecting stride <= 2 * freehub_tendon + 1.
+    {
+        GpuModelIndices idx_t1 = idx;
+        idx_t1.freehub_tendon = 1;
+        std::vector<GpuWorldState> st_t1 = sc.states;
+        std::vector<float> tendon_stride4(static_cast<std::size_t>(kNWorld) * 4, -99.0f);
+        gpu_step_world_writers(
+            3, kDt, idx_t1, sc.heightfield(), sc.configs.data(), 1, st_t1.data(),
+            sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+            sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_stride4.data(), 4
+        );
+        require(tendon_stride4[3 * 4 + 0] == -99.0f &&
+                    tendon_stride4[3 * 4 + 1] == -99.0f &&
+                    tendon_stride4[3 * 4 + 2] == -99.0f,
+                "tendon_range_batch only writes 2 * freehub_tendon + 1");
+        require_near(tendon_stride4[3 * 4 + 3],
+                     st_t1[3].drivetrain.freehub_boundary_rad,
+                     1e-6f,
+                     "tendon_range_batch writes freehub upper bound at 2 * freehub_tendon + 1");
+
+        // Too-small stride (stride = 2 for freehub_tendon = 1 -> 2*1+1 = 3 >= 2) must be rejected
+        std::vector<float> tendon_small(static_cast<std::size_t>(kNWorld) * 2, -77.0f);
+        sc.qfrc_batch[3 * to_index(idx_t1.nv) + to_index(idx_t1.root_z_dof)] = -54321.0f;
+        bike_gpu_launch_step_writers(
+            nullptr, kNWorld, kDt, &idx_t1,
+            sc.hf_heights.data(), kHfSamples, kHfXMin, kHfDx,
+            sc.configs.data(), 1, st_t1.data(),
+            sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+            sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_small.data(), 2
+        );
+        require(sc.qfrc_batch[3 * to_index(idx_t1.nv) + to_index(idx_t1.root_z_dof)] == -54321.0f &&
+                    tendon_small[3 * 2 + 1] == -77.0f,
+                "rejected tendon_range_world_stride leaves qfrc and tendon untouched");
+    }
 }
 
 constexpr std::array<TestCase, 6> cases{{

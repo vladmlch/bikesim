@@ -372,6 +372,7 @@ void test_drivetrain_torque_paths_and_modes() {
     qvel[to_index(idx.root_x_dof)] = 8.0f;
     qvel[to_index(idx.root_z_dof)] = -0.2f;
     qpos[to_index(idx.crank_spin_qpos)] = 2.0f; // ratio * 2.0 = 0.8627 > 0.2
+    qpos[to_index(idx.drive_shaft_spin_qpos)] = 2.0f;
     qvel[to_index(idx.crank_spin_dof)] = 8.0f; // ratio * 8.0 = 3.451 > 3.0, and < target_cadence_rad_s (10.995574, 105 rpm)
     qvel[to_index(idx.front_wheel_spin_dof)] = 22.0f;
     qpos[to_index(idx.rear_wheel_spin_qpos)] = 0.2f;
@@ -875,7 +876,54 @@ void test_zero_chainring_outputs_finite() {
     }
 }
 
-constexpr std::array<TestCase, 13> cases{{
+void test_drive_shaft_spin_freehub_driver() {
+    const GpuResistanceParams rp{};
+    const GpuDrivetrainParams dp{};
+    const float ratio = gpu_drivetrain_ratio(dp);
+
+    // 1. nq = 27 clutch model (drive_shaft_spin_qpos == 14): freehub reads drive_shaft_spin_qpos,
+    //    not crank_spin_qpos.
+    {
+        const GpuModelIndices idx{};
+        require(idx.drive_shaft_spin_qpos == 14, "default drive_shaft_spin_qpos == 14");
+        std::array<float, kMaxNq> qpos{};
+        std::array<float, kMaxNv> qvel{};
+        qpos[to_index(idx.crank_spin_qpos)] = 5.0f;
+        qpos[to_index(idx.drive_shaft_spin_qpos)] = 1.5f;
+        qpos[to_index(idx.rear_wheel_spin_qpos)] = 2.0f;
+
+        GpuDrivetrainState st{};
+        gpu_reset_drivetrain_state(dp, st, 100.0f, 0.0f); // large initial bound so update ratchets down
+        const GpuDrivetrainOutput out = gpu_compute_drivetrain_and_resistance(
+            rp, dp, idx, st, qpos.data(), qvel.data(),
+            0.0f, 0.0f, 0.34f, 0.34f, 0.0f, 0.0f, 0.0f);
+        const float expected_phi = ratio * 1.5f - 2.0f;
+        require_near(out.tendon_upper_bound_rad, expected_phi, 1e-6f,
+                     "nq=27 freehub uses drive_shaft_spin_qpos");
+    }
+
+    // 2. Legacy nq = 26 model (drive_shaft_spin_qpos == -1): falls back to crank_spin_qpos.
+    {
+        GpuModelIndices idx{};
+        idx.drive_shaft_spin_qpos = -1;
+        idx.drive_shaft_spin_dof = -1;
+        std::array<float, kMaxNq> qpos{};
+        std::array<float, kMaxNv> qvel{};
+        qpos[to_index(idx.crank_spin_qpos)] = 3.0f;
+        qpos[to_index(idx.rear_wheel_spin_qpos)] = 2.0f;
+
+        GpuDrivetrainState st{};
+        gpu_reset_drivetrain_state(dp, st, 100.0f, 0.0f);
+        const GpuDrivetrainOutput out = gpu_compute_drivetrain_and_resistance(
+            rp, dp, idx, st, qpos.data(), qvel.data(),
+            0.0f, 0.0f, 0.34f, 0.34f, 0.0f, 0.0f, 0.0f);
+        const float expected_phi = ratio * 3.0f - 2.0f;
+        require_near(out.tendon_upper_bound_rad, expected_phi, 1e-6f,
+                     "nq=26 freehub falls back to crank_spin_qpos");
+    }
+}
+
+constexpr std::array<TestCase, 14> cases{{
     {.name = "default_gear_ratio", .run = test_default_gear_ratio},
     {.name = "rolling_moment", .run = test_rolling_moment},
     {.name = "aerodynamic_force", .run = test_aerodynamic_force},
@@ -895,6 +943,8 @@ constexpr std::array<TestCase, 13> cases{{
     {.name = "gpu_drive_is_lossless", .run = test_gpu_drive_is_lossless},
     {.name = "zero_chainring_outputs_finite",
      .run = test_zero_chainring_outputs_finite},
+    {.name = "drive_shaft_spin_freehub_driver",
+     .run = test_drive_shaft_spin_freehub_driver},
 }};
 
 int run_case(const TestCase &test_case) {

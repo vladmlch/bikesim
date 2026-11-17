@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "../io/value.hpp"
+#include "common.hpp"
 
 namespace bike::gpu::assets {
 
@@ -695,6 +696,207 @@ inline AssetStatus load_captured_initial_state(const std::string &xml_path, int 
     } catch (...) {
         return AssetStatus::kReadError;
     }
+}
+
+namespace detail {
+
+inline int lookup_body_id(const mjModel *m, std::span<const char *const> names, int fallback) {
+    for (const char *name : names) {
+        const int id = mj_name2id(m, mjOBJ_BODY, name);
+        if (id >= 0) {
+            return id;
+        }
+    }
+    return fallback;
+}
+
+struct JointLookupResult {
+    int jid = -1;
+    int qpos_adr = -1;
+    int dof_adr = -1;
+};
+
+inline JointLookupResult lookup_joint_addrs(
+    const mjModel *m,
+    std::span<const int> jnt_qposadr,
+    std::span<const int> jnt_dofadr,
+    std::span<const char *const> names,
+    JointLookupResult fallback
+) {
+    for (const char *name : names) {
+        const int jid = mj_name2id(m, mjOBJ_JOINT, name);
+        if (jid >= 0 && std::cmp_less(jid, jnt_qposadr.size()) &&
+            std::cmp_less(jid, jnt_dofadr.size())) {
+            return JointLookupResult{
+                .jid = jid,
+                .qpos_adr = jnt_qposadr[static_cast<std::size_t>(jid)],
+                .dof_adr = jnt_dofadr[static_cast<std::size_t>(jid)],
+            };
+        }
+    }
+    return fallback;
+}
+
+struct ActuatorLookupTarget {
+    int target_jid = -1;
+    int fallback = -1;
+};
+
+inline int lookup_actuator_id(
+    const mjModel *m,
+    std::span<const int> actuator_trnid,
+    std::span<const char *const> names,
+    ActuatorLookupTarget target
+) {
+    int aid = -1;
+    for (const char *name : names) {
+        const int found = mj_name2id(m, mjOBJ_ACTUATOR, name);
+        if (found >= 0) {
+            aid = found;
+            break;
+        }
+    }
+    if (target.target_jid >= 0) {
+        const std::size_t n_act = actuator_trnid.size() / 2;
+        if (aid >= 0 && std::cmp_less(aid, n_act) &&
+            actuator_trnid[2 * static_cast<std::size_t>(aid)] == target.target_jid) {
+            return aid;
+        }
+        for (std::size_t candidate = 0; candidate < n_act; ++candidate) {
+            if (actuator_trnid[2 * candidate] == target.target_jid) {
+                return static_cast<int>(candidate);
+            }
+        }
+    }
+    return (aid >= 0) ? aid : target.fallback;
+}
+
+inline int lookup_tendon_id(const mjModel *m, const char *name, int fallback) {
+    const int tid = mj_name2id(m, mjOBJ_TENDON, name);
+    return (tid >= 0) ? tid : fallback;
+}
+
+}  // namespace detail
+
+// Dynamically resolves GpuModelIndices from a compiled mjModel, supporting both
+// nq = 27 clutch models (welded.xml) and legacy nq = 26 models (model.xml, where
+// drive_shaft_spin_qpos / drive_shaft_spin_dof / crank_clutch_tendon resolve to -1).
+inline bike::gpu::GpuModelIndices resolve_gpu_model_indices(const mjModel *m) {
+    bike::gpu::GpuModelIndices idx{};
+    if (m == nullptr) {
+        return idx;
+    }
+    idx.nq = static_cast<int>(m->nq);
+    idx.nv = static_cast<int>(m->nv);
+    idx.nu = static_cast<int>(m->nu);
+    idx.nbody = static_cast<int>(m->nbody);
+
+    const std::span<const int> jnt_qposadr =
+        detail::model_span(m->jnt_qposadr, static_cast<std::size_t>(std::max<mjtSize>(0, m->njnt)));
+    const std::span<const int> jnt_dofadr =
+        detail::model_span(m->jnt_dofadr, static_cast<std::size_t>(std::max<mjtSize>(0, m->njnt)));
+    const std::span<const int> actuator_trnid =
+        detail::model_span(m->actuator_trnid, 2 * static_cast<std::size_t>(std::max<mjtSize>(0, m->nu)));
+
+    constexpr std::array<const char *, 3> kFrameNames{"frame", "main_frame", "chassis"};
+    constexpr std::array<const char *, 3> kSteerNames{"steer", "fork_upper", "steering"};
+    constexpr std::array<const char *, 2> kForkLowerNames{"fork_lower", "front_fork_lower"};
+    constexpr std::array<const char *, 2> kFrontWheelNames{"front_wheel", "wheel_front"};
+    constexpr std::array<const char *, 2> kChainstayNames{"chainstay", "rear_arm"};
+    constexpr std::array<const char *, 2> kSeatstayNames{"seatstay", "rear_seatstay"};
+    constexpr std::array<const char *, 2> kRearWheelNames{"rear_wheel", "wheel_rear"};
+
+    idx.frame_body = detail::lookup_body_id(m, kFrameNames, idx.frame_body);
+    idx.steer_body = detail::lookup_body_id(m, kSteerNames, idx.steer_body);
+    idx.fork_lower_body = detail::lookup_body_id(m, kForkLowerNames, idx.fork_lower_body);
+    idx.front_wheel_body = detail::lookup_body_id(m, kFrontWheelNames, idx.front_wheel_body);
+    idx.chainstay_body = detail::lookup_body_id(m, kChainstayNames, idx.chainstay_body);
+    idx.seatstay_body = detail::lookup_body_id(m, kSeatstayNames, idx.seatstay_body);
+    idx.rear_wheel_body = detail::lookup_body_id(m, kRearWheelNames, idx.rear_wheel_body);
+
+    const auto lookup1 = [&](const char *name, int def_q, int def_d) {
+        const std::array<const char *, 1> names{name};
+        return detail::lookup_joint_addrs(
+            m, jnt_qposadr, jnt_dofadr, names,
+            detail::JointLookupResult{.jid = -1, .qpos_adr = def_q, .dof_adr = def_d});
+    };
+
+    const auto rx = lookup1("root_x", idx.root_x_qpos, idx.root_x_dof);
+    const auto rz = lookup1("root_z", idx.root_z_qpos, idx.root_z_dof);
+    const auto rp = lookup1("root_pitch", idx.root_pitch_qpos, idx.root_pitch_dof);
+    const auto cs = lookup1("crank_spin", idx.crank_spin_qpos, idx.crank_spin_dof);
+    const auto ft = lookup1("fork_travel", idx.fork_travel_qpos, idx.fork_travel_dof);
+    const auto fw = lookup1("front_wheel_spin", idx.front_wheel_spin_qpos, idx.front_wheel_spin_dof);
+    const auto rw = lookup1("rear_wheel_spin", idx.rear_wheel_spin_qpos, idx.rear_wheel_spin_dof);
+    const auto sh = lookup1("shock_stroke", idx.shock_stroke_qpos, idx.shock_stroke_dof);
+    const auto ds = lookup1("drive_shaft_spin", -1, -1);
+    const auto mp = lookup1("main_pivot", -1, idx.main_pivot_dof);
+    const auto hp = lookup1("horst_pivot", -1, idx.horst_pivot_dof);
+
+    idx.root_x_qpos = rx.qpos_adr; idx.root_x_dof = rx.dof_adr;
+    idx.root_z_qpos = rz.qpos_adr; idx.root_z_dof = rz.dof_adr;
+    idx.root_pitch_qpos = rp.qpos_adr; idx.root_pitch_dof = rp.dof_adr;
+    idx.crank_spin_qpos = cs.qpos_adr; idx.crank_spin_dof = cs.dof_adr;
+    idx.fork_travel_qpos = ft.qpos_adr; idx.fork_travel_dof = ft.dof_adr;
+    idx.front_wheel_spin_qpos = fw.qpos_adr; idx.front_wheel_spin_dof = fw.dof_adr;
+    idx.rear_wheel_spin_qpos = rw.qpos_adr; idx.rear_wheel_spin_dof = rw.dof_adr;
+    idx.shock_stroke_qpos = sh.qpos_adr; idx.shock_stroke_dof = sh.dof_adr;
+    idx.drive_shaft_spin_qpos = ds.qpos_adr; idx.drive_shaft_spin_dof = ds.dof_adr;
+    idx.main_pivot_dof = mp.dof_adr;
+    idx.horst_pivot_dof = hp.dof_adr;
+
+    idx.freehub_tendon = detail::lookup_tendon_id(m, "ideal_mid_drive_freehub", -1);
+    idx.crank_clutch_tendon = detail::lookup_tendon_id(m, "crank_clutch", -1);
+
+    constexpr std::array<std::array<const char *, 5>, bike::gpu::kNumRiderJoints> kJointCands{{
+        {{"rider_hip_front", "rider_hip", "hip_pitch", "rider_hip_pitch", "hip"}},
+        {{"rider_knee_front", "rider_knee", "knee_pitch", "rider_knee_pitch", "knee"}},
+        {{"rider_hip_rear", "rider_ankle_front", "rider_ankle", "ankle_pitch", "ankle"}},
+        {{"rider_knee_rear", nullptr, nullptr, nullptr, nullptr}},
+        {{"rider_torso_hinge", "rider_waist_pitch", "waist_pitch", "torso_pitch", "waist"}},
+        {{"rider_shoulder_left", nullptr, nullptr, nullptr, nullptr}},
+        {{"rider_elbow_left", nullptr, nullptr, nullptr, nullptr}},
+        {{"rider_shoulder_right", "rider_shoulder_pitch", "shoulder_pitch", "shoulder", nullptr}},
+        {{"rider_elbow_right", "rider_elbow", "elbow_pitch", "rider_elbow_pitch", "elbow"}},
+    }};
+    constexpr std::array<std::array<const char *, 5>, bike::gpu::kNumRiderJoints> kActCands{{
+        {{"act_rider_hip_front", "rider_hip_motor", "act_rider_hip", "hip_motor", "hip"}},
+        {{"act_rider_knee_front", "rider_knee_motor", "act_rider_knee", "knee_motor", "knee"}},
+        {{"act_rider_hip_rear", "rider_ankle_motor", "act_rider_ankle", "ankle_motor", "ankle"}},
+        {{"act_rider_knee_rear", nullptr, nullptr, nullptr, nullptr}},
+        {{"act_rider_torso_hinge", "rider_waist_motor", "act_rider_waist_pitch", "waist_motor", "waist_pitch"}},
+        {{"act_rider_shoulder_left", nullptr, nullptr, nullptr, nullptr}},
+        {{"act_rider_elbow_left", nullptr, nullptr, nullptr, nullptr}},
+        {{"act_rider_shoulder_right", "rider_shoulder_motor", "act_rider_shoulder_pitch", "shoulder_motor", "shoulder_pitch"}},
+        {{"act_rider_elbow_right", "rider_elbow_motor", "act_rider_elbow", "elbow_motor", "elbow"}},
+    }};
+
+    const std::span<int, bike::gpu::kNumRiderJoints> r_qpos(idx.rider_qpos);
+    const std::span<int, bike::gpu::kNumRiderJoints> r_dof(idx.rider_dof);
+    const std::span<int, bike::gpu::kNumRiderJoints> r_ctrl(idx.rider_ctrl);
+    for (std::size_t j = 0; j < static_cast<std::size_t>(bike::gpu::kNumRiderJoints); ++j) {
+        std::vector<const char *> jnames;
+        for (const char *s : kJointCands[j]) {
+            if (s != nullptr) {
+                jnames.push_back(s);
+            }
+        }
+        std::vector<const char *> anames;
+        for (const char *s : kActCands[j]) {
+            if (s != nullptr) {
+                anames.push_back(s);
+            }
+        }
+        const auto res = detail::lookup_joint_addrs(
+            m, jnt_qposadr, jnt_dofadr, jnames,
+            detail::JointLookupResult{.jid = -1, .qpos_adr = r_qpos[j], .dof_adr = r_dof[j]});
+        r_qpos[j] = res.qpos_adr;
+        r_dof[j] = res.dof_adr;
+        r_ctrl[j] = detail::lookup_actuator_id(
+            m, actuator_trnid, anames,
+            detail::ActuatorLookupTarget{.target_jid = res.jid, .fallback = r_ctrl[j]});
+    }
+    return idx;
 }
 
 }  // namespace bike::gpu::assets

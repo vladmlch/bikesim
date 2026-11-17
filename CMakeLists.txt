@@ -693,6 +693,14 @@ if(BUILD_TESTING)
     "${_bike_native_tests_dir}/gpu/test_gpu_model_geometry.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_model_assets
     "${_bike_native_tests_dir}/gpu/test_gpu_model_assets.cpp")
+  add_library(bike_tyre_upload STATIC
+    "${_bike_native_dir}/src/physics_core/tyre_upload.cpp")
+  set_target_properties(bike_tyre_upload PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  bike_apply_native_policy(bike_tyre_upload)
+  target_include_directories(bike_tyre_upload SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(bike_tyre_upload PUBLIC bike::mujoco)
+  target_link_libraries(bike_test_gpu_model_geometry PRIVATE bike_tyre_upload)
   foreach(_gpu_mujoco_test IN ITEMS bike_test_gpu_model_geometry bike_test_gpu_model_assets)
     target_link_libraries(${_gpu_mujoco_test} PRIVATE bike::mujoco)
     bike_rewrite_mujoco_load_name(${_gpu_mujoco_test} "${BIKE_DEP_mujoco_LIBRARY}")

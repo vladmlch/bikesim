@@ -258,9 +258,11 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
     float front_brake_demand,
     float rear_brake_demand
 ) noexcept {
+    const int fh_qpos_idx =
+        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
     const float bike_vx = (idx.root_x_dof >= 0 && idx.root_x_dof < kMaxNv) ? qvel[idx.root_x_dof] : 0.0f;
     const float bike_vz = (idx.root_z_dof >= 0 && idx.root_z_dof < kMaxNv) ? qvel[idx.root_z_dof] : 0.0f;
-    const float crank_qpos = (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < kMaxNq) ? qpos[idx.crank_spin_qpos] : 0.0f;
+    const float fh_qpos = (fh_qpos_idx >= 0 && fh_qpos_idx < kMaxNq) ? qpos[fh_qpos_idx] : 0.0f;
     const float crank_omega = (idx.crank_spin_dof >= 0 && idx.crank_spin_dof < kMaxNv) ? qvel[idx.crank_spin_dof] : 0.0f;
     const float front_omega = (idx.front_wheel_spin_dof >= 0 && idx.front_wheel_spin_dof < kMaxNv) ? qvel[idx.front_wheel_spin_dof] : 0.0f;
     const float rear_qpos = (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < kMaxNq) ? qpos[idx.rear_wheel_spin_qpos] : 0.0f;
@@ -271,7 +273,7 @@ BIKE_HD GpuDrivetrainOutput gpu_compute_drivetrain_and_resistance(
         st,
         bike_vx,
         bike_vz,
-        crank_qpos,
+        fh_qpos,
         crank_omega,
         front_omega,
         rear_qpos,

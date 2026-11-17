@@ -139,8 +139,7 @@ BIKE_HD void gpu_step_world_writers(
     BIKE_THREAD float *tendon_range_batch,
     int tendon_range_world_stride = 2
 ) noexcept {
-    if (idx.nq < 0 || idx.nq > kMaxNq || idx.nv < 0 || idx.nv > kMaxNv ||
-        idx.nu < 0 || idx.nu > kMaxNu || idx.nbody < 0 || idx.nbody > kMaxNbody) {
+    if (!gpu_validate_model_indices(idx)) {
         return;
     }
 
@@ -210,12 +209,17 @@ BIKE_HD void gpu_step_world_writers(
     //    constraints, so their ctrl is exactly 0. Crank effort comes from step 3 (drivetrain).
     gpu_write_rider_qfrc_and_ctrl(cfg.rider, idx, qpos_w, qvel_w, qfrc_w, ctrl_w);
 
-    // 5. Update freehub tendon upper bound for world w (or world 0 if tendon_range is shared [1, 1, 2])
+    // 5. Update freehub tendon upper bound for world w (or world 0 if tendon_range is shared [1, ntendon, 2])
     if (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) {
+        const long slot =
+            static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + static_cast<long>(1);
         if (tendon_range_world_stride > 0) {
-            tendon_range_batch[w * tendon_range_world_stride + 1] = dt_out.tendon_upper_bound_rad;
+            if (slot < static_cast<long>(tendon_range_world_stride)) {
+                tendon_range_batch[w64 * static_cast<long>(tendon_range_world_stride) + slot] =
+                    dt_out.tendon_upper_bound_rad;
+            }
         } else if (w == 0) {
-            tendon_range_batch[1] = dt_out.tendon_upper_bound_rad;
+            tendon_range_batch[slot] = dt_out.tendon_upper_bound_rad;
         }
     }
 }

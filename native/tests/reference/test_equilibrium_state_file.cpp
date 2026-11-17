@@ -29,6 +29,7 @@
 #include "io/json.hpp"
 #include "io/npy.hpp"
 #include "io/value.hpp"
+#include "platform/provenance.hpp"
 #include "model/builder.hpp"
 #include "model/mapping.hpp"
 #include "model/rider_geometry.hpp"
@@ -47,6 +48,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iostream>
 #include <limits>
 #include <optional>
 #include <span>
@@ -534,8 +536,12 @@ void test_savage_pneumatic_fixture_restores() {
         *request.model.physics->equilibrium_state_file; // NOLINT(bugprone-unchecked-optional-access) load_physics resolves the pinned path
     const auto stored = init::read_state_file(pose_path);
     auto owner = init::make_setup(request);
-    if (!same_build_identity(*owner, stored.metadata))
+    if (!same_build_identity(*owner, stored.metadata)) {
+        if (bike::platform::key() == "darwin-arm64")
+            bt::require(false, "pinned savage_pneumatic pose is stale; re-record it with bike-settle --physics-config viewer_physics_pneumatic.toml --track rough_uphill_savage --rider articulated_planar --out tests/fixtures/config/poses/savage_pneumatic.npz");
+        std::cerr << "Skipping test_savage_pneumatic_fixture_restores on " << bike::platform::key() << ": build identity mismatch\n";
         return;
+    }
     const auto eq = init::settle(*owner);
     bt::require(eq.cache_hit, "the pinned fixture serves without settling");
     bt::require(eq.state_file && *eq.state_file == pose_path,

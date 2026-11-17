@@ -67,10 +67,16 @@ configuration::RiderSpecs rider_specs(const Value& value) {
 #undef BIKE_RIDER
     configuration::detail::post_init(out); return out;
 }
-// legacy recordings: the seated-only rider members removed from RiderSpecs
-// are tolerated only at their shipped defaults
-// (configuration/legacy_rider.hpp). Any other value was never written by
-// a shipped config, so the run is not one replay promises to reproduce.
+// Recorded resolved rider sections keep the fifteen-member form the
+// pre-removal writer emitted: the five live RiderSpecs members plus the
+// ten seated-only knobs removed 2026-11-04 (every shipped research_* and
+// replay fixture carries them; configuration/legacy_rider.hpp).
+// inert_rider is the active normalizer for those sections, not a
+// dead-format reader: request construction and the semantic-equality
+// digest both pass every recording's rider through it. A removed member
+// is tolerated only at its shipped default; any other value was never
+// written by a shipped config, so the run is not one replay promises to
+// reproduce.
 Value inert_rider(Value rider) {
     if (const auto removed = configuration::legacy::non_default_rider_field(rider))
         throw IncompatibleExecution(
@@ -81,8 +87,10 @@ Value inert_rider(Value rider) {
 }
 // Semantic-equality form: the recorded-form digest document (shared with
 // the write side via research::configuration_digest_document) with the
-// removed inert knobs stripped — the seated-only rider members. Each
-// strip throws on a non-inert recorded value before any equality
+// removed inert knobs stripped — the seated-only rider members. The
+// recorded and the reconstructed section both pass through inert_rider,
+// so a fifteen-member recording and a five-member rebuild compare equal.
+// Each strip throws on a non-inert recorded value before any equality
 // comparison can run.
 Value configuration_hashable(const Value& resolved) {
     auto hashable = research::configuration_digest_document(resolved);

@@ -1,15 +1,21 @@
-// configuration/legacy_rider.hpp — reading documents written before the
-// seated-only fields were removed from RiderSpecs.
+// configuration/legacy_rider.hpp — the active normalizer for rider
+// sections serialized before the seated-only fields left RiderSpecs.
 //
 // The seated rider variant (removed 2026-11-04) was the only reader of
 // ten RiderSpecs fields: the legs mode, the saddle/pedal/bar load shares,
 // the three body resonances, the damping ratio and the saddle interface
 // spring/damper. No remaining variant reads them (pinned before removal
-// by test_mjcf seated_parameters_are_inert). Recordings and initial-state
-// contracts written earlier still carry them in the resolved rider
-// section. Readers accept a section whose removed members hold the
-// shipped defaults and reject any other value: only documents that a
-// shipped configuration could write are promised to replay.
+// by test_mjcf seated_parameters_are_inert).
+//
+// This is not a dead format reader: recordings and contract digests keep
+// the fifteen-member resolved rider section the pre-removal writer
+// emitted (the five live members plus the ten removed ones) — every
+// shipped research_* and replay fixture still carries that form, so each
+// replayed recording and each legacy initial-state contract passes
+// through these helpers. Readers accept a section whose removed members
+// hold the shipped defaults and reject any other value by name: only
+// documents that a shipped configuration could write are promised to
+// replay.
 #pragma once
 
 #include "fields.hpp"
@@ -40,9 +46,11 @@ inline constexpr std::array<std::pair<std::string_view, double>, 9> kRemovedRide
     {"saddle_interface_c_ns_m", 2'762.}}};
 
 // The first removed member of a recorded rider section that does not hold
-// its shipped default (or has the wrong JSON kind); nullopt when every
-// removed member present is inert. Absent members are inert: documents
-// written after the removal carry none.
+// its shipped default or has the wrong JSON kind — legs is checked first,
+// then the reals in kRemovedRiderReals order; nullopt when every removed
+// member present is inert. The check is on the parsed binary64, not the
+// spelling: any number lexeme decoding to the default is inert. Absent
+// members are inert: documents written after the removal carry none.
 [[nodiscard]] inline std::optional<std::string_view>
 non_default_rider_field(const io::Value& rider) {
     const auto& object = io::as_object(rider, "rider");
@@ -79,14 +87,22 @@ inline void erase_removed_rider_fields(io::Value& rider) {
 
 // The current rider section as pre-removal configs serialized it: the ten
 // removed members re-added at their shipped defaults with the record
-// writer's repr_double lexemes. Contracts hash key-sorted JSON
-// (io::canonical_json), so member position does not matter.
+// writer's repr_double lexemes. The input must be the post-removal
+// section: a removed member already present is refused by name rather
+// than re-serialized into a duplicate key of the hashed document.
+// Contracts hash key-sorted JSON (io::canonical_json), so member position
+// does not matter.
 [[nodiscard]] inline io::Value with_removed_rider_defaults(io::Value rider) {
     auto* object = std::get_if<io::Value::Object>(&rider.data);
     if (object == nullptr)
         throw std::invalid_argument("legacy rider section is not an object");
-    if (io::find_member(*object, kRemovedRiderLegsKey) != nullptr)
-        throw std::invalid_argument("legacy rider section already carries legs");
+    const auto refuse_present = [&object](std::string_view key) {
+        if (io::find_member(*object, key) != nullptr)
+            throw std::invalid_argument(
+                "legacy rider section already carries " + std::string(key));
+    };
+    refuse_present(kRemovedRiderLegsKey);
+    for (const auto& removed : kRemovedRiderReals) refuse_present(removed.first);
     object->emplace_back(std::string(kRemovedRiderLegsKey),
                          io::Value{std::string(kRemovedRiderLegsDefault)});
     for (const auto& [name, value] : kRemovedRiderReals)

@@ -1569,10 +1569,12 @@ constexpr std::string_view kPreRemovalDefaultRider =
     R"("torso_resonance_hz":7.0,"variant":"lumped"})";
 
 // Documents written before the seated-only fields were removed still
-// carry them. Default members are inert and erase; any other value is
-// named; re-adding the defaults rebuilds the exact pre-removal text the
-// old initial-state contracts hashed. Holds before and after the fields
-// leave RiderSpecs.
+// carry them — every shipped research_* and replay fixture keeps the
+// fifteen-member section, so the replay normalizer (rebuild.cpp
+// inert_rider) runs on each replayed recording. Default members are
+// inert and erase; any other value or JSON kind is named; re-adding the
+// defaults rebuilds the exact pre-removal text the old initial-state
+// contracts hashed. Holds before and after the fields leave RiderSpecs.
 void legacy_rider_fields() {
     namespace legacy = cfg::legacy;
     const io::Value current = cfg::detail::plain_document(cfg::detail::as_object(
@@ -1602,6 +1604,12 @@ void legacy_rider_fields() {
     bt::require(legacy::non_default_rider_field(mutated("legs", io::Value{std::string("articulated")})) ==
                     std::optional<std::string_view>{"legs"},
                 "articulated legs are named");
+    bt::require(legacy::non_default_rider_field(mutated("legs", io::Value{io::Number{"1"}})) ==
+                    std::optional<std::string_view>{"legs"},
+                "a non-string legs is named");
+    bt::require(legacy::non_default_rider_field(mutated("legs", io::Value{})) ==
+                    std::optional<std::string_view>{"legs"},
+                "a null legs is named");
     for (const auto& [name, value] : legacy::kRemovedRiderReals) {
         bt::require(legacy::non_default_rider_field(mutated(name, io::Value{io::Number{"0.5"}})) ==
                         std::optional<std::string_view>{name},
@@ -1609,10 +1617,66 @@ void legacy_rider_fields() {
         bt::require(legacy::non_default_rider_field(mutated(name, io::Value{std::string("0.55")})) ==
                         std::optional<std::string_view>{name},
                     std::string(name) + ": a wrong-kind value is named");
+        bt::require(legacy::non_default_rider_field(mutated(name, io::Value{})) ==
+                        std::optional<std::string_view>{name},
+                    std::string(name) + ": a null value is named");
+        bt::require(legacy::non_default_rider_field(mutated(name, io::Value{io::Number{"0.5x"}})) ==
+                        std::optional<std::string_view>{name},
+                    std::string(name) + ": an unparseable lexeme is named");
     }
+    // The comparison is on the parsed binary64, not the spelling: any
+    // lexeme decoding to the shipped default is inert.
+    bt::require(!legacy::non_default_rider_field(
+                    mutated("saddle_share", io::Value{io::Number{"5.5e-1"}})).has_value(),
+                "an equal-valued saddle_share spelling is inert");
+    bt::require(!legacy::non_default_rider_field(
+                    mutated("saddle_interface_k_n_m", io::Value{io::Number{"1.01e5"}})).has_value(),
+                "an equal-valued saddle_interface_k_n_m spelling is inert");
+    // legs is checked before the real members: with two out-of-contract
+    // members the earlier position is the one named.
+    io::Value two_offenders =
+        mutated("legs", io::Value{std::string("articulated")});
+    member_mut(two_offenders, "saddle_share", "rider") =
+        io::Value{io::Number{"0.9"}};
+    bt::require(legacy::non_default_rider_field(two_offenders) ==
+                    std::optional<std::string_view>{"legs"},
+                "the first out-of-contract member is named");
+    // Absence is inert per member: a section carrying only some removed
+    // fields at their defaults normalizes, and erasing strips exactly
+    // the removed members present.
+    io::Value partial = io::parse_json(
+        R"({"legs":"rigid","mass_kg":80.0,"saddle_share":0.55,"variant":"lumped"})");
+    bt::require(!legacy::non_default_rider_field(partial).has_value(),
+                "a subset of removed fields at defaults is inert");
+    legacy::erase_removed_rider_fields(partial);
+    bt::require(io::canonical_json(partial) ==
+                    R"({"mass_kg":80.0,"variant":"lumped"})",
+                "erase strips only the removed members present");
+    // The section itself must be an object: each helper refuses a
+    // wrong-kind section instead of inspecting it.
+    expect_invalid("bike::io::as_object: rider: expected object",
+                   [] { (void)legacy::non_default_rider_field(io::Value{true}); });
+    expect_invalid("legacy rider section is not an object",
+                   [] {
+                       io::Value not_object{true};
+                       legacy::erase_removed_rider_fields(not_object);
+                   });
+    expect_invalid("legacy rider section is not an object",
+                   [] { (void)legacy::with_removed_rider_defaults(io::Value{true}); });
     io::Value twice = legacy::with_removed_rider_defaults(current_erased);
     expect_invalid("legacy rider section already carries legs",
                    [&] { (void)legacy::with_removed_rider_defaults(std::move(twice)); });
+    // The rebuild contract requires the post-removal section: any
+    // removed member already present is refused by name, not re-added
+    // into a duplicate key of the hashed document.
+    io::Value carries_removed = current_erased;
+    object_of(carries_removed).emplace_back("saddle_share",
+                                            io::Value{io::Number{"0.55"}});
+    expect_invalid("legacy rider section already carries saddle_share",
+                   [&] {
+                       (void)legacy::with_removed_rider_defaults(
+                           std::move(carries_removed));
+                   });
 }
 
 void test_loaders() {

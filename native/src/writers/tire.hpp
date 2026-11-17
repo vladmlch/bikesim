@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -21,6 +22,11 @@
 #include "../tyre/profile.hpp"
 #include "tire_common.hpp"
 #include "writer_types.hpp"
+
+namespace bike::physics_core {
+template <class Real>
+struct TyreModel;
+} // namespace bike::physics_core
 
 // _BrushState (tire_forces.py:47-53). `xi` is a plain float in Python —
 // the dataclass default is 0.0 and a restored NaN reaches _brush_step's
@@ -194,6 +200,8 @@ private:
     // geoms/bodies/radii per ('front','rear') insertion order.
     std::array<int, 2> geoms_{}, bodies_{};
     std::array<double, 2> radii_{};
+    std::shared_ptr<const bike::physics_core::TyreModel<double>> core_model_;
+    bool core_surface_map_complete_ = false;
     // self._jac_contact / self._jac_center (3,nv) scratch.
     std::vector<mjtNum> jac_contact_, jac_center_;
     // qfrc()'s body verbatim on caller-owned storage and the persistent

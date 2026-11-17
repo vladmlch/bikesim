@@ -23,7 +23,13 @@
 #include <vector>
 
 #include "../config_types.hpp"
-#include "../contact/laws.hpp"
+
+namespace bike::physics_core {
+template <class Real>
+struct SurfaceSpecPod;
+template <class Real>
+struct SurfaceMapView;
+} // namespace bike::physics_core
 
 // ContactPatch (contact_state.py:19-76). Applied tire writers use the
 // planar force reconstruction; native_reference retains the complete
@@ -102,18 +108,10 @@ namespace tirecommon {
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    [[nodiscard]] inline BrushResult
+    [[nodiscard]] BrushResult
     brush_step(double xi, double u, double v_roll, double fn, double k,
-               double mu, double length, double dt) {
-        // NOLINTEND(bugprone-easily-swappable-parameters)
-        // contactlaw::brush_step is the single implementation — it was
-        // already shared with rider_contacts.cpp when this extraction
-        // was planned. Repacking the tuple adds no arithmetic.
-        const auto [new_xi, force, loss] =
-                contactlaw::brush_step(xi, u, v_roll, fn, k, mu, length,
-                                       dt);
-        return {.xi = new_xi, .force = force, .loss = loss};
-    }
+               double mu, double length, double dt);
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide) *
     // exp(-|slip|/stribeck_speed_mps). Exported for the pneumatic
@@ -138,4 +136,13 @@ namespace tirecommon {
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,
                        double contact_x, double slip);
     // NOLINTEND(bugprone-easily-swappable-parameters)
+
+    [[nodiscard]] bike::physics_core::SurfaceSpecPod<double>
+    to_surface_spec_pod(const nativecfg::SurfaceSpec &s) noexcept;
+
+    // Populates `out` when `map != nullptr && map->sections.size() <= kMaxSurfaceSections`.
+    // Returns true if `out` holds the full SurfaceMap; false if absent or oversized.
+    [[nodiscard]] bool
+    fill_surface_map_view(const nativecfg::SurfaceMap *map,
+                          bike::physics_core::SurfaceMapView<double> &out) noexcept;
 } // namespace tirecommon

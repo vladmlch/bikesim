@@ -22,6 +22,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -34,6 +35,13 @@
 #include "../tyre/station.hpp"
 #include "tire_common.hpp"
 #include "writer_types.hpp"
+
+namespace bike::physics_core {
+template <class Real>
+struct TyreModel;
+template <class Real>
+struct StationStatePod;
+} // namespace bike::physics_core
 
 // Per-station state — the C++ equivalent of the Python `_StationState`
 // dataclass. `active` mirrors presence/absence in the Python `states` dict:
@@ -62,6 +70,11 @@ public:
     // context must outlive it.
     DistributedTireWriter(const mjModel *m, const mjData *d,
                           nativecfg::TireConfig config);
+    ~DistributedTireWriter();
+    DistributedTireWriter(const DistributedTireWriter &);
+    DistributedTireWriter &operator=(const DistributedTireWriter &);
+    DistributedTireWriter(DistributedTireWriter &&) noexcept;
+    DistributedTireWriter &operator=(DistributedTireWriter &&) noexcept;
 
     // CONTRACT — distributed state wire (mirrors Python `set_state`/`state_dict`):
     //
@@ -231,6 +244,10 @@ private:
     std::array<std::vector<std::array<double, 3>>, 2> local_{};
     std::array<std::vector<StationState>, 2> states_{};
     std::array<std::vector<StationState>, 2> states_stage_{};
+    std::array<std::vector<bike::physics_core::StationStatePod<double>>, 2>
+        states_pod_in_, states_pod_out_;
+    std::shared_ptr<const bike::physics_core::TyreModel<double>> core_model_;
+    bool core_surface_map_complete_ = false;
 
     // Wire scaffolding — sized once at construction.
     std::vector<std::string> state_names_{};

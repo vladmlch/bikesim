@@ -63,3 +63,41 @@ target_link_libraries(test_terrain_scanner PRIVATE
 bike_rewrite_mujoco_load_name(test_terrain_scanner "${BIKE_DEP_mujoco_LIBRARY}")
 add_test(NAME test_terrain_scanner COMMAND test_terrain_scanner)
 set_tests_properties(test_terrain_scanner PROPERTIES LABELS "gpu;unit")
+
+set(_tyre_core_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core.cpp")
+
+if(APPLE)
+  add_library(bike_tyre_core_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core_metal_helper.mm")
+  bike_apply_native_policy(bike_tyre_core_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_tyre_core_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_tyre_core_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _tyre_core_sources
+    $<TARGET_OBJECTS:bike_tyre_core_metal_helper_obj>)
+endif()
+
+add_executable(test_tyre_core ${_tyre_core_sources})
+bike_apply_native_policy(test_tyre_core)
+target_compile_options(test_tyre_core PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_tyre_core PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_tyre_core SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_tyre_core PRIVATE bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_tyre_core "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_tyre_core PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_tyre_core COMMAND test_tyre_core)
+set_tests_properties(test_tyre_core PROPERTIES LABELS "gpu;unit")

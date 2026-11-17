@@ -618,6 +618,10 @@ if(BUILD_TESTING AND TARGET bike_installed_provider)
   add_test(NAME native_installed_provider_tests COMMAND native_installed_provider_tests)
 endif()
 
+if(BUILD_TESTING)
+  add_subdirectory(native/tests/physics_core)
+endif()
+
 # GPU unit tests (native/tests/gpu/): the same executables and CTest names the
 # legacy graph registers in native/CMakeLists.txt ("Standalone GPU unit test
 # executables"), so the root gate builds and runs them. The root-only

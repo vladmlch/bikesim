@@ -36,8 +36,10 @@ add_executable(test_physics_core_math ${_physics_core_math_sources})
 bike_apply_native_policy(test_physics_core_math)
 target_compile_options(test_physics_core_math PRIVATE
   -include "${_physics_core_test_config_header}")
+target_include_directories(test_physics_core_math PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
 target_include_directories(test_physics_core_math SYSTEM PRIVATE
-  "${CMAKE_SOURCE_DIR}/native/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(test_physics_core_math PRIVATE
   bike_core bike_engine)
 bike_rewrite_mujoco_load_name(test_physics_core_math "${BIKE_DEP_mujoco_LIBRARY}")

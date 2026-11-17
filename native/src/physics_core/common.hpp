@@ -147,6 +147,7 @@ enum class Status : u8 {
     logic_error
 };
 
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference/device ABI layout
 enum class ErrCode : u16 {
     none = 0,
     nonfinite_center,

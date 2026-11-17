@@ -29,8 +29,16 @@ using numeric::numpy_sum;
 }
 
 [[nodiscard]] inline double hypot2_py(double a, double b) noexcept {
-    const std::array<double, 2> v = {a, b};
-    return numeric::python_vector_norm(v);
+    std::array<double, 2> coords = {std::fabs(a), std::fabs(b)};
+    const bool found_nan = std::isnan(coords[0]) || std::isnan(coords[1]);
+    double mx = 0.0;
+    if (coords[0] > mx) {
+        mx = coords[0];
+    }
+    if (coords[1] > mx) {
+        mx = coords[1];
+    }
+    return numeric::detail::vector_norm(coords, mx, found_nan);
 }
 
 [[nodiscard]] inline double interp_segment(

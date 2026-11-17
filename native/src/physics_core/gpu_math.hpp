@@ -113,8 +113,10 @@ BIKE_HD float expf_portable(float x) noexcept {
     if (x < -103.97207708399179f) {
         return 0.0f;
     }
+    // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cody-Waite split; MSL has no <numbers>
     const float z = pf_floor(1.44269504088896341f * x + 0.5f);
     const int n = static_cast<int>(z);
+    // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cody-Waite split; MSL has no <numbers>
     x -= z * 0.693359375f;
     x -= z * (-2.12194440e-4f);
     const float xx = x * x;
@@ -163,6 +165,7 @@ BIKE_HD float tanhf_portable(float x) noexcept {
     }
     if (u < 1.03972077f) {
         // z = 1 Cody-Waite reduction (2*|x| < 1.5*ln(2)): avoids 1-bit cancellation in e^u - 1.
+        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cody-Waite split; MSL has no <numbers>
         float r = u - 0.693359375f;
         r -= -2.12194440e-4f;
         const float d = 1.0f + 2.0f * expm1f_small_portable(r);

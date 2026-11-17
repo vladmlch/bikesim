@@ -13,6 +13,7 @@ namespace bike::physics_core {
 BIKE_CONSTEXPR i32 kJntSlide = 2;
 BIKE_CONSTEXPR i32 kJntHinge = 3;
 
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference/device ABI layout
 enum class JointKind : i32 {
     slide = kJntSlide,
     hinge = kJntHinge
@@ -133,6 +134,7 @@ struct SurfaceMapView {
     u8 pad[3]{};
 };
 
+// NOLINTNEXTLINE(performance-enum-size) enum width matches the reference/device ABI layout
 enum class TyreBackendKind : i32 {
     compliant_2d = 0,
     distributed_2d_reference = 1

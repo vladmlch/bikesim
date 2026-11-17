@@ -83,20 +83,6 @@ namespace biketyre {
             std::optional<int> previous_segment) const;
 
     private:
-        // _candidates (contact_profile.py:59-68) on this profile's tables —
-        // delegates to detail::candidates_into; the interval contract above.
-        // contact() passes the member scratch so the warm path allocates
-        // nothing (the Python original builds fresh arrays per query).
-        void candidates_into(std::array<double, 2> c, int lo, int hi,
-                             detail::Candidates &out) const;
-
-        // _endpoint_keep (contact_profile.py:70-85) — written as a mask in
-        // candidate order into `out`, which must already hold at least
-        // cand.ids.size() entries; the write only covers that prefix.
-        void endpoint_keep_into(std::array<double, 2> c,
-                                const detail::Candidates &cand,
-                                std::vector<bool> &out) const;
-
         std::vector<double> px_, pz_; // _profile_x / _profile_z
         std::vector<double> seg_x_, seg_z_; // _segments columns
         std::vector<double> seg_len_sq_; // _segment_lengths_sq
@@ -107,15 +93,6 @@ namespace biketyre {
         double significant_delta_m_;
         double significance_fraction_;
         double normal_cosine_;
-        // Warm-contact scratch — sized once in the ctor against the segment
-        // bound (a window never exceeds the segment count), cleared and
-        // refilled by every contact() call without touching the allocator.
-        // `mutable` because contact() is const.
-        mutable detail::Candidates cand_scratch_;
-        mutable std::vector<bool> keep_scratch_;
-        mutable std::vector<int> near_scratch_;
-        mutable std::vector<double> normals_scratch_;
-        mutable std::vector<double> dots_scratch_;
     };
 
     // np.interp(x, xs, ys) for a scalar query (numpy/_core/multiarray/

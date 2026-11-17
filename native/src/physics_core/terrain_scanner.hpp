@@ -333,15 +333,15 @@ BIKE_HD Status scan_polyline_contact(
             const Real previous_x =
                 TK::min(TK::max(cx, pl.px[prev_seg]), pl.px[prev_seg + 1]);
             const Real previous_distance = TK::hypot2(cx - previous_x, height);
-            const int vertex =
+            const int vertex_id =
                 previous_x == pl.px[prev_seg] ? prev_seg : prev_seg + 1;
             const bool endpoint =
                 previous_x == pl.px[prev_seg] || previous_x == pl.px[prev_seg + 1];
             bool closer = false;
             if (endpoint) {
-                const Real off[2] = {cx - pl.px[vertex], cz - pl.pz[vertex]};
-                const Real left[2] = {pl.left_x[vertex], pl.left_z[vertex]};
-                const Real right[2] = {pl.right_x[vertex], pl.right_z[vertex]};
+                const Real off[2] = {cx - pl.px[vertex_id], cz - pl.pz[vertex_id]};
+                const Real left[2] = {pl.left_x[vertex_id], pl.left_z[vertex_id]};
+                const Real right[2] = {pl.right_x[vertex_id], pl.right_z[vertex_id]};
                 closer = TK::dot2(off, left) > BIKE_REAL(Real, 1e-14) ||
                          TK::dot2(off, right) > BIKE_REAL(Real, 1e-14);
             }

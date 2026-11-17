@@ -257,12 +257,12 @@ BIKE_HD Status signed_profile_query(
     if (length <= BIKE_REAL(Real, 1e-12) &&
         (winner.fraction <= BIKE_REAL(Real, 1e-12) ||
          winner.fraction >= static_cast<Real>(1) - BIKE_REAL(Real, 1e-12))) {
-        const int vertex =
+        const int vertex_id =
             winner.fraction <= BIKE_REAL(Real, 1e-12) ? sid : sid + 1;
-        if (0 < vertex && vertex < sp.num_vertices - 1) {
+        if (0 < vertex_id && vertex_id < sp.num_vertices - 1) {
             const Real d[2] = {
-                sp.normal_x[vertex - 1] - sp.normal_x[vertex],
-                sp.normal_z[vertex - 1] - sp.normal_z[vertex]
+                sp.normal_x[vertex_id - 1] - sp.normal_x[vertex_id],
+                sp.normal_z[vertex_id - 1] - sp.normal_z[vertex_id]
             };
             if (TK::norm2_ddot(d) > BIKE_REAL(Real, 1e-10)) {
                 out.nonsmooth = static_cast<u8>(1);

@@ -121,13 +121,20 @@ struct HostPolylineStorage {
     }
 };
 
+struct PolylineThresholds {
+    double significant_delta_m = 0.0;
+    double significance_fraction = 0.0;
+    double normal_angle_deg = 0.0;
+};
+
 [[nodiscard]] HostPolylineStorage build_polyline_storage(
     std::vector<double> px_in,
     std::vector<double> pz_in,
-    double significant_delta_m,
-    double significance_fraction,
-    double normal_angle_deg
+    PolylineThresholds thresholds
 ) {
+    const double significant_delta_m = thresholds.significant_delta_m;
+    const double significance_fraction = thresholds.significance_fraction;
+    const double normal_angle_deg = thresholds.normal_angle_deg;
     HostPolylineStorage s;
     s.px = std::move(px_in);
     s.pz = std::move(pz_in);
@@ -602,7 +609,8 @@ void test_polyline_track_and_adversarial_parity() {
     {
         auto [px, pz] = load_track_polyline(flat_path);
         const HostPolylineStorage st = build_polyline_storage(
-            std::move(px), std::move(pz), 0.005, 0.25, 25.0);
+            std::move(px), std::move(pz),
+            {.significant_delta_m = 0.005, .significance_fraction = 0.25, .normal_angle_deg = 25.0});
         std::vector<QueryCase> queries;
         queries.reserve(5200);
         const double xmin = st.px.front();
@@ -623,7 +631,7 @@ void test_polyline_track_and_adversarial_parity() {
             queries.push_back({.cx = cx, .cz = h + dz, .radius = 0.36, .prev_seg = prev});
         }
         // Exact vertices & boundary queries
-        for (int idx : {0, 1, nseg / 2, nseg - 1, nseg}) {
+        for (const int idx : {0, 1, nseg / 2, nseg - 1, nseg}) {
             const double vx = st.px[static_cast<std::size_t>(idx)];
             const double vz = st.pz[static_cast<std::size_t>(idx)];
             queries.push_back({.cx = vx, .cz = vz + 0.35, .radius = 0.36, .prev_seg = std::min(idx, nseg - 1)});
@@ -636,7 +644,8 @@ void test_polyline_track_and_adversarial_parity() {
     {
         auto [px, pz] = load_track_polyline(rough_path);
         const HostPolylineStorage st = build_polyline_storage(
-            std::move(px), std::move(pz), 0.005, 0.25, 25.0);
+            std::move(px), std::move(pz),
+            {.significant_delta_m = 0.005, .significance_fraction = 0.25, .normal_angle_deg = 25.0});
         std::vector<QueryCase> queries;
         queries.reserve(12200);
         const double xmin = st.px.front();
@@ -673,7 +682,8 @@ void test_polyline_track_and_adversarial_parity() {
             0.0, 0.0, 0.0, 0.25, 0.0, 0.35, 0.10, 0.30, 0.05, 0.45, 0.15, 0.15, 0.15, 0.0, 0.40
         };
         const HostPolylineStorage st = build_polyline_storage(
-            std::move(px), std::move(pz), 0.001, 0.1, 15.0);
+            std::move(px), std::move(pz),
+            {.significant_delta_m = 0.001, .significance_fraction = 0.1, .normal_angle_deg = 15.0});
         std::vector<QueryCase> queries;
         queries.reserve(4500);
 
@@ -724,7 +734,8 @@ void test_polyline_track_and_adversarial_parity() {
     //    both must match bit-for-bit!
     {
         const HostPolylineStorage st = build_polyline_storage(
-            {0.0, 1.0, 2.0, 3.0}, {0.0, 0.0, 0.8, 0.8}, 0.001, 0.1, 15.0);
+            {0.0, 1.0, 2.0, 3.0}, {0.0, 0.0, 0.8, 0.8},
+            {.significant_delta_m = 0.001, .significance_fraction = 0.1, .normal_angle_deg = 15.0});
         std::vector<QueryCase> queries;
         for (int k = 0; k < 200; ++k) {
             const double cx = 0.8 + 0.4 * static_cast<double>(k) / 199.0;
@@ -740,7 +751,8 @@ void test_polyline_track_and_adversarial_parity() {
 
 void test_polyline_error_branches() {
     const HostPolylineStorage st = build_polyline_storage(
-        {0.0, 1.0, 2.0}, {0.0, 0.0, 0.0}, 0.005, 0.25, 25.0);
+        {0.0, 1.0, 2.0}, {0.0, 0.0, 0.0},
+        {.significant_delta_m = 0.005, .significance_fraction = 0.25, .normal_angle_deg = 25.0});
     const PolylineView<double> view = st.view_f64();
     const biketyre::ProfileQuery pq(st.px, st.pz, 0.005, 0.25, 25.0);
     const double qnan = std::numeric_limits<double>::quiet_NaN();
@@ -817,7 +829,8 @@ void test_polyline_error_branches() {
     }
     {
         const HostPolylineStorage slope_st = build_polyline_storage(
-            {0.0, 1.0, 2.0}, {0.0, 0.1, 0.2}, 0.005, 0.25, 25.0);
+            {0.0, 1.0, 2.0}, {0.0, 0.1, 0.2},
+            {.significant_delta_m = 0.005, .significance_fraction = 0.25, .normal_angle_deg = 25.0});
         const biketyre::ProfileQuery slope_pq(slope_st.px, slope_st.pz, 0.005, 0.25, 25.0);
         PolylineContactResult<double> out{};
         ErrCode err = ErrCode::none;
@@ -844,7 +857,7 @@ void test_signed_profile_parity() {
     const std::filesystem::path rough_path =
         repo_root / "examples" / "research" / "rough_uphill_extreme.toml";
 
-    auto check_profile = [](const std::vector<double> &px, const std::vector<double> &pz,
+    const auto check_profile = [](const std::vector<double> &px, const std::vector<double> &pz,
                             std::string_view label) {
         std::vector<std::array<double, 2>> verts(px.size());
         for (std::size_t i = 0; i < px.size(); ++i) {
@@ -989,7 +1002,8 @@ Status run_warm_nonblocking_step(
 
 void test_nonblocking_warm_path() {
     const HostPolylineStorage pl_st = build_polyline_storage(
-        {0.0, 1.0, 2.0, 3.0}, {0.0, 0.1, 0.0, 0.2}, 0.005, 0.25, 25.0);
+        {0.0, 1.0, 2.0, 3.0}, {0.0, 0.1, 0.0, 0.2},
+        {.significant_delta_m = 0.005, .significance_fraction = 0.25, .normal_angle_deg = 25.0});
     const HostSignedStorage sp_st = build_signed_storage(
         {0.0, 1.0, 2.0, 3.0}, {0.0, 0.1, 0.0, 0.2});
     PolylineContactResult<double> contact_out{};
@@ -1005,10 +1019,14 @@ void test_nonblocking_warm_path() {
 } // namespace
 
 int main() {
-    return bt::run([] {
-        test_polyline_track_and_adversarial_parity();
-        test_polyline_error_branches();
-        test_signed_profile_parity();
-        test_nonblocking_warm_path();
-    });
+    try {
+        return bt::run([] {
+            test_polyline_track_and_adversarial_parity();
+            test_polyline_error_branches();
+            test_signed_profile_parity();
+            test_nonblocking_warm_path();
+        });
+    } catch (...) {
+        return 1;
+    }
 }

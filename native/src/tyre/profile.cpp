@@ -315,19 +315,6 @@ namespace biketyre {
         // npy_cos (numeric::np_cos; a lone call — nothing to fuse).
         normal_cosine_ =
                 numeric::np_cos(normal_angle_deg * (std::numbers::pi / 180.0));
-        // Warm-contact scratch: contact() refills this storage every call
-        // instead of allocating per query like the Python original. A
-        // candidates window never exceeds the segment count, so px_.size()
-        // bounds every row the scratch can hold.
-        const std::size_t bound = px_.size();
-        cand_scratch_.ids.reserve(bound);
-        cand_scratch_.t.reserve(bound);
-        cand_scratch_.points.reserve(bound);
-        cand_scratch_.distances.reserve(bound);
-        keep_scratch_.resize(bound);
-        near_scratch_.reserve(bound);
-        normals_scratch_.resize(2 * bound);
-        dots_scratch_.resize(bound);
     }
 
     namespace detail {
@@ -405,42 +392,6 @@ namespace biketyre {
             return out;
         }
     } // namespace detail
-
-    void ProfileQuery::candidates_into(std::array<double, 2> c, int lo,
-                                       int hi,
-                                       detail::Candidates &out) const {
-        detail::candidates_into(px_, pz_, seg_x_, seg_z_, seg_len_sq_, c,
-                                lo, hi, out);
-    }
-
-    void ProfileQuery::endpoint_keep_into(
-        std::array<double, 2> c, const detail::Candidates &cand,
-        std::vector<bool> &out) const {
-        // _endpoint_keep (contact_profile.py:70-85): an endpoint projection is
-        // not a separate support when a neighbour's direction of travel moves
-        // closer to the wheel. Written into the caller's mask — only the
-        // cand.ids.size() prefix is touched.
-        for (std::size_t i = 0; i < cand.ids.size(); ++i) {
-            out[i] = true;
-            const double t = cand.t[i];
-            if (t != 0.0 && t != 1.0)
-                continue; // not an endpoint projection
-            const int vertex = cand.ids[i] + (t == 1.0 ? 1 : 0);
-            const std::size_t v = static_cast<std::size_t>(vertex);
-            const double ox = c[0] - px_[v], oz = c[1] - pz_[v];
-            // einsum('ij,ij->i', offsets, directions[vertex_ids]) per table.
-            double dl = 0.0;
-            dl += ox * left_x_[v];
-            dl += oz * left_z_[v];
-            if (dl > 1e-14)
-                out[i] = false;
-            double dr = 0.0;
-            dr += ox * right_x_[v];
-            dr += oz * right_z_[v];
-            if (dr > 1e-14)
-                out[i] = false;
-        }
-    }
 
     ProfileContact ProfileQuery::contact(
         std::array<double, 2> c, double radius,

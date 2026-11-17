@@ -17,6 +17,7 @@
 #include <array>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -24,6 +25,7 @@
 
 #include "../config_types.hpp"
 #include "../contact/laws.hpp"
+#include "../physics_core/tyre_types.hpp"
 
 // ContactPatch (contact_state.py:19-76). Applied tire writers use the
 // planar force reconstruction; native_reference retains the complete
@@ -138,4 +140,41 @@ namespace tirecommon {
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,
                        double contact_x, double slip);
     // NOLINTEND(bugprone-easily-swappable-parameters)
+
+    [[nodiscard]] inline bike::physics_core::SurfaceSpecPod<double>
+    to_surface_spec_pod(const nativecfg::SurfaceSpec &s) noexcept {
+        return {
+            .mu_peak = s.mu_peak,
+            .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .surface_id = 0
+        };
+    }
+
+    // Populates `out` when `map != nullptr && map->sections.size() <= kMaxSurfaceSections`.
+    // Returns true if `out` holds the full SurfaceMap; false if absent or oversized.
+    [[nodiscard]] inline bool
+    fill_surface_map_view(const nativecfg::SurfaceMap *map,
+                          bike::physics_core::SurfaceMapView<double> &out) noexcept {
+        out = {};
+        if (map == nullptr ||
+            map->sections.size() >
+                static_cast<std::size_t>(bike::physics_core::kMaxSurfaceSections)) {
+            return false;
+        }
+        out.default_surface = to_surface_spec_pod(map->surface);
+        out.section_count = static_cast<bike::physics_core::i32>(
+            map->sections.size());
+        out.has_surface_map = 1;
+        const std::span<bike::physics_core::SurfaceSectionView<double>,
+                        bike::physics_core::kMaxSurfaceSections>
+            dst_sections(out.sections);
+        for (std::size_t i = 0; i < map->sections.size(); ++i) {
+            dst_sections[i].start_m = map->sections[i].start_m;
+            dst_sections[i].end_m = map->sections[i].end_m;
+            dst_sections[i].surface = to_surface_spec_pod(map->sections[i].surface);
+        }
+        return true;
+    }
 } // namespace tirecommon

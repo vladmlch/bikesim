@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -17,6 +18,7 @@
 
 #include "../config_types.hpp"
 #include "../contact/tabulated_radial.hpp"
+#include "../physics_core/tyre_types.hpp"
 #include "../rtsan.hpp"
 #include "../tyre/profile.hpp"
 #include "tire_common.hpp"
@@ -194,6 +196,8 @@ private:
     // geoms/bodies/radii per ('front','rear') insertion order.
     std::array<int, 2> geoms_{}, bodies_{};
     std::array<double, 2> radii_{};
+    std::shared_ptr<const bike::physics_core::TyreModel<double>> core_model_;
+    bool core_surface_map_complete_ = false;
     // self._jac_contact / self._jac_center (3,nv) scratch.
     std::vector<mjtNum> jac_contact_, jac_center_;
     // qfrc()'s body verbatim on caller-owned storage and the persistent

@@ -181,14 +181,17 @@ pedaling enters `coasting` with reason `reposition_requested` or
 controller commands a negative crank rate back to the lower power phase. The
 motor clutch and the rear freehub decouple the forward drive, so the rear
 wheel and the motor drive shaft are not backdriven. The spindle controller
-uses rate damping (D = 12 N·m·s/rad) bounded within [−60, +60] N·m, and clips
+uses rate damping (`reposition_damping_nms_rad` from `[drive.pedaling]`, e.g. 12 N·m·s/rad) bounded within `[-max_crank_torque_nm, +max_crank_torque_nm]` N·m from `[seated_climb]` (e.g. 60 N·m), and clips
 the negative task press below the resting pedal weight so the feet never pull
-on the pedals.
+on the pedals. Both fields, together with `[seated_climb]` `max_forward_lean_rad` (0.55 rad / 31.5°), are **required fields** in physics profiles without code defaults.
 
-`[drive.pedaling]` knobs (defaults):
+Manual crank repositioning (`request_crank_reposition()` / key V in the viewer) validates bicycle topology: it requires `articulated.pedal_attachment == "spindle"` and `drive.motor_clutch == true`. If either prerequisite is missing, the request is rejected with `std::invalid_argument` (the viewer logs a warning to the event journal without terminating the ride).
 
-| Key | Type | Default |
+`[drive.pedaling]` configuration fields:
+
+| Key | Type | Required / Default |
 |---|---|---|
+| `reposition_damping_nms_rad` | real (N·m·s/rad) | **Required** (e.g. `12.0`) |
 | `reposition_on_stall` | bool | `false` |
 | `reposition_min_effort_nm` | real (N·m) | `20` |
 | `reposition_stall_window_s` | real (s) | `1` |

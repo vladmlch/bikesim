@@ -19,10 +19,31 @@ namespace {
     return std::min(raw, wheels.size() - 1);
 }
 
-[[nodiscard]] std::size_t velocity_row_index(const PlaybackData& data, double time_s) {
-    const double clamped = std::clamp(time_s, 0., data.duration_s);
-    const auto found = std::ranges::lower_bound(data.times_s, clamped);
-    return std::min(static_cast<std::size_t>(found - data.times_s.begin()), data.qvel.size() - 1);
+[[nodiscard]] std::vector<double> velocity_at(const PlaybackData& data, double time_s) {
+    const double time = std::clamp(time_s, 0., data.duration_s);
+    const auto after = std::ranges::upper_bound(data.times_s, time);
+    std::size_t index = 0;
+    double weight = 0.;
+    if (after != data.times_s.begin()) {
+        index = static_cast<std::size_t>(after - data.times_s.begin() - 1);
+        if (index + 1 < data.times_s.size()) {
+            const double span = data.times_s[index + 1] - data.times_s[index];
+            if (span > 0.) {
+                weight = (time - data.times_s[index]) / span;
+            }
+        }
+    }
+    index = std::min(index, data.qvel.size() - 1);
+    auto value = data.qvel[index];
+    if (weight == 0. || index + 1 >= data.qvel.size()) return value;
+    const auto& next = data.qvel[index + 1];
+    if (next.size() != value.size()) {
+        throw std::invalid_argument("playback frame widths disagree");
+    }
+    for (std::size_t i = 0; i < value.size(); ++i) {
+        value[i] += (next[i] - value[i]) * weight;
+    }
+    return value;
 }
 } // namespace
 
@@ -36,6 +57,9 @@ viewer::Decorations golden_decorations(
     double& running_max) {
     if (!std::isfinite(time_s)) {
         throw std::invalid_argument("golden_decorations requires a finite time");
+    }
+    if (!std::isfinite(running_max)) {
+        throw std::invalid_argument("golden_decorations requires a finite running_max");
     }
 
     auto ghost_q = pose_at(ghost, time_s);
@@ -53,7 +77,7 @@ viewer::Decorations golden_decorations(
             best_k = i;
         }
     }
-    running_max = std::max(running_max, max_dq);
+    const double next_running_max = std::max(running_max, max_dq);
 
     const std::string dof_label = best_k < dof_names.size()
         ? dof_names[best_k]
@@ -61,11 +85,11 @@ viewer::Decorations golden_decorations(
 
     viewer::Decorations out;
     out.overlay = std::format("GPU vs CPU  max|Δq| {:.3e} ({})  run max {:.3e}",
-                              max_dq, dof_label, running_max);
+                              max_dq, dof_label, next_running_max);
 
     if (!shown.qvel.empty() && !ghost.qvel.empty() && !shown.times_s.empty() && !ghost.times_s.empty()) {
-        const auto& shown_v = shown.qvel[velocity_row_index(shown, time_s)];
-        const auto& ghost_v = ghost.qvel[velocity_row_index(ghost, time_s)];
+        const auto shown_v = velocity_at(shown, time_s);
+        const auto ghost_v = velocity_at(ghost, time_s);
         if (shown_v.size() == ghost_v.size() && !shown_v.empty()) {
             double max_dv = 0.;
             for (std::size_t i = 0; i < shown_v.size(); ++i) {
@@ -116,6 +140,7 @@ viewer::Decorations golden_decorations(
     }
 
     out.ghost_qpos = std::move(ghost_q);
+    running_max = next_running_max;
     return out;
 }
 } // namespace bike::replay

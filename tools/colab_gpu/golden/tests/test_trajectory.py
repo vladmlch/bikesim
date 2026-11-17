@@ -15,7 +15,14 @@ _ROOT = Path(__file__).resolve().parents[4]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from tools.colab_gpu.golden.trajectory import MAGIC, VERSION, WHEEL_COLS, read_trajectory, write_trajectory
+from tools.colab_gpu.golden.trajectory import (
+    MAGIC,
+    VERSION,
+    WHEEL_COLS,
+    read_trajectory,
+    write_trajectory,
+    write_trajectory_arrays,
+)
 
 
 @dataclass
@@ -144,3 +151,107 @@ def test_read_trajectory_rejects_corruption(tmp_path: Path) -> None:
     (out_dir / "trajectory.bin").write_bytes(b"BADMAGIC" + raw[8:])
     with pytest.raises(ValueError, match="invalid trajectory magic"):
         read_trajectory(out_dir)
+
+    # Trailing bytes / oversized payload
+    (out_dir / "trajectory.bin").write_bytes(raw + b"\x00" * 8)
+    with pytest.raises(ValueError, match="size mismatch"):
+        read_trajectory(out_dir)
+
+    # Nonfinite values in qpos, qvel, wheels rejected on read_trajectory
+    header = raw[:96]
+    valid_rows = np.frombuffer(raw, dtype="<f8", offset=96).reshape(3, 2 + 2 + 1 + 8).copy()
+    for col, label in ((2, "qpos"), (4, "qvel"), (5, "wheels")):
+        for bad_val in (np.nan, np.inf):
+            bad_rows = valid_rows.copy()
+            bad_rows[1, col] = bad_val
+            (out_dir / "trajectory.bin").write_bytes(header + bad_rows.tobytes())
+            with pytest.raises(ValueError, match=f"{label} contains nonfinite"):
+                read_trajectory(out_dir)
+
+    # Domain errors in binary payload rejected on read_trajectory
+    bad_time_rows = valid_rows.copy()
+    bad_time_rows[0, 0] = -0.01
+    (out_dir / "trajectory.bin").write_bytes(header + bad_time_rows.tobytes())
+    with pytest.raises(ValueError, match="nonnegative"):
+        read_trajectory(out_dir)
+
+    noninc_rows = valid_rows.copy()
+    noninc_rows[2, 0] = noninc_rows[1, 0]
+    (out_dir / "trajectory.bin").write_bytes(header + noninc_rows.tobytes())
+    with pytest.raises(ValueError, match="strictly increasing"):
+        read_trajectory(out_dir)
+
+    bad_end_rows = valid_rows.copy()
+    bad_end_rows[1, 1] = bad_end_rows[1, 0]
+    (out_dir / "trajectory.bin").write_bytes(header + bad_end_rows.tobytes())
+    with pytest.raises(ValueError, match="ends_s must exceed times_s"):
+        read_trajectory(out_dir)
+
+    one_frame_header = struct.pack(
+        "<8sIIIIQ64s",
+        MAGIC,
+        VERSION,
+        2,
+        1,
+        WHEEL_COLS,
+        1,
+        hashlib.sha256(b"mjb-1").hexdigest().encode("ascii"),
+    )
+    (out_dir / "trajectory.bin").write_bytes(one_frame_header + valid_rows[:1].tobytes())
+    with pytest.raises(ValueError, match="at least two frames"):
+        read_trajectory(out_dir)
+
+
+def test_write_trajectory_arrays_validation(tmp_path: Path) -> None:
+    mjb_path = tmp_path / "model.mjb"
+    mjb_path.write_bytes(b"mjb-1")
+
+    times = np.array([0.0, 0.01, 0.02])
+    ends = np.array([0.01, 0.02, 0.03])
+    qpos = np.zeros((3, 2))
+    qvel = np.ones((3, 1))
+    wheels = np.zeros((3, WHEEL_COLS))
+
+    with pytest.raises(ValueError, match="at least two frames"):
+        write_trajectory_arrays(tmp_path / "one", mjb_path, times[:1], ends[:1], qpos[:1], qvel[:1], wheels[:1])
+
+    with pytest.raises(ValueError, match="nonnegative"):
+        write_trajectory_arrays(
+            tmp_path / "neg_t", mjb_path, np.array([-0.01, 0.01, 0.02]), ends, qpos, qvel, wheels
+        )
+
+    with pytest.raises(ValueError, match="strictly increasing"):
+        write_trajectory_arrays(
+            tmp_path / "noninc", mjb_path, np.array([0.0, 0.01, 0.01]), ends, qpos, qvel, wheels
+        )
+
+    with pytest.raises(ValueError, match="ends_s must exceed times_s"):
+        write_trajectory_arrays(
+            tmp_path / "bad_end", mjb_path, times, np.array([0.01, 0.02, 0.02]), qpos, qvel, wheels
+        )
+
+    for bad_val in (np.nan, np.inf):
+        bad_qpos = qpos.copy()
+        bad_qpos[1, 0] = bad_val
+        with pytest.raises(ValueError, match="qpos contains nonfinite"):
+            write_trajectory_arrays(tmp_path / "bad_qpos", mjb_path, times, ends, bad_qpos, qvel, wheels)
+
+        bad_qvel = qvel.copy()
+        bad_qvel[1, 0] = bad_val
+        with pytest.raises(ValueError, match="qvel contains nonfinite"):
+            write_trajectory_arrays(tmp_path / "bad_qvel", mjb_path, times, ends, qpos, bad_qvel, wheels)
+
+        bad_wheels = wheels.copy()
+        bad_wheels[1, 0] = bad_val
+        with pytest.raises(ValueError, match="wheels contains nonfinite"):
+            write_trajectory_arrays(tmp_path / "bad_wheels", mjb_path, times, ends, qpos, qvel, bad_wheels)
+
+        bad_times = times.copy()
+        bad_times[1] = bad_val
+        with pytest.raises(ValueError, match="times_s contains nonfinite"):
+            write_trajectory_arrays(tmp_path / "bad_times", mjb_path, bad_times, ends, qpos, qvel, wheels)
+
+        bad_ends = ends.copy()
+        bad_ends[1] = bad_val
+        with pytest.raises(ValueError, match="ends_s contains nonfinite"):
+            write_trajectory_arrays(tmp_path / "bad_ends", mjb_path, times, bad_ends, qpos, qvel, wheels)

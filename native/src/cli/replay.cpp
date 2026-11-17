@@ -56,7 +56,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
         }
     }
     std::optional<replay::PlaybackSession> playback_owner;
-    if (ext_ptr) playback_owner.emplace(ext_ptr->playback);
+    if (external) playback_owner.emplace(std::move(external->playback));
     else playback_owner.emplace(args.text("recording"), episode);
     auto& playback = playback_owner.value();
     double running_max = 0.;
@@ -72,7 +72,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
             (void)playback.frame(t);
             if (ext_ptr && ghost_ptr) {
                 (void)replay::golden_decorations(
-                    ext_ptr->playback, *ghost_ptr, ext_ptr->wheels, dof_names, t, running_max);
+                    playback.data(), *ghost_ptr, ext_ptr->wheels, dof_names, t, running_max);
             }
         }
         std::cout << "frames=" << frames << " duration=" << std::fixed << std::setprecision(3)
@@ -111,7 +111,7 @@ int inspect(const Arguments& args, std::optional<std::int64_t> episode) {
     if (ext_ptr && ghost_ptr) {
         hooks.decorations = [&, ext_ptr, ghost_ptr](const runtime::RenderFrame&) {
             return replay::golden_decorations(
-                ext_ptr->playback, *ghost_ptr, ext_ptr->wheels, dof_names, time, running_max);
+                playback.data(), *ghost_ptr, ext_ptr->wheels, dof_names, time, running_max);
         };
     }
     hooks.key_event = [&](int key, int modifiers) {

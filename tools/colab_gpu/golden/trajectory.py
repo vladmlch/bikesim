@@ -36,6 +36,33 @@ class TrajectoryData:
     metadata: dict[str, Any] | None = None
 
 
+def _validate_trajectory_arrays(
+    times_s: np.ndarray,
+    ends_s: np.ndarray,
+    qpos: np.ndarray,
+    qvel: np.ndarray,
+    wheels: np.ndarray,
+) -> None:
+    frames = int(times_s.shape[0])
+    if frames < 2:
+        raise ValueError("stored-state trajectory needs at least two frames")
+    for name, arr in (
+        ("times_s", times_s),
+        ("ends_s", ends_s),
+        ("qpos", qpos),
+        ("qvel", qvel),
+        ("wheels", wheels),
+    ):
+        if not np.all(np.isfinite(arr)):
+            raise ValueError(f"{name} contains nonfinite values")
+    if np.any(times_s < 0.0):
+        raise ValueError("times_s must be nonnegative")
+    if np.any(np.diff(times_s) <= 0.0):
+        raise ValueError("times_s must be strictly increasing")
+    if np.any(ends_s <= times_s):
+        raise ValueError("ends_s must exceed times_s")
+
+
 def write_trajectory_arrays(
     out_dir: Path,
     model_mjb_path: Path,
@@ -47,17 +74,6 @@ def write_trajectory_arrays(
     metadata: dict[str, Any] | None = None,
 ) -> None:
     """Write `trajectory.bin`, `model.mjb`, and `trajectory.json` into `out_dir`."""
-    out_dir = Path(out_dir)
-    model_mjb_path = Path(model_mjb_path)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    mjb = model_mjb_path.read_bytes()
-    dst_mjb = out_dir / "model.mjb"
-    if model_mjb_path.resolve() != dst_mjb.resolve():
-        shutil.copyfile(model_mjb_path, dst_mjb)
-    sha_str = hashlib.sha256(mjb).hexdigest()
-    sha = sha_str.encode("ascii")
-
     times = np.asarray(times_s, dtype="<f8")
     ends = np.asarray(ends_s, dtype="<f8")
     qpos_arr = np.asarray(qpos, dtype="<f8")
@@ -82,6 +98,18 @@ def write_trajectory_arrays(
             wheel_rows = wheel_rows.reshape(frames, WHEEL_COLS)
         if wheel_rows.shape != (frames, WHEEL_COLS):
             raise ValueError(f"wheels must have shape ({frames}, {WHEEL_COLS}), got {wheel_rows.shape}")
+
+    _validate_trajectory_arrays(times, ends, qpos_arr, qvel_arr, wheel_rows)
+
+    out_dir = Path(out_dir)
+    model_mjb_path = Path(model_mjb_path)
+    mjb = model_mjb_path.read_bytes()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dst_mjb = out_dir / "model.mjb"
+    if model_mjb_path.resolve() != dst_mjb.resolve():
+        shutil.copyfile(model_mjb_path, dst_mjb)
+    sha_str = hashlib.sha256(mjb).hexdigest()
+    sha = sha_str.encode("ascii")
 
     header = _HEADER_STRUCT.pack(MAGIC, VERSION, nq, nv, WHEEL_COLS, frames, sha)
     rows = np.hstack([times[:, None], ends[:, None], qpos_arr, qvel_arr, wheel_rows]).astype("<f8", copy=False)
@@ -151,6 +179,8 @@ def read_trajectory(traj_dir: Path) -> TrajectoryData:
     expected_bytes = _HEADER_STRUCT.size + frames * row_cols * 8
     if len(raw) != expected_bytes:
         raise ValueError(f"trajectory.bin size mismatch: expected {expected_bytes}, got {len(raw)}")
+    if frames < 2:
+        raise ValueError("stored-state trajectory needs at least two frames")
 
     table = np.frombuffer(raw, dtype="<f8", offset=_HEADER_STRUCT.size).reshape(frames, row_cols)
     times_s = table[:, 0].copy()
@@ -158,6 +188,7 @@ def read_trajectory(traj_dir: Path) -> TrajectoryData:
     qpos = table[:, 2 : 2 + nq].copy()
     qvel = table[:, 2 + nq : 2 + nq + nv].copy()
     wheels = table[:, 2 + nq + nv :].copy()
+    _validate_trajectory_arrays(times_s, ends_s, qpos, qvel, wheels)
 
     meta_path = traj_dir / "trajectory.json"
     metadata = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None

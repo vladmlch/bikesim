@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <limits>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -63,6 +65,8 @@ struct TrajectorySpec {
     std::uint32_t nq_override = 0;
     std::uint32_t nv_override = 0;
     std::size_t drop_bytes = 0;
+    std::size_t extra_bytes = 0;
+    std::optional<double> wheel0_override;
     std::string sha_override;
 };
 
@@ -106,11 +110,17 @@ void write_trajectory_dir(
             append_f64_le(bytes, i < row_nv ? src.qvel[f][i] : 0.0);
         }
         for (std::uint32_t w = 0; w < spec.wheel_cols; ++w) {
-            append_f64_le(bytes, static_cast<double>(w));
+            const double val = (w == 0 && spec.wheel0_override.has_value())
+                ? *spec.wheel0_override
+                : static_cast<double>(w);
+            append_f64_le(bytes, val);
         }
     }
     if (spec.drop_bytes > 0 && spec.drop_bytes <= bytes.size()) {
         bytes.resize(bytes.size() - spec.drop_bytes);
+    }
+    if (spec.extra_bytes > 0) {
+        bytes.resize(bytes.size() + spec.extra_bytes, std::byte{0});
     }
     platform::write_exclusive(dir / "trajectory.bin", bytes);
 }
@@ -350,6 +360,43 @@ void loader_contracts(const rec::Publication& pub, const replay::PlaybackData& s
     write_trajectory_dir(tmp.path / "one_frame", src.model, src, 1, TrajectorySpec{});
     require_recording_error([&] { (void)replay::load_external_trajectory(tmp.path / "one_frame"); },
                             "at least two");
+
+    // Trailing bytes / oversized payload
+    {
+        TrajectorySpec s;
+        s.extra_bytes = 8;
+        write_trajectory_dir(tmp.path / "oversized", src.model, src, 2, s);
+    }
+    require_recording_error([&] { (void)replay::load_external_trajectory(tmp.path / "oversized"); },
+                            "trajectory size");
+
+    // Nonfinite qpos, qvel, and wheels (both NaN and Inf)
+    const std::array<std::pair<std::string, double>, 2> nonfinite_vals{{
+        {"nan", std::numeric_limits<double>::quiet_NaN()},
+        {"inf", std::numeric_limits<double>::infinity()},
+    }};
+    for (const auto& [tag, bad] : nonfinite_vals) {
+        auto bad_qpos = src;
+        bad_qpos.qpos[1][0] = bad;
+        const auto qpos_dir = tmp.path / ("bad_qpos_" + tag);
+        write_trajectory_dir(qpos_dir, src.model, bad_qpos, 2, TrajectorySpec{});
+        require_recording_error([&] { (void)replay::load_external_trajectory(qpos_dir); },
+                                "nonfinite state");
+
+        auto bad_qvel = src;
+        bad_qvel.qvel[1][0] = bad;
+        const auto qvel_dir = tmp.path / ("bad_qvel_" + tag);
+        write_trajectory_dir(qvel_dir, src.model, bad_qvel, 2, TrajectorySpec{});
+        require_recording_error([&] { (void)replay::load_external_trajectory(qvel_dir); },
+                                "nonfinite state");
+
+        TrajectorySpec ws;
+        ws.wheel0_override = bad;
+        const auto wheels_dir = tmp.path / ("bad_wheels_" + tag);
+        write_trajectory_dir(wheels_dir, src.model, src, 2, ws);
+        require_recording_error([&] { (void)replay::load_external_trajectory(wheels_dir); },
+                                "nonfinite");
+    }
 
     // Verify CLI dry-run and rejections against the same sealed recording.
     (void)pub;

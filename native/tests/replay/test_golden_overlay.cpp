@@ -88,6 +88,81 @@ void guards_and_fallbacks() {
     bt::invalid([&] {
         (void)replay::golden_decorations(data, mismatch, wheels, {"root_x", "root_z"}, 0.0, running_max);
     });
+
+    // Nonfinite running_max is rejected at entry without mutating it.
+    double bad_max = std::numeric_limits<double>::quiet_NaN();
+    bt::invalid([&] {
+        (void)replay::golden_decorations(data, data, wheels, {"root_x", "root_z"}, 0.0, bad_max);
+    });
+    bt::require(std::isnan(bad_max), "rejected running_max remains untouched");
+
+    // Stage-before-commit: a throw on wheel telemetry leaves running_max untouched.
+    double committed_max = 0.005;
+    const std::vector<std::array<double, 8>> bad_wheels{
+        {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+        {0.0, 0.0, std::numeric_limits<double>::infinity(), 0.0, 0.0, 0.0, 0.0, 0.0},
+    };
+    bt::invalid([&] {
+        (void)replay::golden_decorations(
+            data, two_frames(1.5), bad_wheels, {"root_x", "root_z"}, 0.1, committed_max);
+    });
+    bt::require(committed_max == 0.005, "running_max is not updated when golden_decorations throws");
+}
+
+void velocity_interpolates_across_strides() {
+    constexpr double kFineDt = 0.00125;
+    constexpr std::size_t kFineFrames = 41; // 0.000 .. 0.050 s
+    constexpr double kAccel = 20.0;
+
+    replay::PlaybackData ghost;
+    replay::PlaybackData shown;
+    for (std::size_t i = 0; i < kFineFrames; ++i) {
+        const double t = static_cast<double>(i) * kFineDt;
+        const std::vector<double> q{0.5 * kAccel * t * t, 0.0};
+        const std::vector<double> v{kAccel * t, 1.0 - 4.0 * t};
+        ghost.times_s.push_back(t);
+        ghost.ends_s.push_back(t + kFineDt);
+        ghost.qpos.push_back(q);
+        ghost.qvel.push_back(v);
+        if (i % 10 == 0) {
+            shown.times_s.push_back(t);
+            shown.ends_s.push_back(t + kFineDt * 10.0);
+            shown.qpos.push_back(q);
+            shown.qvel.push_back(v);
+        }
+    }
+    ghost.duration_s = ghost.ends_s.back();
+    shown.duration_s = shown.ends_s.back();
+
+    const std::vector<std::array<double, 8>> wheels(shown.times_s.size(), std::array<double, 8>{});
+    double running_max = 0.0;
+
+    // Sample off-grid at 1/60 s: linear qvel(t) must agree across strides.
+    const auto dec = replay::golden_decorations(
+        shown, ghost, wheels, {"root_x", "root_z"}, 1.0 / 60.0, running_max);
+    const auto pos = dec.overlay.find("max|Δv| ");
+    bt::require(pos != std::string::npos, "overlay includes max|Δv|");
+    const double max_dv = std::stod(dec.overlay.substr(pos + 9));
+    bt::require(max_dv < 1e-12, "interpolated qvel matches across 10x stride mismatch");
+
+    // Exact knot sample produces exact zero velocity delta.
+    const auto knot = replay::golden_decorations(
+        shown, ghost, wheels, {"root_x", "root_z"}, 0.025, running_max);
+    bt::require(knot.overlay.find("max|Δv| 0.000e+00") != std::string::npos,
+                "aligned knot produces exact zero max|Δv|");
+
+    // Clamped boundaries and single-frame PlaybackData do not go out of bounds.
+    replay::PlaybackData single;
+    single.times_s = {0.0};
+    single.ends_s = {0.01};
+    single.qpos = {{0.0, 0.0}};
+    single.qvel = {{2.0, -1.0}};
+    single.duration_s = 0.01;
+    const auto low = replay::golden_decorations(single, single, wheels, {"root_x", "root_z"}, -0.1, running_max);
+    const auto high = replay::golden_decorations(single, single, wheels, {"root_x", "root_z"}, 10.0, running_max);
+    bt::require(low.overlay.find("max|Δv| 0.000e+00") != std::string::npos &&
+                    high.overlay.find("max|Δv| 0.000e+00") != std::string::npos,
+                "single-frame and clamped boundary velocity lookup succeeds");
 }
 } // namespace
 
@@ -96,5 +171,6 @@ int main() {
         ghost_pose_and_delta();
         arrows_from_contact_points();
         guards_and_fallbacks();
+        velocity_interpolates_across_strides();
     });
 }

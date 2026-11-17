@@ -6,8 +6,10 @@
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
+#include <type_traits>
 #include "writer_config.hpp"
 #include "writers/brake.hpp"
+#include "writers/compliant_3d_tire.hpp"
 #include "writers/cruise.hpp"
 #include "writers/resistance.hpp"
 #include "writers/rider_contacts.hpp"
@@ -133,7 +135,17 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
         if (cfg.resistance)
             resistance_ =
                     std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
-        if (cfg.tire) {
+        if (cfg.tire && cfg.compliant_3d_tire)
+            throw std::invalid_argument(
+                "cannot configure both tire and compliant_3d_tire");
+        if (cfg.compliant_3d_tire) {
+            compliant_3d_tire_ = std::make_unique<Compliant3dTireWriter>(
+                m_, d_, *cfg.compliant_3d_tire);
+            tire_out_.resize(static_cast<std::size_t>(m_->nv));
+        } else if (cfg.tire) {
+            if (cfg.tire->backend == "compliant_3d")
+                throw std::invalid_argument(
+                    "compliant_3d tire backend requires compliant_3d_tire config");
             // The backend string selects the writer; each writer's own
             // ctor re-validates the section it consumes (TireWriter
             // rejects a distributed-only config and vice versa).
@@ -164,6 +176,7 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
     } catch (...) {
         rider_contacts_.reset();
         drive_.reset();
+        compliant_3d_tire_.reset();
         mj_deleteData(d_);
         mj_deleteModel(m_);
         d_ = nullptr;
@@ -175,6 +188,7 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
 Stepper::~Stepper() {
     rider_contacts_.reset();
     drive_.reset();
+    compliant_3d_tire_.reset();
     if (d_) mj_deleteData(d_);
     if (m_) mj_deleteModel(m_);
 }
@@ -294,6 +308,7 @@ void Stepper::reset() {
         if (tire_) tire_->reset();
         if (distributed_tire_) distributed_tire_->reset();
         if (pneumatic_tire_) pneumatic_tire_->reset();
+        if (compliant_3d_tire_) compliant_3d_tire_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -348,6 +363,7 @@ TireWriterView Stepper::tire_writer() const {
     if (tire_) return TireWriterView(tire_.get());
     if (distributed_tire_) return TireWriterView(distributed_tire_.get());
     if (pneumatic_tire_) return TireWriterView(pneumatic_tire_.get());
+    if (compliant_3d_tire_) return TireWriterView(compliant_3d_tire_.get());
     throw std::logic_error(kNoTire);
 }
 
@@ -458,6 +474,22 @@ double TireWriterView::radial_dissipation_power_w() const {
     }, writer_);
 }
 
+double TireWriterView::step_loss_j(std::span<const double> qvel_mid,
+                                   double dt) const {
+    return std::visit(
+        [&](auto *w) -> double {
+            if constexpr (std::is_same_v<std::decay_t<decltype(w)>,
+                                         Compliant3dTireWriter *>) {
+                return w->step_loss_j(qvel_mid, dt);
+            } else {
+                (void)qvel_mid;
+                return w->brush_loss_step_j() +
+                       w->radial_dissipation_power_w() * dt;
+            }
+        },
+        writer_);
+}
+
 void TireWriterView::set_state(std::span<const std::string> names,
                                std::span<const double> row) const {
     std::visit([&](auto *w) { w->set_state(names, row); }, writer_);
@@ -501,6 +533,10 @@ bool TireWriterView::is_distributed() const noexcept {
 
 bool TireWriterView::is_pneumatic() const noexcept {
     return std::holds_alternative<PneumaticTireWriter *>(writer_);
+}
+
+bool TireWriterView::is_compliant_3d() const noexcept {
+    return std::holds_alternative<Compliant3dTireWriter *>(writer_);
 }
 
 void Stepper::set_inputs(std::span<const double> ctrl,
@@ -598,6 +634,7 @@ void Stepper::set_state(std::span<const double> qpos,
             if (tire_) tire_->reset();
             if (distributed_tire_) distributed_tire_->reset();
             if (pneumatic_tire_) pneumatic_tire_->reset();
+            if (compliant_3d_tire_) compliant_3d_tire_->reset();
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {
@@ -728,6 +765,7 @@ const std::vector<std::string> &Stepper::tire_state_names() const {
     if (tire_) return tire_->state_names();
     if (distributed_tire_) return distributed_tire_->state_names();
     if (pneumatic_tire_) return pneumatic_tire_->state_names();
+    if (compliant_3d_tire_) return compliant_3d_tire_->state_names();
     return TireWriter::state_names();
 }
 

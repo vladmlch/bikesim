@@ -74,3 +74,25 @@ if(BUILD_TESTING)
   set_tests_properties(runtime_run_limits PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_run_limits>")
 endif()
+
+add_executable(runtime_spatial_resistance_brake test_spatial_resistance_brake.cpp)
+bike_startup_target_policy(runtime_spatial_resistance_brake "${_test_repo_root}/native")
+target_link_libraries(runtime_spatial_resistance_brake PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(runtime_spatial_resistance_brake
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME runtime_spatial_resistance_brake COMMAND runtime_spatial_resistance_brake)
+  set_tests_properties(runtime_spatial_resistance_brake PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_resistance_brake>")
+endif()
+
+add_executable(runtime_spatial_step_energy test_spatial_step_energy.cpp)
+bike_startup_target_policy(runtime_spatial_step_energy "${_test_repo_root}/native")
+target_link_libraries(runtime_spatial_step_energy PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(runtime_spatial_step_energy
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME runtime_spatial_step_energy COMMAND runtime_spatial_step_energy)
+  set_tests_properties(runtime_spatial_step_energy PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_step_energy>")
+endif()

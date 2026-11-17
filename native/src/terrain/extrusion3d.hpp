@@ -24,15 +24,15 @@ private:
     struct LabelSpan {
         double start_m = 0.;
         double end_m = 0.;
-        rider::SurfaceLabel label = rider::SurfaceLabel::hardpack;
+        ::rider::SurfaceLabel label = ::rider::SurfaceLabel::hardpack;
     };
 
-    [[nodiscard]] rider::SurfaceLabel label_at(double x_m) const noexcept;
+    [[nodiscard]] ::rider::SurfaceLabel label_at(double x_m) const noexcept;
 
     std::vector<double> xs_;
     std::vector<double> zs_;
     SignedProfile signed_profile_;
-    rider::SurfaceLabel default_label_ = rider::SurfaceLabel::hardpack;
+    ::rider::SurfaceLabel default_label_ = ::rider::SurfaceLabel::hardpack;
     std::vector<LabelSpan> sections_;
     TerrainBounds3d bounds_{};
     std::string sha256_hex_{};

@@ -23,7 +23,7 @@ public:
     // `elevations_xy` has length nx * ny in transverse-slice order: index = ix * ny + iy.
     // `cell_surfaces_xy` has length (nx - 1) * (ny - 1) in order: cell = ix * (ny - 1) + iy.
     Grid3d(Grid3dSpec spec, std::vector<double> elevations_xy,
-           std::vector<rider::SurfaceLabel> cell_surfaces_xy);
+           std::vector<::rider::SurfaceLabel> cell_surfaces_xy);
 
     [[nodiscard]] const Grid3dSpec& spec() const noexcept { return spec_; }
     [[nodiscard]] const TerrainBounds3d& bounds() const noexcept { return bounds_; }
@@ -46,7 +46,7 @@ private:
 
     Grid3dSpec spec_{};
     std::vector<double> elevations_xy_;
-    std::vector<rider::SurfaceLabel> cell_surfaces_xy_;
+    std::vector<::rider::SurfaceLabel> cell_surfaces_xy_;
     std::vector<CellZRange> cell_z_ranges_;
     TerrainBounds3d bounds_{};
     std::string sha256_hex_{};

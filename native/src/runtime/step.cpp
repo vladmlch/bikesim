@@ -14,6 +14,7 @@
 #include <bit>
 #include <cmath>
 #include <functional>
+#include <limits>
 #include <ranges>
 #include <stdexcept>
 #include <utility>
@@ -23,9 +24,10 @@
 #include "../engine_call.hpp"
 #include "../numeric_sum.hpp"
 #include "../rider/rider_posture.hpp"
-#include "../rider/response_codec.hpp"
-#include "value_readers.hpp"
 #include "../stepper.hpp"
+#include "../rider/response_codec.hpp"
+#include "../spatial/frames.hpp"
+#include "value_readers.hpp"
 #include "../writers/cruise.hpp"
 #include "../writers/drivetrain.hpp"
 #include "../writers/resistance.hpp"
@@ -230,6 +232,42 @@ double snapshot_axis_moment(const TireSnapshot &s) {
         const double moment = rz * f[0] - rx * f[2];
         acc.add(p.native_world_force_n || p.couple_world_nm[1] != 0.
             ? moment + p.couple_world_nm[1] : moment);
+    }
+    return acc.total();
+}
+std::array<double, 3> patch_tangent_3d(
+    const std::array<double, 3> &spin_axis,
+    const std::array<double, 3> &normal) noexcept {
+    const std::array<double, 3> raw{
+        spin_axis[1] * normal[2] - spin_axis[2] * normal[1],
+        spin_axis[2] * normal[0] - spin_axis[0] * normal[2],
+        spin_axis[0] * normal[1] - spin_axis[1] * normal[0]};
+    const double nrm =
+        std::sqrt(raw[0] * raw[0] + raw[1] * raw[1] + raw[2] * raw[2]);
+    if (nrm > 1e-12)
+        return {raw[0] / nrm, raw[1] / nrm, raw[2] / nrm};
+    return {normal[2], 0., -normal[0]};
+}
+double snapshot_axis_moment_3d(const TireSnapshot &s,
+                               const std::array<double, 3> &spin_axis) {
+    NeumaierSum acc;
+    for (const auto &p: s.patches) {
+        const auto f = patch_world_force(p);
+        const double rx = p.point_m[0] - s.wheel_axis_m[0];
+        const double ry = p.point_m[1] - s.wheel_axis_m[1];
+        const double rz = p.point_m[2] - s.wheel_axis_m[2];
+        const std::array<double, 3> moment_vec{
+            ry * f[2] - rz * f[1],
+            rz * f[0] - rx * f[2],
+            rx * f[1] - ry * f[0]};
+        const double moment = spin_axis[0] * moment_vec[0] +
+                              spin_axis[1] * moment_vec[1] +
+                              spin_axis[2] * moment_vec[2];
+        const double couple = spin_axis[0] * p.couple_world_nm[0] +
+                              spin_axis[1] * p.couple_world_nm[1] +
+                              spin_axis[2] * p.couple_world_nm[2];
+        acc.add(p.native_world_force_n || couple != 0. ? moment + couple
+                                                       : moment);
     }
     return acc.total();
 }
@@ -1022,6 +1060,17 @@ double closure_stored_energy(const mjData *data) {
 
 // ---- construction ------------------------------------------------------
 
+struct SpatialStepExtension {
+    int root_free_qposadr = -1;
+    int root_free_dofadr = -1;
+    int steer_qposadr = -1;
+    int steer_dofadr = -1;
+    double direct_steer_torque_nm = 0.0;
+    std::vector<double> steer_qfrc;
+};
+
+PhysicalStep::~PhysicalStep() = default;
+
 PhysicalStep::PhysicalStep(
     Stepper &stepper, StepConfig config,
     std::vector<std::array<double, 2>> vertices, StaticBrake brake,
@@ -1043,7 +1092,11 @@ PhysicalStep::PhysicalStep(
       balance_monitor_(config_.monitors.balance_floor_mps,
                        config_.monitors.balance_dwell_s,
                        config_.monitors.balance_grace_s),
-      crash_detector_(stepper.model()),
+      crash_detector_(
+          stepper.model(), 60.0,
+          config_.spatial ? config_.spatial->capsize_roll_rad : 1.0,
+          config_.spatial ? config_.spatial->corridor_half_width_m
+                          : std::numeric_limits<double>::infinity()),
       accumulator_(stepper_->model()->nv) {
     const mjModel *m = stepper_->model();
     if (rider_pose.has_value() != rider_config.has_value())
@@ -1055,9 +1108,49 @@ PhysicalStep::PhysicalStep(
     drive_ctrl_adr_ = mj_name2id(m, mjOBJ_ACTUATOR, "rear_drive");
     cg_site_id_ = mj_name2id(m, mjOBJ_SITE, "site_CG");
     frame_body_ = mj_name2id(m, mjOBJ_BODY, "frame");
-    root_x_qposadr_ = joint_qposadr(m, "root_x");
-    root_x_dofadr_ = joint_dofadr(m, "root_x");
-    root_pitch_qposadr_ = joint_qposadr(m, "root_pitch");
+    const int root_x_id = mj_name2id(m, mjOBJ_JOINT, "root_x");
+    const int root_pitch_id = mj_name2id(m, mjOBJ_JOINT, "root_pitch");
+    if (root_x_id >= 0 && root_pitch_id >= 0) {
+        root_x_qposadr_ = joint_qposadr(m, "root_x");
+        root_x_dofadr_ = joint_dofadr(m, "root_x");
+        root_pitch_qposadr_ = joint_qposadr(m, "root_pitch");
+    } else {
+        const int root_free_id = mj_name2id(m, mjOBJ_JOINT, "root_free");
+        if (root_free_id >= 0) {
+            const auto jtypes = ibuf(m->jnt_type, m->njnt);
+            if (jtypes[static_cast<std::size_t>(root_free_id)] != mjJNT_FREE)
+                throw std::invalid_argument("root_free must be a freejoint");
+            const auto qposadr = ibuf(m->jnt_qposadr, m->njnt);
+            const auto dofadr = ibuf(m->jnt_dofadr, m->njnt);
+            const int free_qpos =
+                qposadr[static_cast<std::size_t>(root_free_id)];
+            const int free_dof =
+                dofadr[static_cast<std::size_t>(root_free_id)];
+            root_x_qposadr_ = free_qpos;
+            root_x_dofadr_ = free_dof;
+            root_pitch_qposadr_ = free_qpos + 4;
+            const int steer_id = mj_name2id(m, mjOBJ_JOINT, "steer_joint");
+            const int steer_qp =
+                steer_id >= 0 ? qposadr[static_cast<std::size_t>(steer_id)]
+                              : -1;
+            const int steer_df =
+                steer_id >= 0 ? dofadr[static_cast<std::size_t>(steer_id)]
+                              : -1;
+            spatial_ = std::make_unique<SpatialStepExtension>(
+                SpatialStepExtension{
+                    .root_free_qposadr = free_qpos,
+                    .root_free_dofadr = free_dof,
+                    .steer_qposadr = steer_qp,
+                    .steer_dofadr = steer_df,
+                    .direct_steer_torque_nm = 0.0,
+                    .steer_qfrc = std::vector<double>(
+                        static_cast<std::size_t>(m->nv), 0.0)});
+        } else {
+            root_x_qposadr_ = joint_qposadr(m, "root_x");
+            root_x_dofadr_ = joint_dofadr(m, "root_x");
+            root_pitch_qposadr_ = joint_qposadr(m, "root_pitch");
+        }
+    }
     shock_stroke_jnt_ = mj_name2id(m, mjOBJ_JOINT, "shock_stroke");
     crank_spin_qposadr_ = joint_qposadr(m, "crank_spin");
     crank_spin_dof_ = joint_dofadr(m, "crank_spin");
@@ -1080,7 +1173,8 @@ PhysicalStep::PhysicalStep(
     {
         const mjData *d = stepper_->data();
         update_rider_senses(settled_grip_entries(), current_wheel_x_m(),
-                            current_frame_up(), buf(d->qvel, m->nv));
+                            current_frame_up(), buf(d->qvel, m->nv),
+                            buf(d->qpos, m->nq));
     }
     // native_reference has no applied tire writer: its solved contact
     // rows are read by RuntimeContactQuery after the engine solve.
@@ -1141,6 +1235,66 @@ PhysicalStep::PhysicalStep(
 
 std::string_view PhysicalStep::drive_mode() const {
     return stepper_->drive().config().drive_mode;
+}
+
+void PhysicalStep::set_direct_steer_torque_nm(double torque_nm) {
+    if (!std::isfinite(torque_nm))
+        throw std::invalid_argument("direct steer torque must be finite");
+    if (spatial_ == nullptr || spatial_->steer_dofadr < 0)
+        throw std::logic_error(
+            "direct steer torque requires a spatial model with steer_joint");
+    spatial_->direct_steer_torque_nm = torque_nm;
+}
+
+double PhysicalStep::direct_steer_torque_nm() const noexcept {
+    return spatial_ != nullptr ? spatial_->direct_steer_torque_nm : 0.0;
+}
+
+int PhysicalStep::steer_qposadr() const noexcept {
+    return spatial_ != nullptr ? spatial_->steer_qposadr : -1;
+}
+
+int PhysicalStep::steer_dofadr() const noexcept {
+    return spatial_ != nullptr ? spatial_->steer_dofadr : -1;
+}
+
+std::pair<double, double> PhysicalStep::measure_energy_and_scale() {
+    return stepper_->mutate([&]() -> std::pair<double, double> {
+        auto [mass, elastic, total] = energy_state();
+        NeumaierSum sum;
+        for (const auto &[name, value] : elastic) {
+            (void)name;
+            sum.add(wire_scalar(value));
+        }
+        return {total, std::max(1.0, mass.kinetic_energy_j + sum.total())};
+    });
+}
+
+double PhysicalStep::forward_speed_mps(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (qpos, qvel) state spans
+    std::span<const double> qpos,
+    std::span<const double> qvel) const noexcept {
+    if (spatial_ == nullptr)
+        return qvel[static_cast<std::size_t>(root_x_dofadr_)];
+    const auto qa = static_cast<std::size_t>(spatial_->root_free_qposadr);
+    const auto da = static_cast<std::size_t>(spatial_->root_free_dofadr);
+    const bike::spatial::Quat quat = bike::spatial::quat_normalized(
+        {qpos[qa + 3U], qpos[qa + 4U], qpos[qa + 5U], qpos[qa + 6U]});
+    const bike::spatial::Vec3 fwd =
+        bike::spatial::rotate_body_to_world(quat, {1.0, 0.0, 0.0});
+    return fwd[0] * qvel[da] + fwd[1] * qvel[da + 1U] +
+           fwd[2] * qvel[da + 2U];
+}
+
+double PhysicalStep::frame_pitch_rad(
+    std::span<const double> qpos) const noexcept {
+    if (spatial_ == nullptr)
+        return qpos[static_cast<std::size_t>(root_pitch_qposadr_)];
+    const auto qa = static_cast<std::size_t>(spatial_->root_free_qposadr);
+    const bike::spatial::Quat quat{
+        qpos[qa + 3U], qpos[qa + 4U], qpos[qa + 5U], qpos[qa + 6U]};
+    const auto att = bike::spatial::euler_zyx(quat);
+    return std::isfinite(att.pitch_rad) ? att.pitch_rad : 0.0;
 }
 
 bool PhysicalStep::posvel_fresh() {
@@ -1320,20 +1474,32 @@ PhysicalStep::apply_forces_body(
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
         // dof_frictionloss is a position-stage model input — a bound that
         // actually changed invalidates the cached makeConstraint rows.
-        if (brake_.apply(m, brakes.final_front, brakes.final_rear))
-            stepper_->note_posvel_stale();
-        // The latched elastic bite at standstill; an advancing pass may
-        // latch or release, a probe reads the committed latch
-        // (static_braking.py hold_qfrc — physical_runtime.py:296).
-        // The relaxation field (active=false) re-seats a saturated bite:
-        // its latch captures the initial angle, and a wheel that creeps
-        // past the clip wind-up would otherwise hold a permanently
-        // saturated torque the friction bound cannot cancel — a residual
-        // floor the equilibrium probe never decays below (the savage
-        // settle defect).
-        std::vector<double> brake_hold =
-            brake_.hold_qfrc(m, d, brakes.final_front, brakes.final_rear,
-                             advance, !active);
+        // When unified_ceiling is enabled (spatial 3D), hold_qfrc evaluates
+        // first and apply_remaining_budget caps dof_frictionloss to
+        // ceiling_nm * u - |tau_hold|.
+        std::vector<double> brake_hold;
+        if (brake_.hold_spec().unified_ceiling) {
+            brake_hold = brake_.hold_qfrc(m, d, brakes.final_front,
+                                          brakes.final_rear, advance, !active);
+            if (brake_.apply_remaining_budget(m, brakes.final_front,
+                                              brakes.final_rear, brake_hold))
+                stepper_->note_posvel_stale();
+        } else {
+            if (brake_.apply(m, brakes.final_front, brakes.final_rear))
+                stepper_->note_posvel_stale();
+            // The latched elastic bite at standstill; an advancing pass may
+            // latch or release, a probe reads the committed latch
+            // (static_braking.py hold_qfrc — physical_runtime.py:296).
+            // The relaxation field (active=false) re-seats a saturated bite:
+            // its latch captures the initial angle, and a wheel that creeps
+            // past the clip wind-up would otherwise hold a permanently
+            // saturated torque the friction bound cannot cancel — a residual
+            // floor the equilibrium probe never decays below (the savage
+            // settle defect).
+            brake_hold =
+                brake_.hold_qfrc(m, d, brakes.final_front, brakes.final_rear,
+                                 advance, !active);
+        }
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -1448,8 +1614,8 @@ PhysicalStep::apply_forces_body(
         const drivetrain::TickInputs tick_inputs{
             .control = drive_control,
             .dt = dt,
-            .speed = buf(d->qvel, m->nv)[static_cast<std::size_t>(
-                root_x_dofadr_)],
+            .speed = forward_speed_mps(buf(d->qpos, m->nq),
+                                       buf(d->qvel, m->nv)),
             .sensed = sensed,
             // Task 4: .braking stays the caller-only predicate the
             // legs-pedaling fallback reads; .motor_braking is the
@@ -1468,6 +1634,13 @@ PhysicalStep::apply_forces_body(
             accumulator_.add(tick.component_names[i],
                              tick.components[i].values);
         stepper_->drive().commit(tick);
+        if (active && spatial_ != nullptr && spatial_->steer_dofadr >= 0 &&
+            spatial_->direct_steer_torque_nm != 0.0) {
+            std::ranges::fill(spatial_->steer_qfrc, 0.0);
+            spatial_->steer_qfrc[static_cast<std::size_t>(
+                spatial_->steer_dofadr)] = spatial_->direct_steer_torque_nm;
+            accumulator_.add("act_rider_steer", spatial_->steer_qfrc);
+        }
         if (rider_control_.has_value()) {
             std::optional<double> crank_goal = pedaling.target_phase_rad;
             if (!active && stepper_->drive().transmission_storage() != nullptr)
@@ -1692,8 +1865,7 @@ RawStep PhysicalStep::advance_body(
         std::vector<double> v = buffer_copy(d->qvel, m->nv);
         const bool braking = front > 0. || rear > 0.;
         const double hold = rollback_brake_demand(
-            buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
-            &control);
+            forward_speed_mps(q, v), &control);
         // Launch part 1, task 4: one resolution per physical step —
         // caller braking is read BEFORE the rollback merge (the reflex
         // alone never coasts the legs or declares motor braking), then
@@ -1902,7 +2074,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             update_intent_signals(signals_in);
         }
         update_rider_senses(in.settle.entries, senses_wheel_x,
-                            senses_frame_up, v);
+                            senses_frame_up, v, q);
         in.loss_step = loss_increment(components, in.qvel_mid, dt);
         if (rider_control_.has_value())
             in.rider_diag =
@@ -2263,9 +2435,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
                 .time_s = t,
                 .position_m =
                     q[static_cast<std::size_t>(root_x_qposadr_)],
-                .pitch_rad =
-                    q[static_cast<std::size_t>(
-                        root_pitch_qposadr_)]});
+                .pitch_rad = frame_pitch_rad(q)});
         crash_detector_.check(d, contacts_);
         update_compiled_com_marker();
         return raw;
@@ -2494,8 +2664,32 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
                        : contact_query_.rear_id)]);
         const auto jac =
             point_jacobian(m, d, body, s.wheel_axis_m);
-        const double omega =
-            dot(std::span<const double>(jac.jr).subspan(nv, nv), qvel);
+        std::array<double, 3> spin_axis{0., 1., 0.};
+        double omega = 0.;
+        if (spatial_ != nullptr) {
+            const auto xmat = buf(d->xmat, 9 * m->nbody);
+            const std::size_t off = 9U * static_cast<std::size_t>(body);
+            const std::array<double, 3> raw_axis{
+                xmat[off + 1U], xmat[off + 4U], xmat[off + 7U]};
+            const double axis_norm = std::sqrt(
+                raw_axis[0] * raw_axis[0] + raw_axis[1] * raw_axis[1] +
+                raw_axis[2] * raw_axis[2]);
+            if (axis_norm > 0.) {
+                spin_axis = {raw_axis[0] / axis_norm, raw_axis[1] / axis_norm,
+                             raw_axis[2] / axis_norm};
+            }
+            omega =
+                spin_axis[0] *
+                    dot(std::span<const double>(jac.jr).subspan(0, nv), qvel) +
+                spin_axis[1] *
+                    dot(std::span<const double>(jac.jr).subspan(nv, nv), qvel) +
+                spin_axis[2] *
+                    dot(std::span<const double>(jac.jr).subspan(2 * nv, nv),
+                        qvel);
+        } else {
+            omega =
+                dot(std::span<const double>(jac.jr).subspan(nv, nv), qvel);
+        }
         const std::array<double, 3> velocity = {
             dot(std::span<const double>(jac.jp).subspan(0, nv), qvel),
             dot(std::span<const double>(jac.jp).subspan(nv, nv), qvel),
@@ -2527,14 +2721,20 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         const double slip = nl > 0. ? slip_num.total() / nl : 0.;
         NeumaierSum roll_num;
         for (const auto &p: s.patches) {
-            const std::array<double, 3> tangent{
-                patch_tangent_component(p, 0),
-                patch_tangent_component(p, 1),
-                patch_tangent_component(p, 2)};
+            const std::array<double, 3> tangent =
+                spatial_ != nullptr
+                    ? patch_tangent_3d(spin_axis, p.normal)
+                    : std::array<double, 3>{patch_tangent_component(p, 0),
+                                            patch_tangent_component(p, 1),
+                                            patch_tangent_component(p, 2)};
             roll_num.add(dot(velocity, tangent) * p.normal_load_n);
         }
         const double roll_speed =
-            nl > 0. ? roll_num.total() / nl : velocity[0];
+            nl > 0. ? roll_num.total() / nl
+                    : (spatial_ != nullptr
+                           ? dot(velocity, patch_tangent_3d(
+                                               spin_axis, {0., 0., 1.}))
+                           : velocity[0]);
         // dict(diagnostics, ...) — the backend's own diagnostic key set
         // starts the row; observation keys then override/append in the
         // oracle's keyword order.
@@ -2575,7 +2775,9 @@ WireObject PhysicalStep::tire_channels(const WheelSnapshots &snapshots,
         wire_set(side, "effective_radius_m", Wire(s.effective_radius_m));
         wire_set(side, "wheel_axis_m", wire_vec3(s.wheel_axis_m));
         wire_set(side, "wheel_axis_moment_nm",
-                 Wire(snapshot_axis_moment(s)));
+                 Wire(spatial_ != nullptr
+                          ? snapshot_axis_moment_3d(s, spin_axis)
+                          : snapshot_axis_moment(s)));
         wire_set(side, "omega_abs_rad_s", Wire(omega));
         wire_set(side, "omega_rel_rad_s",
                  Wire(qvel[static_cast<std::size_t>(
@@ -2744,8 +2946,7 @@ double PhysicalStep::loss_increment(
     // to the closure channel (accounting.cpp raw_work), never a loss —
     // AGENTS.md «Передача», 2026-11-05.
     if (stepper_->has_tire())
-        loss += stepper_->tire_writer().brush_loss_step_j() +
-            stepper_->tire_writer().radial_dissipation_power_w() * dt;
+        loss += stepper_->tire_writer().step_loss_j(velocity, dt);
     if (stepper_->has_rider_contacts()) {
         const auto &rc = stepper_->rider_contacts().state();
         loss += rc.loss_step_j + rc.radial_dissipation_power_w * dt;
@@ -2795,8 +2996,8 @@ WireObject
 PhysicalStep::balance_channel(const BrakeResolution &brakes) {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
-    const double speed_mps =
-        buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)];
+    const double speed_mps = forward_speed_mps(
+        buf(d->qpos, m->nq), buf(d->qvel, m->nv));
     const auto &bal = balance_monitor_.state();
     const bool grace_spent =
         bal.started_s.has_value() && bal.grace_left_s <= 1e-12;
@@ -2883,7 +3084,9 @@ void PhysicalStep::update_rider_senses(
         settled_entries,
     std::span<const double, 2> wheel_x_m,
     std::span<const double, 3> frame_up,
-    std::span<const double> qvel_start) {
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) preserve defaultless legacy arg order
+    std::span<const double> qvel_start,
+    std::span<const double> qpos_start) {
     rider::RiderSenses s = rider_senses_;
     // The settled weld reactions this instant's settle latched — grip
     // entries carry the world-frame force on the rider, projected on the
@@ -2897,7 +3100,11 @@ void PhysicalStep::update_rider_senses(
             hand_press_n += blas::ddot(3, entry.force_on_rider_n.data(),
                                      1, frame_up.data(), 1);
     s.hand_press_n = hand_press_n;
-    s.speed_mps = qvel_start[static_cast<std::size_t>(root_x_dofadr_)];
+    const std::span<const double> qpos_eff =
+        qpos_start.empty()
+            ? buf(stepper_->data()->qpos, stepper_->model()->nq)
+            : qpos_start;
+    s.speed_mps = forward_speed_mps(qpos_eff, qvel_start);
     if (stepper_->has_drive())
         s.rear_teeth = stepper_->drive().state().shifting.rear_teeth;
     s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
@@ -3082,6 +3289,7 @@ void PhysicalStep::restore(const StepState &s) {
     // The queued one-shot is transient input, not serialized state: a
     // restored episode starts with no reposition pending.
     pending_reposition_ = false;
+    if (spatial_ != nullptr) spatial_->direct_steer_torque_nm = 0.0;
 }
 
 } // namespace runtime

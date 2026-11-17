@@ -28,7 +28,7 @@ struct TerrainSample3d {
     QueryStatus3d status = QueryStatus3d::invalid_input;
     double height_m = 0.;
     Vec3d normal_world{0., 0., 1.};
-    rider::SurfaceLabel surface = rider::SurfaceLabel::hardpack;
+    ::rider::SurfaceLabel surface = ::rider::SurfaceLabel::hardpack;
 };
 
 // Closest point on z = h(x, y) within [x - window, x + window] x [y - window, y + window]
@@ -40,7 +40,7 @@ struct TorusClosestPoint3d {
     double signed_distance_m = 0.;
     Vec3d surface_point_world_m{};
     Vec3d normal_world{0., 0., 1.};
-    rider::SurfaceLabel surface = rider::SurfaceLabel::hardpack;
+    ::rider::SurfaceLabel surface = ::rider::SurfaceLabel::hardpack;
 };
 
 } // namespace bike::terrain

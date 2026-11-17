@@ -112,11 +112,11 @@ Grid3d build_overlay_grid3d(const TrackSpec& base_track, const Terrain3dOverlayS
     }
 
     const SurfaceMap smap = base_track.surface_map();
-    std::vector<rider::SurfaceLabel> cell_surfaces((nx - 1) * (ny - 1), rider::SurfaceLabel::hardpack);
+    std::vector<::rider::SurfaceLabel> cell_surfaces((nx - 1) * (ny - 1), ::rider::SurfaceLabel::hardpack);
     for (std::size_t ix = 0; ix + 1 < nx; ++ix) {
         const double x_mid = 0.5 * (base_pts[ix][0] + base_pts[ix + 1][0]);
         const std::string& sname = smap.at(x_mid).name;
-        const auto lbl = rider::surface_label(sname);
+        const auto lbl = ::rider::surface_label(sname);
         if (!lbl.has_value()) {
             throw std::invalid_argument("build_overlay_grid3d: unknown surface '" + sname + "'");
         }

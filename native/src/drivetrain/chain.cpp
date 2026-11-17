@@ -65,6 +65,49 @@ namespace drivetrain {
         return id;
     }
 
+    double relative_sagittal_angle(const mjModel *m, const mjData *d,
+                                   int reference_body, int body) {
+        if (m == nullptr || d == nullptr)
+            throw std::invalid_argument("geometry: null model or data");
+        model_access::require_id(reference_body, m->nbody, "geometry.reference_body");
+        if (reference_body == 0)
+            throw std::invalid_argument(
+                "geometry.reference_body: requires physical body ID");
+        model_access::require_id(body, m->nbody, "geometry.body");
+        if (body == 0)
+            throw std::invalid_argument("geometry.body: requires physical body ID");
+        const mjtSize xmat_count = static_cast<mjtSize>(model_access::checked_product(
+            static_cast<std::size_t>(model_access::kRotationElements),
+            static_cast<std::size_t>(m->nbody),
+            static_cast<std::size_t>(std::numeric_limits<mjtSize>::max())));
+        const auto xmat = model_access::readonly_buffer(d->xmat, xmat_count);
+        const auto stride = static_cast<std::size_t>(model_access::kRotationElements);
+        const auto ref_rot = xmat.subspan(
+            stride * static_cast<std::size_t>(reference_body), stride);
+        const auto body_rot = xmat.subspan(
+            stride * static_cast<std::size_t>(body), stride);
+        for (const double value : ref_rot)
+            finite(value, "geometry.reference_rotation");
+        for (const double value : body_rot)
+            finite(value, "geometry.rotation");
+        const double rel_01 =
+            ref_rot[0] * body_rot[1] + ref_rot[3] * body_rot[4] + ref_rot[6] * body_rot[7];
+        const double rel_11 =
+            ref_rot[1] * body_rot[1] + ref_rot[4] * body_rot[4] + ref_rot[7] * body_rot[7];
+        const double rel_21 =
+            ref_rot[2] * body_rot[1] + ref_rot[5] * body_rot[4] + ref_rot[8] * body_rot[7];
+        if (!std::isfinite(rel_01) || !std::isfinite(rel_11) || !std::isfinite(rel_21) ||
+            std::abs(rel_01) > 1e-6 || std::abs(rel_21) > 1e-6 || rel_11 <= 1. - 1e-6)
+            throw std::invalid_argument(
+                "relative sagittal angle requires aligned local +Y axes");
+        const double c =
+            ref_rot[0] * body_rot[0] + ref_rot[3] * body_rot[3] + ref_rot[6] * body_rot[6];
+        const double s_neg =
+            ref_rot[2] * body_rot[0] + ref_rot[5] * body_rot[3] + ref_rot[8] * body_rot[6];
+        return validation::derived(std::atan2(-s_neg, c),
+                                   "geometry.relative_sagittal_angle");
+    }
+
     ChainGeometry chain_geometry(Vec2 front, Vec2 rear, double rf, double rr, Vec2 up,
                                  std::optional<double> reference) {
         for (double const v: front)

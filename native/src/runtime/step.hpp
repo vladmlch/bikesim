@@ -28,6 +28,7 @@
 #include "../rider/intent.hpp"
 #include "../rider/senses.hpp"
 #include "../rider/spindle_controller.hpp"
+#include "../spatial/types.hpp"
 #include "../writers/rider_contacts.hpp"
 #include "../writers/tire.hpp"
 #include "../writers/writer_types.hpp"
@@ -41,6 +42,7 @@ namespace bike::golden { class RuntimeAccess; }
 
 namespace runtime {
 struct PresentationState;
+struct SpatialStepExtension;
 
 // The step-owned slice of the runtime config — decoded in the binding.
 // `monitors`, `intent` and rollback thresholds arrive prevalidated;
@@ -70,6 +72,8 @@ struct StepConfig {
     // The track's surface-label map — the senses fold's lookup for the
     // front-wheel and lookahead labels.
     rider::SurfaceLabels surface_labels{};
+    // Opt-in spatial 3D configuration (nullopt in planar mode).
+    std::optional<bike::spatial::SpatialConfig> spatial{};
 };
 
 // constraint_forces.py ConstraintForceSnapshot — solved-limit forces for
@@ -279,7 +283,7 @@ public:
 
     // Immovable like the oracle's runtime: members own model pointers and
     // the rider controller emplaces in place.
-    ~PhysicalStep() = default;
+    ~PhysicalStep();
     PhysicalStep(const PhysicalStep &) = delete;
     PhysicalStep &operator=(const PhysicalStep &) = delete;
     PhysicalStep(PhysicalStep &&) = delete;
@@ -408,6 +412,14 @@ public:
     [[nodiscard]] bool rider_commands_overridden() const noexcept {
         return rider_commands_override_.has_value();
     }
+    [[nodiscard]] bool is_spatial() const noexcept {
+        return spatial_ != nullptr;
+    }
+    void set_direct_steer_torque_nm(double torque_nm);
+    [[nodiscard]] double direct_steer_torque_nm() const noexcept;
+    [[nodiscard]] int steer_qposadr() const noexcept;
+    [[nodiscard]] int steer_dofadr() const noexcept;
+    [[nodiscard]] std::pair<double, double> measure_energy_and_scale();
 
 private:
     // Freshness predicate for the mjSTAGE_VEL-skip fast path: drains the
@@ -515,7 +527,13 @@ private:
             settled_entries,
         std::span<const double, 2> wheel_x_m,
         std::span<const double, 3> frame_up,
-        std::span<const double> qvel_start);
+        std::span<const double> qvel_start,
+        std::span<const double> qpos_start = {});
+    [[nodiscard]] double forward_speed_mps(
+        std::span<const double> qpos,
+        std::span<const double> qvel) const noexcept;
+    [[nodiscard]] double frame_pitch_rad(
+        std::span<const double> qpos) const noexcept;
     // Current wheel positions and the frame up axis from the live data's
     // kinematics — the startup callers' sources (the interval fold stages
     // its own copies before settle_welds republishes endpoint kinematics).
@@ -678,6 +696,7 @@ private:
     std::array<std::size_t, 2> patch_working_capacity_{};
     // rider_state wheel_x_m staging ('front','rear' order).
     std::array<double, 2> wheel_x_m_{};
+    std::unique_ptr<SpatialStepExtension> spatial_;
 };
 
 } // namespace runtime

@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 #include <map>
 #include <optional>
 #include <span>
@@ -353,10 +354,15 @@ struct CrashEvent {
 
 class CrashDetector {
 public:
-    // __init__ resolves root_x/root_pitch qpos addresses; the 60 deg
-    // default matches CRASH_PITCH_LIMIT_DEG.
-    explicit CrashDetector(const mjModel *model,
-                           double pitch_limit_deg = 60.0);
+    // __init__ resolves root_x/root_pitch (or root_free in spatial 3D) qpos
+    // addresses; the 60 deg default matches CRASH_PITCH_LIMIT_DEG.
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (pitch_limit_deg, capsize_roll_rad, corridor_half_width_m) crash detector thresholds
+    explicit CrashDetector(
+        const mjModel *model,
+        double pitch_limit_deg = 60.0,
+        double capsize_roll_rad = 1.0,
+        double corridor_half_width_m =
+            std::numeric_limits<double>::infinity());
     // check() latches the first cause; a latched event sticks.
     std::optional<CrashEvent> check(const mjData *data,
                                     const RuntimeContacts &contacts);
@@ -376,6 +382,10 @@ public:
 
 private:
     mjtSize nq_ = 0;
+    bool has_root_free_ = false;
+    double capsize_roll_rad_ = 1.0;
+    double corridor_half_width_m_ =
+        std::numeric_limits<double>::infinity();
     std::optional<CrashEvent> event_;
 };
 

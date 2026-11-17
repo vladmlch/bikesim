@@ -1,5 +1,6 @@
 #include "builder_internal.hpp"
 #include "../diag.hpp"
+#include <stdexcept>
 
 namespace bike::model::detail {
 namespace {
@@ -69,8 +70,16 @@ void build_steering_and_fork(Element& frame,BuildContext& c) {
     const auto relative=sub(p11,ht),axis=div(relative,geometry::detail::np_norm3(relative)),axle=sub(fa,ht);
     auto& steer=body(frame,"steer",ht);
     const auto& mode=c.request.mode;
-    if(mode=="ride")
-        joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-0.01 0.01"},{"stiffness","50000"}});
+    if(mode=="ride") {
+        if(c.is_spatial() && c.request.spatial.has_value()) {
+            const double range_deg=c.request.spatial->steer.range_deg;
+            if(!std::isfinite(range_deg) || range_deg<=0. || range_deg>75.)
+                throw std::invalid_argument("spatial.steer.range_deg must lie in (0, 75] deg");
+            joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"damping","0"},{"stiffness","0"},{"limited","true"},{"range",f(-range_deg)+" "+f(range_deg)}});
+        } else {
+            joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-0.01 0.01"},{"stiffness","50000"}});
+        }
+    }
     else joint(steer,"steer_joint","hinge",{{"axis",vec(axis)},{"range","-60 60"}});
     tube(steer,"geom_steerer_tube","cylinder",{},relative,"0.014","0.25","mat_metal");
     const auto stem=add(relative,{.04,0.,.02});

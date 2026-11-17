@@ -101,7 +101,7 @@ namespace drivetrain {
           pedaling_scratch_(config_.policies.pedaling),
           shifting_scratch_(config_.policies.gearing, config_.policies.shifting),
           assist_scratch_(config_.policies.assist) {
-        if (m->nq != m->nv)
+        if (m->nq != m->nv && config_.transmission_model != "ideal_mid_drive")
             throw std::invalid_argument(
                 "physical chain supports scalar planar coordinates only (nq == nv)");
         for (const char *name: {
@@ -184,7 +184,10 @@ namespace drivetrain {
     }
 
     double DrivetrainWriter::angle(int body, std::optional<double> reference) {
-        const double raw = geometry_.angle(model_, data_, body, false);
+        const double raw =
+                model_->nq == model_->nv
+                    ? geometry_.angle(model_, data_, body, false)
+                    : relative_sagittal_angle(model_, data_, frame_, body);
         return reference ? unwrap(raw, *reference) : raw;
     }
 

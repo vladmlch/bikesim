@@ -73,6 +73,10 @@ public:
     [[nodiscard]] static std::span<const std::string_view>
     component_names() noexcept;
 
+    [[nodiscard]] bool allow_spatial() const noexcept {
+        return cfg_.allow_spatial;
+    }
+
 private:
     const mjModel *m_ = nullptr; // non-owning; the Stepper outlives the writer
     nativecfg::ResistanceConfig cfg_;

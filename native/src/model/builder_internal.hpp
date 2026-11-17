@@ -49,6 +49,7 @@ struct BuildContext {
     bool crank_joint;
     MassRegistry registry;
     [[nodiscard]] bool physical() const { return physics && physics->physics_mode=="physical"; }
+    [[nodiscard]] bool is_spatial() const noexcept { return request.spatial.has_value(); }
     MassRegistry* mass_registry() { return physical()? &registry : nullptr; }
 };
 void build_visual_and_assets(Element& root);

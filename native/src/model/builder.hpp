@@ -10,6 +10,7 @@
 #include "../configuration/model_config.hpp"
 #include "../geometry/specs.hpp"
 #include "../kinematics/solver.hpp"
+#include "../spatial/types.hpp"
 #include "../terrain/types.hpp"
 #include "mass.hpp"
 #include "rider_geometry.hpp"
@@ -30,6 +31,7 @@ struct BuildRequest {
     bool crank_joint = false;
     double gear_ratio = 32.0 / 14.0;
     std::optional<configuration::SimulationPhysicsConfig> physics;
+    std::optional<bike::spatial::SpatialConfig> spatial{};
 };
 
 [[nodiscard]] std::string generate_mjcf(const BuildRequest& request);

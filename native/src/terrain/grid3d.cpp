@@ -74,7 +74,7 @@ void extract_stencil(const Grid3d& grid, std::size_t ix, std::size_t iy,
 } // namespace
 
 Grid3d::Grid3d(Grid3dSpec spec, std::vector<double> elevations_xy,
-               std::vector<rider::SurfaceLabel> cell_surfaces_xy)
+               std::vector<::rider::SurfaceLabel> cell_surfaces_xy)
     : spec_(spec),
       elevations_xy_(std::move(elevations_xy)),
       cell_surfaces_xy_(std::move(cell_surfaces_xy)) {
@@ -155,7 +155,7 @@ Grid3d::Grid3d(Grid3dSpec spec, std::vector<double> elevations_xy,
     for (const double z : elevations_xy_) {
         hash_f64(hasher, z);
     }
-    for (const rider::SurfaceLabel s : cell_surfaces_xy_) {
+    for (const ::rider::SurfaceLabel s : cell_surfaces_xy_) {
         const std::array<std::byte, 1> b{static_cast<std::byte>(s)};
         hasher.update(b);
     }
@@ -214,7 +214,7 @@ TorusClosestPoint3d Grid3d::closest_point(const Vec3d& center_world_m,
     double best_y = cy;
     double best_z = vertical.height_m;
     Vec3d best_surf_normal = vertical.normal_world;
-    rider::SurfaceLabel best_surface = vertical.surface;
+    ::rider::SurfaceLabel best_surface = vertical.surface;
 
     // Scan candidate cells inside [cx - R, cx + R] x [cy - R, cy + R] with exact Z-AABB pruning.
     const double x_lo = std::max(bounds_.x_min_m, cx - search_radius_m);
@@ -256,7 +256,7 @@ TorusClosestPoint3d Grid3d::closest_point(const Vec3d& center_world_m,
             }
 
             const double v_clamp = std::clamp((cy - cell_y0) * inv_dy, 0., 1.);
-            const rider::SurfaceLabel cell_surf = cell_surfaces_xy_[cell_idx];
+            const ::rider::SurfaceLabel cell_surf = cell_surfaces_xy_[cell_idx];
 
             // Fast path for flat cells: closest point is strictly (u_clamp, v_clamp).
             if (zr.z_max == zr.z_min) {

@@ -230,6 +230,7 @@ namespace nativecfg {
         std::array<double, 3> wind_world_mps{};
         std::array<double, 3> point_body_m{};
         std::string frame_body, front_wheel_body, rear_wheel_body;
+        bool allow_spatial = false;
     };
 
     // TireSpec fields (physics/tire.py:31-50) — the linear radial material the

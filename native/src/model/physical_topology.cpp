@@ -22,12 +22,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 void finish_physical_topology(Element& root,const BuildContext& c) {
     if(!c.physical()) throw std::invalid_argument("physical topology cannot modify the legacy model");
     const auto& cfg=*c.physics;const auto& drive=cfg.drive;
-    auto& steer=required(root,"body","steer");
-    for(auto* value:steer.direct("joint")) if(value->get("name")=="steer_joint") (void)steer.remove(value);
-    if(auto* sensors=root.child("sensor")) {
-        std::vector<Element*> remove;
-        for(const auto& value:sensors->children) if(value->get("joint")=="steer_joint") remove.push_back(value.get());
-        for(auto* value:remove) (void)sensors->remove(value);
+    if(!c.is_spatial()) {
+        auto& steer=required(root,"body","steer");
+        for(auto* value:steer.direct("joint")) if(value->get("name")=="steer_joint") (void)steer.remove(value);
+        if(auto* sensors=root.child("sensor")) {
+            std::vector<Element*> remove;
+            for(const auto& value:sensors->children) if(value->get("joint")=="steer_joint") remove.push_back(value.get());
+            for(auto* value:remove) (void)sensors->remove(value);
+        }
     }
     if(auto* equality=root.child("equality")) for(auto& constraint:equality->children) constraint->set("solref",g(cfg.closure_time_constant_s)+" 1");
     auto& crank=required(root,"body","crank");
@@ -85,7 +87,13 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
         auto& contact=required(owner,"geom","geom_"+prefix+"_contact");
         contact.set("priority","1");
         contact.set("friction",g(prefix=="front"?cfg.tires.front.mu:cfg.tires.rear.mu)+" 0.005 0.0001");
-        if(cfg.tires.backend=="compliant_2d" || cfg.tires.backend=="distributed_2d_reference" || cfg.tires.backend=="pneumatic")
+        bool custom_spatial_tire=false;
+        if(c.is_spatial() && c.request.spatial.has_value()) {
+            const auto backend=c.request.spatial->tire_backend;
+            custom_spatial_tire=backend==bike::spatial::SpatialTireBackend::compliant_3d ||
+                                backend==bike::spatial::SpatialTireBackend::distributed_3d;
+        }
+        if(custom_spatial_tire || cfg.tires.backend=="compliant_2d" || cfg.tires.backend=="distributed_2d_reference" || cfg.tires.backend=="pneumatic")
             for(auto* value:owner.descendants("geom")) { value->set("contype","0");value->set("conaffinity","0"); }
     }
     for(const char* name:{"frame","steer","fork_lower","chainstay","seatstay","rocker","shock_yoke","shock_shaft","shock_body"})
@@ -129,6 +137,8 @@ void finish_physical_topology(Element& root,const BuildContext& c) {
 NATIVE_DIAG_POP
 void finalize_geometric_transmission(Element& root,const configuration::SimulationPhysicsConfig& cfg) {
     if(cfg.drive.transmission_model!="geometric_ideal_mid_drive" || (cfg.drive_mode!="crank_effort" && cfg.drive_mode!="articulated_effort")) return;
+    if(!block(root,"worldbody").descendants("freejoint").empty())
+        throw std::invalid_argument("geometric ideal drive requires scalar planar joints");
     auto& tendons=block(root,"tendon");
     auto* freehub=tendons.find("fixed","geometric_mid_drive_freehub");
     if(!freehub) freehub=&fixed_tendon(root,"geometric_mid_drive_freehub",cfg.closure_time_constant_s);

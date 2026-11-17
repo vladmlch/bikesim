@@ -28,6 +28,7 @@ class ResistanceWriter;
 class TireWriter;
 class DistributedTireWriter;
 class PneumaticTireWriter;
+class Compliant3dTireWriter;
 
 namespace drivetrain {
     class DrivetrainWriter;
@@ -87,6 +88,8 @@ public:
     [[nodiscard]] double elastic_energy_j() const;
     [[nodiscard]] double brush_loss_step_j() const;
     [[nodiscard]] double radial_dissipation_power_w() const;
+    [[nodiscard]] double step_loss_j(std::span<const double> qvel_mid,
+                                     double dt) const;
     void set_state(std::span<const std::string> names,
                    std::span<const double> row) const;
     // Initialization-only two-phase material restore. The same decoder is
@@ -106,11 +109,13 @@ public:
     // True when the engaged backend is the pneumatic radial-carcass
     // tyre — its diagnostics dict is the pneumatic schema.
     [[nodiscard]] bool is_pneumatic() const noexcept;
+    [[nodiscard]] bool is_compliant_3d() const noexcept;
 
 private:
     friend class Stepper;
     using Variant = std::variant<TireWriter *, DistributedTireWriter *,
-                                 PneumaticTireWriter *>;
+                                 PneumaticTireWriter *,
+                                 Compliant3dTireWriter *>;
     explicit TireWriterView(Variant writer) noexcept : writer_(writer) {}
     Variant writer_;
 };
@@ -328,7 +333,8 @@ public:
     // the dispatched writer is one of the three configured backends.
     [[nodiscard]] bool has_tire() const noexcept {
         return tire_ != nullptr || distributed_tire_ != nullptr ||
-               pneumatic_tire_ != nullptr;
+               pneumatic_tire_ != nullptr ||
+               compliant_3d_tire_ != nullptr;
     }
 
     // ---- Owned-writer access for the runtime's physical step (plan A3) --
@@ -487,6 +493,7 @@ private:
     std::unique_ptr<TireWriter> tire_;
     std::unique_ptr<DistributedTireWriter> distributed_tire_;
     std::unique_ptr<PneumaticTireWriter> pneumatic_tire_;
+    std::unique_ptr<Compliant3dTireWriter> compliant_3d_tire_;
     std::unique_ptr<drivetrain::DrivetrainWriter> drive_;
     // T3b-1 — the model-owned RiderContactWriter plus its construction-
     // sized nv qfrc buffer (resized beside the writer in the config ctor).

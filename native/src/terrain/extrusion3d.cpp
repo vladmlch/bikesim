@@ -75,7 +75,7 @@ ExtrudedTrack3d::ExtrudedTrack3d(const TrackSpec& track, double half_width_m,
         z_max = std::max(z_max, zs_[i]);
     }
 
-    const auto def_lbl = rider::surface_label(track.surface);
+    const auto def_lbl = ::rider::surface_label(track.surface);
     if (!def_lbl.has_value()) {
         throw std::invalid_argument("ExtrudedTrack3d: unknown default surface '" + track.surface + "'");
     }
@@ -84,7 +84,7 @@ ExtrudedTrack3d::ExtrudedTrack3d(const TrackSpec& track, double half_width_m,
     const SurfaceMap smap = track.surface_map();
     sections_.reserve(smap.sections().size());
     for (const SurfaceSection& sec : smap.sections()) {
-        const auto lbl = rider::surface_label(sec.surface);
+        const auto lbl = ::rider::surface_label(sec.surface);
         if (!lbl.has_value()) {
             throw std::invalid_argument("ExtrudedTrack3d: unknown section surface '" + sec.surface + "'");
         }
@@ -120,8 +120,8 @@ ExtrudedTrack3d::ExtrudedTrack3d(const TrackSpec& track, double half_width_m,
     sha256_hex_ = hex_digest(hasher.finish());
 }
 
-rider::SurfaceLabel ExtrudedTrack3d::label_at(double x_m) const noexcept {
-    rider::SurfaceLabel out = default_label_;
+::rider::SurfaceLabel ExtrudedTrack3d::label_at(double x_m) const noexcept {
+    ::rider::SurfaceLabel out = default_label_;
     for (const LabelSpan& sec : sections_) {
         if (x_m >= sec.start_m && x_m < sec.end_m) {
             out = sec.label;

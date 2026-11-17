@@ -17,7 +17,9 @@
 #pragma once
 #include <mujoco/mujoco.h>
 
+#include <array>
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -31,6 +33,7 @@ struct BrakeHoldSpec {
     double damping_nms_rad = 0.;
     double engage_radps = .5;
     double release_radps = 1.;
+    bool unified_ceiling = false;
 };
 
 class StaticBrake {
@@ -49,6 +52,30 @@ public:
     // guard needs it).
     [[nodiscard]] bool apply(mjModel *model, double front_demand,
                              double rear_demand) const;
+
+    // apply_remaining_budget(model, front_demand, rear_demand,
+    //                        front_hold_torque_nm, rear_hold_torque_nm):
+    // validates finite inputs and sets
+    //   dof_frictionloss[dof] = max(0.0, ceiling_nm * clip(demand, 0, 1) - |hold_torque_nm|)
+    // front first, returning whether either bound changed. Guarantees
+    // |tau_hold| + dof_frictionloss <= ceiling_nm * clip(demand, 0, 1).
+    [[nodiscard]] bool apply_remaining_budget(
+        mjModel *model, double front_demand, double rear_demand,
+        double front_hold_torque_nm, double rear_hold_torque_nm) const;
+
+    // Convenience span overload reading hold_qfrc[front_dof()] and
+    // hold_qfrc[rear_dof()] from a precomputed hold vector of length model->nv.
+    [[nodiscard]] bool apply_remaining_budget(
+        mjModel *model, double front_demand, double rear_demand,
+        std::span<const double> hold_qfrc) const;
+
+    // Lightweight non-allocating twin of hold_qfrc returning
+    // {front_hold_torque_nm, rear_hold_torque_nm}. When hold_.unified_ceiling
+    // is true, each wheel's hold torque magnitude is capped at
+    // min(hold_.torque_nm, ceiling_nm_) * clip(demand, 0, 1).
+    [[nodiscard]] std::array<double, 2> hold_wheel_torques(
+        const mjModel *model, const mjData *data, double front_demand,
+        double rear_demand, bool advance, bool reseat = false);
 
     // hold_qfrc(model, data, front_demand, rear_demand, advance, reseat):
     // the bite's generalized force (nv zeros when unlatched). An

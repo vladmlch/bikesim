@@ -170,6 +170,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writers/resistance.cpp"
   "${_bike_native_dir}/src/writers/tire_common.cpp"
   "${_bike_native_dir}/src/writers/tire.cpp"
+  "${_bike_native_dir}/src/writers/compliant_3d_tire.cpp"
   "${_bike_native_dir}/src/writers/distributed_tire.cpp"
   "${_bike_native_dir}/src/writers/pneumatic_tire.cpp"
   "${_bike_native_dir}/src/writers/rider_contacts.cpp")
@@ -179,6 +180,7 @@ target_include_directories(bike_core SYSTEM PRIVATE
   "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include"
   "${BIKE_DEP_rapidjson_ROOT}/include" "${BIKE_DEP_tomlplusplus_ROOT}/include"
   "${BIKE_DEP_eigen_ROOT}" "${BIKE_DEP_duckdb_ROOT}/include")
+target_link_libraries(bike_core PUBLIC bike_spatial_core)
 
 # Track-B build identity for runtime/provenance.cpp — the
 # research_build_identity.hpp generated for bike_core so the product
@@ -508,6 +510,7 @@ target_include_directories(bike_random SYSTEM PRIVATE
 # bike_spatial_core: pure 3D SO(3) frame kinematics and typed [spatial]
 # configuration contract, isolated from planar bike_core and bike_configuration.
 add_library(bike_spatial_core STATIC
+  "${_bike_native_dir}/src/spatial/types.hpp"
   "${_bike_native_dir}/src/spatial/frames.hpp"
   "${_bike_native_dir}/src/spatial/frames.cpp"
   "${_bike_native_dir}/src/spatial/config.hpp"
@@ -517,6 +520,15 @@ bike_apply_native_policy(bike_spatial_core)
 target_include_directories(bike_spatial_core SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 target_link_libraries(bike_spatial_core PUBLIC bike_io)
+
+add_library(bike_spatial_whipple STATIC
+  "${_bike_native_dir}/src/spatial/benchmark_whipple.hpp"
+  "${_bike_native_dir}/src/spatial/benchmark_whipple.cpp")
+set_target_properties(bike_spatial_whipple PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_apply_native_policy(bike_spatial_whipple)
+target_include_directories(bike_spatial_whipple SYSTEM PRIVATE
+  "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(bike_spatial_whipple PUBLIC bike_spatial_core bike_engine Bike::Numerics)
 
 # bike_model: the T15 model boundary — inertia.py's ring tensors and the
 # synthetic wheel/mudguard mass profile, component_masses.py's MJCF

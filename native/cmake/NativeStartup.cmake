@@ -51,7 +51,8 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/terrain/interpolation3d.cpp"
     "${native_dir}/src/terrain/grid3d.cpp"
     "${native_dir}/src/terrain/source3d.cpp"
-    "${native_dir}/src/terrain/generator3d.cpp")
+    "${native_dir}/src/terrain/generator3d.cpp"
+    "${native_dir}/src/terrain/heightfield3d.cpp")
   bike_startup_target_policy(bike_terrain "${native_dir}")
   target_link_libraries(bike_terrain PUBLIC bike_configuration bike_geometry bike_random bike_io)
 
@@ -69,7 +70,7 @@ function(bike_add_native_startup native_dir)
     "${native_dir}/src/model/environment.cpp"
     "${native_dir}/src/model/sensors.cpp"
     "${native_dir}/src/model/mapping.cpp")
-  target_link_libraries(bike_model PUBLIC bike_terrain ${_startup_engine} bike_io)
+  target_link_libraries(bike_model PUBLIC bike_terrain ${_startup_engine} bike_io bike_spatial_core)
 
   # Filesystem-backed arrays depend on platform; keep them above the small
   # JSON/hash archive so platform -> io never becomes a circular edge.

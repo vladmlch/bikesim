@@ -10,3 +10,15 @@ foreach(_spatial_test IN ITEMS spatial_frames spatial_config)
       WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_spatial_test}>")
   endif()
 endforeach()
+
+add_executable(spatial_whipple_benchmark test_whipple_benchmark.cpp)
+bike_startup_target_policy(spatial_whipple_benchmark "${_test_repo_root}/native")
+target_link_libraries(spatial_whipple_benchmark PRIVATE
+  bike_test_fixtures bike_spatial_whipple)
+  bike_rewrite_mujoco_load_name(spatial_whipple_benchmark
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME spatial_whipple_benchmark COMMAND spatial_whipple_benchmark)
+  set_tests_properties(spatial_whipple_benchmark PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:spatial_whipple_benchmark>")
+endif()

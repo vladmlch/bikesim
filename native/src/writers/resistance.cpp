@@ -101,9 +101,11 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
                                    nativecfg::ResistanceConfig config)
     : m_(m), cfg_(std::move(config)),
       nv_(static_cast<int>(m->nv)) {
-    nativecfg::validate(cfg_);
+    if (!cfg_.allow_spatial)
+        nativecfg::validate(cfg_);
     // ResistanceConfig.__post_init__ (physical_config.py:275-284): scalars
-    // finite + bounds, both 3-vectors finite and planar ([1] == 0).
+    // finite + bounds, both 3-vectors finite and planar ([1] == 0 unless
+    // allow_spatial is enabled for 3D motion).
     if (!std::isfinite(cfg_.crr) || cfg_.crr < 0.0)
         throw std::invalid_argument("invalid crr");
     if (!std::isfinite(cfg_.rho_kg_m3) || cfg_.rho_kg_m3 < 0.0)
@@ -121,7 +123,8 @@ ResistanceWriter::ResistanceWriter(const mjModel *m,
         if (!std::isfinite(v))
             throw std::invalid_argument(
                 "invalid shape or non-finite point_body_m");
-    if (cfg_.wind_world_mps[1] != 0.0 || cfg_.point_body_m[1] != 0.0)
+    if (!cfg_.allow_spatial &&
+        (cfg_.wind_world_mps[1] != 0.0 || cfg_.point_body_m[1] != 0.0))
         throw std::invalid_argument(
             "resistance configuration must be planar");
     // physical_resistance.py:13-15.
@@ -316,7 +319,7 @@ void ResistanceWriter::compute_validated(const mjData *d,
     // not a sequential fold — same-libcall contract applies here too.
     // np.sqrt is libm sqrt. (Distinct from the CPython vector_norm — see
     // numeric_norm.hpp; this site stays on the BLAS oracle.)
-    if (relative[1] != 0.0)
+    if (!cfg_.allow_spatial && relative[1] != 0.0)
         throw std::invalid_argument("drag velocity must be planar X-Z");
     const double norm = std::sqrt(
         blas::ddot(model_access::kXYZ, relative.data(), 1, relative.data(),

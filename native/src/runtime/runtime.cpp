@@ -387,6 +387,8 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
         return dofadr[static_cast<std::size_t>(joint)] + ref.dof_index;
     };
     const auto &drive = stepper.drive().config();
+    const bool has_root_free =
+        mj_name2id(&model, mjOBJ_JOINT, "root_free") >= 0;
     return {resolve(config.geometry.front_brake, "front"),
             resolve(config.geometry.rear_brake, "rear"),
             drive.brake_ceiling_nm,
@@ -394,7 +396,54 @@ decode_step_state(const runtime::BootstrapState &bootstrap) {
                           .stiffness_nm_rad = drive.brake_hold_stiffness_nm_rad,
                           .damping_nms_rad = drive.brake_hold_damping_nms_rad,
                           .engage_radps = drive.brake_hold_engage_radps,
-                          .release_radps = drive.brake_hold_release_radps}};
+                          .release_radps = drive.brake_hold_release_radps,
+                          .unified_ceiling = has_root_free}};
+}
+
+std::vector<std::array<double, 2>>
+spatial_centerline_vertices(const mjModel *model, const mjData *data) {
+    const int geom = mj_name2id(model, mjOBJ_GEOM, "terrain");
+    if (geom < 0)
+        throw std::invalid_argument("model has no geom 'terrain'");
+    const auto gdata =
+        std::views::counted(model->geom_dataid, model->ngeom);
+    const int hfield = gdata[static_cast<std::size_t>(geom)];
+    if (hfield < 0)
+        throw std::invalid_argument("terrain geom has no hfield");
+    const auto hrows = std::views::counted(model->hfield_nrow, model->nhfield);
+    const auto hcols = std::views::counted(model->hfield_ncol, model->nhfield);
+    const auto hadr = std::views::counted(model->hfield_adr, model->nhfield);
+    const auto hsize =
+        std::views::counted(model->hfield_size, 4 * model->nhfield);
+    const int rows = hrows[static_cast<std::size_t>(hfield)];
+    const int cols = hcols[static_cast<std::size_t>(hfield)];
+    if (rows < 1 || cols < 2)
+        throw std::invalid_argument("terrain hfield dimensions invalid");
+    const int center_row = rows / 2;
+    const auto addr =
+        static_cast<std::size_t>(hadr[static_cast<std::size_t>(hfield)]);
+    const auto raster =
+        std::views::counted(model->hfield_data, model->nhfielddata)
+            .subspan(addr + static_cast<std::size_t>(center_row) *
+                                static_cast<std::size_t>(cols),
+                     static_cast<std::size_t>(cols));
+    const double sx = hsize[4 * static_cast<std::size_t>(hfield)];
+    const double sz = hsize[4 * static_cast<std::size_t>(hfield) + 2];
+    const auto xpos = std::views::counted(data->geom_xpos, 3 * model->ngeom);
+    const double x0 = xpos[3U * static_cast<std::size_t>(geom)];
+    const double z0 = xpos[3U * static_cast<std::size_t>(geom) + 2U];
+    const double step = (2.0 * sx) / static_cast<double>(cols - 1);
+    std::vector<std::array<double, 2>> vertices;
+    vertices.reserve(static_cast<std::size_t>(cols));
+    for (int c = 0; c < cols; ++c) {
+        const double lx = c + 1 == cols
+                              ? sx
+                              : static_cast<double>(c) * step - sx;
+        const double lz =
+            static_cast<double>(raster[static_cast<std::size_t>(c)]) * sz;
+        vertices.push_back({x0 + lx, z0 + lz});
+    }
+    return vertices;
 }
 
 // The PhysicalStep assembly — pose/config/vertices decode plus the
@@ -404,9 +453,21 @@ std::unique_ptr<PhysicalStep>
 build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
     // The compiled terrain cross-section is constant model geometry — the
     // tire writer's own copy was read from this same post-forward data.
-    std::vector<std::array<double, 2>> vertices =
-        biketyre::compiled_profile_vertices(stepper.model(),
-                                            stepper.data(), "terrain");
+    std::vector<std::array<double, 2>> vertices;
+    const bool has_root_free =
+        mj_name2id(stepper.model(), mjOBJ_JOINT, "root_free") >= 0;
+    if (has_root_free) {
+        try {
+            vertices = biketyre::compiled_profile_vertices(
+                stepper.model(), stepper.data(), "terrain");
+        } catch (const std::invalid_argument &) {
+            vertices = spatial_centerline_vertices(stepper.model(),
+                                                   stepper.data());
+        }
+    } else {
+        vertices = biketyre::compiled_profile_vertices(
+            stepper.model(), stepper.data(), "terrain");
+    }
     std::optional<rider::SpindlePose> pose;
     std::optional<rider::SpindleConfig> rider_cfg;
     StepConfig step_cfg = step_config(config);
@@ -641,14 +702,36 @@ void NativeRideRuntime::initialize_accounting() {
     accounting_config_.max_qpos = static_cast<std::size_t>(model->nq);
     const int root_x = mj_name2id(model, mjOBJ_JOINT, "root_x");
     const int root_pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
-    if (root_x < 0 || root_pitch < 0)
-        throw std::invalid_argument("accounting requires root_x and root_pitch joints");
-    const auto qpos_addresses = std::views::counted(model->jnt_qposadr, model->njnt);
-    const auto dof_addresses = std::views::counted(model->jnt_dofadr, model->njnt);
-    accounting_config_.columns = {
-        .root_x_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_x)]),
-        .root_x_dof = static_cast<std::size_t>(dof_addresses[static_cast<std::size_t>(root_x)]),
-        .root_pitch_qpos = static_cast<std::size_t>(qpos_addresses[static_cast<std::size_t>(root_pitch)])};
+    const auto qpos_addresses =
+        std::views::counted(model->jnt_qposadr, model->njnt);
+    const auto dof_addresses =
+        std::views::counted(model->jnt_dofadr, model->njnt);
+    if (root_x >= 0 && root_pitch >= 0) {
+        accounting_config_.columns = {
+            .root_x_qpos = static_cast<std::size_t>(
+                qpos_addresses[static_cast<std::size_t>(root_x)]),
+            .root_x_dof = static_cast<std::size_t>(
+                dof_addresses[static_cast<std::size_t>(root_x)]),
+            .root_pitch_qpos = static_cast<std::size_t>(
+                qpos_addresses[static_cast<std::size_t>(root_pitch)])};
+    } else {
+        const int root_free = mj_name2id(model, mjOBJ_JOINT, "root_free");
+        if (root_free < 0)
+            throw std::invalid_argument(
+                "accounting requires root_x and root_pitch joints");
+        const auto jnt_types =
+            std::views::counted(model->jnt_type, model->njnt);
+        if (jnt_types[static_cast<std::size_t>(root_free)] != mjJNT_FREE)
+            throw std::invalid_argument("root_free must be a freejoint");
+        const auto free_qpos = static_cast<std::size_t>(
+            qpos_addresses[static_cast<std::size_t>(root_free)]);
+        const auto free_dof = static_cast<std::size_t>(
+            dof_addresses[static_cast<std::size_t>(root_free)]);
+        accounting_config_.columns = {
+            .root_x_qpos = free_qpos,
+            .root_x_dof = free_dof,
+            .root_pitch_qpos = free_qpos + 4U};
+    }
     accounting_ = std::make_unique<PeriodAccounting>(accounting_config_,
         bootstrap_accounting_state_, physical_->generation(),
         physical_->rider_present() ? &physical_->rider_control() : nullptr,

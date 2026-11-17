@@ -38,6 +38,7 @@
 #include "config_validation.hpp"
 #include "validation.hpp"
 #include "io/value.hpp"
+#include "writers/compliant_3d_tire.hpp"
 
 namespace nativecfg {
 
@@ -55,6 +56,7 @@ namespace nativecfg {
         std::optional<BrakeConfig> brake;
         std::optional<ResistanceConfig> resistance;
         std::optional<TireConfig> tire;
+        std::optional<Compliant3dTireConfig> compliant_3d_tire;
         std::optional<rider::RiderContactsConfig> rider_contacts;
     };
 

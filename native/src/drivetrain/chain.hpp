@@ -30,6 +30,12 @@ namespace drivetrain {
 
     int resolve(const mjModel *m, mjtObj kind, const char *name);
 
+    // Relative rotation angle of `body` around local +Y in `reference_body`'s
+    // sagittal plane (R_rel = R_ref^T * R_body). Rejects non-physical IDs,
+    // nonfinite rotation entries, and misaligned local +Y axes (> 1e-6).
+    [[nodiscard]] double relative_sagittal_angle(const mjModel *m, const mjData *d,
+                                                 int reference_body, int body);
+
     // Thin alias retained for TUs that adopted it before model_access.hpp
     // existed — it delegates to the checked helpers, so negative extents
     // and null positive-extent buffers throw std::invalid_argument before

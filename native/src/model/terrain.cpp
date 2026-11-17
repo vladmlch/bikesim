@@ -6,6 +6,7 @@ namespace bike::model::detail {
 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
 void build_terrain(Element& root,Element& world,const BuildContext& c) {
     const auto& field=c.request.field;
+    if(c.is_spatial()) field.validate();
     block(root,"asset").add("hfield",{{"name","road"},{"nrow",std::to_string(field.nrow)},
         {"ncol",std::to_string(field.ncol)},{"size",field.size_attr()}});
     const auto ground=geometry::compute_ground_z(c.request.bike)/1000.;

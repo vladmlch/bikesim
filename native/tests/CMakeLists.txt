@@ -77,6 +77,6 @@ set_target_properties(bike_test_allocation_faults PROPERTIES
 # and CTest names.
 foreach(_domain IN ITEMS batch cli config drivetrain engine initialization
     io kinematics model numerics platform random recording replay
-    research rider runtime spatial terrain validation viewer viz)
+    research rider runtime spatial terrain validation viewer viz writers)
   add_subdirectory(${_domain})
 endforeach()

@@ -76,9 +76,13 @@ void mounts_and_sites(Element& frame,const BuildContext& c,const Vec3& seatpost)
 Element& build_frame_body(Element& world,BuildContext& c) {
     auto& frame=world.add("body",{{"name","frame"},{"pos","0 0 0"}});
     if(c.request.mode=="ride") {
-        joint(frame,"root_x","slide",{{"axis","1 0 0"}});
-        joint(frame,"root_z","slide",{{"axis","0 0 1"}});
-        joint(frame,"root_pitch","hinge",{{"axis","0 1 0"}});
+        if(c.is_spatial()) {
+            frame.add("freejoint",{{"name","root_free"}});
+        } else {
+            joint(frame,"root_x","slide",{{"axis","1 0 0"}});
+            joint(frame,"root_z","slide",{{"axis","0 0 1"}});
+            joint(frame,"root_pitch","hinge",{{"axis","0 1 0"}});
+        }
     }
     if(c.request.mode=="ride") build_lumped_rider(frame,c.rider);
     build_bb_and_motor(frame,c);

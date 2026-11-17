@@ -12,6 +12,7 @@
 
 #include "../model_access.hpp"
 #include "../engine_call.hpp"
+#include "../spatial/frames.hpp"
 #include "../tyre/profile.hpp"
 #include "../validation.hpp"
 
@@ -335,48 +336,104 @@ WireObject BalanceMonitor::observation() const {
 }
 
 // ---- CrashDetector -------------------------------------------------------
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) (pitch_limit_deg, capsize_roll_rad, corridor_half_width_m) crash detector thresholds
 CrashDetector::CrashDetector(const mjModel *model,
-                             double pitch_limit_deg) {
+                             double pitch_limit_deg,
+                             double capsize_roll_rad,
+                             double corridor_half_width_m) {
     if (pitch_limit_deg <= 0.)
         throw std::invalid_argument(
             "pitch_limit_deg must be positive, got " +
             std::to_string(pitch_limit_deg));
+    if (!std::isfinite(capsize_roll_rad) || capsize_roll_rad <= 0.)
+        throw std::invalid_argument(
+            "capsize_roll_rad must be positive finite, got " +
+            std::to_string(capsize_roll_rad));
+    if (std::isnan(corridor_half_width_m) || corridor_half_width_m <= 0.)
+        throw std::invalid_argument(
+            "corridor_half_width_m must be positive, got " +
+            std::to_string(corridor_half_width_m));
     const int pitch = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
-    if (pitch < 0)
-        throw std::invalid_argument(
-            "model has no joint 'root_pitch'; the virtual rider acts on "
-            "chassis pitch");
     const int root_x = mj_name2id(model, mjOBJ_JOINT, "root_x");
-    if (root_x < 0)
-        throw std::invalid_argument(
-            "model has no joint 'root_x'; the crash detector reports "
-            "track position");
     const auto qposadr =
         std::views::counted(model->jnt_qposadr, model->njnt);
-    pitch_qposadr = static_cast<int>(qposadr[static_cast<std::size_t>(pitch)]);
-    root_x_qposadr =
-        static_cast<int>(qposadr[static_cast<std::size_t>(root_x)]);
+    if (pitch >= 0 && root_x >= 0) {
+        pitch_qposadr =
+            static_cast<int>(qposadr[static_cast<std::size_t>(pitch)]);
+        root_x_qposadr =
+            static_cast<int>(qposadr[static_cast<std::size_t>(root_x)]);
+    } else {
+        const int root_free = mj_name2id(model, mjOBJ_JOINT, "root_free");
+        if (root_free >= 0) {
+            const auto jnt_type =
+                std::views::counted(model->jnt_type, model->njnt);
+            if (jnt_type[static_cast<std::size_t>(root_free)] != mjJNT_FREE)
+                throw std::invalid_argument("root_free must be a freejoint");
+            has_root_free_ = true;
+            const int free_qpos = static_cast<int>(
+                qposadr[static_cast<std::size_t>(root_free)]);
+            root_x_qposadr = free_qpos;
+            pitch_qposadr = free_qpos + 4;
+        } else {
+            if (pitch < 0)
+                throw std::invalid_argument(
+                    "model has no joint 'root_pitch'; the virtual rider acts "
+                    "on chassis pitch");
+            throw std::invalid_argument(
+                "model has no joint 'root_x'; the crash detector reports "
+                "track position");
+        }
+    }
     nq_ = model->nq;
     pitch_limit_rad = pitch_limit_deg * (std::numbers::pi / 180.0);
+    capsize_roll_rad_ = capsize_roll_rad;
+    corridor_half_width_m_ = corridor_half_width_m;
 }
 
 std::optional<CrashEvent>
 CrashDetector::check(const mjData *data, const RuntimeContacts &contacts) {
     if (event_.has_value()) return event_;
     const auto qpos = std::views::counted(data->qpos, nq_);
-    const double pitch_rad = qpos[static_cast<std::size_t>(pitch_qposadr)];
-    if (std::abs(pitch_rad) > pitch_limit_rad)
-        event_ = CrashEvent{
-            .cause = "pitch_over",
-            .time_s = data->time,
-            .position_m = qpos[static_cast<std::size_t>(root_x_qposadr)],
-            .pitch_rad = pitch_rad};
+    if (!has_root_free_) {
+        const double pitch_rad = qpos[static_cast<std::size_t>(pitch_qposadr)];
+        if (std::abs(pitch_rad) > pitch_limit_rad)
+            event_ = CrashEvent{
+                .cause = "pitch_over",
+                .time_s = data->time,
+                .position_m = qpos[static_cast<std::size_t>(root_x_qposadr)],
+                .pitch_rad = pitch_rad};
+        else if (contacts.handlebar_in_contact())
+            event_ = CrashEvent{
+                .cause = "handlebar_contact",
+                .time_s = data->time,
+                .position_m = qpos[static_cast<std::size_t>(root_x_qposadr)],
+                .pitch_rad = pitch_rad};
+        return event_;
+    }
+    const auto adr = static_cast<std::size_t>(root_x_qposadr);
+    const double pos_x = qpos[adr];
+    const double pos_y = qpos[adr + 1U];
+    const bike::spatial::Quat quat{
+        qpos[adr + 3U], qpos[adr + 4U], qpos[adr + 5U], qpos[adr + 6U]};
+    const auto att = bike::spatial::euler_zyx(quat);
+    const double pitch_rad = std::isfinite(att.pitch_rad) ? att.pitch_rad : 0.0;
+    if (!att.valid || std::abs(att.roll_rad) > capsize_roll_rad_ ||
+        std::abs(att.pitch_rad) > pitch_limit_rad)
+        event_ = CrashEvent{.cause = "capsize",
+                            .time_s = data->time,
+                            .position_m = pos_x,
+                            .pitch_rad = pitch_rad};
+    else if (!std::isfinite(pos_y) ||
+             std::abs(pos_y) > corridor_half_width_m_)
+        event_ = CrashEvent{.cause = "corridor_exit",
+                            .time_s = data->time,
+                            .position_m = pos_x,
+                            .pitch_rad = pitch_rad};
     else if (contacts.handlebar_in_contact())
-        event_ = CrashEvent{
-            .cause = "handlebar_contact",
-            .time_s = data->time,
-            .position_m = qpos[static_cast<std::size_t>(root_x_qposadr)],
-            .pitch_rad = pitch_rad};
+        event_ = CrashEvent{.cause = "handlebar_contact",
+                            .time_s = data->time,
+                            .position_m = pos_x,
+                            .pitch_rad = pitch_rad};
     return event_;
 }
 

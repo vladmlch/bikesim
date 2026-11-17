@@ -509,7 +509,9 @@ target_include_directories(bike_random SYSTEM PRIVATE
 # configuration contract, isolated from planar bike_core and bike_configuration.
 add_library(bike_spatial_core STATIC
   "${_bike_native_dir}/src/spatial/frames.hpp"
-  "${_bike_native_dir}/src/spatial/frames.cpp")
+  "${_bike_native_dir}/src/spatial/frames.cpp"
+  "${_bike_native_dir}/src/spatial/config.hpp"
+  "${_bike_native_dir}/src/spatial/config.cpp")
 set_target_properties(bike_spatial_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 bike_apply_native_policy(bike_spatial_core)
 target_include_directories(bike_spatial_core SYSTEM PRIVATE

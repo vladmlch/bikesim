@@ -454,7 +454,7 @@ git commit -m "feat(spatial): add isolated bike_spatial_core and SO(3) frame kin
 - Consumes: `bike::io::Value`, `bike::spatial::Vec3`, `bike::configuration::SimulationPhysicsConfig` (только для теста побитовой неизменности 2D).
 - Produces: `bike::spatial::{SpatialTireBackend, SpatialTirePreset, SpatialStartMode, SpatialSteerSpec, SpatialStartSupportSpec, SpatialConfig, parse_spatial_config, validate_spatial_config, spatial_config_to_value}` с проверкой обязательных таймингов кратно `timestep_s`.
 
-- [ ] **Step 1: Написать `native/src/spatial/config.hpp` и тест `native/tests/spatial/test_config.cpp`**
+- [x] **Step 1: Написать `native/src/spatial/config.hpp` и тест `native/tests/spatial/test_config.cpp`**
 
 Создать `native/src/spatial/config.hpp`:
 ```cpp
@@ -600,7 +600,7 @@ int main() {
 }
 ```
 
-- [ ] **Step 2: Добавить `config.cpp` и `spatial_config` в CMake и проверить ожидаемый отказ до создания `config.cpp`**
+- [x] **Step 2: Добавить `config.cpp` и `spatial_config` в CMake и проверить ожидаемый отказ до создания `config.cpp`**
 
 В `CMakeLists.txt` обновить список источников `bike_spatial_core`:
 ```cmake
@@ -630,7 +630,7 @@ endforeach()
 Run: `cmake --preset release`
 Expected: FAIL (`Cannot find source file: .../native/src/spatial/config.cpp`)
 
-- [ ] **Step 3: Написать `native/src/spatial/config.cpp`**
+- [x] **Step 3: Написать `native/src/spatial/config.cpp`**
 
 ```cpp
 #include "spatial/config.hpp"
@@ -943,7 +943,7 @@ Value spatial_config_to_value(const SpatialConfig& config) {
 } // namespace bike::spatial
 ```
 
-- [ ] **Step 4: Собрать и запустить `spatial_config`, закоммитить**
+- [x] **Step 4: Собрать и запустить `spatial_config`, закоммитить**
 
 Run:
 ```bash

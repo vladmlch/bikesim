@@ -155,6 +155,8 @@ void index_channels_plan(EncodePlan &parsed) {
         if (column.path.size() == 1) {
             const auto routed = parsed.deeper.find(column.path);
             if (routed != parsed.deeper.end()) owned = &routed->second;
+        } else if (!column.except_set.empty()) {
+            owned = &column.except_set;
         }
         parsed.column_owned.push_back(owned);
         index_member_lookup(column);
@@ -200,10 +202,12 @@ EncodePlanColumn parse_column(const bio::Value &item) {
     }
     if (dict.contains("except_keys"))
         for (const bio::Value &key : vread::sequence(
-                 dict["except_keys"], dict.child("except_keys")))
-            column.except_keys.push_back(
-                vread::string(vread::Node{&key},
-                              dict.child("except_keys")));
+                 dict["except_keys"], dict.child("except_keys"))) {
+            auto text = vread::string(vread::Node{&key},
+                                      dict.child("except_keys"));
+            column.except_set.insert(text);
+            column.except_keys.push_back(std::move(text));
+        }
     if (dict.contains("convert") && !vread::is_none(dict["convert"])) {
         column.convert = vread::string(dict["convert"],
                                        dict.child("convert"));

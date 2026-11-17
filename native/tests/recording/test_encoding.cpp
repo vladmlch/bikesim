@@ -75,5 +75,73 @@ void physical_contract() {
     modified->channels.emplace_back("unreviewed",runtime::Wire{1.});
     bt::invalid([&]{(void)runtime::encode_table_native(episode,rec::compile_plan(catalog,"channel_energy"),0,3);});
 }
+void distributed_tires_projection_contract() {
+    auto tire_side = [](std::initializer_list<std::pair<std::string, runtime::Wire>> extra) {
+        runtime::WireObject side{
+            {"backend", runtime::Wire{std::string("distributed_2d_reference")}},
+            {"unloaded_radius_m", runtime::Wire{0.34}},
+            {"supports_multiple_contacts", runtime::Wire{true}},
+            {"outside_material_load_range", runtime::Wire{false}},
+            {"patches", runtime::Wire{runtime::WireArray{}}},
+            {"geometric_contact", runtime::Wire{false}},
+            {"raw_contact", runtime::Wire{false}},
+            {"controller_grounded", runtime::Wire{false}},
+            {"multi_support", runtime::Wire{false}},
+            {"normal_load_n", runtime::Wire{0.}},
+            {"world_force_n", runtime::Wire{runtime::WireArray{runtime::Wire{0.}, runtime::Wire{0.}, runtime::Wire{0.}}}},
+            {"vertical_force_n", runtime::Wire{0.}},
+            {"normal_vertical_n", runtime::Wire{0.}},
+            {"tangent_force_n", runtime::Wire{0.}},
+            {"effective_radius_m", runtime::Wire{0.34}},
+            {"wheel_axis_m", runtime::Wire{runtime::WireArray{runtime::Wire{0.}, runtime::Wire{0.}, runtime::Wire{0.34}}}},
+            {"wheel_axis_moment_nm", runtime::Wire{0.}},
+            {"omega_abs_rad_s", runtime::Wire{0.}},
+            {"omega_rel_rad_s", runtime::Wire{0.}},
+            {"slip_mps", runtime::Wire{0.}},
+            {"slip_ratio", runtime::Wire{0.}},
+            {"tangent_center_speed_mps", runtime::Wire{0.}},
+        };
+        for (const auto &[k, v] : extra) side.emplace_back(k, v);
+        return side;
+    };
+    const auto catalog = recording_fixture::catalog();
+    const auto plan = rec::compile_plan(catalog, "channel_tires");
+    auto episode = recording_fixture::episode(1);
+    auto sample = std::make_shared<runtime::PhysicalSampleData>(*episode.samples[0]);
+    sample->channels.emplace_back("tires", runtime::Wire{runtime::WireObject{
+        {"front", runtime::Wire{tire_side({
+            {"active_station_count", runtime::Wire{std::int64_t{4}}},
+            {"max_patch_count", runtime::Wire{std::int64_t{4}}},
+        })}},
+        {"rear", runtime::Wire{tire_side({
+            {"active_station_count", runtime::Wire{std::int64_t{5}}},
+            {"max_patch_count", runtime::Wire{std::int64_t{5}}},
+        })}},
+    }});
+    episode.samples[0] = sample;
+    const auto table = runtime::encode_table_native(episode, plan, 0, 1);
+    rec::validate_pieces(table, catalog, "channel_tires");
+    bt::require(table.rows == 1, "distributed tires projection preserves row count");
+
+    for (const char *side_name : {"front", "rear"}) {
+        auto bad_sample = std::make_shared<runtime::PhysicalSampleData>(*episode.samples[0]);
+        auto &tires = std::get<runtime::WireObject>(bad_sample->channels.back().second.value);
+        for (auto &[k, v] : tires) {
+            if (k == side_name) {
+                std::get<runtime::WireObject>(v.value).emplace_back(
+                    "bogus_member", runtime::Wire{std::int64_t{1}});
+            }
+        }
+        auto bad_ep = episode;
+        bad_ep.samples[0] = std::move(bad_sample);
+        bool threw_unknown = false;
+        try {
+            (void)runtime::encode_table_native(bad_ep, plan, 0, 1);
+        } catch (const std::invalid_argument &err) {
+            threw_unknown = std::string_view(err.what()).find("unknown struct members") != std::string_view::npos;
+        }
+        bt::require(threw_unknown, std::string("unknown member on tires.") + side_name + " still throws unknown struct members");
+    }
 }
-int main(){return bt::run([]{generic_contract();physical_contract();});}
+}
+int main(){return bt::run([]{generic_contract();physical_contract();distributed_tires_projection_contract();});}

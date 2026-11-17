@@ -23,10 +23,11 @@
 // of the unconditional upstream update (a poisoned compensation is
 // unreachable once t is non-finite — see numeric_sum.hpp).
 #include "resistance.hpp"
-#include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/resistance.hpp"
 
 #include <algorithm>
 #include <array>
@@ -40,46 +41,12 @@
 #include <utility>
 
 namespace {
-    // CPython 3.13 builtin sum() on float items: Neumaier compensated
-    // summation. The compensation term updates only while the running
-    // total stays finite — a local guard, observationally equivalent to
-    // CPython's unconditional update (numeric_sum.hpp has the proof);
-    // f_result itself always takes the naive step. An empty/fully-filtered
-    // iterable yields 0 — same value this returns (int 0 vs 0.0 compare equal
-    // in the `Fn > 0` gate).
-    double py_sum(std::span<const double> loads,
-                  std::span<const bool> working) {
-        double f_result = 0.0;
-        double c_sum = 0.0;
-        for (std::size_t i = 0; i < loads.size(); ++i) {
-            if (!working[i])
-                continue;
-            const double x = loads[i];
-            const double t = f_result + x;
-            if (std::isfinite(t)) {
-                if (std::abs(f_result) >= std::abs(x))
-                    c_sum += (f_result - t) + x;
-                else
-                    c_sum += (x - t) + f_result;
-            }
-            f_result = t;
-        }
-        return f_result + c_sum;
-    }
-
     // physical_mapping.py:6-11 — resolve_id. Site contract: BODY lookups
     // additionally reject the world body (id 0 can never host a force);
     // other kinds keep the plain name check — routed through the shared
     // resolver with the physical gate explicit.
     int resolve_id(const mjModel *m, mjtObj kind, const char *name) {
         return model_access::resolve_id(m, kind, name, kind == mjOBJ_BODY);
-    }
-
-    // external_resistance.py:21-23 — _rolling_moment (validation-free core).
-    // math.tanh is libm tanh, same as std::tanh here.
-    double rolling_moment(double crr, double load, double radius, double speed,
-                          double taper) {
-        return validation::derived(-crr * load * radius * std::tanh(speed / taper), "rolling_moment.torque");
     }
 
     // physical_mapping.py:24-37 — point_jacobian_into's checks + the jacp-only
@@ -94,6 +61,41 @@ namespace {
         model_access::point_jacobian_into(
             m, d, body_id, point, jp,
             model_access::JacobianBody::physical_strict, "point Jacobian");
+    }
+
+    [[noreturn]] void throw_resistance_error(
+            bike::physics_core::ResDiagField field) {
+        using bike::physics_core::ResDiagField;
+        switch (field) {
+            case ResDiagField::normal_load:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.normal_load must be finite");
+            case ResDiagField::rolling_moment:
+                throw std::overflow_error(
+                    "rolling_moment.torque must be finite");
+            case ResDiagField::point:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.point must be finite");
+            case ResDiagField::nonplanar_velocity:
+                throw std::invalid_argument(
+                    "drag velocity must be planar X-Z");
+            case ResDiagField::velocity_norm:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.velocity_norm must be finite");
+            case ResDiagField::drag_force:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.drag_force must be finite");
+            case ResDiagField::rolling:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.rolling must be finite");
+            case ResDiagField::aerodynamic:
+                throw std::overflow_error(
+                    "ExternalResistanceApplier.aerodynamic must be finite");
+            case ResDiagField::invalid_nv:
+            case ResDiagField::none:
+                throw std::invalid_argument(
+                    "invalid resistance evaluation state");
+        }
     }
 } // namespace
 
@@ -240,101 +242,73 @@ void ResistanceWriter::compute_validated(const mjData *d,
         return s[static_cast<std::size_t>(i)];
     };
 
-    std::ranges::fill(rolling_, 0.0);
-    // self.wheels = {'front': ..., 'rear': ...} — iteration order matters:
-    // both sides accumulate into the same vector.
-    const std::array<std::pair<const TireSideInput *, int>, 2> sides{
-        {
-            {&front, front_wheel_}, {&rear, rear_wheel_}
-        }
+    const bike::physics_core::ResistanceParams<double> params{
+        .crr = cfg_.crr,
+        .rolling_taper_rad_s = cfg_.rolling_taper_rad_s,
+        .rho_kg_m3 = cfg_.rho_kg_m3,
+        .cda_m2 = cfg_.cda_m2,
+        .wind_world_mps = {cfg_.wind_world_mps[0], cfg_.wind_world_mps[1], cfg_.wind_world_mps[2]},
+        .point_body_m = {cfg_.point_body_m[0], cfg_.point_body_m[1], cfg_.point_body_m[2]},
     };
-    for (const auto &[snap_p, body]: sides) {
-        const TireSideInput &snap = *snap_p;
-        // Fn = sum(p.normal_load_n for p in snapshot.patches
-        //          if p.working_surface)
-        const double Fn = validation::derived(py_sum(snap.patch_loads, snap.patch_working), "ExternalResistanceApplier.normal_load");
-        // axis = data.xmat[body].reshape(3, 3)[:, 1] — the body's world
-        // y-axis, column 1 of the row-major 3x3 block.
-        const std::array<double, model_access::kXYZ> axis = {
-            at(xmat, model_access::kRotationElements * body + 1),
-            at(xmat, model_access::kRotationElements * body + 4),
-            at(xmat, model_access::kRotationElements * body + 7)
-        };
-        mj_jac(m_, d, nullptr, jr_.data(), &at(xpos, model_access::kXYZ * body),
-               body);
-        // row = self._jr.T @ axis (F-order operand → gemv-trans path);
-        // row_ is the shared per-side member — beta = 0 overwrites it.
-        blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
-                    model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
-                    axis.data(), 1, 0.0, row_.data(), 1);
-        // omega = float(row @ data.qvel)
-        const double omega =
-                blas::ddot(nv_, row_.data(), 1, qvel.data(), 1);
-        const double radius = snap.effective_radius_m;
-        if (Fn > 0.0 && radius > 0.0) {
-            const double moment =
-                    rolling_moment(cfg_.crr, Fn, radius, omega,
-                                   cfg_.rolling_taper_rad_s);
-            // rolling += moment * row — two separately-rounded elementwise
-            // ops in numpy (temp product, then in-place add).
-            for (int i = 0; i < nv_; ++i)
-                rolling_[static_cast<std::size_t>(i)] +=
-                        moment * row_[static_cast<std::size_t>(i)];
+
+    auto wheel_jr_fn = [&](bike::physics_core::i32 side,
+                           const double *wheel_xpos,
+                           double *out_jr,
+                           bike::physics_core::ErrCode &) noexcept
+        -> bike::physics_core::Status {
+        const int body = (side == 0) ? front_wheel_ : rear_wheel_;
+        mj_jac(m_, d, nullptr, out_jr, wheel_xpos, body);
+        return bike::physics_core::Status::ok;
+    };
+
+    bool jac_invalid = false;
+    auto frame_jp_fn = [&](const double *pt_ptr,
+                           double *out_jp,
+                           bike::physics_core::ErrCode &local_err) noexcept
+        -> bike::physics_core::Status {
+        (void)out_jp;
+        const auto pt_span = std::views::counted(pt_ptr, model_access::kXYZ);
+        const std::array<double, model_access::kXYZ> pt_arr{
+            pt_span[0], pt_span[1], pt_span[2]};
+        try {
+            point_jacobian_into(m_, d, frame_, pt_arr, jp_);
+        } catch (const std::invalid_argument &) {
+            jac_invalid = true;
+            local_err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::invalid_argument;
+        } catch (...) {
+            jac_invalid = true;
+            local_err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::invalid_argument;
         }
+        return bike::physics_core::Status::ok;
+    };
+
+    auto err = bike::physics_core::ErrCode::none;
+    auto diag = bike::physics_core::ResDiagField::none;
+    const auto st = bike::physics_core::eval_resistance<
+        double, bike::physics_core::CpuExactToolkit>(
+        nv_, &params, qvel.data(),
+        front.patch_loads.data(), front.patch_working.data(),
+        static_cast<bike::physics_core::i32>(front.patch_loads.size()),
+        front.effective_radius_m,
+        &at(xpos, model_access::kXYZ * front_wheel_),
+        &at(xmat, model_access::kRotationElements * front_wheel_),
+        rear.patch_loads.data(), rear.patch_working.data(),
+        static_cast<bike::physics_core::i32>(rear.patch_loads.size()),
+        rear.effective_radius_m,
+        &at(xpos, model_access::kXYZ * rear_wheel_),
+        &at(xmat, model_access::kRotationElements * rear_wheel_),
+        &at(xpos, model_access::kXYZ * frame_),
+        &at(xmat, model_access::kRotationElements * frame_),
+        jr_.data(), jp_.data(), row_.data(),
+        rolling_.data(), aerodynamic_.data(),
+        wheel_jr_fn, frame_jp_fn, err, diag);
+    if (st != bike::physics_core::Status::ok) {
+        if (jac_invalid) {
+            point_jacobian_into(m_, d, frame_, std::array<double, model_access::kXYZ>{}, jp_);
+            throw std::invalid_argument("point Jacobian: invalid input");
+        }
+        throw_resistance_error(diag);
     }
-
-    // point = data.xpos[self.frame] + data.xmat[self.frame].reshape(3, 3)
-    //         @ cfg.point_body_m
-    std::array<double, model_access::kXYZ> rotp{};
-    blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                model_access::kXYZ, model_access::kXYZ, 1.0,
-                &at(xmat, model_access::kRotationElements * frame_),
-                model_access::kXYZ,
-                cfg_.point_body_m.data(), 1, 0.0, rotp.data(), 1);
-    std::array<double, model_access::kXYZ> point{};
-    for (int i = 0; i < model_access::kXYZ; ++i)
-        point[static_cast<std::size_t>(i)] =
-                at(xpos, model_access::kXYZ * frame_ + i) +
-                rotp[static_cast<std::size_t>(i)];
-    validation::derived_array(point, "ExternalResistanceApplier.point");
-    point_jacobian_into(m_, d, frame_, point, jp_);
-    // velocity = self._jp @ data.qvel
-    std::array<double, model_access::kXYZ> velocity{};
-    blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
-                qvel.data(), 1, 0.0, velocity.data(), 1);
-    // relative = velocity - np.asarray(cfg.wind_world_mps)
-    std::array<double, model_access::kXYZ> relative{};
-    for (int i = 0; i < model_access::kXYZ; ++i)
-        relative[static_cast<std::size_t>(i)] =
-                velocity[static_cast<std::size_t>(i)] -
-                cfg_.wind_world_mps[static_cast<std::size_t>(i)];
-
-    // external_resistance.py:37-42 — _drag_force: planar gate, then
-    // -.5*rho*cda*norm(v)*v. np.linalg.norm's fast path on a real 1-D
-    // vector is `x.dot(x)` → cblas_ddot (numpy/linalg/_linalg.py:2767),
-    // not a sequential fold — same-libcall contract applies here too.
-    // np.sqrt is libm sqrt. (Distinct from the CPython vector_norm — see
-    // numeric_norm.hpp; this site stays on the BLAS oracle.)
-    if (relative[1] != 0.0)
-        throw std::invalid_argument("drag velocity must be planar X-Z");
-    const double norm = std::sqrt(
-        blas::ddot(model_access::kXYZ, relative.data(), 1, relative.data(),
-                   1));
-    validation::derived(norm, "ExternalResistanceApplier.velocity_norm");
-    const double t =
-            ((-0.5 * cfg_.rho_kg_m3) * cfg_.cda_m2) * norm;
-    std::array<double, model_access::kXYZ> force{};
-    for (int i = 0; i < model_access::kXYZ; ++i)
-        force[static_cast<std::size_t>(i)] =
-                t * relative[static_cast<std::size_t>(i)];
-    validation::derived_array(force, "ExternalResistanceApplier.drag_force");
-
-    // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row_
-    // above); beta = 0 fully overwrites the member like the fresh vector.
-    blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
-                model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
-                force.data(), 1, 0.0, aerodynamic_.data(), 1);
-    validation::derived_array(rolling_, "ExternalResistanceApplier.rolling");
-    validation::derived_array(aerodynamic_, "ExternalResistanceApplier.aerodynamic");
 }

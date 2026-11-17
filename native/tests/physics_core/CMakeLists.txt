@@ -101,3 +101,42 @@ endif()
 
 add_test(NAME test_tyre_core COMMAND test_tyre_core)
 set_tests_properties(test_tyre_core PROPERTIES LABELS "gpu;unit")
+
+set(_sp2_force_laws_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws.cpp")
+
+if(APPLE)
+  add_library(bike_sp2_force_laws_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws_metal_helper.mm")
+  bike_apply_native_policy(bike_sp2_force_laws_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_sp2_force_laws_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_sp2_force_laws_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _sp2_force_laws_sources
+    $<TARGET_OBJECTS:bike_sp2_force_laws_metal_helper_obj>)
+endif()
+
+add_executable(test_sp2_force_laws ${_sp2_force_laws_sources})
+bike_apply_native_policy(test_sp2_force_laws)
+target_compile_options(test_sp2_force_laws PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp2_force_laws PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_sp2_force_laws SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp2_force_laws PRIVATE
+  bike_test_fixtures bike_core bike_engine bike_rider_math bike_tyre_upload)
+bike_rewrite_mujoco_load_name(test_sp2_force_laws "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_sp2_force_laws PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_sp2_force_laws COMMAND test_sp2_force_laws)
+set_tests_properties(test_sp2_force_laws PROPERTIES LABELS "gpu;unit")

@@ -18,11 +18,15 @@
 
 #include "../config_types.hpp"
 #include "../contact/tabulated_radial.hpp"
-#include "../physics_core/tyre_types.hpp"
 #include "../rtsan.hpp"
 #include "../tyre/profile.hpp"
 #include "tire_common.hpp"
 #include "writer_types.hpp"
+
+namespace bike::physics_core {
+template <class Real>
+struct TyreModel;
+} // namespace bike::physics_core
 
 // _BrushState (tire_forces.py:47-53). `xi` is a plain float in Python —
 // the dataclass default is 0.0 and a restored NaN reaches _brush_step's

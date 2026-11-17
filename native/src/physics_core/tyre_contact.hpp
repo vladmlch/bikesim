@@ -11,6 +11,32 @@ BIKE_GPU_SHARED_CODE_BEGIN
 
 namespace bike::physics_core {
 
+template <class Real>
+struct TyreVec3 {
+    Real x = BIKE_REAL(Real, 0.0);
+    Real y = BIKE_REAL(Real, 0.0);
+    Real z = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct TyreXZ {
+    Real x = BIKE_REAL(Real, 0.0);
+    Real z = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct FrictionQuery {
+    Real tire_mu = BIKE_REAL(Real, 0.0);
+    Real contact_x = BIKE_REAL(Real, 0.0);
+    Real slip = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct FrictionResult {
+    Real mu = BIKE_REAL(Real, 0.0);
+    i32 section_idx = -1;
+};
+
 template <class Real, class TK>
 BIKE_HD Real surface_mu(SurfaceSpecPod<Real> s, Real slip) noexcept {
     const Real decay = TK::exp(TK::div(-TK::abs(slip), s.stribeck_speed_mps));

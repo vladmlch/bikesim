@@ -5,15 +5,63 @@
 // 56-61 block under the plan's signature.
 #include "tire_common.hpp"
 
+#include "../contact/laws.hpp"
 #include "../physics_core/cpu_exact_toolkit.hpp"
 #include "../physics_core/tyre_contact.hpp"
+#include "../physics_core/tyre_types.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <span>
 #include <stdexcept>
 
 namespace tirecommon {
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
+    BrushResult brush_step(double xi, double u, double v_roll, double fn,
+                           double k, double mu, double length, double dt) {
+        // NOLINTEND(bugprone-easily-swappable-parameters)
+        const auto [new_xi, force, loss] =
+                contactlaw::brush_step(xi, u, v_roll, fn, k, mu, length, dt);
+        return {.xi = new_xi, .force = force, .loss = loss};
+    }
+
+    bike::physics_core::SurfaceSpecPod<double>
+    to_surface_spec_pod(const nativecfg::SurfaceSpec &s) noexcept {
+        return {
+            .mu_peak = s.mu_peak,
+            .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .surface_id = 0
+        };
+    }
+
+    bool fill_surface_map_view(
+        const nativecfg::SurfaceMap *map,
+        bike::physics_core::SurfaceMapView<double> &out
+    ) noexcept {
+        out = {};
+        if (map == nullptr ||
+            map->sections.size() >
+                static_cast<std::size_t>(bike::physics_core::kMaxSurfaceSections)) {
+            return false;
+        }
+        out.default_surface = to_surface_spec_pod(map->surface);
+        out.section_count = static_cast<bike::physics_core::i32>(
+            map->sections.size());
+        out.has_surface_map = 1;
+        const std::span<bike::physics_core::SurfaceSectionView<double>,
+                        bike::physics_core::kMaxSurfaceSections>
+            dst_sections(out.sections);
+        for (std::size_t i = 0; i < map->sections.size(); ++i) {
+            dst_sections[i].start_m = map->sections[i].start_m;
+            dst_sections[i].end_m = map->sections[i].end_m;
+            dst_sections[i].surface = to_surface_spec_pod(map->sections[i].surface);
+        }
+        return true;
+    }
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
     double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
         return bike::physics_core::surface_mu<

@@ -12,81 +12,100 @@ BIKE_GPU_SHARED_CODE_BEGIN
 
 namespace bike::physics_core {
 
+template <class Real>
+struct RadialEvalInput {
+    Real delta = BIKE_REAL(Real, 0.0);
+    Real delta_dot = BIKE_REAL(Real, 0.0);
+    Real eta = BIKE_REAL(Real, 0.0);
+    Real eps = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct RadialEvalOutput {
+    Real normal = BIKE_REAL(Real, 0.0);
+    Real energy = BIKE_REAL(Real, 0.0);
+    Real elastic = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct CompliantJacInput {
+    TyreVec3<Real> point{};
+    TyreVec3<Real> center{};
+};
+
+template <class Real>
+struct CompliantJacOutput {
+    TyreVec3<Real> velocity{};
+    TyreVec3<Real> center_velocity{};
+};
+
+template <class Real>
+struct CompliantRecord {
+    TyreVec3<Real> center{};
+    TyreVec3<Real> point{};
+    TyreVec3<Real> normal{};
+    PolylineContactResult<Real> contact{};
+    Real delta_dot = BIKE_REAL(Real, 0.0);
+    Real slip = BIKE_REAL(Real, 0.0);
+    Real normal_load = BIKE_REAL(Real, 0.0);
+    Real radial_energy = BIKE_REAL(Real, 0.0);
+    Real elastic_force = BIKE_REAL(Real, 0.0);
+    Real tangent_force = BIKE_REAL(Real, 0.0);
+    Real xi_new = BIKE_REAL(Real, 0.0);
+    Real mu = BIKE_REAL(Real, 0.0);
+    i32 section_idx = -1;
+    Real release_loss = BIKE_REAL(Real, 0.0);
+    Real brush_loss = BIKE_REAL(Real, 0.0);
+};
+
 template <class Real, class Io>
 struct CompliantIoTraits {
     BIKE_HD static bool eval_radial(
         BIKE_THREAD Io &io,
         i32 side,
-        Real delta,
-        Real delta_dot,
-        Real eta,
-        Real eps,
-        BIKE_THREAD Real &out_normal,
-        BIKE_THREAD Real &out_energy,
-        BIKE_THREAD Real &out_elastic,
+        const RadialEvalInput<Real> &in,
+        BIKE_THREAD RadialEvalOutput<Real> &out,
         BIKE_THREAD Status &out_status,
         BIKE_THREAD ErrCode &err
     ) noexcept {
-        return io.eval_radial(
-            side, delta, delta_dot, eta, eps,
-            out_normal, out_energy, out_elastic, out_status, err);
+        return io.eval_radial(side, in, out, out_status, err);
     }
 
     BIKE_HD static bool custom_friction(
         BIKE_THREAD Io &io,
-        Real tire_mu,
-        Real contact_x,
-        Real slip,
-        BIKE_THREAD Real &out_mu,
-        BIKE_THREAD i32 &out_section_idx,
+        const FrictionQuery<Real> &query,
+        BIKE_THREAD FrictionResult<Real> &out,
         BIKE_THREAD Status &out_status,
         BIKE_THREAD ErrCode &err
     ) noexcept {
-        return io.custom_friction(
-            tire_mu, contact_x, slip, out_mu, out_section_idx,
-            out_status, err);
+        return io.custom_friction(query, out, out_status, err);
     }
 
     BIKE_HD static Status record(
         BIKE_THREAD Io &io,
         i32 side,
-        BIKE_THREAD const Real (&center)[3],
-        BIKE_THREAD const Real (&p)[3],
-        BIKE_THREAD const Real (&n)[3],
-        BIKE_THREAD const PolylineContactResult<Real> &contact,
-        Real delta_dot,
-        Real slip,
-        Real normal,
-        Real radial_energy,
-        Real elastic_force,
-        Real force,
-        Real xi_new,
-        Real mu,
-        i32 section_idx,
-        Real release_loss,
-        Real brush_loss,
+        BIKE_THREAD const CompliantRecord<Real> &rec,
         BIKE_THREAD ErrCode &err
     ) noexcept {
-        return io.record(
-            side, center, p, n, contact, delta_dot, slip, normal,
-            radial_energy, elastic_force, force, xi_new, mu,
-            section_idx, release_loss, brush_loss, err);
+        return io.record(side, rec, err);
     }
 };
 
 template <class Real>
 struct CompliantIoTraits<Real, NoOpIo> {
     BIKE_HD static bool eval_radial(
-        BIKE_THREAD NoOpIo &, i32, Real, Real, Real, Real,
-        BIKE_THREAD Real &, BIKE_THREAD Real &, BIKE_THREAD Real &,
+        BIKE_THREAD NoOpIo &, i32,
+        const RadialEvalInput<Real> &,
+        BIKE_THREAD RadialEvalOutput<Real> &,
         BIKE_THREAD Status &, BIKE_THREAD ErrCode &
     ) noexcept {
         return false;
     }
 
     BIKE_HD static bool custom_friction(
-        BIKE_THREAD NoOpIo &, Real, Real, Real,
-        BIKE_THREAD Real &, BIKE_THREAD i32 &,
+        BIKE_THREAD NoOpIo &,
+        const FrictionQuery<Real> &,
+        BIKE_THREAD FrictionResult<Real> &,
         BIKE_THREAD Status &, BIKE_THREAD ErrCode &
     ) noexcept {
         return false;
@@ -94,12 +113,8 @@ struct CompliantIoTraits<Real, NoOpIo> {
 
     BIKE_HD static Status record(
         BIKE_THREAD NoOpIo &, i32,
-        BIKE_THREAD const Real (&)[3],
-        BIKE_THREAD const Real (&)[3],
-        BIKE_THREAD const Real (&)[3],
-        BIKE_THREAD const PolylineContactResult<Real> &,
-        Real, Real, Real, Real, Real, Real, Real, Real,
-        i32, Real, Real, BIKE_THREAD ErrCode &
+        BIKE_THREAD const CompliantRecord<Real> &,
+        BIKE_THREAD ErrCode &
     ) noexcept {
         return Status::ok;
     }
@@ -160,13 +175,21 @@ BIKE_HD Status step_compliant_wheel(
     const Real n[3] = {contact.normal[0], BIKE_REAL(Real, 0.0), contact.normal[1]};
     const Real tangent[3] = {n[2], BIKE_REAL(Real, 0.0), -n[0]};
 
-    Real velocity[3]{};
-    Real center_velocity[3]{};
-    st = jac_fn(side, p, center, qvel, velocity, center_velocity, local_err);
+    const TyreVec3<Real> p_vec{p[0], p[1], p[2]};
+    const TyreVec3<Real> center_vec{center[0], center[1], center[2]};
+    const CompliantJacInput<Real> jac_in{p_vec, center_vec};
+    CompliantJacOutput<Real> jac_out{};
+    st = jac_fn(side, jac_in, qvel, jac_out, local_err);
     if (st != Status::ok) {
         err = local_err;
         return st;
     }
+    const Real velocity[3] = {
+        jac_out.velocity.x, jac_out.velocity.y, jac_out.velocity.z};
+    const Real center_velocity[3] = {
+        jac_out.center_velocity.x,
+        jac_out.center_velocity.y,
+        jac_out.center_velocity.z};
 
     const Real delta_dot = -TK::dot3(velocity, n);
     const Real slip = TK::dot3(velocity, tangent);
@@ -176,9 +199,10 @@ BIKE_HD Status step_compliant_wheel(
     Real elastic_force = BIKE_REAL(Real, 0.0);
     Status io_status = Status::ok;
     if (has_tabulated_radial != 0) {
+        const RadialEvalInput<Real> rad_in{contact.delta, delta_dot, eta, eps};
+        RadialEvalOutput<Real> rad_out{};
         if (!CompliantIoTraits<Real, Io>::eval_radial(
-                io, side, contact.delta, delta_dot, eta, eps,
-                normal, radial_energy, elastic_force, io_status, local_err)) {
+                io, side, rad_in, rad_out, io_status, local_err)) {
             err = ErrCode::missing_material;
             return Status::invalid_argument;
         }
@@ -186,6 +210,9 @@ BIKE_HD Status step_compliant_wheel(
             err = local_err;
             return io_status;
         }
+        normal = rad_out.normal;
+        radial_energy = rad_out.energy;
+        elastic_force = rad_out.elastic;
     } else {
         st = normal_contact_hysteresis<Real, TK>(
             contact.delta, delta_dot, rk, eta, eps,
@@ -252,8 +279,10 @@ BIKE_HD Status step_compliant_wheel(
     Real mu = BIKE_REAL(Real, 0.0);
     i32 section_idx = -1;
     Status fric_status = Status::ok;
+    const FrictionQuery<Real> fquery{tire_mu, p[0], slip};
+    FrictionResult<Real> fresult{};
     if (!CompliantIoTraits<Real, Io>::custom_friction(
-            io, tire_mu, p[0], slip, mu, section_idx, fric_status, local_err)) {
+            io, fquery, fresult, fric_status, local_err)) {
         st = effective_friction<Real, TK>(
             tire_mu, &model->surface_map, p[0], slip, mu, section_idx, local_err);
         if (st != Status::ok) {
@@ -263,6 +292,9 @@ BIKE_HD Status step_compliant_wheel(
     } else if (fric_status != Status::ok) {
         err = local_err;
         return fric_status;
+    } else {
+        mu = fresult.mu;
+        section_idx = fresult.section_idx;
     }
 
     Real xi_new = BIKE_REAL(Real, 0.0);
@@ -277,21 +309,35 @@ BIKE_HD Status step_compliant_wheel(
         return st;
     }
 
-    const Real force_world[3] = {
+    const TyreVec3<Real> force_world_vec{
         normal * n[0] + force * tangent[0],
         normal * n[1] + force * tangent[1],
         normal * n[2] + force * tangent[2]
     };
-    st = qfrc_accum_fn(side, p, force_world, out_qfrc, local_err);
+    st = qfrc_accum_fn(side, p_vec, force_world_vec, out_qfrc, local_err);
     if (st != Status::ok) {
         err = local_err;
         return st;
     }
 
-    st = CompliantIoTraits<Real, Io>::record(
-        io, side, center, p, n, contact, delta_dot, slip,
-        normal, radial_energy, elastic_force, force, xi_new,
-        mu, section_idx, release_loss, brush_loss, local_err);
+    const CompliantRecord<Real> rec{
+        center_vec,
+        p_vec,
+        TyreVec3<Real>{n[0], n[1], n[2]},
+        contact,
+        delta_dot,
+        slip,
+        normal,
+        radial_energy,
+        elastic_force,
+        force,
+        xi_new,
+        mu,
+        section_idx,
+        release_loss,
+        brush_loss
+    };
+    st = CompliantIoTraits<Real, Io>::record(io, side, rec, local_err);
     if (st != Status::ok) {
         err = local_err;
         return st;

@@ -374,7 +374,7 @@ TireWriter::TireWriter(const mjModel *m, const mjData *d,
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::TireParams &pcfg = s == 0 ? cfg_.front : cfg_.rear;
-        const nativecfg::TireMaterial &mat = *pcfg.material;
+        const nativecfg::TireMaterial &mat = engaged(pcfg.material);
         auto &w = std::span{model->wheels}[s];
         w.geom_id = geoms_[s];
         w.radius_m = radii_[s];
@@ -705,43 +705,40 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
             model_access::readonly_buffer(d->qvel, m_->nv);
 
     struct CompliantCpuIo {
-        TireWriter &self;
-        double time_val;
-        double dt_val;
-        const nativecfg::TireMaterial &f_mat;
-        const nativecfg::TireMaterial &r_mat;
-        double &energy_acc;
-        double &loss_acc;
-        double &radial_power_acc;
-        std::string_view custom_material_name;
-        std::exception_ptr &caught;
+        TireWriter *self = nullptr;
+        double time_val = 0.0;
+        double dt_val = 0.0;
+        const nativecfg::TireMaterial *f_mat = nullptr;
+        const nativecfg::TireMaterial *r_mat = nullptr;
+        double *energy_acc = nullptr;
+        double *loss_acc = nullptr;
+        double *radial_power_acc = nullptr;
+        std::string_view custom_material_name{};
+        std::exception_ptr *caught = nullptr;
 
         bool eval_radial(
             bike::physics_core::i32 side,
-            double delta,
-            double delta_dot,
-            double eta,
-            double eps,
-            double &out_normal,
-            double &out_energy,
-            double &out_elastic,
+            const bike::physics_core::RadialEvalInput<double> &in,
+            bike::physics_core::RadialEvalOutput<double> &out_val,
             bike::physics_core::Status &out_status,
             bike::physics_core::ErrCode &err
         ) noexcept {
-            const auto &radial_table = self.radial_tables_[static_cast<std::size_t>(side)];
+            const auto &radial_table =
+                self->radial_tables_[static_cast<std::size_t>(side)];
             if (!radial_table) {
                 return false;
             }
             try {
-                const auto [norm_val, rad_e] =
-                    radial_table->normal_contact(delta, delta_dot, eta, eps);
-                out_normal = norm_val;
-                out_energy = rad_e;
-                out_elastic = radial_table->elastic_response(delta).first;
+                const auto [norm_val, rad_e] = radial_table->normal_contact(
+                    in.delta, in.delta_dot, in.eta, in.eps);
+                out_val.normal = norm_val;
+                out_val.energy = rad_e;
+                out_val.elastic =
+                    radial_table->elastic_response(in.delta).first;
                 out_status = bike::physics_core::Status::ok;
                 err = bike::physics_core::ErrCode::none;
             } catch (...) {
-                caught = std::current_exception();
+                *caught = std::current_exception();
                 out_status = bike::physics_core::Status::invalid_argument;
                 err = bike::physics_core::ErrCode::overflow_nonfinite;
             }
@@ -749,29 +746,26 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
         }
 
         bool custom_friction(
-            double tire_mu,
-            double contact_x,
-            double slip,
-            double &out_mu,
-            bike::physics_core::i32 &out_section_idx,
+            const bike::physics_core::FrictionQuery<double> &query,
+            bike::physics_core::FrictionResult<double> &out_val,
             bike::physics_core::Status &out_status,
             bike::physics_core::ErrCode &err
         ) noexcept {
-            if (self.core_surface_map_complete_) {
+            if (self->core_surface_map_complete_) {
                 return false;
             }
             try {
                 const auto [mu_val, mat_name] = tirecommon::effective_friction(
-                    tire_mu,
-                    self.surface_map_ ? &*self.surface_map_ : nullptr,
-                    contact_x, slip);
-                out_mu = mu_val;
-                out_section_idx = -1;
+                    query.tire_mu,
+                    self->surface_map_ ? &*self->surface_map_ : nullptr,
+                    query.contact_x, query.slip);
+                out_val.mu = mu_val;
+                out_val.section_idx = -1;
                 custom_material_name = mat_name;
                 out_status = bike::physics_core::Status::ok;
                 err = bike::physics_core::ErrCode::none;
             } catch (...) {
-                caught = std::current_exception();
+                *caught = std::current_exception();
                 out_status = bike::physics_core::Status::invalid_argument;
                 err = bike::physics_core::ErrCode::outside_domain;
             }
@@ -780,59 +774,50 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
 
         bike::physics_core::Status record(
             bike::physics_core::i32 side,
-            const double (&center_arr)[3],
-            const double (&p_arr)[3],
-            const double (&n_arr)[3],
-            const bike::physics_core::PolylineContactResult<double> &contact,
-            double delta_dot,
-            double slip,
-            double normal,
-            double radial_energy,
-            double elastic_force,
-            double force,
-            double xi_new,
-            double mu,
-            bike::physics_core::i32 section_idx,
-            double release_loss,
-            double brush_loss,
+            const bike::physics_core::CompliantRecord<double> &rec,
             bike::physics_core::ErrCode &err
         ) noexcept {
             try {
                 const std::size_t s_idx = static_cast<std::size_t>(side);
                 const nativecfg::TireParams &pcfg =
-                    s_idx == 0 ? self.cfg_.front : self.cfg_.rear;
-                const nativecfg::TireMaterial &mat = s_idx == 0 ? f_mat : r_mat;
+                    s_idx == 0 ? self->cfg_.front : self->cfg_.rear;
+                const nativecfg::TireMaterial &mat =
+                    s_idx == 0 ? *f_mat : *r_mat;
                 const double tk = pcfg.tangent_k_n_m;
-                const Vec3 center = {center_arr[0], center_arr[1], center_arr[2]};
-                const Vec3 p = {p_arr[0], p_arr[1], p_arr[2]};
-                const Vec3 n = {n_arr[0], n_arr[1], n_arr[2]};
+                const Vec3 center = {
+                    rec.center.x, rec.center.y, rec.center.z};
+                const Vec3 p = {rec.point.x, rec.point.y, rec.point.z};
+                const Vec3 n = {rec.normal.x, rec.normal.y, rec.normal.z};
 
                 std::string_view material_name = "configured";
-                if (!self.core_surface_map_complete_) {
+                if (!self->core_surface_map_complete_) {
                     material_name = custom_material_name;
-                } else if (self.surface_map_) {
-                    material_name = section_idx >= 0
+                } else if (self->surface_map_) {
+                    material_name = rec.section_idx >= 0
                         ? std::string_view(
-                              self.surface_map_
-                                  ->sections[static_cast<std::size_t>(section_idx)]
+                              self->surface_map_
+                                  ->sections[static_cast<std::size_t>(
+                                      rec.section_idx)]
                                   .surface.name)
-                        : std::string_view(self.surface_map_->surface.name);
+                        : std::string_view(self->surface_map_->surface.name);
                 }
 
-                TireSnapshot &snap = self.snapshot_stage_[s_idx];
+                TireSnapshot &snap = self->snapshot_stage_[s_idx];
                 snap.patches.clear();
                 snap.time_s = time_val;
                 snap.backend = "compliant_2d";
-                snap.geometric_contact = contact.delta > 0.0;
+                snap.geometric_contact = rec.contact.delta > 0.0;
                 snap.wheel_axis_m = center;
-                if (contact.delta > 0.0) {
+                if (rec.contact.delta > 0.0) {
                     if (snap.patches.size() >= kMaxSnapshotPatches)
                         throw std::invalid_argument(
                             "tire snapshot patch capacity exceeded");
                     snap.patches.push_back(
-                        make_patch(p, n, normal, force, slip));
+                        make_patch(p, n, rec.normal_load, rec.tangent_force,
+                                   rec.slip));
                 }
-                snap.interval_id = interval_clock::interval_id(time_val, dt_val);
+                snap.interval_id =
+                    interval_clock::interval_id(time_val, dt_val);
                 if (!std::isfinite(time_val) || time_val < 0.0)
                     throw std::invalid_argument(
                         "contact snapshot needs finite nonnegative time");
@@ -845,31 +830,34 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
                             "wheel axis must be a finite 3D vector");
                 snap.effective_radius_m = effective_radius(snap.patches, center);
 
-                const double radial_loss = (normal - elastic_force) * delta_dot;
-                radial_power_acc +=
-                    contact.delta > 0.0 ? std::max(radial_loss, 0.0) : 0.0;
-                energy_acc += radial_energy + 0.5 * tk * xi_new * xi_new;
-                loss_acc += std::max(release_loss, 0.0) + brush_loss;
+                const double radial_loss =
+                    (rec.normal_load - rec.elastic_force) * rec.delta_dot;
+                *radial_power_acc +=
+                    rec.contact.delta > 0.0 ? std::max(radial_loss, 0.0) : 0.0;
+                *energy_acc +=
+                    rec.radial_energy + 0.5 * tk * rec.xi_new * rec.xi_new;
+                *loss_acc +=
+                    std::max(rec.release_loss, 0.0) + rec.brush_loss;
 
-                TireDiagnostics &diag = self.diagnostics_stage_[s_idx];
-                diag.multi_support = contact.multi_support != 0;
-                diag.penetration_m = contact.delta;
-                diag.normal_speed_mps = -delta_dot;
-                diag.slip_mps = slip;
-                diag.normal_load_n = normal;
-                diag.tangent_force_n = force;
-                diag.friction_coefficient = mu;
+                TireDiagnostics &diag = self->diagnostics_stage_[s_idx];
+                diag.multi_support = rec.contact.multi_support != 0;
+                diag.penetration_m = rec.contact.delta;
+                diag.normal_speed_mps = -rec.delta_dot;
+                diag.slip_mps = rec.slip;
+                diag.normal_load_n = rec.normal_load;
+                diag.tangent_force_n = rec.tangent_force;
+                diag.friction_coefficient = rec.mu;
                 diag.surface = material_name;
-                diag.branch_release_loss_j = std::max(release_loss, 0.0);
-                diag.brush_loss_j = brush_loss;
-                diag.radial_energy_j = radial_energy;
-                diag.shear_energy_j = 0.5 * tk * xi_new * xi_new;
+                diag.branch_release_loss_j = std::max(rec.release_loss, 0.0);
+                diag.brush_loss_j = rec.brush_loss;
+                diag.radial_energy_j = rec.radial_energy;
+                diag.shear_energy_j = 0.5 * tk * rec.xi_new * rec.xi_new;
                 diag.outside_material_load_range =
-                    !nativecfg::is_load_in_valid_range(mat, normal);
+                    !nativecfg::is_load_in_valid_range(mat, rec.normal_load);
                 err = bike::physics_core::ErrCode::none;
                 return bike::physics_core::Status::ok;
             } catch (...) {
-                caught = std::current_exception();
+                *caught = std::current_exception();
                 err = bike::physics_core::ErrCode::overflow_nonfinite;
                 return bike::physics_core::Status::invalid_argument;
             }
@@ -903,23 +891,25 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     };
 
     auto jac_fn = [&](bike::physics_core::i32 side,
-                      const double (&p_arr)[3],
-                      const double (&center_arr)[3],
+                      const bike::physics_core::CompliantJacInput<double> &in_j,
                       const double * /*qvel_ptr*/,
-                      double (&vel_out)[3],
-                      double (&center_vel_out)[3],
+                      bike::physics_core::CompliantJacOutput<double> &out_j,
                       bike::physics_core::ErrCode &err) noexcept
         -> bike::physics_core::Status {
         try {
             const int body = bodies_[static_cast<std::size_t>(side)];
-            const Vec3 p_vec = {p_arr[0], p_arr[1], p_arr[2]};
-            const Vec3 c_vec = {center_arr[0], center_arr[1], center_arr[2]};
+            const Vec3 p_vec = {in_j.point.x, in_j.point.y, in_j.point.z};
+            const Vec3 c_vec = {in_j.center.x, in_j.center.y, in_j.center.z};
             point_jacobian_into(m_, d, body, p_vec, jac_contact_);
             point_jacobian_into(m_, d, body, c_vec, jac_center_);
+            std::array<double, 3> v_arr{};
+            std::array<double, 3> cv_arr{};
             bike::physics_core::CpuExactToolkit::gemv_n3(
-                nv_, jac_contact_.data(), qvel.data(), vel_out);
+                nv_, jac_contact_.data(), qvel.data(), v_arr.data());
             bike::physics_core::CpuExactToolkit::gemv_n3(
-                nv_, jac_center_.data(), qvel.data(), center_vel_out);
+                nv_, jac_center_.data(), qvel.data(), cv_arr.data());
+            out_j.velocity = {.x = v_arr[0], .y = v_arr[1], .z = v_arr[2]};
+            out_j.center_velocity = {.x = cv_arr[0], .y = cv_arr[1], .z = cv_arr[2]};
             err = bike::physics_core::ErrCode::none;
             return bike::physics_core::Status::ok;
         } catch (...) {
@@ -930,13 +920,14 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     };
 
     auto qfrc_accum_fn = [&](bike::physics_core::i32 /*side*/,
-                             const double (& /*p_arr*/)[3],
-                             const double (&force_world_arr)[3],
+                             const bike::physics_core::TyreVec3<double> & /*p_v*/,
+                             const bike::physics_core::TyreVec3<double> &fw_v,
                              double * /*out_ptr*/,
                              bike::physics_core::ErrCode &err) noexcept
         -> bike::physics_core::Status {
+        const std::array<double, 3> fw_arr = {fw_v.x, fw_v.y, fw_v.z};
         bike::physics_core::CpuExactToolkit::gemv_t3(
-            nv_, jac_contact_.data(), force_world_arr, tmp_.data());
+            nv_, jac_contact_.data(), fw_arr.data(), tmp_.data());
         for (int i = 0; i < nv_; ++i) {
             out[static_cast<std::size_t>(i)] += tmp_[static_cast<std::size_t>(i)];
         }
@@ -945,16 +936,16 @@ void TireWriter::accumulate_validated(const mjData *d, double dt_arg,
     };
 
     CompliantCpuIo cpu_io{
-        .self = *this,
+        .self = this,
         .time_val = time,
         .dt_val = dt,
-        .f_mat = front_mat,
-        .r_mat = rear_mat,
-        .energy_acc = energy,
-        .loss_acc = loss,
-        .radial_power_acc = radial_loss_power,
+        .f_mat = &front_mat,
+        .r_mat = &rear_mat,
+        .energy_acc = &energy,
+        .loss_acc = &loss,
+        .radial_power_acc = &radial_loss_power,
         .custom_material_name = {},
-        .caught = caught_err
+        .caught = &caught_err
     };
 
     for (std::size_t s = 0; s < 2; ++s) {

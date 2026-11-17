@@ -16,10 +16,41 @@
 //     terms, so the loop is bitwise the oracle's np.sum reduction.
 #include "station.hpp"
 
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_distributed.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <numbers>
+#include <span>
 #include <stdexcept>
+
+namespace {
+    bool fill_hinge_density_view(
+        const nativecfg::HingeDensity &density,
+        bike::physics_core::HingeDensityView<double> &view
+    ) noexcept {
+        const std::size_t knots = std::min(
+            density.knots_m.size(), density.stiffness_n_m.size());
+        if (knots > static_cast<std::size_t>(bike::physics_core::kMaxHingeKnots)) {
+            return false;
+        }
+        view = {};
+        view.knot_count = static_cast<bike::physics_core::i32>(knots);
+        view.damping_ns_m = density.damping_ns_m;
+        view.loss_factor = density.loss_factor;
+        view.hysteresis_rate_eps_mps = density.hysteresis_rate_eps_mps;
+        const std::span<double, bike::physics_core::kMaxHingeKnots> dst_k(
+            view.knots_m);
+        const std::span<double, bike::physics_core::kMaxHingeKnots> dst_s(
+            view.stiffness_n_m);
+        for (std::size_t i = 0; i < knots; ++i) {
+            dst_k[i] = density.knots_m[i];
+            dst_s[i] = density.stiffness_n_m[i];
+        }
+        return true;
+    }
+} // namespace
 
 namespace biketyre {
     StationAngles station_angles(int count) {
@@ -51,15 +82,23 @@ namespace biketyre {
 
     std::pair<double, double>
     station_density(double delta, const nativecfg::HingeDensity &density) {
-        // distributed_tire.py:131-132 — the oracle's finite-penetration
-        // gate; material validity is HingeDensity's construction contract.
+        bike::physics_core::HingeDensityView<double> view{};
+        if (fill_hinge_density_view(density, view)) {
+            double force = 0.0;
+            double energy = 0.0;
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::station_density<
+                double, bike::physics_core::CpuExactToolkit>(
+                    delta, view, force, energy, err);
+            if (st != bike::physics_core::Status::ok)
+                throw std::invalid_argument(
+                    "contact penetration must be finite");
+            return {force, energy};
+        }
+        // Fallback when knot count exceeds kMaxHingeKnots:
         if (!std::isfinite(delta))
             throw std::invalid_argument(
                 "contact penetration must be finite");
-        // lines 133-139 — the sequential fold over
-        // zip(knots_m, stiffness_n_m): zip truncates to the shorter
-        // column, mirrored by the min bound (config validation already
-        // keeps the two vectors equal-length, so this is a faithful zip).
         double force = 0.0;
         double energy = 0.0;
         const std::size_t knots = std::min(density.knots_m.size(),
@@ -78,18 +117,26 @@ namespace biketyre {
     station_response(double delta, double rate, double weight,
                      const nativecfg::HingeDensity &density) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
-        // distributed_tire.py:144-145 — finite quadrature triple plus a
-        // nonnegative weight, in the oracle's clause order.
+        bike::physics_core::HingeDensityView<double> view{};
+        if (fill_hinge_density_view(density, view)) {
+            double force = 0.0;
+            double energy = 0.0;
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::station_response<
+                double, bike::physics_core::CpuExactToolkit>(
+                    delta, rate, weight, view, force, energy, err);
+            if (st != bike::physics_core::Status::ok) {
+                if (err == bike::physics_core::ErrCode::invalid_station_quad)
+                    throw std::invalid_argument("invalid contact quadrature");
+                throw std::invalid_argument(
+                    "contact penetration must be finite");
+            }
+            return {force, energy};
+        }
         if (!(std::isfinite(delta) && std::isfinite(rate) &&
               std::isfinite(weight)) ||
             weight < 0.0)
             throw std::invalid_argument("invalid contact quadrature");
-        // lines 146-148 — density first, then the gated force; the
-        // weight multiplies force and energy alike. Ban #39: the radial
-        // loss is the rate-independent hysteresis
-        // eta*elastic*tanh(rate/eps) of contact/laws.hpp
-        // (normal_contact_hysteresis), not viscous damping — stored
-        // energy stays the elastic fold, independent of rate.
         const auto [elastic, energy] = station_density(delta, density);
         const double force =
             delta > 0.0

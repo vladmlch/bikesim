@@ -21,6 +21,8 @@
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_distributed.hpp"
 #include "../tyre/profile.hpp"
 #include "pyfloat.hpp"
 
@@ -255,6 +257,57 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     states_[1].resize(n);
     states_stage_[0].resize(n);
     states_stage_[1].resize(n);
+    states_pod_in_[0].resize(n);
+    states_pod_in_[1].resize(n);
+    states_pod_out_[0].resize(n);
+    states_pod_out_[1].resize(n);
+    auto model = std::make_shared<bike::physics_core::TyreModel<double>>();
+    model->backend = bike::physics_core::TyreBackendKind::distributed_2d_reference;
+    model->nq = static_cast<bike::physics_core::i32>(m_->nq);
+    model->nv = nv_;
+    model->nbody = static_cast<bike::physics_core::i32>(m_->nbody);
+    model->njnt = static_cast<bike::physics_core::i32>(m_->njnt);
+    model->station_count = static_cast<bike::physics_core::i32>(n);
+    model->distinct_normal_cosine = numeric::np_cos(
+        cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
+    for (std::size_t s = 0; s < 2; ++s) {
+        const nativecfg::TireParams &pcfg = s == 0 ? cfg_.front : cfg_.rear;
+        const nativecfg::DistributedMaterial &domain =
+            s == 0 ? dist.front : dist.rear;
+        auto &w = std::span{model->wheels}[s];
+        w.geom_id = geoms_[s];
+        w.radius_m = radii_[s];
+        w.tangent_k_n_m = pcfg.tangent_k_n_m;
+        w.tire_mu = pcfg.mu;
+        w.relaxation_length_m = pcfg.relaxation_length_m;
+        w.station_weight = stations_.weights[0];
+        w.valid_deflection_min_m = domain.valid_deflection_range_m[0];
+        w.valid_deflection_max_m = domain.valid_deflection_range_m[1];
+        const std::size_t knots = std::min(
+            domain.density.knots_m.size(),
+            domain.density.stiffness_n_m.size());
+        if (knots > static_cast<std::size_t>(bike::physics_core::kMaxHingeKnots))
+            throw std::invalid_argument(
+                "distributed hinge density knot count exceeds kMaxHingeKnots");
+        w.distributed_density.knot_count =
+            static_cast<bike::physics_core::i32>(knots);
+        w.distributed_density.damping_ns_m = domain.density.damping_ns_m;
+        w.distributed_density.loss_factor = domain.density.loss_factor;
+        w.distributed_density.hysteresis_rate_eps_mps =
+            domain.density.hysteresis_rate_eps_mps;
+        const std::span<double, bike::physics_core::kMaxHingeKnots> dst_k(
+            w.distributed_density.knots_m);
+        const std::span<double, bike::physics_core::kMaxHingeKnots> dst_s(
+            w.distributed_density.stiffness_n_m);
+        for (std::size_t k = 0; k < knots; ++k) {
+            dst_k[k] = domain.density.knots_m[k];
+            dst_s[k] = domain.density.stiffness_n_m[k];
+        }
+    }
+    core_surface_map_complete_ = surface_map_
+        ? tirecommon::fill_surface_map_view(&*surface_map_, model->surface_map)
+        : true;
+    core_model_ = std::move(model);
     const std::size_t cols = 2 * n * kLeaves.size();
     wire_cols_.resize(cols);
     wire_seen_.resize(cols);
@@ -294,6 +347,12 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     }
     // reset() (:58-62) — the member initializers already hold these values.
 }
+
+DistributedTireWriter::~DistributedTireWriter() = default;
+DistributedTireWriter::DistributedTireWriter(const DistributedTireWriter &) = default;
+DistributedTireWriter &DistributedTireWriter::operator=(const DistributedTireWriter &) = default;
+DistributedTireWriter::DistributedTireWriter(DistributedTireWriter &&) noexcept = default;
+DistributedTireWriter &DistributedTireWriter::operator=(DistributedTireWriter &&) noexcept = default;
 
 void DistributedTireWriter::reset() {
     // :58-62. Copy-assign from const empties (not move-assign or
@@ -601,7 +660,6 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
     std::ranges::fill(out, 0.0);
     const nativecfg::DistributedConfig &dist = engaged(cfg_.distributed);
     const std::size_t n = stations_.angles.size();
-    const std::size_t nv = static_cast<std::size_t>(nv_);
     constexpr std::size_t kDim =
             static_cast<std::size_t>(model_access::kXYZ);
     double energy = 0.0, total_loss = 0.0, radial_loss_power = 0.0;
@@ -609,277 +667,364 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
+    const std::span<const mjtNum> xmat = model_access::readonly_buffer(
+        d->xmat, 9 * m_->nbody);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, m_->nv);
+
+    struct CpuDistributedWorkspace {
+        double *points;
+        bike::physics_core::i32 *active_ids;
+        double *jac_center;
+        double *jr;
+        double *jac_station;
+        double *tmp;
+    };
+
+    struct DistributedCpuIo {
+        DistributedTireWriter *self = nullptr;
+        const nativecfg::DistributedConfig *dist_cfg = nullptr;
+        double time_val = 0.0;
+        double dt_val = 0.0;
+        std::size_t n_stations = 0;
+        double cos_distinct_val = 0.0;
+        double *energy_acc = nullptr;
+        double *total_loss_acc = nullptr;
+        double *radial_power_acc = nullptr;
+        int nonsmooth_count = 0;
+        std::exception_ptr *caught = nullptr;
+
+        bool custom_friction(
+            const bike::physics_core::FrictionQuery<double> &query,
+            bike::physics_core::FrictionResult<double> &out_val,
+            bike::physics_core::Status &out_status,
+            bike::physics_core::ErrCode &err
+        ) noexcept {
+            if (self->core_surface_map_complete_) {
+                return false;
+            }
+            try {
+                const auto [mu_val, material_name] =
+                    tirecommon::effective_friction(
+                        query.tire_mu,
+                        self->surface_map_ ? &*self->surface_map_ : nullptr,
+                        query.contact_x, query.slip);
+                static_cast<void>(material_name);
+                out_val.mu = mu_val;
+                out_val.section_idx = -1;
+                out_status = bike::physics_core::Status::ok;
+                err = bike::physics_core::ErrCode::none;
+            } catch (...) {
+                *caught = std::current_exception();
+                out_status = bike::physics_core::Status::invalid_argument;
+                err = bike::physics_core::ErrCode::outside_domain;
+            }
+            return true;
+        }
+
+        bike::physics_core::Status record_station(
+            bike::physics_core::i32 side,
+            const bike::physics_core::DistributedStationRecord<double> &rec,
+            bike::physics_core::ErrCode &err
+        ) noexcept {
+            try {
+                const std::size_t s_idx = static_cast<std::size_t>(side);
+                const std::size_t j_idx = static_cast<std::size_t>(rec.j);
+                const Vec3 point = {rec.point.x, rec.point.y, rec.point.z};
+                const Vec3 normal = {rec.normal.x, rec.normal.y, rec.normal.z};
+                self->loads_[j_idx] = rec.load;
+                self->energies_[j_idx] = rec.elastic_energy;
+                self->depths_[j_idx] = rec.penetration;
+                nonsmooth_count += rec.geometry.nonsmooth != 0 ? 1 : 0;
+                self->normals_[kDim * j_idx] = normal[0];
+                self->normals_[kDim * j_idx + 1] = normal[1];
+                self->normals_[kDim * j_idx + 2] = normal[2];
+                TireSnapshot &snap = self->snapshot_stage_[s_idx];
+                if (snap.patches.size() >= n_stations)
+                    throw std::invalid_argument(
+                        "tire snapshot patch capacity exceeded");
+                snap.patches.push_back(
+                    make_patch(point, normal, rec.load, rec.tangent_force,
+                               rec.slip));
+                err = bike::physics_core::ErrCode::none;
+                return bike::physics_core::Status::ok;
+            } catch (...) {
+                *caught = std::current_exception();
+                err = bike::physics_core::ErrCode::overflow_nonfinite;
+                return bike::physics_core::Status::invalid_argument;
+            }
+        }
+
+        bike::physics_core::Status record_wheel(
+            bike::physics_core::i32 side,
+            const bike::physics_core::DistributedWheelRecord<double> &rec,
+            bike::physics_core::ErrCode &err
+        ) noexcept {
+            try {
+                const std::size_t s_idx = static_cast<std::size_t>(side);
+                const std::size_t count =
+                    static_cast<std::size_t>(rec.active_count);
+                const nativecfg::DistributedMaterial &domain =
+                    s_idx == 0 ? dist_cfg->front : dist_cfg->rear;
+                const Vec3 center = {
+                    rec.center.x, rec.center.y, rec.center.z};
+
+                const double normal_total = numeric::numpy_sum(
+                    std::span{self->loads_}.first(count));
+                const double radial_energy = numeric::numpy_sum(
+                    std::span{self->energies_}.first(count));
+                const double max_depth =
+                    count > 0 ? *std::ranges::max_element(
+                                    self->depths_.begin(),
+                                    self->depths_.begin() +
+                                        static_cast<std::ptrdiff_t>(count))
+                              : 0.0;
+                const double center_clearance =
+                    engaged(self->profile_)
+                            .query({center[0], center[2]})
+                            .distance -
+                    self->radii_[s_idx];
+                const double signed_overlap =
+                    count > 0 ? max_depth
+                              : -std::max(0.0, center_clearance);
+
+                bool distinct = false;
+                if (count > 1)
+                    for (std::size_t a = 0; a < count && !distinct; ++a)
+                        for (std::size_t b = 0; b < count; ++b)
+                            if (dot3({self->normals_[kDim * a],
+                                      self->normals_[kDim * a + 1],
+                                      self->normals_[kDim * a + 2]},
+                                     {self->normals_[kDim * b],
+                                      self->normals_[kDim * b + 1],
+                                      self->normals_[kDim * b + 2]}) <
+                                cos_distinct_val) {
+                                distinct = true;
+                                break;
+                            }
+
+                bool separate = false;
+                if (count > 1) {
+                    for (std::size_t i = 0; i + 1 < count; ++i)
+                        if (self->active_ids_[i + 1] -
+                                self->active_ids_[i] > 1) {
+                            separate = true;
+                            break;
+                        }
+                    if (self->active_ids_[0] == 0 &&
+                        self->active_ids_[count - 1] ==
+                            static_cast<int>(n_stations) - 1)
+                        separate = false;
+                }
+
+                TireSnapshot &snap = self->snapshot_stage_[s_idx];
+                snap.time_s = time_val;
+                snap.backend = "distributed_2d_reference";
+                snap.geometric_contact = count > 0;
+                snap.wheel_axis_m = center;
+                snap.interval_id =
+                    interval_clock::interval_id(time_val, dt_val);
+                if (!std::isfinite(time_val) || time_val < 0.0)
+                    throw std::invalid_argument(
+                        "contact snapshot needs finite nonnegative time");
+                if (snap.interval_id < 0)
+                    throw std::invalid_argument(
+                        "contact snapshot needs a nonnegative interval ID");
+                for (const double v: center)
+                    if (!std::isfinite(v))
+                        throw std::invalid_argument(
+                            "wheel axis must be a finite 3D vector");
+                snap.effective_radius_m =
+                    effective_radius(snap.patches, center);
+
+                TireDiagnostics &diag = self->diagnostics_stage_[s_idx];
+                diag.multi_support = distinct || separate;
+                diag.penetration_m = signed_overlap;
+                diag.normal_load_n = normal_total;
+                diag.supports_multiple_contacts = true;
+                diag.capability_status =
+                    "experimental_reference_not_release_qualified";
+                diag.calibration_status = domain.calibration_status;
+                diag.station_count = static_cast<int>(n_stations);
+                diag.active_station_count = static_cast<int>(count);
+                diag.nonsmooth_station_count = nonsmooth_count;
+                diag.max_patch_count = static_cast<int>(count);
+                diag.outside_material_load_range =
+                    !(domain.valid_load_range_n[0] <= normal_total &&
+                      normal_total <= domain.valid_load_range_n[1]);
+                diag.outside_material_deflection_range =
+                    !(domain.valid_deflection_range_m[0] <= max_depth &&
+                      max_depth <= domain.valid_deflection_range_m[1]);
+                diag.radial_energy_j = radial_energy;
+                diag.shear_energy_j = rec.shear_energy;
+                diag.brush_loss_j = rec.losses;
+
+                *energy_acc += radial_energy + rec.shear_energy;
+                *total_loss_acc += rec.losses;
+                *radial_power_acc += rec.radial_power;
+                err = bike::physics_core::ErrCode::none;
+                return bike::physics_core::Status::ok;
+            } catch (...) {
+                *caught = std::current_exception();
+                err = bike::physics_core::ErrCode::overflow_nonfinite;
+                return bike::physics_core::Status::invalid_argument;
+            }
+        }
+    };
+
+    std::exception_ptr caught_err;
+    auto profile_height_fn = [&](double x, double &out_h,
+                                 bike::physics_core::ErrCode &err) noexcept
+        -> bike::physics_core::Status {
+        try {
+            out_h = engaged(profile_).height(x);
+            err = bike::physics_core::ErrCode::none;
+            return bike::physics_core::Status::ok;
+        } catch (...) {
+            caught_err = std::current_exception();
+            err = bike::physics_core::ErrCode::outside_domain;
+            return bike::physics_core::Status::invalid_argument;
+        }
+    };
+
+    auto signed_query_fn = [&](const bike::physics_core::TyreXZ<double> &xz,
+                               bike::physics_core::PointDistanceResult<double> &out_geom,
+                               bike::physics_core::ErrCode &err) noexcept
+        -> bike::physics_core::Status {
+        try {
+            const biketyre::PointDistance g =
+                engaged(profile_).query({xz.x, xz.z});
+            out_geom.distance = g.distance;
+            out_geom.normal[0] = g.normal[0];
+            out_geom.normal[1] = g.normal[1];
+            out_geom.point[0] = g.point[0];
+            out_geom.point[1] = g.point[1];
+            out_geom.segment = g.segment;
+            out_geom.nonsmooth = g.nonsmooth ? 1 : 0;
+            err = bike::physics_core::ErrCode::none;
+            return bike::physics_core::Status::ok;
+        } catch (...) {
+            caught_err = std::current_exception();
+            err = bike::physics_core::ErrCode::outside_domain;
+            return bike::physics_core::Status::invalid_argument;
+        }
+    };
+
+    std::size_t current_side = 0;
+    auto center_jac_fn = [&](const bike::physics_core::TyreVec3<double> &c_v,
+                             double * /*jp_ptr*/,
+                             double * /*jr_ptr*/,
+                             bike::physics_core::ErrCode &err) noexcept
+        -> bike::physics_core::Status {
+        try {
+            const Vec3 c_vec = {c_v.x, c_v.y, c_v.z};
+            point_jacobian(m_, d, bodies_[current_side], c_vec,
+                           jac_center_, jr_);
+            err = bike::physics_core::ErrCode::none;
+            return bike::physics_core::Status::ok;
+        } catch (...) {
+            caught_err = std::current_exception();
+            err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::invalid_argument;
+        }
+    };
+
+    CpuDistributedWorkspace ws{
+        .points = points_.data(),
+        .active_ids = active_ids_.data(),
+        .jac_center = jac_center_.data(),
+        .jr = jr_.data(),
+        .jac_station = jac_station_.data(),
+        .tmp = tmp_.data()
+    };
+
+    DistributedCpuIo cpu_io{
+        .self = this,
+        .dist_cfg = &dist,
+        .time_val = time,
+        .dt_val = dt,
+        .n_stations = n,
+        .cos_distinct_val = cos_distinct,
+        .energy_acc = &energy,
+        .total_loss_acc = &total_loss,
+        .radial_power_acc = &radial_loss_power,
+        .nonsmooth_count = 0,
+        .caught = &caught_err
+    };
+
     // :147 — self.bodies.items() — front then rear, insertion order.
     for (std::size_t s = 0; s < 2; ++s) {
-        // :148-149 — the per-side TireParams plus its resolved
-        // for_wheel material domain.
-        const nativecfg::TireParams &pcfg =
-                s == 0 ? cfg_.front : cfg_.rear;
-        const nativecfg::DistributedMaterial &domain =
-                s == 0 ? dist.front : dist.rear;
-        const nativecfg::HingeDensity &material = domain.density;
-        const int body = bodies_[s];
-        const double tk = pcfg.tangent_k_n_m;
-        // :150 — _stations: the geom_xpos center, the world lift of the
-        // local ring, the height/domain sweep and the ascending
-        // penetrating ids (station_points).
+        current_side = s;
+        cpu_io.nonsmooth_count = 0;
+        snapshot_stage_[s].patches.clear();
         const std::size_t g3 =
                 kDim * static_cast<std::size_t>(geoms_[s]);
         const Vec3 center = {xpos[g3], xpos[g3 + 1], xpos[g3 + 2]};
-        const std::size_t count = station_points(d, s);
-        // :151-152 — point_jacobian at the wheel center (both halves),
-        // then center_velocity = jp_center @ qvel.
-        point_jacobian(m_, d, body, center, jac_center_, jr_);
-        Vec3 center_velocity{};
-        blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                    model_access::kXYZ, nv_, 1.0, jac_center_.data(), nv_,
-                    qvel.data(), 1, 0.0, center_velocity.data(), 1);
-        // :153-155 — the per-side accumulators; loads_/energies_/
-        // depths_ cover np.zeros(len(ids)) — only their [0,count)
-        // prefix is read back below.
-        double losses = 0.0, shear_energy = 0.0, radial_power = 0.0;
-        int nonsmooth = 0;
-        TireSnapshot &snap = snapshot_stage_[s];
-        snap.patches.clear();
-        // new_states[side] starts empty: detach unless a station is
-        // written below — the (side, sid) keyed dict's absence.
-        std::ranges::fill(states_stage_[s], StationState{});
-        // :156 — for j, sid in enumerate(ids).
-        for (std::size_t j = 0; j < count; ++j) {
-            const std::size_t sid =
-                    static_cast<std::size_t>(active_ids_[j]);
-            const Vec3 point = {points_[kDim * sid],
-                                points_[kDim * sid + 1],
-                                points_[kDim * sid + 2]};
-            // :157-160 — the station's signed-distance row and the
-            // X-Z-plane normal/tangent pair.
-            const biketyre::PointDistance geometry =
-                    engaged(profile_).query({point[0], point[2]});
-            const Vec3 normal = {geometry.normal[0], 0.0,
-                                 geometry.normal[1]};
-            const Vec3 tangent = {normal[2], 0.0, -normal[0]};
-            // :161 — arm = points[sid] - center.
-            const Vec3 arm = {point[0] - center[0],
-                              point[1] - center[1],
-                              point[2] - center[2]};
-            // :163-165 — the unrolled np.cross row: jp[k] +
-            // (jr[(k+1)%3]*arm[(k+2)%3] - jr[(k+2)%3]*arm[(k+1)%3]).
-            // numpy evaluates the parenthesized mul-mul-sub into a
-            // temporary row, then adds jp elementwise — the identical
-            // per-element order, and -ffp-contract=off forbids the fma
-            // fusion that would change it.
-            for (std::size_t k = 0; k < kDim; ++k) {
-                const std::size_t a = (k + 1) % kDim,
-                                  b = (k + 2) % kDim;
-                for (std::size_t i = 0; i < nv; ++i)
-                    jac_station_[k * nv + i] =
-                            jac_center_[k * nv + i] +
-                            (jr_[a * nv + i] * arm[b] -
-                             jr_[b * nv + i] * arm[a]);
-            }
-            // :166 — velocity = jac @ data.qvel.
-            Vec3 velocity{};
-            blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                        model_access::kXYZ, nv_, 1.0,
-                        jac_station_.data(), nv_, qvel.data(), 1, 0.0,
-                        velocity.data(), 1);
-            // :167-168 — penetration rate (literal parenthesized fold)
-            // and the positive penetration depth.
-            const double rate =
-                    -((velocity[0] * normal[0] +
-                       velocity[1] * normal[1]) +
-                      velocity[2] * normal[2]);
-            const double penetration = -geometry.distance;
-            // :169-171 — the station's radial material response and the
-            // nonnegative dissipative-power term.
-            const auto [load, elastic_energy] =
-                    biketyre::station_response(penetration, rate,
-                                               stations_.weights[sid],
-                                               material);
-            const double elastic_density = biketyre::station_density(
-                    penetration, material)
-                    .first;
-            radial_power += std::max(
-                    0.0, (load - stations_.weights[sid] * elastic_density) *
-                         rate);
-            // :172-177 — the stored brush transports through the
-            // tangent change; released stretch is dissipated.
-            const StationState &old = states_[s][sid];
-            double xi = old.xi;
-            const double k_station = tk * stations_.weights[sid];
-            if (old.tangent.has_value()) {
-                const double transported = xi * dot3(*old.tangent,
-                                                     tangent);
-                losses += std::max(
-                        0.0, .5 * k_station *
-                             (xi * xi - transported * transported));
-                xi = transported;
-            }
-            // :178-179 — slip = velocity @ tangent, then the
-            // Stribeck-capped effective mu at the contact's x.
-            const double slip = dot3(velocity, tangent);
-            const auto [mu, material_name] =
-                    tirecommon::effective_friction(
-                            pcfg.mu,
-                            surface_map_ ? &*surface_map_ : nullptr,
-                            geometry.point[0], slip);
-            // `mu, _ = ...` (:179) — the material name is discarded.
-            static_cast<void>(material_name);
-            // :180-182 — _brush_step plus its dissipation and stored
-            // shear-energy terms (xi_new ** 2 → the libm call).
-            const auto [xi_new, tangent_force, brush_loss] =
-                    tirecommon::brush_step(
-                            xi, slip, dot3(center_velocity, tangent),
-                            load, k_station, mu,
-                            pcfg.relaxation_length_m, dt);
-            losses += brush_loss;
-            shear_energy += .5 * k_station * pyfloat::pow(xi_new, 2.0);
-            // :183-184 — force = load*normal + tangent_force*tangent
-            // (mul, mul, add per component), then result += jac.T @
-            // force — dgemv(Trans) into tmp_ first, elementwise +=
-            // second, matching numpy's materialized product.
-            const Vec3 force = {
-                    load * normal[0] + tangent_force * tangent[0],
-                    load * normal[1] + tangent_force * tangent[1],
-                    load * normal[2] + tangent_force * tangent[2]};
-            blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
-                        model_access::kXYZ, nv_, 1.0,
-                        jac_station_.data(), nv_, force.data(), 1, 0.0,
-                        tmp_.data(), 1);
-            for (std::size_t i = 0; i < nv; ++i)
-                out[i] += tmp_[i];
-            // :185-189 — staged per-station artifacts in enumeration
-            // order (the oracle's append order).
-            loads_[j] = load;
-            energies_[j] = elastic_energy;
-            depths_[j] = penetration;
-            nonsmooth += geometry.nonsmooth ? 1 : 0;
-            normals_[kDim * j] = normal[0];
-            normals_[kDim * j + 1] = normal[1];
-            normals_[kDim * j + 2] = normal[2];
-            // One patch per station: construction-reserved capacity —
-            // the guard can never trip, like TireWriter's.
-            if (snap.patches.size() >= n)
-                throw std::invalid_argument(
-                        "tire snapshot patch capacity exceeded");
-            snap.patches.push_back(
-                    make_patch(point, normal, load, tangent_force,
-                               slip));
-            states_stage_[s][sid] = StationState{
-                    .active = true, .xi = xi_new, .tangent = tangent};
-        }
-        // :190-192 — stations that detached this interval release their
-        // stored shear as loss, in (side, station) ascending order —
-        // sorted(self.states.items()) restricted to this side.
+        const std::size_t b9 = 9 * static_cast<std::size_t>(bodies_[s]);
+
         for (std::size_t i = 0; i < n; ++i) {
-            const StationState &old = states_[s][i];
-            if (old.active && !states_stage_[s][i].active)
-                losses += .5 * tk * stations_.weights[i] *
-                          pyfloat::pow(old.xi, 2.0);
+            const StationState &st_in = states_[s][i];
+            auto &pod = states_pod_in_[s][i];
+            pod.active = st_in.active ? 1 : 0;
+            pod.xi = st_in.xi;
+            if (st_in.tangent.has_value()) {
+                std::ranges::copy(*st_in.tangent, std::span{pod.tangent}.begin());
+                pod.has_tangent = 1;
+            } else {
+                pod.tangent[0] = 0.0;
+                pod.tangent[1] = 0.0;
+                pod.tangent[2] = 0.0;
+                pod.has_tangent = 0;
+            }
         }
-        // :193-196 — the wheel's numpy reductions and the signed
-        // overlap convention (deepest penetration, else the negative
-        // of the nonnegative center clearance).
-        const double normal_total = numeric::numpy_sum(
-                std::span{loads_}.first(count));
-        const double radial_energy = numeric::numpy_sum(
-                std::span{energies_}.first(count));
-        const double max_depth =
-                count > 0 ? *std::ranges::max_element(
-                        depths_.begin(),
-                        depths_.begin() +
-                            static_cast<std::ptrdiff_t>(count))
-                          : 0.0;
-        const double center_clearance =
-                engaged(profile_)
-                        .query({center[0], center[2]})
-                        .distance -
-                radii_[s];
-        const double signed_overlap =
-                count > 0 ? max_depth
-                          : -std::max(0.0, center_clearance);
-        // :197 — any pair of patch normals separated by more than
-        // distinct_normal_deg marks multi-support. The oracle's double
-        // generator scans a-outer/b-inner with early exit — identical.
-        bool distinct = false;
-        if (count > 1)
-            for (std::size_t a = 0; a < count && !distinct; ++a)
-                for (std::size_t b = 0; b < count; ++b)
-                    if (dot3({normals_[kDim * a],
-                              normals_[kDim * a + 1],
-                              normals_[kDim * a + 2]},
-                             {normals_[kDim * b],
-                              normals_[kDim * b + 1],
-                              normals_[kDim * b + 2]}) <
-                        cos_distinct) {
-                        distinct = true;
-                        break;
-                    }
-        // :200-201 — separated material patches across a missing tread
-        // station also count as simultaneous supports, unless the
-        // active set wraps the whole circumference.
-        bool separate = false;
-        if (count > 1) {
-            for (std::size_t i = 0; i + 1 < count; ++i)
-                if (active_ids_[i + 1] - active_ids_[i] > 1) {
-                    separate = true;
-                    break;
-                }
-            if (active_ids_[0] == 0 &&
-                active_ids_[count - 1] == static_cast<int>(n) - 1)
-                separate = false;
+
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::step_distributed_wheel<
+            double, bike::physics_core::CpuExactToolkit>(
+                core_model_.get(),
+                static_cast<bike::physics_core::i32>(s),
+                dt,
+                center.data(),
+                xmat.subspan(b9, 9).data(),
+                qvel.data(),
+                &local_[s][0][0],
+                stations_.weights.data(),
+                states_pod_in_[s].data(),
+                states_pod_out_[s].data(),
+                out.data(),
+                ws,
+                profile_height_fn,
+                signed_query_fn,
+                center_jac_fn,
+                cpu_io,
+                err);
+        if (st != bike::physics_core::Status::ok) {
+            if (caught_err) {
+                std::rethrow_exception(caught_err);
+            }
+            if (err == bike::physics_core::ErrCode::overflow_passivity) {
+                throw std::overflow_error(
+                    "brush update violates discrete passivity");
+            }
+            if (st == bike::physics_core::Status::overflow) {
+                throw std::overflow_error(
+                    "tire calculation exceeds finite floating-point range");
+            }
+            throw std::invalid_argument("distributed wheel invalid argument");
         }
-        // :202-203 — WheelContactSnapshot. The interval_id argument
-        // (round(time/dt)) evaluates before the dataclass __post_init__
-        // checks, like tire.cpp's staging; the patch tuple already
-        // holds every station's ContactPatch in append order.
-        snap.time_s = time;
-        snap.backend = "distributed_2d_reference";
-        snap.geometric_contact = count > 0;
-        snap.wheel_axis_m = center;
-        snap.interval_id = interval_clock::interval_id(time, dt);
-        // WheelContactSnapshot.__post_init__ (contact_state.py:90-113).
-        if (!std::isfinite(time) || time < 0.0)
-            throw std::invalid_argument(
-                    "contact snapshot needs finite nonnegative time");
-        if (snap.interval_id < 0)
-            throw std::invalid_argument(
-                    "contact snapshot needs a nonnegative interval ID");
-        for (const double v: center)
-            if (!std::isfinite(v))
-                throw std::invalid_argument(
-                        "wheel axis must be a finite 3D vector");
-        snap.effective_radius_m = effective_radius(snap.patches, center);
-        // :204-213 — diagnostics[side]. Compliant-only fields keep
-        // their staged zero/empty defaults: the distributed dict never
-        // emits them.
-        TireDiagnostics &diag = diagnostics_stage_[s];
-        diag.multi_support = distinct || separate;
-        diag.penetration_m = signed_overlap;
-        diag.normal_load_n = normal_total;
-        diag.supports_multiple_contacts = true;
-        diag.capability_status =
-                "experimental_reference_not_release_qualified";
-        diag.calibration_status = domain.calibration_status;
-        diag.station_count = static_cast<int>(n);
-        diag.active_station_count = static_cast<int>(count);
-        diag.nonsmooth_station_count = nonsmooth;
-        diag.max_patch_count = static_cast<int>(count);
-        diag.outside_material_load_range =
-                !(domain.valid_load_range_n[0] <= normal_total &&
-                  normal_total <= domain.valid_load_range_n[1]);
-        diag.outside_material_deflection_range =
-                !(domain.valid_deflection_range_m[0] <= max_depth &&
-                  max_depth <= domain.valid_deflection_range_m[1]);
-        diag.radial_energy_j = radial_energy;
-        diag.shear_energy_j = shear_energy;
-        diag.brush_loss_j = losses;
-        // :214 — the cross-side folds, one rounded add each.
-        energy += radial_energy + shear_energy;
-        total_loss += losses;
-        radial_loss_power += radial_power;
+
+        for (std::size_t i = 0; i < n; ++i) {
+            const auto &pod = states_pod_out_[s][i];
+            if (pod.active != 0) {
+                states_stage_[s][i] = StationState{
+                    .active = true,
+                    .xi = pod.xi,
+                    .tangent = Vec3{pod.tangent[0], pod.tangent[1], pod.tangent[2]}
+                };
+            } else {
+                states_stage_[s][i] = StationState{};
+            }
+        }
     }
     // :215-217 — the atomic commit after both wheels evaluate. The
     // committed slots copy-assign from the stages — capacity-reserved

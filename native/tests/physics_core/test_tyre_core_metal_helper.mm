@@ -103,11 +103,9 @@ struct SmokeJacFn {
 
     bike::physics_core::Status operator()(
         bike::physics_core::i32,
-        thread const float (&p)[3],
-        thread const float (&center)[3],
+        bike::physics_core::CompliantJacInput<float> in_j,
         thread const float *qvel,
-        thread float (&vel_out)[3],
-        thread float (&cvel_out)[3],
+        thread bike::physics_core::CompliantJacOutput<float> &out_j,
         thread bike::physics_core::ErrCode &err
     ) {
         for (int i = 0; i < 9; ++i) {
@@ -115,13 +113,13 @@ struct SmokeJacFn {
         }
         // q = [x, z, pitch]
         jac[0 * 3 + 0] = 1.0f;
-        jac[0 * 3 + 2] = p[2] - center[2];
+        jac[0 * 3 + 2] = in_j.point.z - in_j.center.z;
         jac[2 * 3 + 1] = 1.0f;
-        jac[2 * 3 + 2] = -(p[0] - center[0]);
-        bike::physics_core::GpuToolkit::gemv_n3(3, jac, qvel, vel_out);
-        cvel_out[0] = qvel[0];
-        cvel_out[1] = 0.0f;
-        cvel_out[2] = qvel[1];
+        jac[2 * 3 + 2] = -(in_j.point.x - in_j.center.x);
+        float vel_arr[3] = {0.0f, 0.0f, 0.0f};
+        bike::physics_core::GpuToolkit::gemv_n3(3, jac, qvel, vel_arr);
+        out_j.velocity = {vel_arr[0], vel_arr[1], vel_arr[2]};
+        out_j.center_velocity = {qvel[0], 0.0f, qvel[1]};
         err = bike::physics_core::ErrCode::none;
         return bike::physics_core::Status::ok;
     }
@@ -132,13 +130,14 @@ struct SmokeAccumFn {
 
     bike::physics_core::Status operator()(
         bike::physics_core::i32,
-        thread const float (&)[3],
-        thread const float (&force_world)[3],
+        bike::physics_core::TyreVec3<float>,
+        bike::physics_core::TyreVec3<float> force_world,
         thread float *out_qfrc,
         thread bike::physics_core::ErrCode &err
     ) const {
+        float fw[3] = {force_world.x, force_world.y, force_world.z};
         float tmp[3];
-        bike::physics_core::GpuToolkit::gemv_t3(3, jac, force_world, tmp);
+        bike::physics_core::GpuToolkit::gemv_t3(3, jac, fw, tmp);
         for (int i = 0; i < 3; ++i) {
             out_qfrc[i] += tmp[i];
         }
@@ -199,15 +198,14 @@ struct SmokeDistHeightFn {
 
 struct SmokeDistQueryFn {
     bike::physics_core::Status operator()(
-        float x,
-        float z,
+        bike::physics_core::TyreXZ<float> xz,
         thread bike::physics_core::PointDistanceResult<float> &out,
         thread bike::physics_core::ErrCode &err
     ) const {
-        out.distance = z;
+        out.distance = xz.z;
         out.normal[0] = 0.0f;
         out.normal[1] = 1.0f;
-        out.point[0] = x;
+        out.point[0] = xz.x;
         out.point[1] = 0.0f;
         out.segment = 0;
         out.nonsmooth = 0;
@@ -218,7 +216,7 @@ struct SmokeDistQueryFn {
 
 struct SmokeCenterJacFn {
     bike::physics_core::Status operator()(
-        thread const float *,
+        bike::physics_core::TyreVec3<float>,
         thread float *jp_center,
         thread float *jr,
         thread bike::physics_core::ErrCode &err
@@ -252,9 +250,7 @@ kernel void tyre_core_dist_smoke_kernel(
                      0.0f, 0.0f, 1.0f};
     float qvel[3] = {2.5f, -0.02f, 7.0f};
     float qfrc[3] = {0.0f, 0.0f, 0.0f};
-    GpuDistributedWorkspace<float> ws{};
-    ws.local_xyz = model.wheels[0].local_xyz;
-    ws.uniform_weight = model.wheels[0].station_weight;
+    GpuDistributedWorkspace<float, 128u, 3u> ws{};
     SmokeDistHeightFn hfn{};
     SmokeDistQueryFn qfn{};
     SmokeCenterJacFn jfn{};
@@ -262,6 +258,8 @@ kernel void tyre_core_dist_smoke_kernel(
     ErrCode err = ErrCode::none;
     step_distributed_wheel<float, GpuToolkit>(
         &model, 0, 0.00125f, center, xmat, qvel,
+        model.wheels[0].local_xyz,
+        static_cast<thread const float *>(nullptr),
         prev_states, next_states, qfrc, ws, hfn, qfn, jfn, io, err);
     out->distributed_xi0 = next_states[0].xi;
     out->distributed_qfrc0 = qfrc[0];

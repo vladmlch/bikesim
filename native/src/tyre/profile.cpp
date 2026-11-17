@@ -26,6 +26,10 @@
 #include "../numeric_norm.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sincos.hpp"
+#include "../physics_core/common.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/terrain_scanner.hpp"
+#include "../physics_core/tyre_types.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -37,51 +41,9 @@
 
 namespace {
 
-    // np.searchsorted(x, v, side='right') — first index with x[i] > v.
-    int search_right(std::span<const double> x, double v) {
-        return static_cast<int>(
-            std::ranges::upper_bound(x, v) - x.begin());
-    }
-
-    // np.searchsorted(x, v, side='left') — first index with x[i] >= v.
-    int search_left(std::span<const double> x, double v) {
-        return static_cast<int>(
-            std::ranges::lower_bound(x, v) - x.begin());
-    }
-
     // np.clip(t, 0., 1.): comparisons propagate NaN like np.maximum/np.minimum
     // do for these bounds (inputs are finite in every caller anyway).
     double clip01(double t) { return t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t); }
-
-    // np.min on a non-empty span of finite values.
-    double min_elt(std::span<const double> v) {
-        double m = v.front();
-        for (const double x: v)
-            if (x < m)
-                m = x;
-        return m;
-    }
-
-    // ProfileContact.__post_init__ (contact_profile.py:23-29).
-    biketyre::ProfileContact make_contact(std::array<double, 2> point,
-                                          std::array<double, 2> normal,
-                                          double delta, int segment,
-                                          bool multi) {
-        for (const double v: point)
-            if (!std::isfinite(v))
-                throw std::invalid_argument(
-                    "invalid shape or non-finite contact point");
-        for (const double v: normal)
-            if (!std::isfinite(v))
-                throw std::invalid_argument(
-                    "invalid shape or non-finite contact normal");
-        // math.isclose(hypot(n0,n1), 1., rel_tol=0., abs_tol=1e-10)
-        if (!(std::abs(biketyre::py_hypot(normal[0], normal[1]) - 1.0) <= 1e-10))
-            throw std::invalid_argument("contact normal must be a unit vector");
-        if (!std::isfinite(delta))
-            throw std::invalid_argument("invalid shape or non-finite penetration");
-        return {.point = point, .normal = normal, .delta = delta, .segment_id = segment, .multi_support = multi};
-    }
 
 } // namespace
 
@@ -483,175 +445,76 @@ namespace biketyre {
     ProfileContact ProfileQuery::contact(
         std::array<double, 2> c, double radius,
         std::optional<int> previous_segment) const {
-        // contact_profile.py:88-102 — argument validation in source order.
-        if (!std::isfinite(c[0]) || !std::isfinite(c[1]))
-            throw std::invalid_argument(
-                "invalid shape or non-finite wheel center");
-        if (!std::isfinite(radius) || radius <= 0.0)
-            throw std::invalid_argument("invalid wheel radius");
-        const int count = static_cast<int>(px_.size()) - 1;
-        if (previous_segment &&
-            (*previous_segment < 0 || *previous_segment >= count))
-            throw std::invalid_argument("invalid previous contact segment");
-        if (!(px_.front() <= c[0] && c[0] <= px_.back()))
-            throw std::invalid_argument(
-                "wheel center is outside profile domain");
-        if (c[1] <= np_interp(c[0], px_, pz_))
-            throw std::invalid_argument(
-                "wheel center reached or entered solid road");
-        const int lo = std::max(0, search_right(px_, c[0] - radius) - 2);
-        const int hi = std::min(count, search_right(px_, c[0] + radius) + 1);
-        const double height = c[1] - pz_[static_cast<std::size_t>(lo)];
-        if (height < radius &&
-            height_changes_[static_cast<std::size_t>(hi)] ==
-            height_changes_[static_cast<std::size_t>(lo)]) {
-            // Flat-window fast path (contact_profile.py:104-121).
-            int segment = std::max(0, search_left(px_, c[0]) - 1);
-            std::array<double, 2> point = {c[0], pz_[static_cast<std::size_t>(lo)]};
-            double distance = height;
-            if (previous_segment && lo <= *previous_segment &&
-                *previous_segment < hi) {
-                const std::size_t pv = static_cast<std::size_t>(*previous_segment);
-                const double previous_x =
-                        std::min(std::max(c[0], px_[pv]), px_[pv + 1]);
-                const double previous_distance =
-                        py_hypot(c[0] - previous_x, height);
-                const int vertex = previous_x == px_[pv]
-                                       ? *previous_segment
-                                       : *previous_segment + 1;
-                const bool endpoint = previous_x == px_[pv] ||
-                                      previous_x == px_[pv + 1];
-                // eligible = not endpoint or not any(offset @ dir > 1e-14)
-                bool closer = false;
-                if (endpoint) {
-                    const std::size_t vv = static_cast<std::size_t>(vertex);
-                    const std::array<double, 2> off = {
-                        c[0] - px_[vv],
-                        c[1] - pz_[vv]
-                    };
-                    const std::array<double, 2> left = {left_x_[vv], left_z_[vv]};
-                    const std::array<double, 2> right = {
-                        right_x_[vv],
-                        right_z_[vv]
-                    };
-                    closer = blas::ddot(2, off.data(), 1, left.data(), 1) >
-                                 1e-14 ||
-                             blas::ddot(2, off.data(), 1, right.data(), 1) >
-                                 1e-14;
-                }
-                if (!closer && std::abs(previous_distance - distance) <= 1e-12) {
-                    segment = *previous_segment;
-                    point[0] = previous_x;
-                    distance = previous_distance;
-                }
-            }
-            if (distance <= 1e-12)
-                throw std::invalid_argument(
-                    "unsupported or degenerate contact geometry");
-            return make_contact(point,
-                                {
-                                    (c[0] - point[0]) / distance,
-                                    (c[1] - point[1]) / distance
-                                },
-                                radius - distance, segment, false);
-        }
-        // candidates path (contact_profile.py:122-165) — the member scratch
-        // vectors replace the Python temporaries; their construction-sized
-        // capacity keeps steady-state queries off the allocator.
-        candidates_into(c, lo, hi, cand_scratch_);
-        if (cand_scratch_.ids.empty() ||
-            min_elt(cand_scratch_.distances) >= radius) {
-            int search_lo = 0, search_hi = 0;
-            if (!cand_scratch_.ids.empty()) {
-                const double best = min_elt(cand_scratch_.distances);
-                const double vertical_lower =
-                        std::max(0.0, c[1] - maximum_z_);
-                const double reach = std::sqrt(std::max(
-                                         0.0, best * best - vertical_lower * vertical_lower)) + 1e-8;
-                search_lo = std::max(0, search_right(px_, c[0] - reach) - 2);
-                search_hi =
-                        std::min(count, search_right(px_, c[0] + reach) + 1);
-            } else {
-                search_lo = 0;
-                search_hi = count;
-            }
-            candidates_into(c, search_lo, search_hi, cand_scratch_);
-        }
-        if (cand_scratch_.ids.empty() ||
-            min_elt(cand_scratch_.distances) <= 1e-12)
-            throw std::invalid_argument(
-                "unsupported or degenerate contact geometry");
-        endpoint_keep_into(c, cand_scratch_, keep_scratch_);
-        // np.argmin(distances): first index of the minimum.
-        std::size_t winner = 0;
-        for (std::size_t i = 1; i < cand_scratch_.distances.size(); ++i)
-            if (cand_scratch_.distances[i] < cand_scratch_.distances[winner])
-                winner = i;
-        if (previous_segment) {
-            // same = flatnonzero((ids == prev) & keep); same[0] if it exists.
-            for (std::size_t i = 0; i < cand_scratch_.ids.size(); ++i)
-                if (cand_scratch_.ids[i] == *previous_segment &&
-                    keep_scratch_[i]) {
-                    if (std::abs(cand_scratch_.distances[i] -
-                                 cand_scratch_.distances[winner]) <=
-                        1e-12)
-                        winner = i;
-                    break;
-                }
-        }
-        const double delta_winner = radius - cand_scratch_.distances[winner];
-        const std::array<double, 2> normal_winner = {
-            (c[0] - cand_scratch_.points[winner][0]) /
-                cand_scratch_.distances[winner],
-            (c[1] - cand_scratch_.points[winner][1]) /
-                cand_scratch_.distances[winner]
+        const bike::physics_core::PolylineView<double> view{
+            .px = px_.data(),
+            .pz = pz_.data(),
+            .seg_x = seg_x_.data(),
+            .seg_z = seg_z_.data(),
+            .seg_len_sq = seg_len_sq_.data(),
+            .height_changes = height_changes_.data(),
+            .left_x = left_x_.data(),
+            .left_z = left_z_.data(),
+            .right_x = right_x_.data(),
+            .right_z = right_z_.data(),
+            .num_vertices = static_cast<bike::physics_core::i32>(px_.size()),
+            .maximum_z = maximum_z_,
+            .significant_delta_m = significant_delta_m_,
+            .significance_fraction = significance_fraction_,
+            .normal_cosine = normal_cosine_,
         };
-        const double threshold =
-                std::max(significant_delta_m_,
-                         significance_fraction_ * std::max(delta_winner, 0.0));
-        near_scratch_.clear();
-        for (std::size_t i = 0; i < cand_scratch_.ids.size(); ++i)
-            if (radius - cand_scratch_.distances[i] >= threshold &&
-                keep_scratch_[i])
-                near_scratch_.push_back(static_cast<int>(i));
-        bool multi = false;
-        if (!near_scratch_.empty()) {
-            const std::size_t near_n = near_scratch_.size();
-            // normals = (c - points[near]) / distances[near, None]
-            const std::span<double> normals =
-                    std::span{normals_scratch_}.first(2 * near_n);
-            for (std::size_t j = 0; j < near_n; ++j) {
-                const std::size_t i =
-                        static_cast<std::size_t>(near_scratch_[j]);
-                normals[2 * j] = (c[0] - cand_scratch_.points[i][0]) /
-                                     cand_scratch_.distances[i];
-                normals[2 * j + 1] = (c[1] - cand_scratch_.points[i][1]) /
-                                         cand_scratch_.distances[i];
-            }
-            // different = normals @ normal_winner < normal_cosine — a
-            // (k,2)@(2,) matmul → gemv path, not a per-row manual dot.
-            const std::span<double> dots =
-                    std::span{dots_scratch_}.first(near_n);
-            blas::dgemv(blas::Order::row_major, blas::Transpose::no,
-                        static_cast<int>(near_n), 2, 1.0,
-                        normals.data(), 2, normal_winner.data(), 1, 0.0,
-                        dots.data(), 1);
-            for (std::size_t j = 0; j < near_n; ++j) {
-                const std::size_t i =
-                        static_cast<std::size_t>(near_scratch_[j]);
-                const double ex = cand_scratch_.points[i][0] -
-                                      cand_scratch_.points[winner][0];
-                const double ez = cand_scratch_.points[i][1] -
-                                      cand_scratch_.points[winner][1];
-                // np.linalg.norm(..., axis=1) on (k,2): elementwise sqrt(x²+y²).
-                const bool separated = std::sqrt(ex * ex + ez * ez) > 1e-10;
-                if (dots[j] < normal_cosine_ && separated) {
-                    multi = true;
-                    break;
-                }
+        bike::physics_core::PolylineContactResult<double> res{};
+        bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+        const bike::physics_core::Status status =
+            bike::physics_core::scan_polyline_contact<
+                double,
+                bike::physics_core::CpuExactToolkit,
+                bike::physics_core::O1CpuMultiSupport>(
+                view, c[0], c[1], radius, previous_segment.has_value(),
+                previous_segment.value_or(-1), res, err);
+        if (status != bike::physics_core::Status::ok) {
+            using bike::physics_core::ErrCode;
+            switch (err) {
+                case ErrCode::nonfinite_center:
+                    throw std::invalid_argument(
+                        "invalid shape or non-finite wheel center");
+                case ErrCode::invalid_radius:
+                    throw std::invalid_argument("invalid wheel radius");
+                case ErrCode::invalid_prev_seg:
+                    throw std::invalid_argument(
+                        "invalid previous contact segment");
+                case ErrCode::outside_domain:
+                    throw std::invalid_argument(
+                        "wheel center is outside profile domain");
+                case ErrCode::solid_road:
+                    throw std::invalid_argument(
+                        "wheel center reached or entered solid road");
+                case ErrCode::nonunit_normal:
+                    throw std::invalid_argument(
+                        "contact normal must be a unit vector");
+                case ErrCode::overflow_nonfinite:
+                    throw std::invalid_argument(
+                        "invalid shape or non-finite penetration");
+                case ErrCode::degenerate_contact:
+                case ErrCode::none:
+                case ErrCode::logic_no_closest:
+                case ErrCode::overflow_passivity:
+                case ErrCode::missing_material:
+                case ErrCode::bad_dt:
+                case ErrCode::bad_time:
+                case ErrCode::out_of_bounds_chain:
+                case ErrCode::out_of_bounds_station:
+                case ErrCode::nonfinite_tangent:
+                case ErrCode::invalid_station_quad:
+                    throw std::invalid_argument(
+                        "unsupported or degenerate contact geometry");
             }
         }
-        return make_contact(cand_scratch_.points[winner], normal_winner,
-                            delta_winner, cand_scratch_.ids[winner], multi);
+        return {
+            .point = {res.point[0], res.point[1]},
+            .normal = {res.normal[0], res.normal[1]},
+            .delta = res.delta,
+            .segment_id = res.segment_id,
+            .multi_support = res.multi_support != 0,
+        };
     }
 } // namespace biketyre

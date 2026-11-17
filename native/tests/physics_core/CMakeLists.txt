@@ -50,3 +50,16 @@ endif()
 
 add_test(NAME test_physics_core_math COMMAND test_physics_core_math)
 set_tests_properties(test_physics_core_math PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_terrain_scanner
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_terrain_scanner.cpp")
+bike_apply_native_policy(test_terrain_scanner)
+target_include_directories(test_terrain_scanner PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_terrain_scanner SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_terrain_scanner PRIVATE
+  bike_test_fixtures bike_terrain bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_terrain_scanner "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_terrain_scanner COMMAND test_terrain_scanner)
+set_tests_properties(test_terrain_scanner PROPERTIES LABELS "gpu;unit")

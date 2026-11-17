@@ -21,32 +21,14 @@
 //   np.min / flatnonzero / argmin-id  → ordered scans (first winner)
 #include "distance.hpp"
 
-#include "profile.hpp"
-#include "../cblas_abi.hpp"
+#include "../physics_core/common.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/terrain_distance.hpp"
+#include "../physics_core/tyre_types.hpp"
 
-#include <algorithm>
 #include <cmath>
-#include <span>
 #include <stdexcept>
 #include <utility>
-
-namespace {
-    // np.searchsorted(x, v, side='right') — first index with x[i] > v.
-    int search_right(std::span<const double> x, double v) {
-        return static_cast<int>(
-            std::ranges::upper_bound(x, v) - x.begin());
-    }
-
-    // np.searchsorted(x, v, side='left') — first index with x[i] >= v.
-    int search_left(std::span<const double> x, double v) {
-        return static_cast<int>(
-            std::ranges::lower_bound(x, v) - x.begin());
-    }
-
-    // np.clip(t, 0., 1.) constant-bound float path: the sequential
-    // comparisons keep -0.0 and propagate NaN like the clip ufunc.
-    double clip01(double t) { return t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t); }
-} // namespace
 
 namespace biketyre {
     SignedProfile::SignedProfile(
@@ -103,157 +85,60 @@ namespace biketyre {
     }
 
     double SignedProfile::height(double x) const {
-        // profile_distance.py:34-38 — finite scalar inside the compiled
-        // X domain, then the np.interp port.
-        if (!std::isfinite(x) || x < x_.front() || x > x_.back())
+        const bike::physics_core::SignedProfileView<double> view{
+            .x = x_.data(),
+            .z = z_.data(),
+            .edge_x = edge_x_.data(),
+            .edge_z = edge_z_.data(),
+            .length2 = length2_.data(),
+            .normal_x = normal_x_.data(),
+            .normal_z = normal_z_.data(),
+            .num_vertices = static_cast<bike::physics_core::i32>(x_.size()),
+        };
+        double h = 0.0;
+        bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+        const bike::physics_core::Status status =
+            bike::physics_core::profile_height<
+                double, bike::physics_core::CpuExactToolkit>(view, x, h, err);
+        if (status != bike::physics_core::Status::ok)
             throw std::invalid_argument(
                 "query lies outside the compiled road domain");
-        return np_interp(x, x_, z_);
-    }
-
-    SignedProfile::Candidate SignedProfile::candidate(
-        int i, std::array<double, 2> p) const {
-        // profile_distance.py:55-59 evaluated as scalar rows for segment
-        // i: offsets = p - vertices[i], fractions = clip(sum(offsets *
-        // edges, axis=1)/length2), projections = vertices + fractions
-        // [:, None]*edges, vectors = p - projections, squared =
-        // np.sum(vectors*vectors, axis=1).
-        const std::size_t u = static_cast<std::size_t>(i);
-        const double ox = p[0] - x_[u];
-        const double oz = p[1] - z_[u];
-        // Two-element row of offsets*edges[ids]: +0.0-seeded fold (see the
-        // header for why the seed sign is +0.0, not pairwise's -0.0).
-        double num = 0.0;
-        num += ox * edge_x_[u];
-        num += oz * edge_z_[u];
-        const double fraction = clip01(num / length2_[u]);
-        // vertices + fractions[:, None]*edges — one multiply then one add
-        // per component (two roundings, kept un-fused).
-        const std::array<double, 2> projection = {
-            x_[u] + fraction * edge_x_[u], z_[u] + fraction * edge_z_[u]};
-        const std::array<double, 2> vector = {p[0] - projection[0],
-                                              p[1] - projection[1]};
-        double squared = 0.0;
-        squared += vector[0] * vector[0];
-        squared += vector[1] * vector[1];
-        return {.fraction = fraction,
-                .projection = projection,
-                .vector = vector,
-                .squared = squared};
+        return h;
     }
 
     PointDistance SignedProfile::query(std::array<double, 2> p) const {
-        // profile_distance.py:42-43 — the oracle checks finiteness of the
-        // whole (N,2) batch before the domain gate; for the single-point
-        // API both reduce to this point.
-        if (!std::isfinite(p[0]) || !std::isfinite(p[1]))
-            throw std::invalid_argument(
-                "distance queries must be a finite (N, 2) array");
-        // line 44 — height() carries the domain check and np.interp.
-        const double h = height(p[0]);
-        const int nseg = static_cast<int>(x_.size()) - 1;
-        // line 47 — local = clip(searchsorted(x, px, 'right') - 1,
-        // 0, nseg-1); the integer clip is a plain clamp.
-        const int first =
-            std::clamp(search_right(x_, p[0]) - 1, 0, nseg - 1);
-        const std::size_t f = static_cast<std::size_t>(first);
-        const std::array<double, 2> edge = {edge_x_[f], edge_z_[f]};
-        const std::array<double, 2> offset = {p[0] - x_[f], p[1] - z_[f]};
-        // line 50 — np.dot on two (2,) vectors → ddot; then the scalar
-        // divide and the scalar np.clip.
-        const double t = clip01(
-            blas::ddot(2, offset.data(), 1, edge.data(), 1) /
-            length2_[f]);
-        // line 51 — vertices[first] + t*edge is multiply-then-add per
-        // component; np.linalg.norm on the (2,) difference → sqrt(ddot).
-        const std::array<double, 2> projected = {x_[f] + t * edge[0],
-                                                 z_[f] + t * edge[1]};
-        const std::array<double, 2> upper_d = {p[0] - projected[0],
-                                               p[1] - projected[1]};
-        const double upper = std::sqrt(
-            blas::ddot(2, upper_d.data(), 1, upper_d.data(), 1));
-        // lines 52-54 — the horizontal window follows from the first
-        // candidate's Euclidean length; ids = arange(left, hi) is the
-        // nonempty ascending segment range.
-        const int left = std::max(0, search_left(x_, p[0] - upper) - 1);
-        const int right = std::min(nseg, search_right(x_, p[0] + upper));
-        const int hi = std::max(left + 1, right);
-        // line 61 — best = min(squared): a value scan over the window.
-        double best = candidate(left, p).squared;
-        for (int i = left + 1; i < hi; ++i)
-            best = std::min(best, candidate(i, p).squared);
-        // line 62 — numerical ties only, not a geometric smoothing
-        // length; the bound is scalar best + 2e-15*max(1., best).
-        const double bound = best + 2e-15 * std::max(1.0, best);
-        // lines 63-70 — the window ascends, so the first squared <= bound
-        // is the winner (ties[0]); every tie's segment normal is compared
-        // against the winner's for the nonsmooth flag. The candidate row
-        // is a pure function of the segment id, so recomputing it here
-        // reproduces the oracle's temporaries bit-for-bit.
-        int sid = -1;
-        Candidate winner{};
-        bool nonsmooth = false;
-        for (int i = left; i < hi; ++i) {
-            const Candidate row = candidate(i, p);
-            if (row.squared <= bound) {
-                if (sid < 0) {
-                    sid = i;
-                    winner = row;
-                }
-                const std::size_t u = static_cast<std::size_t>(i);
-                const std::size_t w = static_cast<std::size_t>(sid);
-                const double dnx = normal_x_[u] - normal_x_[w];
-                const double dnz = normal_z_[u] - normal_z_[w];
-                // norm(tie_normals - normals[sid], axis=1) > 1e-10 —
-                // the (k,2) row-norm add.reduce fold.
-                if (std::sqrt(dnx * dnx + dnz * dnz) > 1e-10)
-                    nonsmooth = true;
-            }
-        }
-        if (sid < 0)
-            // Unreachable: the best element is always inside its own tie
-            // bound; the throw pins the invariant instead of relying on
-            // an out-of-contract empty-window caller.
+        const bike::physics_core::SignedProfileView<double> view{
+            .x = x_.data(),
+            .z = z_.data(),
+            .edge_x = edge_x_.data(),
+            .edge_z = edge_z_.data(),
+            .length2 = length2_.data(),
+            .normal_x = normal_x_.data(),
+            .normal_z = normal_z_.data(),
+            .num_vertices = static_cast<bike::physics_core::i32>(x_.size()),
+        };
+        bike::physics_core::PointDistanceResult<double> res{};
+        bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+        const bike::physics_core::Status status =
+            bike::physics_core::signed_profile_query<
+                double, bike::physics_core::CpuExactToolkit>(
+                view, p[0], p[1], res, err);
+        if (status == bike::physics_core::Status::logic_error)
             throw std::logic_error(
                 "signed-distance window produced no closest segment");
-        // lines 64-66 — length, sign (p.z >= height), distance, point,
-        // segment.
-        const double length = std::sqrt(winner.squared);
-        const double sign = p[1] >= h ? 1.0 : -1.0;
-        const std::size_t w = static_cast<std::size_t>(sid);
-        PointDistance out{
-            .distance = sign * length,
-            // line 67 — sign*vector/length is elementwise-mul then
-            // elementwise-div (two roundings per component); below the
-            // 1e-12 length floor the raw segment normal is used.
-            .normal = length > 1e-12
-                          ? std::array<double, 2>{
-                                (sign * winner.vector[0]) / length,
-                                (sign * winner.vector[1]) / length}
-                          : std::array<double, 2>{normal_x_[w],
-                                                  normal_z_[w]},
-            .point = winner.projection,
-            .segment = sid,
-            .nonsmooth = nonsmooth,
-        };
-        // lines 71-74 — a zero-length hit on a shared endpoint is
-        // nonsmooth only when the adjacent segment normals really differ.
-        if (length <= 1e-12 &&
-            (winner.fraction <= 1e-12 ||
-             winner.fraction >= 1.0 - 1e-12)) {
-            const int vertex = winner.fraction <= 1e-12 ? sid : sid + 1;
-            if (0 < vertex && vertex < static_cast<int>(x_.size()) - 1) {
-                const std::size_t v = static_cast<std::size_t>(vertex);
-                const std::array<double, 2> d = {
-                    normal_x_[v - 1] - normal_x_[v],
-                    normal_z_[v - 1] - normal_z_[v]};
-                // 1-D np.linalg.norm here (axis=None → x.dot(x)) →
-                // sqrt(ddot(d, d)), not the axis=1 fold used above.
-                if (std::sqrt(blas::ddot(2, d.data(), 1, d.data(), 1)) >
-                    1e-10)
-                    out.nonsmooth = true;
-            }
+        if (status != bike::physics_core::Status::ok) {
+            if (err == bike::physics_core::ErrCode::nonfinite_center)
+                throw std::invalid_argument(
+                    "distance queries must be a finite (N, 2) array");
+            throw std::invalid_argument(
+                "query lies outside the compiled road domain");
         }
-        return out;
+        return {
+            .distance = res.distance,
+            .normal = {res.normal[0], res.normal[1]},
+            .point = {res.point[0], res.point[1]},
+            .segment = res.segment,
+            .nonsmooth = res.nonsmooth != 0,
+        };
     }
 } // namespace biketyre

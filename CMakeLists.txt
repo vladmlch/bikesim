@@ -505,6 +505,17 @@ bike_apply_native_policy(bike_random)
 target_include_directories(bike_random SYSTEM PRIVATE
   "${_bike_native_dir}/src")
 
+# bike_spatial_core: pure 3D SO(3) frame kinematics and typed [spatial]
+# configuration contract, isolated from planar bike_core and bike_configuration.
+add_library(bike_spatial_core STATIC
+  "${_bike_native_dir}/src/spatial/frames.hpp"
+  "${_bike_native_dir}/src/spatial/frames.cpp")
+set_target_properties(bike_spatial_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+bike_apply_native_policy(bike_spatial_core)
+target_include_directories(bike_spatial_core SYSTEM PRIVATE
+  "${_bike_native_dir}/src")
+target_link_libraries(bike_spatial_core PUBLIC bike_io)
+
 # bike_model: the T15 model boundary — inertia.py's ring tensors and the
 # synthetic wheel/mudguard mass profile, component_masses.py's MJCF
 # distribution + registry, mass.py's BikeMassSpecs/component centers/

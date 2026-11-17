@@ -382,10 +382,9 @@ BIKE_CONSTEXPR float kMainPivotLocalDzM = 0.0463930f;
 BIKE_CONSTEXPR float kSeatstayFromChainstayDxM = -0.3342160f;
 BIKE_CONSTEXPR float kSeatstayFromChainstayDzM = -0.0548350f;
 // Seatstay origin in the frame at main_pivot = 0, i.e. kMainPivotLocal + kSeatstayFromChainstay.
-// NOT the horst fallback for main_pivot != 0 (use gpu_horst_pivot_anchor_fallback). No production caller
-// passes it to gpu_rear_pivot_anchor_world: tire_kernel.hpp and metal_batch_runner.mm use
-// gpu_horst_pivot_anchor_world for the seatstay. It remains for the benchmark seatstay seed in
-// metal_batch_runner.mm and the pre-fix anchor comparison in test_gpu_tire.cpp.
+// NOT the horst fallback for main_pivot != 0 (use gpu_horst_pivot_anchor_fallback). Production
+// callers use physics_core/kinematics.hpp (`chain_point_jacobian`) for wheel Jacobians; it remains
+// for rear suspension anchor helpers in test_gpu_model_geometry.cpp.
 BIKE_CONSTEXPR float kHorstPivotLocalDxM = -0.3791180f;
 BIKE_CONSTEXPR float kHorstPivotLocalDzM = -0.0084420f;
 

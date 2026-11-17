@@ -8,6 +8,7 @@
 // host compile of cuda_kernels.cu: the ODR sweep links every selected TU into
 // one image, so a textual #include of the .cu here would define them twice.
 #include "../../src/gpu/cuda_kernels_abi.hpp"
+#include "../../src/gpu/terrain_tables.hpp"
 #include "../../src/platform/argv.hpp"
 
 #include <array>
@@ -15,6 +16,7 @@
 #include <cstddef>
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <string>
@@ -59,44 +61,119 @@ constexpr std::size_t to_index(int field) {
 constexpr int kNWorld = 64;
 constexpr int kNumSteps = 10;
 constexpr int kHfSamples = 4000;
+constexpr int kNjnt = 27;
 constexpr float kDt = 0.001f;
 constexpr float kHfXMin = -5.0f;
 constexpr float kHfDx = 0.05f;
+constexpr float kFrontRadiusM = 0.372f;
+constexpr float kRearRadiusM = 0.352f;
 
-// Shared scenario buffers for the batch-step cases: the heterogeneous sweep
-// configs, world states, flat batch kinematics/force arrays and the tendon
-// range block, all sized by the default model index counts.
+bike::physics_core::GpuTyreModel make_synthetic_tyre_model(
+    const GpuModelIndices &idx,
+    bike::physics_core::TyreBackendKind backend
+) {
+    using namespace bike::physics_core;
+    GpuTyreModel tm{};
+    tm.backend = backend;
+    tm.nq = idx.nq;
+    tm.nv = idx.nv;
+    tm.nbody = idx.nbody;
+    tm.njnt = kNjnt;
+    tm.station_count = (backend == TyreBackendKind::distributed_2d_reference) ? 64 : 0;
+    tm.distinct_normal_cosine = 0.9781476f;
+
+    struct WheelSpecArgs {
+        int side;
+        int body_id;
+        float radius;
+        int extra_j1;
+        int extra_j2;
+    };
+    const std::span<TyreWheelSpec<float>, 2> tm_wheels(tm.wheels);
+    const auto init_wheel = [&](const WheelSpecArgs &ws) {
+        TyreWheelSpec<float> &w = tm_wheels[to_index(ws.side)];
+        w.geom_id = ws.side;
+        w.radius_m = ws.radius;
+        w.tangent_k_n_m = 60000.0f;
+        w.tire_mu = 1.1f;
+        w.relaxation_length_m = 0.05f;
+        w.compliant = CompliantMaterialView<float>{
+            .radial_k_n_m = 110000.0f,
+            .loss_factor = 0.05f,
+            .hysteresis_rate_eps_mps = 0.01f,
+            .valid_load_min_n = 0.0f,
+            .valid_load_max_n = 4000.0f,
+            .has_tabulated_radial = 0,
+        };
+        w.distributed_density = HingeDensityView<float>{
+            .knots_m = {0.0f, 0.01f, 0.03f, 0.06f},
+            .stiffness_n_m = {180000.0f, 220000.0f, 280000.0f, 360000.0f},
+            .knot_count = 4,
+            .damping_ns_m = 0.0f,
+            .loss_factor = 0.05f,
+            .hysteresis_rate_eps_mps = 0.01f,
+        };
+        w.valid_deflection_min_m = 0.0f;
+        w.valid_deflection_max_m = 0.08f;
+        w.station_weight = 6.283185307f / 64.0f;
+        const std::span local_xyz(w.local_xyz);
+        for (int s = 0; s < 64; ++s) {
+            const float ang = 6.283185307f * static_cast<float>(s) / 64.0f;
+            local_xyz[to_index(3 * s + 0)] = ws.radius * std::cos(ang);
+            local_xyz[to_index(3 * s + 1)] = 0.0f;
+            local_xyz[to_index(3 * s + 2)] = ws.radius * std::sin(ang);
+        }
+
+        w.chain.wheel_body_id = ws.body_id;
+        w.chain.njnt = kNjnt;
+        const std::span chain_joints(w.chain.joints);
+        chain_joints[0] = GpuChainJoint{.joint_id = idx.root_x_dof, .joint_type = kJntSlide, .dof_adr = idx.root_x_dof};
+        chain_joints[1] = GpuChainJoint{.joint_id = idx.root_z_dof, .joint_type = kJntSlide, .dof_adr = idx.root_z_dof};
+        chain_joints[2] = GpuChainJoint{.joint_id = idx.root_pitch_dof, .joint_type = kJntHinge, .dof_adr = idx.root_pitch_dof};
+        chain_joints[3] = GpuChainJoint{
+            .joint_id = ws.extra_j1,
+            .joint_type = (ws.side == 0) ? kJntSlide : kJntHinge,
+            .dof_adr = ws.extra_j1,
+        };
+        std::size_t cnt = 4;
+        if (ws.extra_j2 >= 0) {
+            chain_joints[cnt++] = GpuChainJoint{.joint_id = ws.extra_j2, .joint_type = kJntHinge, .dof_adr = ws.extra_j2};
+        }
+        const int spin_dof = (ws.side == 0) ? idx.front_wheel_spin_dof : idx.rear_wheel_spin_dof;
+        chain_joints[cnt++] = GpuChainJoint{.joint_id = spin_dof, .joint_type = kJntHinge, .dof_adr = spin_dof};
+        w.chain.joint_count = static_cast<int>(cnt);
+    };
+
+    init_wheel(WheelSpecArgs{.side = 0, .body_id = idx.front_wheel_body, .radius = kFrontRadiusM, .extra_j1 = idx.fork_travel_dof, .extra_j2 = -1});
+    init_wheel(WheelSpecArgs{.side = 1, .body_id = idx.rear_wheel_body, .radius = kRearRadiusM, .extra_j1 = idx.main_pivot_dof, .extra_j2 = idx.horst_pivot_dof});
+    return tm;
+}
+
+float eval_synthetic_ground_z(float x) {
+    return 0.015f * std::sin(1.7f * x) + 0.008f * std::cos(5.3f * x);
+}
+
+// Shared scenario buffers for the batch-step cases.
 struct BatchScenario {
     GpuModelIndices idx{};
+    bike::physics_core::GpuTyreModel tyre_model{};
+    HostPackedTerrain terrain{};
     std::vector<float> hf_heights;
     std::vector<GpuWorldConfig> configs;
     std::vector<GpuWorldState> states;
     std::vector<float> qpos_batch;
     std::vector<float> qvel_batch;
     std::vector<float> xpos_batch;
+    std::vector<float> xmat_batch;
+    std::vector<float> xanchor_batch;
+    std::vector<float> xaxis_batch;
     std::vector<float> qfrc_batch;
     std::vector<float> ctrl_batch;
     std::vector<float> tendon_range_batch;
     float initial_bound_w0 = 0.0f;
-
-    // The heightfield view is rebuilt on each call so it always points at
-    // this scenario's own buffer, even if the struct was moved or copied.
-    GpuHeightfield1D heightfield() const {
-        return GpuHeightfield1D{
-            .heights_m = hf_heights.data(),
-            .num_samples = kHfSamples,
-            .x_min_m = kHfXMin,
-            .dx_m = kHfDx,
-            .inv_dx_m = 1.0f / kHfDx
-        };
-    }
 };
 
-// 64 heterogeneous GpuWorldConfig entries:
-//   - First 32 worlds: 32x1 tire rays (32 rays/wheel)
-//   - Next 32 worlds:  45x10 tire rays (450 rays/wheel)
-//   - Varying fork air pressures, rebound scales, rear shock spring rates,
-//     and tire stiffness
+// 64 heterogeneous GpuWorldConfig entries.
 std::vector<GpuWorldConfig> make_sweep_configs() {
     std::vector<float> fork_psi_scale(to_index(kNWorld), 1.0f);
     std::vector<float> rebound_scale(to_index(kNWorld), 1.0f);
@@ -112,87 +189,82 @@ std::vector<GpuWorldConfig> make_sweep_configs() {
     }
 
     std::vector<GpuWorldConfig> configs(static_cast<std::size_t>(kNWorld));
-    bike_gpu_build_sweep_configs(
-        configs.data(),
-        kNWorld,
-        fork_psi_scale.data(),
-        rebound_scale.data(),
-        shock_rate_scale.data(),
-        tire_stiff_scale.data(),
-        32,
-        1
-    );
-
-    // Configure worlds [32..63] to use 45x10 = 450 rays per wheel
-    for (int w = 32; w < kNWorld; ++w) {
-        configs[to_index(w)].front_tire.num_stations = 45;
-        configs[to_index(w)].front_tire.num_lateral_ribs = 10;
-        configs[to_index(w)].rear_tire.num_stations = 45;
-        configs[to_index(w)].rear_tire.num_lateral_ribs = 10;
-    }
+    require(bike_gpu_build_sweep_configs(
+                configs.data(),
+                kNWorld,
+                fork_psi_scale.data(),
+                rebound_scale.data(),
+                shock_rate_scale.data(),
+                tire_stiff_scale.data()) == 0,
+            "bike_gpu_build_sweep_configs succeeds");
     return configs;
 }
 
-// Sections 2–5 of the original single-flow test: builds the heightfield and
-// sweep configs, populates realistic initial bike kinematics across all 64
-// worlds, initializes world states, then runs gpu_step_world_writers for 10
-// steps — the first 5 coasting (rear wheel faster than crank, so the freehub
-// ratchets downward), the next 5 pedaling hard (crank catching up to bound).
-BatchScenario make_batch_scenario() {
+BatchScenario make_batch_scenario(
+    bike::physics_core::TyreBackendKind backend = bike::physics_core::TyreBackendKind::compliant_2d
+) {
     BatchScenario sc;
     const GpuModelIndices &idx = sc.idx;
+    sc.tyre_model = make_synthetic_tyre_model(idx, backend);
     const std::size_t nq = to_index(idx.nq);
     const std::size_t nv = to_index(idx.nv);
     const std::size_t nbody3 = 3 * to_index(idx.nbody);
+    const std::size_t nbody9 = 9 * to_index(idx.nbody);
+    const std::size_t njnt3 = 3 * to_index(kNjnt);
 
-    // 2. Build a 4000-sample synthetic rough heightfield (x in [-5.0, 195.0],
-    //    dx = 0.05 m)
+    // 2. Build a 4000-sample synthetic rough terrain (x in [-5.0, 195.0], dx = 0.05 m)
     sc.hf_heights.assign(to_index(kHfSamples), 0.0f);
     for (int i = 0; i < kHfSamples; ++i) {
         const float x = kHfXMin + static_cast<float>(i) * kHfDx;
-        sc.hf_heights[to_index(i)] =
-            0.015f * std::sin(1.7f * x) + 0.008f * std::cos(5.3f * x);
+        sc.hf_heights[to_index(i)] = eval_synthetic_ground_z(x);
     }
-    const GpuHeightfield1D hf = sc.heightfield();
+    const float x_max = kHfXMin + static_cast<float>(kHfSamples - 1) * kHfDx;
+    sc.terrain = pack_uniform_heightfield_to_terrain_tables(
+        sc.hf_heights, {.x_min = kHfXMin, .x_max = x_max});
 
-    // 3. Heterogeneous per-world configs (see make_sweep_configs).
+    // 3. Heterogeneous per-world configs
     sc.configs = make_sweep_configs();
 
-    // 4. Allocate batched state and MuJoCo-like kinematics buffers for
-    //    64 worlds
+    // 4. Allocate batched state and MuJoCo-like kinematics buffers
     sc.states.resize(static_cast<std::size_t>(kNWorld));
     sc.qpos_batch.assign(static_cast<std::size_t>(kNWorld) * nq, 0.0f);
     sc.qvel_batch.assign(static_cast<std::size_t>(kNWorld) * nv, 0.0f);
     sc.xpos_batch.assign(static_cast<std::size_t>(kNWorld) * nbody3, 0.0f);
+    sc.xmat_batch.assign(static_cast<std::size_t>(kNWorld) * nbody9, 0.0f);
+    sc.xanchor_batch.assign(static_cast<std::size_t>(kNWorld) * njnt3, 0.0f);
+    sc.xaxis_batch.assign(static_cast<std::size_t>(kNWorld) * njnt3, 0.0f);
     sc.qfrc_batch.assign(static_cast<std::size_t>(kNWorld) * nv, 0.0f);
-    sc.ctrl_batch.assign(
-        static_cast<std::size_t>(kNWorld) * to_index(idx.nu), 0.0f);
+    sc.ctrl_batch.assign(static_cast<std::size_t>(kNWorld) * to_index(idx.nu), 0.0f);
     sc.tendon_range_batch.assign(static_cast<std::size_t>(kNWorld) * 2, 0.0f);
 
     const std::span<float> qpos_rows{sc.qpos_batch};
     const std::span<float> qvel_rows{sc.qvel_batch};
     const std::span<float> xpos_rows{sc.xpos_batch};
+    const std::span<float> xmat_rows{sc.xmat_batch};
+    const std::span<float> xanchor_rows{sc.xanchor_batch};
+    const std::span<float> xaxis_rows{sc.xaxis_batch};
     const auto rider_qpos = std::span{idx.rider_qpos};
 
-    // Populate realistic initial bike kinematics across all 64 worlds
     for (int w = 0; w < kNWorld; ++w) {
         const std::size_t wi = to_index(w);
         const std::span<float> qpos_w = qpos_rows.subspan(wi * nq, nq);
         const std::span<float> qvel_w = qvel_rows.subspan(wi * nv, nv);
         const std::span<float> xpos_w = xpos_rows.subspan(wi * nbody3, nbody3);
+        const std::span<float> xmat_w = xmat_rows.subspan(wi * nbody9, nbody9);
+        const std::span<float> xanc_w = xanchor_rows.subspan(wi * njnt3, njnt3);
+        const std::span<float> xax_w = xaxis_rows.subspan(wi * njnt3, njnt3);
 
         qpos_w[to_index(idx.root_x_qpos)] = 2.0f;
         qpos_w[to_index(idx.root_z_qpos)] = 0.55f;
         qpos_w[to_index(idx.root_pitch_qpos)] = 0.02f;
         qpos_w[to_index(idx.crank_spin_qpos)] = 0.40f;
         qpos_w[to_index(idx.drive_shaft_spin_qpos)] = 0.40f;
-        qpos_w[to_index(idx.fork_travel_qpos)] = 0.045f;   // 45 mm fork compression
+        qpos_w[to_index(idx.fork_travel_qpos)] = 0.045f;
         qpos_w[to_index(idx.front_wheel_spin_qpos)] = 1.10f;
         qpos_w[to_index(idx.rear_wheel_spin_qpos)] = 0.70f;
-        qpos_w[to_index(idx.shock_stroke_qpos)] = 0.022f;  // 22 mm shock stroke
+        qpos_w[to_index(idx.shock_stroke_qpos)] = 0.022f;
 
-        // Place rider joints away from posture targets, with hip_front into soft ROM margin
-        qpos_w[to_index(rider_qpos[0])] = -2.02f; // below -25 deg hip_front lower ROM margin
+        qpos_w[to_index(rider_qpos[0])] = -2.02f;
         qpos_w[to_index(rider_qpos[1])] = 0.70f;
         qpos_w[to_index(rider_qpos[2])] = -0.35f;
         qpos_w[to_index(rider_qpos[3])] = 0.70f;
@@ -213,28 +285,48 @@ BatchScenario make_batch_scenario() {
 
         const float front_x = 2.60f;
         const float rear_x = 1.40f;
-        const float front_ground_z = gpu_sample_heightfield_1d(hf, front_x).x;
-        const float rear_ground_z = gpu_sample_heightfield_1d(hf, rear_x).x;
+        const float front_ground_z = eval_synthetic_ground_z(front_x);
+        const float rear_ground_z = eval_synthetic_ground_z(rear_x);
 
-        // Frame CoM
         xpos_w[3 * to_index(idx.frame_body) + 0] = 2.00f;
         xpos_w[3 * to_index(idx.frame_body) + 2] = 0.62f;
 
-        // Front wheel center embedded ~14 mm into terrain
         xpos_w[3 * to_index(idx.front_wheel_body) + 0] = front_x;
-        xpos_w[3 * to_index(idx.front_wheel_body) + 2] =
-            front_ground_z + sc.configs[wi].front_tire.nominal_radius_m - 0.014f;
+        xpos_w[3 * to_index(idx.front_wheel_body) + 2] = front_ground_z + kFrontRadiusM - 0.014f;
 
-        // Rear wheel center embedded ~16 mm into terrain
         xpos_w[3 * to_index(idx.rear_wheel_body) + 0] = rear_x;
-        xpos_w[3 * to_index(idx.rear_wheel_body) + 2] =
-            rear_ground_z + sc.configs[wi].rear_tire.nominal_radius_m - 0.016f;
+        xpos_w[3 * to_index(idx.rear_wheel_body) + 2] = rear_ground_z + kRearRadiusM - 0.016f;
+
+        for (int b = 0; b < idx.nbody; ++b) {
+            xmat_w[9 * to_index(b) + 0] = 1.0f;
+            xmat_w[9 * to_index(b) + 4] = 1.0f;
+            xmat_w[9 * to_index(b) + 8] = 1.0f;
+        }
+        xax_w[3 * to_index(idx.root_x_dof) + 0] = 1.0f;
+        xax_w[3 * to_index(idx.root_z_dof) + 2] = 1.0f;
+        xax_w[3 * to_index(idx.root_pitch_dof) + 1] = 1.0f;
+        xax_w[3 * to_index(idx.fork_travel_dof) + 0] = 0.34f;
+        xax_w[3 * to_index(idx.fork_travel_dof) + 2] = -0.94f;
+        xax_w[3 * to_index(idx.front_wheel_spin_dof) + 1] = 1.0f;
+        xax_w[3 * to_index(idx.rear_wheel_spin_dof) + 1] = 1.0f;
+        xax_w[3 * to_index(idx.main_pivot_dof) + 1] = 1.0f;
+        xax_w[3 * to_index(idx.horst_pivot_dof) + 1] = 1.0f;
+
+        xanc_w[3 * to_index(idx.root_pitch_dof) + 0] = 2.00f;
+        xanc_w[3 * to_index(idx.root_pitch_dof) + 2] = 0.62f;
+        xanc_w[3 * to_index(idx.main_pivot_dof) + 0] = rear_x + 0.42f;
+        xanc_w[3 * to_index(idx.main_pivot_dof) + 2] = rear_ground_z + kRearRadiusM + 0.08f;
+        xanc_w[3 * to_index(idx.horst_pivot_dof) + 0] = rear_x + 0.08f;
+        xanc_w[3 * to_index(idx.horst_pivot_dof) + 2] = rear_ground_z + kRearRadiusM - 0.04f;
+        xanc_w[3 * to_index(idx.front_wheel_spin_dof) + 0] = front_x;
+        xanc_w[3 * to_index(idx.front_wheel_spin_dof) + 2] = front_ground_z + kFrontRadiusM - 0.014f;
+        xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 0] = rear_x;
+        xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 2] = rear_ground_z + kRearRadiusM - 0.016f;
 
         sc.tendon_range_batch[wi * 2 + 0] = -1.0e6f;
         sc.tendon_range_batch[wi * 2 + 1] = 0.0f;
     }
 
-    // Initialize world states using gpu_init_world_state
     for (int w = 0; w < kNWorld; ++w) {
         const std::size_t wi = to_index(w);
         const std::span<const float> qpos_w = qpos_rows.subspan(wi * nq, nq);
@@ -251,32 +343,37 @@ BatchScenario make_batch_scenario() {
     // 5. Step gpu_step_world_writers across all 64 worlds for 10 steps
     for (int step = 0; step < kNumSteps; ++step) {
         for (int w = 0; w < kNWorld; ++w) {
-            gpu_step_world_writers(
+            const bike::physics_core::Status st = gpu_step_world_writers(
                 w,
                 kDt,
                 idx,
-                hf,
+                &sc.tyre_model,
+                sc.terrain.desc,
+                sc.terrain.f32.data(),
+                sc.terrain.i32.data(),
                 sc.configs.data(),
                 /*per_world_config=*/1,
                 sc.states.data(),
                 sc.qpos_batch.data(),
                 sc.qvel_batch.data(),
                 sc.xpos_batch.data(),
+                sc.xmat_batch.data(),
+                sc.xanchor_batch.data(),
+                sc.xaxis_batch.data(),
                 sc.qfrc_batch.data(),
                 sc.ctrl_batch.data(),
                 sc.tendon_range_batch.data()
             );
+            require(st == bike::physics_core::Status::ok,
+                    "gpu_step_world_writers succeeds in scenario loop");
         }
 
-        // Advance kinematics slightly each step: first 5 steps coasting (rear
-        // wheel faster than crank so freehub ratchets downward), next 5 steps
-        // pedaling hard (crank catching up to bound).
         for (int w = 0; w < kNWorld; ++w) {
             const std::size_t wi = to_index(w);
             const std::span<float> qpos_w = qpos_rows.subspan(wi * nq, nq);
             const std::span<float> qvel_w = qvel_rows.subspan(wi * nv, nv);
-            const std::span<float> xpos_w =
-                xpos_rows.subspan(wi * nbody3, nbody3);
+            const std::span<float> xpos_w = xpos_rows.subspan(wi * nbody3, nbody3);
+            const std::span<float> xanc_w = xanchor_rows.subspan(wi * njnt3, njnt3);
 
             const float dx = qvel_w[to_index(idx.root_x_dof)] * kDt;
             qpos_w[to_index(idx.root_x_qpos)] += dx;
@@ -284,23 +381,23 @@ BatchScenario make_batch_scenario() {
             xpos_w[3 * to_index(idx.front_wheel_body) + 0] += dx;
             xpos_w[3 * to_index(idx.rear_wheel_body) + 0] += dx;
 
-            const float f_ground = gpu_sample_heightfield_1d(
-                hf, xpos_w[3 * to_index(idx.front_wheel_body) + 0]).x;
-            const float r_ground = gpu_sample_heightfield_1d(
-                hf, xpos_w[3 * to_index(idx.rear_wheel_body) + 0]).x;
-            xpos_w[3 * to_index(idx.front_wheel_body) + 2] =
-                f_ground + sc.configs[wi].front_tire.nominal_radius_m - 0.014f;
-            xpos_w[3 * to_index(idx.rear_wheel_body) + 2] =
-                r_ground + sc.configs[wi].rear_tire.nominal_radius_m - 0.016f;
+            const float f_ground = eval_synthetic_ground_z(xpos_w[3 * to_index(idx.front_wheel_body) + 0]);
+            const float r_ground = eval_synthetic_ground_z(xpos_w[3 * to_index(idx.rear_wheel_body) + 0]);
+            xpos_w[3 * to_index(idx.front_wheel_body) + 2] = f_ground + kFrontRadiusM - 0.014f;
+            xpos_w[3 * to_index(idx.rear_wheel_body) + 2] = r_ground + kRearRadiusM - 0.016f;
+            xanc_w[3 * to_index(idx.root_pitch_dof) + 0] += dx;
+            xanc_w[3 * to_index(idx.main_pivot_dof) + 0] += dx;
+            xanc_w[3 * to_index(idx.horst_pivot_dof) + 0] += dx;
+            xanc_w[3 * to_index(idx.front_wheel_spin_dof) + 0] = xpos_w[3 * to_index(idx.front_wheel_body) + 0];
+            xanc_w[3 * to_index(idx.front_wheel_spin_dof) + 2] = xpos_w[3 * to_index(idx.front_wheel_body) + 2];
+            xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 0] = xpos_w[3 * to_index(idx.rear_wheel_body) + 0];
+            xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 2] = xpos_w[3 * to_index(idx.rear_wheel_body) + 2];
 
             if (step < 5) {
-                // Coasting: rear wheel spins faster than ratio * drive_shaft
                 qpos_w[to_index(idx.crank_spin_qpos)] += 2.0f * kDt;
                 qpos_w[to_index(idx.drive_shaft_spin_qpos)] += 2.0f * kDt;
                 qpos_w[to_index(idx.rear_wheel_spin_qpos)] += 20.0f * kDt;
             } else {
-                // Pedaling: drive_shaft advances faster than rear_wheel / ratio
-                // (ratio = 22/51) to engage pawls
                 qpos_w[to_index(idx.crank_spin_qpos)] += 28.0f * kDt;
                 qpos_w[to_index(idx.drive_shaft_spin_qpos)] += 28.0f * kDt;
                 qpos_w[to_index(idx.rear_wheel_spin_qpos)] += 8.0f * kDt;
@@ -320,6 +417,12 @@ void test_api_sizes_and_model_defaults() {
                 static_cast<int>(sizeof(GpuWorldState)),
             "C API world state size matches sizeof(GpuWorldState)");
     static_assert(sizeof(GpuModelIndices) == 240, "GpuModelIndices must be 240 bytes");
+    require(bike_gpu_sizeof_tyre_model() ==
+                static_cast<int>(sizeof(bike::physics_core::GpuTyreModel)),
+            "C API tyre model size matches sizeof(GpuTyreModel)");
+    require(bike_gpu_sizeof_terrain_desc() ==
+                static_cast<int>(sizeof(bike::physics_core::GpuTerrainTableDesc)),
+            "C API terrain desc size matches sizeof(GpuTerrainTableDesc)");
     require(bike_gpu_sizeof_model_indices() == 240,
             "C API model indices size is 240 bytes");
     require(bike_gpu_sizeof_model_indices() ==
@@ -526,18 +629,25 @@ void test_drivetrain_torque_path() {
         static_cast<std::size_t>(kNWorld) * to_index(idx.nu), 0.0f);
     std::vector<float> tendon_tmp(static_cast<std::size_t>(kNWorld) * 2, 0.0f);
 
-    const GpuHeightfield1D hf = sc.heightfield();
-    gpu_step_world_writers(
-        0, kDt, idx, hf, sc.configs.data(), 1, st_tendon.data(),
-        sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
-        qfrc_tendon.data(), ctrl_tmp.data(), tendon_tmp.data()
-    );
-    gpu_step_world_writers(
-        0, kDt, idx, hf, sc.configs.data(), 1, st_explicit.data(),
-        sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
-        qfrc_explicit.data(), ctrl_tmp.data(),
-        /*tendon_range_batch=*/nullptr
-    );
+    require(gpu_step_world_writers(
+                0, kDt, idx, &sc.tyre_model, sc.terrain.desc,
+                sc.terrain.f32.data(), sc.terrain.i32.data(),
+                sc.configs.data(), 1, st_tendon.data(),
+                sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
+                sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                qfrc_tendon.data(), ctrl_tmp.data(), tendon_tmp.data()) ==
+                bike::physics_core::Status::ok,
+            "tendon mode step succeeds");
+    require(gpu_step_world_writers(
+                0, kDt, idx, &sc.tyre_model, sc.terrain.desc,
+                sc.terrain.f32.data(), sc.terrain.i32.data(),
+                sc.configs.data(), 1, st_explicit.data(),
+                sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
+                sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                qfrc_explicit.data(), ctrl_tmp.data(),
+                /*tendon_range_batch=*/nullptr) ==
+                bike::physics_core::Status::ok,
+            "explicit mode step succeeds");
 
     const float rear_torque_diff =
         qfrc_explicit[to_index(idx.rear_wheel_spin_dof)] -
@@ -556,21 +666,19 @@ void test_drivetrain_torque_path() {
 
 // Section 8: distinct worlds reflect their parameter sweep differences —
 // world 63 has higher fork pressure & shock spring rate than world 0, and
-// world 31 (32x1 rays) vs world 32 (45x10 = 450 rays) produce distinct tire
-// forces.
+// compliant_2d vs distributed_2d_reference produce distinct tire loads.
 void test_sweep_world_differences() {
-    const BatchScenario sc = make_batch_scenario();
-    const GpuModelIndices &idx = sc.idx;
+    const auto sc = std::make_unique<BatchScenario>(
+        make_batch_scenario(bike::physics_core::TyreBackendKind::compliant_2d));
+    const auto sc_dist = std::make_unique<BatchScenario>(
+        make_batch_scenario(bike::physics_core::TyreBackendKind::distributed_2d_reference));
+    const GpuModelIndices &idx = sc->idx;
     const std::size_t nv = to_index(idx.nv);
-    const std::span<const float> qfrc_rows{sc.qfrc_batch};
+    const std::span<const float> qfrc_rows{sc->qfrc_batch};
+    const std::span<const float> qfrc_dist_rows{sc_dist->qfrc_batch};
     const std::span<const float> qfrc_w0 = qfrc_rows.first(nv);
-    const std::span<const float> qfrc_w31 = qfrc_rows.subspan(31 * nv, nv);
-    const std::span<const float> qfrc_w32 = qfrc_rows.subspan(32 * nv, nv);
     const std::span<const float> qfrc_w63 = qfrc_rows.subspan(63 * nv, nv);
 
-    // Ban #39: hysteresis caps the tire loss at +-loss_factor*elastic —
-    // the viscous-damped forces that inflated this threshold are gone,
-    // so the sweep gap is suspension-dominated (measured ~28 N).
     require(std::fabs(qfrc_w63[to_index(idx.fork_travel_dof)] -
                       qfrc_w0[to_index(idx.fork_travel_dof)]) > 10.0f,
             "fork DOF force differs across the pressure sweep");
@@ -580,91 +688,125 @@ void test_sweep_world_differences() {
     require(std::fabs(qfrc_w63[to_index(idx.root_z_dof)] -
                       qfrc_w0[to_index(idx.root_z_dof)]) > 10.0f,
             "root_z force differs across the stiffness sweep");
-    require(std::fabs(qfrc_w32[to_index(idx.root_z_dof)] -
-                      qfrc_w31[to_index(idx.root_z_dof)]) > 1.0f,
-            "450-ray tire forces differ from 32-ray tire forces");
+    require(std::fabs(qfrc_dist_rows[to_index(idx.root_z_dof)] -
+                      qfrc_w0[to_index(idx.root_z_dof)]) > 1.0f,
+            "distributed_2d_reference and compliant_2d backends produce distinct tire loads");
 }
 
 // Section 9: the extern "C" host launch wrappers run on the CPU fallback and
-// reject oversized model dimensions without touching the output batch.
+// reject invalid bounds/descriptors with nonzero int without touching qfrc_batch.
 void test_launch_wrappers_and_bounds() {
-    BatchScenario sc = make_batch_scenario();
+    const auto sc_ptr = std::make_unique<BatchScenario>(make_batch_scenario());
+    BatchScenario &sc = *sc_ptr;
     const GpuModelIndices &idx = sc.idx;
 
-    bike_gpu_launch_init_states(
-        nullptr,
-        kNWorld,
-        &idx,
-        sc.configs.data(),
-        1,
-        sc.states.data(),
-        sc.qpos_batch.data()
-    );
-    bike_gpu_launch_writers(
-        nullptr,
-        kNWorld,
-        kDt,
-        &idx,
-        sc.hf_heights.data(),
-        kHfSamples,
-        kHfXMin,
-        kHfDx,
-        sc.configs.data(),
-        1,
-        sc.states.data(),
-        sc.qpos_batch.data(),
-        sc.qvel_batch.data(),
-        sc.xpos_batch.data(),
-        sc.qfrc_batch.data(),
-        sc.ctrl_batch.data(),
-        sc.tendon_range_batch.data(),
-        2
-    );
+    require(bike_gpu_launch_init_states(
+                nullptr,
+                kNWorld,
+                &idx,
+                sc.configs.data(),
+                1,
+                sc.states.data(),
+                sc.qpos_batch.data()) == 0,
+            "launch_init_states succeeds");
+    require(bike_gpu_launch_writers(
+                nullptr,
+                kNWorld,
+                kDt,
+                &idx,
+                &sc.tyre_model,
+                &sc.terrain.desc,
+                sc.terrain.f32.data(),
+                sc.terrain.i32.data(),
+                sc.configs.data(),
+                1,
+                sc.states.data(),
+                sc.qpos_batch.data(),
+                sc.qvel_batch.data(),
+                sc.xpos_batch.data(),
+                sc.xmat_batch.data(),
+                sc.xanchor_batch.data(),
+                sc.xaxis_batch.data(),
+                sc.qfrc_batch.data(),
+                sc.ctrl_batch.data(),
+                sc.tendon_range_batch.data(),
+                2) == 0,
+            "launch_writers succeeds");
     require(std::isfinite(sc.qfrc_batch[to_index(idx.root_z_dof)]),
             "launch_writers leaves finite qfrc on the CPU fallback");
 
-    // Verify oversized model dimensions are rejected cleanly without
-    // modifying qfrc_batch
+    // Reject oversized model dimensions, bad joint_id, oversized station_count, and non-monotonic px
     GpuModelIndices bad_idx = idx;
     bad_idx.nq = kMaxNq + 1;
     const float saved_root_z = sc.qfrc_batch[to_index(idx.root_z_dof)];
     sc.qfrc_batch[to_index(idx.root_z_dof)] = -12345.0f;
-    bike_gpu_launch_step_writers(
-        nullptr,
-        kNWorld,
-        kDt,
-        &bad_idx,
-        sc.hf_heights.data(),
-        kHfSamples,
-        kHfXMin,
-        kHfDx,
-        sc.configs.data(),
-        1,
-        sc.states.data(),
-        sc.qpos_batch.data(),
-        sc.qvel_batch.data(),
-        sc.xpos_batch.data(),
-        sc.qfrc_batch.data(),
-        sc.ctrl_batch.data(),
-        sc.tendon_range_batch.data(),
-        2
-    );
+    require(bike_gpu_launch_step_writers(
+                nullptr, kNWorld, kDt, &bad_idx, &sc.tyre_model, &sc.terrain.desc,
+                sc.terrain.f32.data(), sc.terrain.i32.data(),
+                sc.configs.data(), 1, sc.states.data(),
+                sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+            "launch_step_writers rejects nq > kMaxNq");
     require(sc.qfrc_batch[to_index(idx.root_z_dof)] == -12345.0f,
             "rejected launch leaves qfrc_batch unmodified");
+
+    {
+        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(sc.tyre_model);
+        const std::span bad_wheels(bad_tm->wheels);
+        const std::span bad_joints(bad_wheels[0].chain.joints);
+        bad_joints[0].joint_id = kNjnt;
+        require(bike_gpu_launch_writers(
+                    nullptr, kNWorld, kDt, &idx, bad_tm.get(), &sc.terrain.desc,
+                    sc.terrain.f32.data(), sc.terrain.i32.data(),
+                    sc.configs.data(), 1, sc.states.data(),
+                    sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                    sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                "launch_writers rejects joint_id >= njnt");
+    }
+    {
+        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(sc.tyre_model);
+        bad_tm->backend = bike::physics_core::TyreBackendKind::distributed_2d_reference;
+        bad_tm->station_count = bike::physics_core::kMaxGpuTyreStations + 1;
+        require(bike_gpu_launch_writers(
+                    nullptr, kNWorld, kDt, &idx, bad_tm.get(), &sc.terrain.desc,
+                    sc.terrain.f32.data(), sc.terrain.i32.data(),
+                    sc.configs.data(), 1, sc.states.data(),
+                    sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                    sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                "launch_writers rejects station_count > 128");
+    }
+    {
+        auto bad_f32 = sc.terrain.f32;
+        bad_f32[to_index(sc.terrain.desc.px_offset + 10)] =
+            bad_f32[to_index(sc.terrain.desc.px_offset + 9)];
+        require(bike_gpu_launch_writers(
+                    nullptr, kNWorld, kDt, &idx, &sc.tyre_model, &sc.terrain.desc,
+                    bad_f32.data(), sc.terrain.i32.data(),
+                    sc.configs.data(), 1, sc.states.data(),
+                    sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                    sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                "launch_writers rejects non-monotonic px");
+    }
     sc.qfrc_batch[to_index(idx.root_z_dof)] = saved_root_z;
 
-    // Verify tendon_range_batch writes to 2 * freehub_tendon + 1 with stride 4 (ntendon = 2)
-    // and leaves neighboring tendon slots untouched, while rejecting stride <= 2 * freehub_tendon + 1.
     {
         GpuModelIndices idx_t1 = idx;
         idx_t1.freehub_tendon = 1;
         std::vector<GpuWorldState> st_t1 = sc.states;
         std::vector<float> tendon_stride4(static_cast<std::size_t>(kNWorld) * 4, -99.0f);
-        gpu_step_world_writers(
-            3, kDt, idx_t1, sc.heightfield(), sc.configs.data(), 1, st_t1.data(),
-            sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
-            sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_stride4.data(), 4
-        );
+        require(gpu_step_world_writers(
+                    3, kDt, idx_t1, &sc.tyre_model, sc.terrain.desc,
+                    sc.terrain.f32.data(), sc.terrain.i32.data(),
+                    sc.configs.data(), 1, st_t1.data(),
+                    sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                    sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_stride4.data(), 4) ==
+                    bike::physics_core::Status::ok,
+                "stride 4 step succeeds");
         require(tendon_stride4[3 * 4 + 0] == -99.0f &&
                     tendon_stride4[3 * 4 + 1] == -99.0f &&
                     tendon_stride4[3 * 4 + 2] == -99.0f,
@@ -674,16 +816,17 @@ void test_launch_wrappers_and_bounds() {
                      1e-6f,
                      "tendon_range_batch writes freehub upper bound at 2 * freehub_tendon + 1");
 
-        // Too-small stride (stride = 2 for freehub_tendon = 1 -> 2*1+1 = 3 >= 2) must be rejected
         std::vector<float> tendon_small(static_cast<std::size_t>(kNWorld) * 2, -77.0f);
         sc.qfrc_batch[3 * to_index(idx_t1.nv) + to_index(idx_t1.root_z_dof)] = -54321.0f;
-        bike_gpu_launch_step_writers(
-            nullptr, kNWorld, kDt, &idx_t1,
-            sc.hf_heights.data(), kHfSamples, kHfXMin, kHfDx,
-            sc.configs.data(), 1, st_t1.data(),
-            sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
-            sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_small.data(), 2
-        );
+        require(bike_gpu_launch_step_writers(
+                    nullptr, kNWorld, kDt, &idx_t1,
+                    &sc.tyre_model, &sc.terrain.desc,
+                    sc.terrain.f32.data(), sc.terrain.i32.data(),
+                    sc.configs.data(), 1, st_t1.data(),
+                    sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
+                    sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), tendon_small.data(), 2) != 0,
+                "launch_step_writers rejects small stride");
         require(sc.qfrc_batch[3 * to_index(idx_t1.nv) + to_index(idx_t1.root_z_dof)] == -54321.0f &&
                     tendon_small[3 * 2 + 1] == -77.0f,
                 "rejected tendon_range_world_stride leaves qfrc and tendon untouched");

@@ -12,18 +12,21 @@ extern "C" {
 int bike_gpu_sizeof_world_config();
 int bike_gpu_sizeof_world_state();
 int bike_gpu_sizeof_model_indices();
-void bike_gpu_init_default_config(bike::gpu::GpuWorldConfig *cfg);
-void bike_gpu_build_sweep_configs(
+int bike_gpu_sizeof_tyre_model();
+int bike_gpu_sizeof_terrain_desc();
+
+int bike_gpu_init_default_config(bike::gpu::GpuWorldConfig *cfg);
+
+int bike_gpu_build_sweep_configs(
     bike::gpu::GpuWorldConfig *configs,
     int nworld,
     const float *fork_psi_scale,
     const float *rebound_scale,
     const float *shock_rate_scale,
-    const float *tire_stiff_scale,
-    int num_stations,
-    int num_lateral_ribs
+    const float *tire_stiff_scale
 );
-void bike_gpu_launch_init_states(
+
+int bike_gpu_launch_init_states(
     const void *cuda_stream,
     int nworld,
     const bike::gpu::GpuModelIndices *d_idx,
@@ -32,41 +35,49 @@ void bike_gpu_launch_init_states(
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos
 );
-void bike_gpu_launch_writers(
+
+int bike_gpu_launch_writers(
     const void *cuda_stream,
     int nworld,
     float dt_s,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos,
     const float *d_qvel,
     const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
     float *d_qfrc_applied,
     float *d_ctrl,
     float *d_tendon_range,
     int tendon_range_world_stride
 );
-void bike_gpu_launch_step_writers(
+
+int bike_gpu_launch_step_writers(
     const void *cuda_stream,
     int nworld,
     float dt_s,
     const bike::gpu::GpuModelIndices *idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos,
     const float *d_qvel,
     const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
     float *d_qfrc_applied,
     float *d_ctrl,
     float *d_tendon_range,

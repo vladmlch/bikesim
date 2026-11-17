@@ -682,6 +682,7 @@ if(BUILD_TESTING)
   bike_add_gpu_unit_test(bike_test_gpu_batch_step
     "${_bike_native_tests_dir}/gpu/test_gpu_batch_step.cpp")
   bike_link_gpu_reference_core(bike_test_gpu_tire)
+  target_link_libraries(bike_test_gpu_tire PRIVATE bike_tyre_upload)
   bike_link_gpu_reference_core(bike_test_gpu_drivetrain_resistance)
   target_link_libraries(bike_test_gpu_rider PRIVATE bike_rider_math)
   target_link_libraries(bike_test_gpu_batch_step PRIVATE bike_gpu_kernels)
@@ -736,7 +737,7 @@ if(BUILD_TESTING)
   endif()
   bike_add_gpu_unit_test(bike_test_gpu_batch_runners ${_bike_gpu_runner_sources})
   target_link_libraries(bike_test_gpu_batch_runners PRIVATE
-    bike_gpu_kernels Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+    bike_gpu_kernels bike_tyre_upload Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
   bike_rewrite_mujoco_load_name(bike_test_gpu_batch_runners "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE

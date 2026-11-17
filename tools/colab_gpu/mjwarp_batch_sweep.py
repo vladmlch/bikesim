@@ -1,17 +1,16 @@
-"""Batched C++/CUDA Force Writers + mujoco_warp Parameter Sweep & 3D Tire Ray Scaling Benchmark.
+"""Batched C++/CUDA Force Writers + mujoco_warp Parameter Sweep & Tyre Backend Benchmark.
 
 Executes two core GPU benchmarks on NVIDIA CUDA (e.g. Google Colab L4):
   1. Experiment A (`run_parameter_sweep`):
      Runs `nworld = 2048` heterogeneous worlds in parallel (`fork_psi_scale` in [0.8, 1.25],
      `rebound_scale` in [0.7, 1.4], `shock_rate_scale` in [0.85, 1.20], `tire_stiff_scale` in
-     [0.85, 1.20]) inside a single `wp.ScopedCapture()` CUDA Graph fusing
-     `lib.bike_gpu_launch_writers(...)` + `mjwarp.step(m_wp, d_b)`.
-  2. Experiment B (`run_3d_tire_ray_scaling_benchmark`):
-     Benchmarks the fused C++/CUDA writers + `mjwarp.step` at `nworld = 2048` across three
-     tire ray-grid resolutions:
-       - 2D Planar Tier (64 rays/world):     `num_stations = 32,  num_lateral_ribs = 1`
-       - 3D Fast Tier (900 rays/world):      `num_stations = 45,  num_lateral_ribs = 10`
-       - 3D Detailed Tier (7700 rays/world): `num_stations = 110, num_lateral_ribs = 35`
+     [0.85, 1.20]) inside a single `wp.ScopedCapture()` CUDA Graph executing the `clean_split`
+     schedule (`fwd_kinematics -> crb -> tendon_armature -> factor_m -> collision -> transmission
+     -> fwd_velocity -> bike_gpu_launch_writers -> make_constraint -> fwd_actuation ->
+     fwd_acceleration(factorize=False) -> solve -> sensor_acc -> implicit`).
+  2. Experiment B (`run_tyre_backend_scaling_benchmark`):
+     Benchmarks the fused C++/CUDA writers + `clean_split` at `nworld = 2048` across the unified
+     `tyre_gpu_step.hpp` backends (`compliant_2d`, `distributed_2d_reference` at N=32/64/128).
 """
 
 from __future__ import annotations
@@ -22,7 +21,7 @@ import json
 from pathlib import Path
 import sys
 import time
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -32,11 +31,11 @@ try:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         build_sweep_configs_bytes,
+        build_tyre_and_terrain_buffers,
         compile_cuda_writers,
         resolve_gpu_model_indices,
     )
     from tools.colab_gpu.model_assets import (
-        extract_heightfield_1d,
         load_captured_initial_state,
         load_model_with_assets,
     )
@@ -47,11 +46,11 @@ except ImportError:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         build_sweep_configs_bytes,
+        build_tyre_and_terrain_buffers,
         compile_cuda_writers,
         resolve_gpu_model_indices,
     )
     from model_assets import (  # type: ignore[no-redef]
-        extract_heightfield_1d,
         load_captured_initial_state,
         load_model_with_assets,
     )
@@ -71,30 +70,38 @@ except Exception:  # pragma: no cover - imported on CUDA/Colab runtime
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL_XML = REPO_ROOT / "tools" / "fp32_probe" / "artifacts" / "common" / "model.xml"
 
-TIRE_RAY_SCALING_TIERS: tuple[dict[str, Any], ...] = (
+TYRE_BACKEND_TIERS: tuple[dict[str, Any], ...] = (
     {
-        "tier_id": "2d_planar_64",
-        "label": "2D Planar Tier (64 rays/world)",
-        "num_stations": 32,
-        "num_lateral_ribs": 1,
-        "rays_per_wheel": 32,
-        "rays_per_world": 64,
+        "tier_id": "compliant_2d",
+        "label": "Compliant 2D (polyline O(1))",
+        "backend": "compliant_2d",
+        "station_count": 0,
+        "units_per_wheel": 1,
+        "units_per_world": 2,
     },
     {
-        "tier_id": "3d_fast_900",
-        "label": "3D Fast Tier (900 rays/world)",
-        "num_stations": 45,
-        "num_lateral_ribs": 10,
-        "rays_per_wheel": 450,
-        "rays_per_world": 900,
+        "tier_id": "distributed_32",
+        "label": "Distributed 2D (N=32 stations)",
+        "backend": "distributed_2d_reference",
+        "station_count": 32,
+        "units_per_wheel": 32,
+        "units_per_world": 64,
     },
     {
-        "tier_id": "3d_detailed_7700",
-        "label": "3D Detailed Tier (7700 rays/world)",
-        "num_stations": 110,
-        "num_lateral_ribs": 35,
-        "rays_per_wheel": 3850,
-        "rays_per_world": 7700,
+        "tier_id": "distributed_64",
+        "label": "Distributed 2D (N=64 stations)",
+        "backend": "distributed_2d_reference",
+        "station_count": 64,
+        "units_per_wheel": 64,
+        "units_per_world": 128,
+    },
+    {
+        "tier_id": "distributed_128",
+        "label": "Distributed 2D (N=128 stations)",
+        "backend": "distributed_2d_reference",
+        "station_count": 128,
+        "units_per_wheel": 128,
+        "units_per_world": 256,
     },
 )
 
@@ -116,38 +123,129 @@ def _allocate_and_copy_device_bytes(raw_bytes: bytes, device: str = "cuda:0") ->
     return dev_wp
 
 
-class _HostHeightfieldArray(np.ndarray):
-    """Host float32 array that also exposes `.numpy()` and `.ptr` when Warp is unavailable."""
-
-    def numpy(self) -> np.ndarray:
-        return np.asarray(self)
-
-    @property
-    def ptr(self) -> int:
-        return int(self.ctypes.data)
+def _ensure_newton_solver(m: Any) -> None:
+    """Enforce Newton solver (CG is rejected on GPU sweeps per simulation-decisions.md)."""
+    if mujoco is not None and hasattr(m, "opt") and hasattr(mujoco, "mjtSolver"):
+        m.opt.solver = int(mujoco.mjtSolver.mjSOL_NEWTON)
 
 
-def _extract_heightfield_1d(
-    m: Any,
-    device: str = "cuda:0",
-) -> tuple[Any, int, float, float]:
-    """Extract the 1D terrain elevation slice from `MjModel` and upload it to GPU memory.
+def _upload_tyre_and_terrain_device(
+    host_lib: ctypes.CDLL,
+    xml_path: Path,
+    backend: str,
+    station_count: int,
+    idx_bytes: bytes,
+    device: str,
+) -> tuple[Any, Any, Any, Any, int, int]:
+    """Build host tyre/terrain tables and upload ``(tyre_model, desc, f32, i32)`` to ``device``."""
+    model_b, desc_b, f32_np, i32_np = build_tyre_and_terrain_buffers(
+        host_lib=host_lib,
+        xml_path=xml_path,
+        backend=backend,
+        station_count=station_count,
+        idx_bytes=idx_bytes,
+    )
+    d_tyre_model = _allocate_and_copy_device_bytes(model_b, device=device)
+    d_terrain_desc = _allocate_and_copy_device_bytes(desc_b, device=device)
+    d_terrain_f32 = (
+        wp.array(f32_np, dtype=wp.float32, device=device)
+        if f32_np.size > 0
+        else wp.zeros(1, dtype=wp.float32, device=device)
+    )
+    d_terrain_i32 = (
+        wp.array(i32_np, dtype=wp.int32, device=device)
+        if i32_np.size > 0
+        else wp.zeros(1, dtype=wp.int32, device=device)
+    )
+    return (
+        d_tyre_model,
+        d_terrain_desc,
+        d_terrain_f32,
+        d_terrain_i32,
+        int(d_terrain_f32.ptr) if f32_np.size > 0 else 0,
+        int(d_terrain_i32.ptr) if i32_np.size > 0 else 0,
+    )
 
-    `m` must come from `model_assets.load_model_with_assets` so `hfield_data` is populated.
-    """
-    raw_row_f32, hf_x_min, hf_dx = extract_heightfield_1d(m)
-    ncol = int(raw_row_f32.size)
-    if wp is None:
-        return raw_row_f32.view(_HostHeightfieldArray), ncol, hf_x_min, hf_dx
 
-    target_device = device
-    if target_device.startswith("cuda") and not wp.is_cuda_available():
-        try:
-            target_device = str(wp.get_device())
-        except Exception:
-            target_device = "cpu"
-    d_hf_heights = wp.array(raw_row_f32, dtype=wp.float32, device=target_device)
-    return d_hf_heights, ncol, hf_x_min, hf_dx
+def _resolve_clean_split_ops(mjw_mod: Any) -> dict[str, Any]:
+    """Resolve ``mujoco_warp`` submodules/functions for the SP1 ``clean_split`` step."""
+    src = getattr(mjw_mod, "_src", None)
+    fwd = getattr(mjw_mod, "forward", None) or getattr(src, "forward", None) or mjw_mod
+    smooth = getattr(mjw_mod, "smooth", None) or getattr(src, "smooth", None) or mjw_mod
+    coll = (
+        getattr(mjw_mod, "collision_driver", None)
+        or getattr(src, "collision_driver", None)
+        or mjw_mod
+    )
+    cons = getattr(mjw_mod, "constraint", None) or getattr(src, "constraint", None) or mjw_mod
+    sol = getattr(mjw_mod, "solver", None) or getattr(src, "solver", None) or mjw_mod
+    sens = getattr(mjw_mod, "sensor", None) or getattr(src, "sensor", None) or mjw_mod
+
+    def _pick(primary: Any, *names: str) -> Any:
+        for obj in (primary, mjw_mod, fwd, smooth, coll, cons, sol, sens):
+            if obj is None:
+                continue
+            for name in names:
+                fn = getattr(obj, name, None)
+                if callable(fn):
+                    return fn
+        raise RuntimeError(f"clean_split could not resolve any of {names} on mujoco_warp")
+
+    kin_fn = getattr(fwd, "fwd_kinematics", None) or getattr(mjw_mod, "fwd_kinematics", None)
+    if callable(kin_fn):
+        kin_stage = lambda m_wp, d_b: kin_fn(m_wp, d_b)
+    else:
+        k1 = _pick(smooth, "kinematics")
+        k2 = _pick(smooth, "com_pos")
+        k3 = _pick(smooth, "camlight")
+        k4 = _pick(smooth, "flex")
+        k5 = _pick(smooth, "tendon")
+
+        def kin_stage(m_wp: Any, d_b: Any) -> None:
+            k1(m_wp, d_b)
+            k2(m_wp, d_b)
+            k3(m_wp, d_b)
+            k4(m_wp, d_b)
+            k5(m_wp, d_b)
+
+    return {
+        "fwd_kinematics": kin_stage,
+        "crb": _pick(smooth, "crb"),
+        "tendon_armature": _pick(smooth, "tendon_armature"),
+        "factor_m": _pick(smooth, "factor_m"),
+        "collision": _pick(coll, "collision"),
+        "transmission": _pick(smooth, "transmission"),
+        "fwd_velocity": _pick(fwd, "fwd_velocity"),
+        "make_constraint": _pick(cons, "make_constraint"),
+        "fwd_actuation": _pick(fwd, "fwd_actuation"),
+        "fwd_acceleration": _pick(fwd, "fwd_acceleration"),
+        "solve": _pick(sol, "solve"),
+        "sensor_acc": _pick(sens, "sensor_acc"),
+        "implicit": _pick(fwd, "implicit"),
+    }
+
+
+def _mjwarp_clean_split_step(
+    ops: dict[str, Any],
+    m_wp: Any,
+    d_b: Any,
+    launch_writers_fn: Callable[[], None],
+) -> None:
+    """Execute one SP1 ``clean_split`` step (``fwd_velocity`` before ``make_constraint``)."""
+    ops["fwd_kinematics"](m_wp, d_b)
+    ops["crb"](m_wp, d_b)
+    ops["tendon_armature"](m_wp, d_b)
+    ops["factor_m"](m_wp, d_b)
+    ops["collision"](m_wp, d_b)
+    ops["transmission"](m_wp, d_b)
+    ops["fwd_velocity"](m_wp, d_b)
+    launch_writers_fn()
+    ops["make_constraint"](m_wp, d_b)
+    ops["fwd_actuation"](m_wp, d_b)
+    ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+    ops["solve"](m_wp, d_b)
+    ops["sensor_acc"](m_wp, d_b)
+    ops["implicit"](m_wp, d_b)
 
 
 def _resolve_tendon_range_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
@@ -276,18 +374,28 @@ def run_parameter_sweep(
     seed: int = 42,
     peak_sample_stride: int = 25,
     lib: ctypes.CDLL | None = None,
+    host_lib: ctypes.CDLL | None = None,
     device: str = "cuda:0",
+    backend: str = "compliant_2d",
+    station_count: int = 64,
 ) -> dict[str, Any]:
-    """Experiment A: Heterogeneous 2048-world parameter sweep in a single CUDA Graph."""
+    """Experiment A: Heterogeneous 2048-world parameter sweep via clean_split CUDA Graph."""
     _require_gpu_stack()
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
+    if host_lib is None:
+        try:
+            from tools.colab_gpu.cpu_batch_sweep import compile_cpu_batch_runner
+        except ImportError:
+            from cpu_batch_sweep import compile_cpu_batch_runner  # type: ignore[no-redef]
+        host_lib = compile_cpu_batch_runner()
 
     m = load_model_with_assets(model_xml_path)
+    _ensure_newton_solver(m)
     d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
+    ops = _resolve_clean_split_ops(mjwarp)
 
-    # 1. Build host byte buffers for GpuModelIndices and heterogeneous GpuWorldConfig[nworld]
     idx_bytes = resolve_gpu_model_indices(m)
     idx_struct = GpuModelIndicesStruct.from_buffer_copy(idx_bytes)
     scales = generate_parameter_sweep_scales(nworld=nworld, seed=seed)
@@ -298,18 +406,23 @@ def run_parameter_sweep(
         rebound_scale=scales["rebound_scale"],
         shock_rate_scale=scales["shock_rate_scale"],
         tire_stiff_scale=scales["tire_stiff_scale"],
-        num_stations=32,
-        num_lateral_ribs=1,
     )
     sizeof_state = int(lib.bike_gpu_sizeof_world_state())
 
-    # 2. Allocate device buffers with wp.zeros(..., dtype=wp.uint8) and copy host bytes via wp.copy
     d_idx = _allocate_and_copy_device_bytes(idx_bytes, device=device)
     d_configs = _allocate_and_copy_device_bytes(configs_bytes, device=device)
     d_states = wp.zeros(nworld * sizeof_state, dtype=wp.uint8, device=device)
-    d_hf_heights, hf_num_samples, hf_x_min, hf_dx = _extract_heightfield_1d(m, device=device)
+    (
+        d_tyre_model,
+        d_terrain_desc,
+        d_terrain_f32,
+        d_terrain_i32,
+        terrain_f32_ptr,
+        terrain_i32_ptr,
+    ) = _upload_tyre_and_terrain_device(
+        host_lib, model_xml_path, backend, station_count, idx_bytes, device=device
+    )
 
-    # 3. Upload model & batched data to mujoco_warp and initialize states
     m_wp = mjwarp.put_model(m)
     if m.ntendon > 0 and hasattr(m_wp, "tendon_range"):
         tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
@@ -320,127 +433,79 @@ def run_parameter_sweep(
     cuda_stream = wp.get_stream().cuda_stream
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
 
-    lib.bike_gpu_launch_init_states(
-        ctypes.c_void_p(cuda_stream),
-        int(nworld),
-        ctypes.c_void_p(d_idx.ptr),
-        ctypes.c_void_p(d_configs.ptr),
-        1,
-        ctypes.c_void_p(d_states.ptr),
-        ctypes.c_void_p(d_b.qpos.ptr),
-    )
-    wp.synchronize()
-
-    # 4. Capture [lib.bike_gpu_launch_writers(...) + mjwarp.step(m_wp, d_b)] in ONE CUDA Graph
-    with wp.ScopedCapture() as capture:
-        lib.bike_gpu_launch_writers(
-            ctypes.c_void_p(cuda_stream),
-            int(nworld),
-            ctypes.c_float(dt_s),
-            ctypes.c_void_p(d_idx.ptr),
-            ctypes.c_void_p(d_hf_heights.ptr),
-            int(hf_num_samples),
-            ctypes.c_float(hf_x_min),
-            ctypes.c_float(hf_dx),
-            ctypes.c_void_p(d_configs.ptr),
-            1,
-            ctypes.c_void_p(d_states.ptr),
-            ctypes.c_void_p(d_b.qpos.ptr),
-            ctypes.c_void_p(d_b.qvel.ptr),
-            ctypes.c_void_p(d_b.xpos.ptr),
-            ctypes.c_void_p(d_b.qfrc_applied.ptr),
-            ctypes.c_void_p(d_b.ctrl.ptr),
-            ctypes.c_void_p(tendon_range_ptr),
-            int(tendon_range_stride),
+    def _init_states(data_b: Any) -> None:
+        rc = int(
+            lib.bike_gpu_launch_init_states(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_configs.ptr),
+                1,
+                ctypes.c_void_p(d_states.ptr),
+                ctypes.c_void_p(data_b.qpos.ptr),
+            )
         )
-        mjwarp.step(m_wp, d_b)
-    graph = capture.graph
+        if rc != 0:
+            raise RuntimeError(f"bike_gpu_launch_init_states failed with code {rc}")
 
-    # 5. Warmup graph execution, then reset to clean initial state before timing
+    def _capture_step(data_b: Any) -> Any:
+        def _launch_writers() -> None:
+            rc = int(
+                lib.bike_gpu_launch_writers(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_float(dt_s),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_tyre_model.ptr),
+                    ctypes.c_void_p(d_terrain_desc.ptr),
+                    ctypes.c_void_p(terrain_f32_ptr),
+                    ctypes.c_void_p(terrain_i32_ptr),
+                    ctypes.c_void_p(d_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_states.ptr),
+                    ctypes.c_void_p(data_b.qpos.ptr),
+                    ctypes.c_void_p(data_b.qvel.ptr),
+                    ctypes.c_void_p(data_b.xpos.ptr),
+                    ctypes.c_void_p(data_b.xmat.ptr),
+                    ctypes.c_void_p(data_b.xanchor.ptr),
+                    ctypes.c_void_p(data_b.xaxis.ptr),
+                    ctypes.c_void_p(data_b.qfrc_applied.ptr),
+                    ctypes.c_void_p(data_b.ctrl.ptr),
+                    ctypes.c_void_p(tendon_range_ptr),
+                    int(tendon_range_stride),
+                )
+            )
+            if rc != 0:
+                raise RuntimeError(f"bike_gpu_launch_writers failed with code {rc}")
+
+        with wp.ScopedCapture() as capture:
+            _mjwarp_clean_split_step(ops, m_wp, data_b, _launch_writers)
+        return capture.graph
+
+    _init_states(d_b)
+    wp.synchronize()
+    graph = _capture_step(d_b)
+
     for _ in range(warmup_steps):
         wp.capture_launch(graph)
     wp.synchronize()
 
     d_b = mjwarp.put_data(m, d0, nworld=nworld)
     mjwarp.forward(m_wp, d_b)
-    lib.bike_gpu_launch_init_states(
-        ctypes.c_void_p(cuda_stream),
-        int(nworld),
-        ctypes.c_void_p(d_idx.ptr),
-        ctypes.c_void_p(d_configs.ptr),
-        1,
-        ctypes.c_void_p(d_states.ptr),
-        ctypes.c_void_p(d_b.qpos.ptr),
-    )
-    # Re-capture on the fresh d_b buffer pointers
-    with wp.ScopedCapture() as capture:
-        lib.bike_gpu_launch_writers(
-            ctypes.c_void_p(cuda_stream),
-            int(nworld),
-            ctypes.c_float(dt_s),
-            ctypes.c_void_p(d_idx.ptr),
-            ctypes.c_void_p(d_hf_heights.ptr),
-            int(hf_num_samples),
-            ctypes.c_float(hf_x_min),
-            ctypes.c_float(hf_dx),
-            ctypes.c_void_p(d_configs.ptr),
-            1,
-            ctypes.c_void_p(d_states.ptr),
-            ctypes.c_void_p(d_b.qpos.ptr),
-            ctypes.c_void_p(d_b.qvel.ptr),
-            ctypes.c_void_p(d_b.xpos.ptr),
-            ctypes.c_void_p(d_b.qfrc_applied.ptr),
-            ctypes.c_void_p(d_b.ctrl.ptr),
-            ctypes.c_void_p(tendon_range_ptr),
-            int(tendon_range_stride),
-        )
-        mjwarp.step(m_wp, d_b)
-    graph = capture.graph
+    _init_states(d_b)
+    graph = _capture_step(d_b)
     wp.synchronize()
 
-    # 6. Timed uninterrupted CUDA Graph execution
     t0 = time.perf_counter()
     for _ in range(n_steps):
         wp.capture_launch(graph)
     wp.synchronize()
     wall_time_s = time.perf_counter() - t0
 
-    # 7. Collect physical sweep metrics across all nworld worlds
-    #    Replay in chunks of `peak_sample_stride` to record exact peak fork travel and shock stroke
     d_b = mjwarp.put_data(m, d0, nworld=nworld)
     mjwarp.forward(m_wp, d_b)
-    lib.bike_gpu_launch_init_states(
-        ctypes.c_void_p(cuda_stream),
-        int(nworld),
-        ctypes.c_void_p(d_idx.ptr),
-        ctypes.c_void_p(d_configs.ptr),
-        1,
-        ctypes.c_void_p(d_states.ptr),
-        ctypes.c_void_p(d_b.qpos.ptr),
-    )
-    with wp.ScopedCapture() as capture:
-        lib.bike_gpu_launch_writers(
-            ctypes.c_void_p(cuda_stream),
-            int(nworld),
-            ctypes.c_float(dt_s),
-            ctypes.c_void_p(d_idx.ptr),
-            ctypes.c_void_p(d_hf_heights.ptr),
-            int(hf_num_samples),
-            ctypes.c_float(hf_x_min),
-            ctypes.c_float(hf_dx),
-            ctypes.c_void_p(d_configs.ptr),
-            1,
-            ctypes.c_void_p(d_states.ptr),
-            ctypes.c_void_p(d_b.qpos.ptr),
-            ctypes.c_void_p(d_b.qvel.ptr),
-            ctypes.c_void_p(d_b.xpos.ptr),
-            ctypes.c_void_p(d_b.qfrc_applied.ptr),
-            ctypes.c_void_p(d_b.ctrl.ptr),
-            ctypes.c_void_p(tendon_range_ptr),
-            int(tendon_range_stride),
-        )
-        mjwarp.step(m_wp, d_b)
-    graph = capture.graph
+    _init_states(d_b)
+    graph = _capture_step(d_b)
 
     fork_qpos_idx = int(idx_struct.fork_travel_qpos)
     shock_qpos_idx = int(idx_struct.shock_stroke_qpos)
@@ -471,6 +536,8 @@ def run_parameter_sweep(
 
     return {
         "experiment": "A_parameter_sweep",
+        "schedule": "clean_split",
+        "backend": backend,
         "nworld": int(nworld),
         "n_steps": int(n_steps),
         "dt_s": dt_s,
@@ -492,26 +559,34 @@ def run_parameter_sweep(
     }
 
 
-def run_3d_tire_ray_scaling_benchmark(
+def run_tyre_backend_scaling_benchmark(
     model_xml_path: Path = DEFAULT_MODEL_XML,
     nworld: int = 2048,
     n_steps: int = 500,
     warmup_steps: int = 20,
     lib: ctypes.CDLL | None = None,
+    host_lib: ctypes.CDLL | None = None,
     device: str = "cuda:0",
 ) -> dict[str, Any]:
-    """Experiment B: 3D tire ray-grid scaling benchmark across 64, 900, and 7700 rays/world."""
+    """Experiment B: Tyre backend scaling across compliant_2d and distributed N=32/64/128."""
     _require_gpu_stack()
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
+    if host_lib is None:
+        try:
+            from tools.colab_gpu.cpu_batch_sweep import compile_cpu_batch_runner
+        except ImportError:
+            from cpu_batch_sweep import compile_cpu_batch_runner  # type: ignore[no-redef]
+        host_lib = compile_cpu_batch_runner()
 
     m = load_model_with_assets(model_xml_path)
+    _ensure_newton_solver(m)
     d0 = _prepare_initial_mjdata(m, model_xml_path)
     dt_s = float(m.opt.timestep)
+    ops = _resolve_clean_split_ops(mjwarp)
 
     idx_bytes = resolve_gpu_model_indices(m)
     d_idx = _allocate_and_copy_device_bytes(idx_bytes, device=device)
-    d_hf_heights, hf_num_samples, hf_x_min, hf_dx = _extract_heightfield_1d(m, device=device)
     sizeof_state = int(lib.bike_gpu_sizeof_world_state())
 
     m_wp = mjwarp.put_model(m)
@@ -521,63 +596,77 @@ def run_3d_tire_ray_scaling_benchmark(
     cuda_stream = wp.get_stream().cuda_stream
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
 
+    configs_bytes = build_sweep_configs_bytes(lib=lib, nworld=1)
+    d_configs = _allocate_and_copy_device_bytes(configs_bytes, device=device)
+    d_states = wp.zeros(nworld * sizeof_state, dtype=wp.uint8, device=device)
+
     tier_results: list[dict[str, Any]] = []
     baseline_us: float | None = None
 
-    for tier in TIRE_RAY_SCALING_TIERS:
-        num_stations = int(tier["num_stations"])
-        num_lateral_ribs = int(tier["num_lateral_ribs"])
-        rays_per_world = int(tier["rays_per_world"])
-
-        configs_bytes = build_sweep_configs_bytes(
-            lib=lib,
-            nworld=1,
-            fork_psi_scale=None,
-            rebound_scale=None,
-            shock_rate_scale=None,
-            tire_stiff_scale=None,
-            num_stations=num_stations,
-            num_lateral_ribs=num_lateral_ribs,
+    for tier in TYRE_BACKEND_TIERS:
+        backend = str(tier["backend"])
+        station_count = int(tier["station_count"])
+        units_per_world = int(tier["units_per_world"])
+        (
+            d_tyre_model,
+            d_terrain_desc,
+            _d_terrain_f32,
+            _d_terrain_i32,
+            terrain_f32_ptr,
+            terrain_i32_ptr,
+        ) = _upload_tyre_and_terrain_device(
+            host_lib, model_xml_path, backend, station_count, idx_bytes, device=device
         )
-        d_configs = _allocate_and_copy_device_bytes(configs_bytes, device=device)
-        d_states = wp.zeros(nworld * sizeof_state, dtype=wp.uint8, device=device)
 
         d_b = mjwarp.put_data(m, d0, nworld=nworld)
         mjwarp.forward(m_wp, d_b)
 
-        lib.bike_gpu_launch_init_states(
-            ctypes.c_void_p(cuda_stream),
-            int(nworld),
-            ctypes.c_void_p(d_idx.ptr),
-            ctypes.c_void_p(d_configs.ptr),
-            0,
-            ctypes.c_void_p(d_states.ptr),
-            ctypes.c_void_p(d_b.qpos.ptr),
-        )
-        wp.synchronize()
-
-        with wp.ScopedCapture() as capture:
-            lib.bike_gpu_launch_writers(
+        rc_init = int(
+            lib.bike_gpu_launch_init_states(
                 ctypes.c_void_p(cuda_stream),
                 int(nworld),
-                ctypes.c_float(dt_s),
                 ctypes.c_void_p(d_idx.ptr),
-                ctypes.c_void_p(d_hf_heights.ptr),
-                int(hf_num_samples),
-                ctypes.c_float(hf_x_min),
-                ctypes.c_float(hf_dx),
                 ctypes.c_void_p(d_configs.ptr),
                 0,
                 ctypes.c_void_p(d_states.ptr),
                 ctypes.c_void_p(d_b.qpos.ptr),
-                ctypes.c_void_p(d_b.qvel.ptr),
-                ctypes.c_void_p(d_b.xpos.ptr),
-                ctypes.c_void_p(d_b.qfrc_applied.ptr),
-                ctypes.c_void_p(d_b.ctrl.ptr),
-                ctypes.c_void_p(tendon_range_ptr),
-                int(tendon_range_stride),
             )
-            mjwarp.step(m_wp, d_b)
+        )
+        if rc_init != 0:
+            raise RuntimeError(f"bike_gpu_launch_init_states failed with code {rc_init}")
+        wp.synchronize()
+
+        def _launch_writers() -> None:
+            rc = int(
+                lib.bike_gpu_launch_writers(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_float(dt_s),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_tyre_model.ptr),
+                    ctypes.c_void_p(d_terrain_desc.ptr),
+                    ctypes.c_void_p(terrain_f32_ptr),
+                    ctypes.c_void_p(terrain_i32_ptr),
+                    ctypes.c_void_p(d_configs.ptr),
+                    0,
+                    ctypes.c_void_p(d_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_void_p(d_b.qvel.ptr),
+                    ctypes.c_void_p(d_b.xpos.ptr),
+                    ctypes.c_void_p(d_b.xmat.ptr),
+                    ctypes.c_void_p(d_b.xanchor.ptr),
+                    ctypes.c_void_p(d_b.xaxis.ptr),
+                    ctypes.c_void_p(d_b.qfrc_applied.ptr),
+                    ctypes.c_void_p(d_b.ctrl.ptr),
+                    ctypes.c_void_p(tendon_range_ptr),
+                    int(tendon_range_stride),
+                )
+            )
+            if rc != 0:
+                raise RuntimeError(f"bike_gpu_launch_writers failed with code {rc}")
+
+        with wp.ScopedCapture() as capture:
+            _mjwarp_clean_split_step(ops, m_wp, d_b, _launch_writers)
         graph = capture.graph
 
         for _ in range(warmup_steps):
@@ -596,32 +685,30 @@ def run_3d_tire_ray_scaling_benchmark(
         total_world_steps = int(nworld) * int(n_steps)
         us_per_step_per_world = (wall_time_s * 1e6) / float(total_world_steps)
         steps_per_s = float(total_world_steps) / max(wall_time_s, 1e-12)
-        mrays_per_s = (float(total_world_steps) * float(rays_per_world)) / max(wall_time_s, 1e-12) / 1e6
 
         if baseline_us is None:
             baseline_us = us_per_step_per_world
-        delta_us_vs_2d = us_per_step_per_world - baseline_us
+        delta_us = us_per_step_per_world - baseline_us
 
         tier_results.append(
             {
                 "tier_id": tier["tier_id"],
                 "label": tier["label"],
-                "num_stations": num_stations,
-                "num_lateral_ribs": num_lateral_ribs,
-                "rays_per_wheel": int(tier["rays_per_wheel"]),
-                "rays_per_world": rays_per_world,
-                "total_rays_per_step": int(nworld) * rays_per_world,
+                "backend": backend,
+                "station_count": station_count,
+                "units_per_wheel": int(tier["units_per_wheel"]),
+                "units_per_world": units_per_world,
                 "wall_time_ms": wall_time_s * 1000.0,
                 "us_per_step_per_world": us_per_step_per_world,
-                "delta_us_vs_2d_planar": delta_us_vs_2d,
+                "delta_us_vs_compliant": delta_us,
                 "steps_per_s": steps_per_s,
-                "mrays_per_s": mrays_per_s,
                 "all_finite": finite_all,
             }
         )
 
     return {
-        "experiment": "B_3d_tire_ray_scaling",
+        "experiment": "B_tyre_backend_scaling",
+        "schedule": "clean_split",
         "nworld": int(nworld),
         "n_steps": int(n_steps),
         "dt_s": dt_s,
@@ -632,7 +719,7 @@ def run_3d_tire_ray_scaling_benchmark(
 def _print_report(results: dict[str, Any]) -> None:
     if "parameter_sweep" in results:
         sw = results["parameter_sweep"]
-        print("\n=== Experiment A: Batched Parameter Sweep (CUDA Graph) ===")
+        print("\n=== Experiment A: Batched Parameter Sweep (clean_split CUDA Graph) ===")
         print(
             f"nworld = {sw['nworld']} | n_steps = {sw['n_steps']} | "
             f"wall = {sw['wall_time_ms']:.2f} ms | "
@@ -647,24 +734,23 @@ def _print_report(results: dict[str, Any]) -> None:
                 f"p90={stats['p90']:.3f}, max={stats['max']:.3f}"
             )
 
-    if "tire_ray_scaling" in results:
-        tr = results["tire_ray_scaling"]
-        print("\n=== Experiment B: 3D Tire Ray-Grid Scaling Benchmark (CUDA Graph) ===")
+    if "tyre_backend_scaling" in results:
+        tr = results["tyre_backend_scaling"]
+        print("\n=== Experiment B: Tyre Backend Scaling Benchmark (clean_split CUDA Graph) ===")
         for tier in tr["tiers"]:
             print(
                 f"  {tier['label']:<35} | "
-                f"grid={tier['num_stations']}x{tier['num_lateral_ribs']} | "
+                f"stations={tier['station_count']:3d} | "
                 f"wall={tier['wall_time_ms']:7.2f} ms | "
                 f"{tier['us_per_step_per_world']:6.3f} us/step/world "
-                f"(+{tier['delta_us_vs_2d_planar']:.3f} us) | "
-                f"{tier['steps_per_s']:10,.0f} steps/s | "
-                f"{tier['mrays_per_s']:8.1f} Mrays/s"
+                f"(+{tier['delta_us_vs_compliant']:.3f} us) | "
+                f"{tier['steps_per_s']:10,.0f} steps/s"
             )
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run batched C++/CUDA force writers + mujoco_warp benchmarks."
+        description="Run batched C++/CUDA force writers + clean_split mujoco_warp benchmarks."
     )
     parser.add_argument(
         "--model-xml",
@@ -685,10 +771,10 @@ def main(argv: list[str] | None = None) -> int:
         help="Number of steps for Experiment A parameter sweep (default: 1000).",
     )
     parser.add_argument(
-        "--ray-steps",
+        "--tier-steps",
         type=int,
         default=500,
-        help="Number of steps per tier for Experiment B 3D tire ray scaling (default: 500).",
+        help="Number of steps per tier for Experiment B tyre backend scaling (default: 500).",
     )
     parser.add_argument(
         "--experiment",
@@ -716,10 +802,10 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.experiment in ("all", "tire_scaling"):
-        results["tire_ray_scaling"] = run_3d_tire_ray_scaling_benchmark(
+        results["tyre_backend_scaling"] = run_tyre_backend_scaling_benchmark(
             model_xml_path=args.model_xml,
             nworld=args.nworld,
-            n_steps=args.ray_steps,
+            n_steps=args.tier_steps,
             lib=lib,
         )
 

@@ -88,6 +88,149 @@ class GpuModelIndicesStruct(ctypes.Structure):
         self.rear_wheel_body = int(value)
 
 
+def _assert_struct_size(lib: ctypes.CDLL, fn_name: str, struct_cls: type[ctypes.Structure]) -> None:
+    expected = ctypes.sizeof(struct_cls)
+    actual = int(getattr(lib, fn_name)())
+    if actual != expected:
+        raise RuntimeError(
+            f"{struct_cls.__name__} size mismatch: ctypes has {expected} bytes, "
+            f"C++ library ({fn_name}) expects {actual} bytes"
+        )
+
+
+class GpuTerrainTableDescStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::physics_core::GpuTerrainTableDesc``."""
+
+    _fields_ = [
+        ("polyline_vertex_count", ctypes.c_int32),
+        ("px_offset", ctypes.c_int32),
+        ("pz_offset", ctypes.c_int32),
+        ("seg_x_offset", ctypes.c_int32),
+        ("seg_z_offset", ctypes.c_int32),
+        ("seg_len_sq_offset", ctypes.c_int32),
+        ("height_changes_offset", ctypes.c_int32),
+        ("left_x_offset", ctypes.c_int32),
+        ("left_z_offset", ctypes.c_int32),
+        ("right_x_offset", ctypes.c_int32),
+        ("right_z_offset", ctypes.c_int32),
+        ("maximum_z", ctypes.c_float),
+        ("significant_delta_m", ctypes.c_float),
+        ("significance_fraction", ctypes.c_float),
+        ("normal_cosine", ctypes.c_float),
+        ("signed_vertex_count", ctypes.c_int32),
+        ("sp_x_offset", ctypes.c_int32),
+        ("sp_z_offset", ctypes.c_int32),
+        ("sp_edge_x_offset", ctypes.c_int32),
+        ("sp_edge_z_offset", ctypes.c_int32),
+        ("sp_length2_offset", ctypes.c_int32),
+        ("sp_normal_x_offset", ctypes.c_int32),
+        ("sp_normal_z_offset", ctypes.c_int32),
+        ("f32_count", ctypes.c_int32),
+        ("i32_count", ctypes.c_int32),
+    ]
+
+
+class GpuChainJointStruct(ctypes.Structure):
+    _fields_ = [
+        ("joint_id", ctypes.c_int32),
+        ("joint_type", ctypes.c_int32),
+        ("dof_adr", ctypes.c_int32),
+    ]
+
+
+class GpuWheelChainStruct(ctypes.Structure):
+    _fields_ = [
+        ("wheel_body_id", ctypes.c_int32),
+        ("njnt", ctypes.c_int32),
+        ("joint_count", ctypes.c_int32),
+        ("joints", GpuChainJointStruct * 8),
+    ]
+
+
+class CompliantMaterialViewStruct(ctypes.Structure):
+    _fields_ = [
+        ("radial_k_n_m", ctypes.c_float),
+        ("loss_factor", ctypes.c_float),
+        ("hysteresis_rate_eps_mps", ctypes.c_float),
+        ("valid_load_min_n", ctypes.c_float),
+        ("valid_load_max_n", ctypes.c_float),
+        ("has_tabulated_radial", ctypes.c_uint8),
+        ("_pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class HingeDensityViewStruct(ctypes.Structure):
+    _fields_ = [
+        ("knots_m", ctypes.c_float * 8),
+        ("stiffness_n_m", ctypes.c_float * 8),
+        ("knot_count", ctypes.c_int32),
+        ("damping_ns_m", ctypes.c_float),
+        ("loss_factor", ctypes.c_float),
+        ("hysteresis_rate_eps_mps", ctypes.c_float),
+    ]
+
+
+class TyreWheelSpecStruct(ctypes.Structure):
+    _fields_ = [
+        ("chain", GpuWheelChainStruct),
+        ("geom_id", ctypes.c_int32),
+        ("radius_m", ctypes.c_float),
+        ("tangent_k_n_m", ctypes.c_float),
+        ("tire_mu", ctypes.c_float),
+        ("relaxation_length_m", ctypes.c_float),
+        ("compliant", CompliantMaterialViewStruct),
+        ("distributed_density", HingeDensityViewStruct),
+        ("valid_deflection_min_m", ctypes.c_float),
+        ("valid_deflection_max_m", ctypes.c_float),
+        ("local_xyz", ctypes.c_float * (3 * 128)),
+        ("station_weight", ctypes.c_float),
+    ]
+
+
+class SurfaceSpecPodStruct(ctypes.Structure):
+    _fields_ = [
+        ("mu_peak", ctypes.c_float),
+        ("mu_slide", ctypes.c_float),
+        ("slip_stiffness_per_load", ctypes.c_float),
+        ("stribeck_speed_mps", ctypes.c_float),
+        ("surface_id", ctypes.c_int32),
+    ]
+
+
+class SurfaceSectionViewStruct(ctypes.Structure):
+    _fields_ = [
+        ("start_m", ctypes.c_float),
+        ("end_m", ctypes.c_float),
+        ("surface", SurfaceSpecPodStruct),
+    ]
+
+
+class SurfaceMapViewStruct(ctypes.Structure):
+    _fields_ = [
+        ("default_surface", SurfaceSpecPodStruct),
+        ("sections", SurfaceSectionViewStruct * 16),
+        ("section_count", ctypes.c_int32),
+        ("has_surface_map", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class GpuTyreModelStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::physics_core::GpuTyreModel``."""
+
+    _fields_ = [
+        ("backend", ctypes.c_int32),
+        ("nq", ctypes.c_int32),
+        ("nv", ctypes.c_int32),
+        ("nbody", ctypes.c_int32),
+        ("njnt", ctypes.c_int32),
+        ("station_count", ctypes.c_int32),
+        ("distinct_normal_cosine", ctypes.c_float),
+        ("wheels", TyreWheelSpecStruct * 2),
+        ("surface_map", SurfaceMapViewStruct),
+    ]
+
+
 def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     """Configure ``.argtypes`` and ``.restype`` for all ``bike_gpu_*`` C API entry points."""
     lib.bike_gpu_sizeof_world_config.argtypes = []
@@ -99,16 +242,18 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     lib.bike_gpu_sizeof_model_indices.argtypes = []
     lib.bike_gpu_sizeof_model_indices.restype = ctypes.c_int
 
-    expected_idx_size = ctypes.sizeof(GpuModelIndicesStruct)
-    actual_idx_size = int(lib.bike_gpu_sizeof_model_indices())
-    if actual_idx_size != expected_idx_size:
-        raise RuntimeError(
-            f"GpuModelIndicesStruct size mismatch: ctypes has {expected_idx_size} bytes, "
-            f"C++ library expects {actual_idx_size} bytes"
-        )
+    lib.bike_gpu_sizeof_tyre_model.argtypes = []
+    lib.bike_gpu_sizeof_tyre_model.restype = ctypes.c_int
+
+    lib.bike_gpu_sizeof_terrain_desc.argtypes = []
+    lib.bike_gpu_sizeof_terrain_desc.restype = ctypes.c_int
+
+    _assert_struct_size(lib, "bike_gpu_sizeof_model_indices", GpuModelIndicesStruct)
+    _assert_struct_size(lib, "bike_gpu_sizeof_tyre_model", GpuTyreModelStruct)
+    _assert_struct_size(lib, "bike_gpu_sizeof_terrain_desc", GpuTerrainTableDescStruct)
 
     lib.bike_gpu_init_default_config.argtypes = [ctypes.c_void_p]
-    lib.bike_gpu_init_default_config.restype = None
+    lib.bike_gpu_init_default_config.restype = ctypes.c_int
 
     lib.bike_gpu_build_sweep_configs.argtypes = [
         ctypes.c_void_p,
@@ -117,10 +262,8 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
-        ctypes.c_int,
-        ctypes.c_int,
     ]
-    lib.bike_gpu_build_sweep_configs.restype = None
+    lib.bike_gpu_build_sweep_configs.restype = ctypes.c_int
 
     lib.bike_gpu_launch_init_states.argtypes = [
         ctypes.c_void_p,
@@ -131,29 +274,36 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
         ctypes.c_void_p,
         ctypes.c_void_p,
     ]
-    lib.bike_gpu_launch_init_states.restype = None
+    lib.bike_gpu_launch_init_states.restype = ctypes.c_int
 
-    lib.bike_gpu_launch_writers.argtypes = [
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_float,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_float,
-        ctypes.c_float,
-        ctypes.c_void_p,
-        ctypes.c_int,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_void_p,
-        ctypes.c_int,
+    writers_argtypes = [
+        ctypes.c_void_p,  # cuda_stream
+        ctypes.c_int,     # nworld
+        ctypes.c_float,   # dt_s
+        ctypes.c_void_p,  # d_idx
+        ctypes.c_void_p,  # d_tyre_model
+        ctypes.c_void_p,  # d_terrain_desc
+        ctypes.c_void_p,  # d_terrain_f32
+        ctypes.c_void_p,  # d_terrain_i32
+        ctypes.c_void_p,  # d_configs
+        ctypes.c_int,     # per_world_config
+        ctypes.c_void_p,  # d_states
+        ctypes.c_void_p,  # d_qpos
+        ctypes.c_void_p,  # d_qvel
+        ctypes.c_void_p,  # d_xpos
+        ctypes.c_void_p,  # d_xmat
+        ctypes.c_void_p,  # d_xanchor
+        ctypes.c_void_p,  # d_xaxis
+        ctypes.c_void_p,  # d_qfrc_applied
+        ctypes.c_void_p,  # d_ctrl
+        ctypes.c_void_p,  # d_tendon_range
+        ctypes.c_int,     # tendon_range_world_stride
     ]
-    lib.bike_gpu_launch_writers.restype = None
+    lib.bike_gpu_launch_writers.argtypes = writers_argtypes
+    lib.bike_gpu_launch_writers.restype = ctypes.c_int
+    if hasattr(lib, "bike_gpu_launch_step_writers"):
+        lib.bike_gpu_launch_step_writers.argtypes = writers_argtypes
+        lib.bike_gpu_launch_step_writers.restype = ctypes.c_int
 
     return lib
 
@@ -164,6 +314,7 @@ def compile_cuda_writers(
 ) -> ctypes.CDLL:
     """Compile ``cuda_kernels.cu`` with ``nvcc`` and load the resulting shared library via ``ctypes.CDLL``."""
     gpu_src_dir = Path(gpu_src_dir).resolve()
+    native_src_dir = gpu_src_dir.parent
     out_so_path = Path(out_so_path).resolve()
     cu_path = gpu_src_dir / "cuda_kernels.cu"
     if not cu_path.is_file():
@@ -174,10 +325,12 @@ def compile_cuda_writers(
         "nvcc",
         "-std=c++20",
         "-O3",
-        "--use_fast_math",
+        "--fmad=false",
         "--shared",
         "-Xcompiler",
         "-fPIC",
+        f"-I{native_src_dir}",
+        f"-I{gpu_src_dir}",
         str(cu_path),
         "-o",
         str(out_so_path),
@@ -415,7 +568,9 @@ def build_default_config_bytes(lib: ctypes.CDLL) -> bytes:
     """Populate a single default ``GpuWorldConfig`` struct on the host and return its raw bytes."""
     cfg_size = int(lib.bike_gpu_sizeof_world_config())
     buf = ctypes.create_string_buffer(cfg_size)
-    lib.bike_gpu_init_default_config(ctypes.cast(buf, ctypes.c_void_p))
+    rc = int(lib.bike_gpu_init_default_config(ctypes.cast(buf, ctypes.c_void_p)))
+    if rc != 0:
+        raise RuntimeError(f"bike_gpu_init_default_config failed with return code {rc}")
     return buf.raw
 
 
@@ -438,8 +593,6 @@ def build_sweep_configs_bytes(
     rebound_scale: np.ndarray | None = None,
     shock_rate_scale: np.ndarray | None = None,
     tire_stiff_scale: np.ndarray | None = None,
-    num_stations: int = 32,
-    num_lateral_ribs: int = 1,
 ) -> bytes:
     """Populate ``nworld`` ``GpuWorldConfig`` structs on the host and return their raw bytes."""
     cfg_size = int(lib.bike_gpu_sizeof_world_config())
@@ -450,17 +603,117 @@ def build_sweep_configs_bytes(
     _, shock_ptr = _as_float32_ptr(shock_rate_scale, nworld)
     _, tire_ptr = _as_float32_ptr(tire_stiff_scale, nworld)
 
-    lib.bike_gpu_build_sweep_configs(
-        ctypes.cast(buf, ctypes.c_void_p),
-        int(nworld),
-        fork_ptr,
-        reb_ptr,
-        shock_ptr,
-        tire_ptr,
-        int(num_stations),
-        int(num_lateral_ribs),
+    rc = int(
+        lib.bike_gpu_build_sweep_configs(
+            ctypes.cast(buf, ctypes.c_void_p),
+            int(nworld),
+            fork_ptr,
+            reb_ptr,
+            shock_ptr,
+            tire_ptr,
+        )
     )
+    if rc != 0:
+        raise RuntimeError(f"bike_gpu_build_sweep_configs failed with return code {rc}")
     return buf.raw
+
+
+def configure_host_tyre_builder(lib: ctypes.CDLL, symbol_name: str) -> Any:
+    """Bind ``bike_{cpu,metal}_build_tyre_and_terrain`` argtypes and restype."""
+    fn = getattr(lib, symbol_name)
+    fn.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.POINTER(ctypes.c_int32),
+        ctypes.POINTER(ctypes.c_int),
+    ]
+    fn.restype = ctypes.c_int
+    return fn
+
+
+def build_tyre_and_terrain_buffers(
+    host_lib: ctypes.CDLL,
+    xml_path: Path | str,
+    backend: str = "compliant_2d",
+    station_count: int = 64,
+    idx_bytes: bytes | None = None,
+) -> tuple[bytes, bytes, np.ndarray, np.ndarray]:
+    """Resolve ``(tyre_model_bytes, terrain_desc_bytes, terrain_f32, terrain_i32)`` via host C++."""
+    if hasattr(host_lib, "bike_cpu_build_tyre_and_terrain"):
+        builder = configure_host_tyre_builder(host_lib, "bike_cpu_build_tyre_and_terrain")
+    elif hasattr(host_lib, "bike_metal_build_tyre_and_terrain"):
+        builder = configure_host_tyre_builder(host_lib, "bike_metal_build_tyre_and_terrain")
+    else:
+        raise AttributeError(
+            "host_lib exposes neither bike_cpu_build_tyre_and_terrain nor bike_metal_build_tyre_and_terrain"
+        )
+
+    if backend == "compliant_2d":
+        backend_kind = 0
+    elif backend == "distributed_2d_reference":
+        backend_kind = 1
+    else:
+        raise ValueError(f"Unknown tyre backend '{backend}'")
+
+    model_buf = ctypes.create_string_buffer(int(host_lib.bike_gpu_sizeof_tyre_model()))
+    desc_buf = ctypes.create_string_buffer(int(host_lib.bike_gpu_sizeof_terrain_desc()))
+    idx_buf = ctypes.create_string_buffer(idx_bytes) if idx_bytes is not None else None
+    idx_ptr = ctypes.cast(idx_buf, ctypes.c_void_p) if idx_buf is not None else None
+
+    f32_cap = ctypes.c_int(0)
+    i32_cap = ctypes.c_int(0)
+    xml_b = str(Path(xml_path).resolve()).encode("utf-8")
+    rc = int(
+        builder(
+            xml_b,
+            int(backend_kind),
+            int(station_count),
+            idx_ptr,
+            ctypes.cast(model_buf, ctypes.c_void_p),
+            ctypes.cast(desc_buf, ctypes.c_void_p),
+            None,
+            ctypes.byref(f32_cap),
+            None,
+            ctypes.byref(i32_cap),
+        )
+    )
+    if rc != 0:
+        raise RuntimeError(f"Host tyre/terrain size query failed with return code {rc}")
+
+    f32_arr = np.zeros(max(1, int(f32_cap.value)), dtype=np.float32)
+    i32_arr = np.zeros(max(1, int(i32_cap.value)), dtype=np.int32)
+    f32_cap.value = int(f32_arr.size)
+    i32_cap.value = int(i32_arr.size)
+
+    rc = int(
+        builder(
+            xml_b,
+            int(backend_kind),
+            int(station_count),
+            idx_ptr,
+            ctypes.cast(model_buf, ctypes.c_void_p),
+            ctypes.cast(desc_buf, ctypes.c_void_p),
+            f32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            ctypes.byref(f32_cap),
+            i32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)),
+            ctypes.byref(i32_cap),
+        )
+    )
+    if rc != 0:
+        raise RuntimeError(f"Host tyre/terrain build failed with return code {rc}")
+
+    return (
+        model_buf.raw,
+        desc_buf.raw,
+        np.ascontiguousarray(f32_arr[: int(f32_cap.value)], dtype=np.float32),
+        np.ascontiguousarray(i32_arr[: int(i32_cap.value)], dtype=np.int32),
+    )
 
 
 if __name__ == "__main__":
@@ -469,5 +722,7 @@ if __name__ == "__main__":
         "sizeof_world_config": int(so_lib.bike_gpu_sizeof_world_config()),
         "sizeof_world_state": int(so_lib.bike_gpu_sizeof_world_state()),
         "sizeof_model_indices": int(so_lib.bike_gpu_sizeof_model_indices()),
+        "sizeof_tyre_model": int(so_lib.bike_gpu_sizeof_tyre_model()),
+        "sizeof_terrain_desc": int(so_lib.bike_gpu_sizeof_terrain_desc()),
     }
     print(json.dumps(info, indent=2))

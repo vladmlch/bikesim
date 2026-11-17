@@ -1,5 +1,5 @@
 // native/src/gpu/cpu_batch_runner.cpp — Multi-threaded C++ CPU batch runner
-// executing `gpu_step_world_writers` + `mj_step` across all CPU cores with
+// executing `gpu_step_world_writers` + MuJoCo step across CPU cores with
 // zero per-step heap allocations and zero Python/GIL overhead.
 
 #include "batch_step.hpp"
@@ -7,6 +7,7 @@
 #include <mujoco/mujoco.h>
 
 #include "model_assets.hpp"
+#include "runner_tyre_setup.hpp"
 
 #include <algorithm>
 #include <array>
@@ -23,20 +24,20 @@
 
 namespace {
 
-// Path of a side-car asset next to the model XML (diagnostics only).
 std::string asset_file_path(const char *xml_path, const char *file_name) {
     return (std::filesystem::path(bike::gpu::assets::asset_dir(xml_path)) / file_name).string();
 }
 
 // The single raw pointer -> std::span boundary of this TU. The extern "C" batch
 // entry points receive (pointer, count) ranges whose extents the caller owns
-// (d_configs/d_hf_heights/init_qpos/init_qvel/out_* sized by nworld, the model
-// counts or the caller's sample count); MuJoCo likewise exposes mjModel/mjData
-// arrays as raw pointers sized by the adjacent model counts (qpos/qvel/xpos/
-// qfrc_applied/ctrl by nq/nv/nbody*3/nu, tendon_range by ntendon*2). Every such
-// range is wrapped once through this helper; the (pointer, count) construction
-// itself is -Wunsafe-buffer-usage-in-container — suppressed here, scoped
-// exactly like native/src/gpu/model_assets.hpp's detail::model_span and
+// (d_configs/d_terrain_f32/d_terrain_i32/init_qpos/init_qvel/out_* sized by
+// nworld, the model counts or the caller's terrain table counts); MuJoCo likewise
+// exposes mjModel/mjData arrays as raw pointers sized by the adjacent model counts
+// (qpos/qvel/xpos/xmat/xanchor/xaxis/qfrc_applied/ctrl by nq/nv/nbody*3/nbody*9/
+// njnt*3/nu, tendon_range by ntendon*2). Every such range is wrapped once through
+// this helper; the (pointer, count) construction itself is
+// -Wunsafe-buffer-usage-in-container — suppressed here, scoped exactly like
+// native/src/gpu/model_assets.hpp's detail::model_span and
 // native/src/platform/argv.hpp's main_arguments.
 // Register: docs/TESTING.md suppression table.
 template <typename T>
@@ -51,24 +52,16 @@ template <typename T>
 #endif
 }
 
-// Container subscripts take size_t; the C ABI dims, GpuModelIndices fields and
-// the (kMax-checked) mjModel counts are int, so the explicit conversion lives
-// in one place (same helper shape as the gpu tests' to_index).
 constexpr std::size_t to_index(int field) {
     return static_cast<std::size_t>(field);
 }
 
-// The three scalar int dims arrive as adjacent, easily swapped ABI slots;
-// binding them once into a named aggregate keeps every use site self-labeled.
 struct BatchDims {
     int nworld;
     int n_steps;
     int num_threads;
 };
 
-// The four optional float* outputs, each an nworld-sized range or empty when
-// the caller passed nullptr. One aggregate init keeps the boundary staging in
-// a single place; empty() replaces the null check at the write sites.
 struct OutputViews {
     std::span<float> peak_fork_mm;
     std::span<float> peak_shock_mm;
@@ -86,10 +79,10 @@ int bike_cpu_run_batch_ex(
     int n_steps,
     int num_threads,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     const double *init_qpos,
@@ -101,36 +94,17 @@ int bike_cpu_run_batch_ex(
     double *out_elapsed_ms,
     float *out_final_root_z_m
 );
+
 int bike_cpu_run_batch(
     const char *xml_path,
     int nworld,
     int n_steps,
     int num_threads,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
-    const bike::gpu::GpuWorldConfig *d_configs,
-    int per_world_config,
-    const double *init_qpos,
-    const double *init_qvel,
-    float *out_peak_fork_mm,
-    float *out_peak_shock_mm,
-    float *out_final_root_x_m,
-    int *out_all_finite,
-    double *out_elapsed_ms
-);
-int bike_cpu_run_batch_sweep(
-    const char *xml_path,
-    int nworld,
-    int n_steps,
-    int num_threads,
-    const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     const double *init_qpos,
@@ -142,17 +116,39 @@ int bike_cpu_run_batch_sweep(
     double *out_elapsed_ms
 );
 
-// Return codes, shared by bike_cpu_run_batch_ex, bike_cpu_run_batch and bike_cpu_run_batch_sweep
-// (the last two forward to bike_cpu_run_batch_ex):
-//    0  success
-//   -1  invalid arguments: xml_path or d_configs is null, or nworld or n_steps <= 0
-//   -2  model load failure, or model / idx dimensions exceed the kMax bounds
-//   -5  initial-state asset error, only when init_qpos or init_qvel is null: captured_bootstrap.json
-//       next to xml_path is missing, malformed, or its nq/nv differ from the model
-//   -6  heightfield asset error: hfield_data.bin next to xml_path is missing or does not hold exactly
-//       nhfielddata binary64 values (required whenever the model has a heightfield), or no heights were
-//       passed and the model has no usable 1D heightfield
-// Errors -5 and -6 print the asset status name and the file path to stderr.
+int bike_cpu_run_batch_sweep(
+    const char *xml_path,
+    int nworld,
+    int n_steps,
+    int num_threads,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuWorldConfig *d_configs,
+    int per_world_config,
+    const double *init_qpos,
+    const double *init_qvel,
+    float *out_peak_fork_mm,
+    float *out_peak_shock_mm,
+    float *out_final_root_x_m,
+    int *out_all_finite,
+    double *out_elapsed_ms
+);
+
+int bike_cpu_build_tyre_and_terrain(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    const bike::gpu::GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+);
 
 int bike_cpu_run_batch_ex(
     const char *xml_path,
@@ -160,10 +156,10 @@ int bike_cpu_run_batch_ex(
     int n_steps,
     int num_threads,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     const double *init_qpos,
@@ -179,10 +175,30 @@ int bike_cpu_run_batch_ex(
     using bike::gpu::kMaxNq;
     using bike::gpu::kMaxNu;
     using bike::gpu::kMaxNv;
+    using bike::physics_core::kMaxNjnt;
 
     if (xml_path == nullptr || nworld <= 0 || n_steps <= 0 || d_configs == nullptr) {
         return -1;
     }
+    if ((d_tyre_model == nullptr) != (d_terrain_desc == nullptr)) {
+        return -1;
+    }
+    std::span<const float> caller_f32{};
+    std::span<const bike::physics_core::i32> caller_i32{};
+    if (d_terrain_desc != nullptr) {
+        if (d_terrain_desc->f32_count < 0 || d_terrain_desc->i32_count < 0 ||
+            (d_terrain_desc->f32_count > 0 && d_terrain_f32 == nullptr) ||
+            (d_terrain_desc->i32_count > 0 && d_terrain_i32 == nullptr)) {
+            return -1;
+        }
+        if (d_terrain_desc->f32_count > 0) {
+            caller_f32 = boundary_span(d_terrain_f32, to_index(d_terrain_desc->f32_count));
+        }
+        if (d_terrain_desc->i32_count > 0) {
+            caller_i32 = boundary_span(d_terrain_i32, to_index(d_terrain_desc->i32_count));
+        }
+    }
+
     const BatchDims dims{.nworld = nworld, .n_steps = n_steps, .num_threads = num_threads};
 
     std::array<char, 1024> err{};
@@ -191,7 +207,6 @@ int bike_cpu_run_batch_ex(
         return -2;
     }
 
-    // The rollout's contacts read m->hfield_data, so the side-car is required for any model with a heightfield.
     const bike::gpu::assets::AssetStatus hf_bin_status =
         bike::gpu::assets::load_hfield_bin(m_base, xml_path);
     if (hf_bin_status != bike::gpu::assets::AssetStatus::kOk) {
@@ -202,11 +217,16 @@ int bike_cpu_run_batch_ex(
         return -6;
     }
 
-    if (m_base->nq > kMaxNq || m_base->nv > kMaxNv || m_base->nu > kMaxNu || m_base->nbody > kMaxNbody) {
+    if (m_base->nq <= 0 || m_base->nq > kMaxNq ||
+        m_base->nv <= 0 || m_base->nv > kMaxNv ||
+        m_base->nu < 0 || m_base->nu > kMaxNu ||
+        m_base->nbody <= 0 || m_base->nbody > kMaxNbody ||
+        m_base->njnt <= 0 || m_base->njnt > kMaxNjnt) {
         std::cerr << "bike_cpu_run_batch: model dimensions exceed kMax bounds\n";
         mj_deleteModel(m_base);
         return -2;
     }
+
     const bike::gpu::GpuModelIndices idx =
         (d_idx != nullptr) ? *d_idx : bike::gpu::assets::resolve_gpu_model_indices(m_base);
     if (!bike::gpu::gpu_validate_model_indices(idx, static_cast<int>(m_base->ntendon)) ||
@@ -219,46 +239,15 @@ int bike_cpu_run_batch_ex(
         return -2;
     }
 
-    // kMax bounds above keep the mjtSize -> int narrowing lossless.
     const int nq = static_cast<int>(m_base->nq);
     const int nv = static_cast<int>(m_base->nv);
     const int nu = static_cast<int>(m_base->nu);
     const int nbody3 = 3 * static_cast<int>(m_base->nbody);
+    const int nbody9 = 9 * static_cast<int>(m_base->nbody);
+    const int njnt3 = 3 * static_cast<int>(m_base->njnt);
     const int ntendon = static_cast<int>(m_base->ntendon);
 
-    // Caller heights, when usable, are adopted as given; otherwise the model's own 1D
-    // heightfield is extracted. The caller's three hf_* scalars bind into one descriptor.
-    bike::gpu::assets::Heightfield1D model_hf;
-    bike::gpu::GpuHeightfield1D hf{};
-    if (d_hf_heights != nullptr && hf_num_samples > 0) {
-        const float inv_dx = (hf_dx > 0.0f) ? (1.0f / hf_dx) : 1.0f;
-        hf = bike::gpu::GpuHeightfield1D{
-            .heights_m = d_hf_heights,
-            .num_samples = hf_num_samples,
-            .x_min_m = hf_x_min,
-            .dx_m = hf_dx,
-            .inv_dx_m = inv_dx,
-        };
-    } else {
-        const bike::gpu::assets::AssetStatus hf_status =
-            bike::gpu::assets::extract_heightfield_1d(m_base, model_hf);
-        if (hf_status != bike::gpu::assets::AssetStatus::kOk) {
-            std::cerr << "bike_cpu_run_batch: model heightfield extraction '"
-                      << bike::gpu::assets::asset_status_name(hf_status) << "'\n";
-            mj_deleteModel(m_base);
-            return -6;
-        }
-        const float inv_dx = (model_hf.dx_m > 0.0f) ? (1.0f / model_hf.dx_m) : 1.0f;
-        hf = bike::gpu::GpuHeightfield1D{
-            .heights_m = model_hf.heights.data(),
-            .num_samples = static_cast<int>(model_hf.heights.size()),
-            .x_min_m = model_hf.x_min_m,
-            .dx_m = model_hf.dx_m,
-            .inv_dx_m = inv_dx,
-        };
-    }
-
-    // Initial state: caller pointers are used as given; a null pointer takes the captured bootstrap value.
+    // Initial state: caller pointers are used as given; null takes captured_bootstrap.json.
     const double *qpos_src = init_qpos;
     const double *qvel_src = init_qvel;
     std::vector<double> captured_qpos;
@@ -293,6 +282,40 @@ int bike_cpu_run_batch_ex(
         qvel0[i] = init_qvel_v[i];
     }
 
+    const auto make_data_fn = &mj_makeData;
+    const auto reset_data_fn = &mj_resetData;
+    const auto forward_fn = &mj_forward;
+    const auto step_fn = &mj_step;
+    const auto kinematics_fn = &mj_kinematics;
+
+    bike::gpu::ResolvedRunnerTyre resolved_tyre{};
+    {
+        mjData *d_init = make_data_fn(m_base);
+        const std::span<mjtNum> d_init_qpos = boundary_span(d_init->qpos, to_index(nq));
+        const std::span<mjtNum> d_init_qvel = boundary_span(d_init->qvel, to_index(nv));
+        for (std::size_t i = 0; i < to_index(nq); ++i) {
+            d_init_qpos[i] = static_cast<mjtNum>(qpos0[i]);
+        }
+        for (std::size_t i = 0; i < to_index(nv); ++i) {
+            d_init_qvel[i] = static_cast<mjtNum>(qvel0[i]);
+        }
+        forward_fn(m_base, d_init);
+        const int rc_tyre = bike::gpu::resolve_runner_tyre_and_terrain(
+            m_base,
+            d_init,
+            idx,
+            d_tyre_model,
+            d_terrain_desc,
+            caller_f32,
+            caller_i32,
+            resolved_tyre);
+        mj_deleteData(d_init);
+        if (rc_tyre != 0) {
+            mj_deleteModel(m_base);
+            return -1;
+        }
+    }
+
     const std::span<const bike::gpu::GpuWorldConfig> configs_v =
         boundary_span(d_configs, (per_world_config != 0) ? to_index(dims.nworld) : 1);
     const std::size_t nworld_u = to_index(dims.nworld);
@@ -316,11 +339,6 @@ int bike_cpu_run_batch_ex(
         1, std::min(dims.nworld,
                     (dims.num_threads > 0) ? dims.num_threads : ((hw_threads > 0) ? hw_threads : 4)));
 
-    const auto make_data_fn = &mj_makeData;
-    const auto reset_data_fn = &mj_resetData;
-    const auto forward_fn = &mj_forward;
-    const auto step_fn = &mj_step;
-
     std::vector<mjModel *> worker_models(to_index(n_workers), nullptr);
     std::vector<mjData *> worker_data(to_index(n_workers), nullptr);
     for (int t = 0; t < n_workers; ++t) {
@@ -329,20 +347,26 @@ int bike_cpu_run_batch_ex(
     }
 
     const float dt_s = static_cast<float>(m_base->opt.timestep);
+    const float *terrain_f32_ptr =
+        resolved_tyre.terrain.f32.empty() ? nullptr : resolved_tyre.terrain.f32.data();
+    const bike::physics_core::i32 *terrain_i32_ptr =
+        resolved_tyre.terrain.i32.empty() ? nullptr : resolved_tyre.terrain.i32.data();
 
     std::atomic<int> next_world{0};
     std::atomic<int> all_finite_flag{1};
+    std::atomic<int> writer_failed_flag{0};
 
     const auto t_start = std::chrono::steady_clock::now();
 
     const auto worker_fn = [&](int tid) {
         mjModel *m_t = worker_models[to_index(tid)];
         mjData *d_t = worker_data[to_index(tid)];
-        // MuJoCo-owned worker arrays, wrapped once through the boundary helper;
-        // the copies share m_base's dims.
         const std::span<mjtNum> d_qpos = boundary_span(d_t->qpos, to_index(nq));
         const std::span<mjtNum> d_qvel = boundary_span(d_t->qvel, to_index(nv));
         const std::span<mjtNum> d_xpos = boundary_span(d_t->xpos, to_index(nbody3));
+        const std::span<mjtNum> d_xmat = boundary_span(d_t->xmat, to_index(nbody9));
+        const std::span<mjtNum> d_xanchor = boundary_span(d_t->xanchor, to_index(njnt3));
+        const std::span<mjtNum> d_xaxis = boundary_span(d_t->xaxis, to_index(njnt3));
         const std::span<mjtNum> d_qfrc_applied = boundary_span(d_t->qfrc_applied, to_index(nv));
         const std::span<mjtNum> d_ctrl = boundary_span(d_t->ctrl, to_index(nu));
         const std::span<mjtNum> t_tendon_range =
@@ -376,7 +400,7 @@ int bike_cpu_run_batch_ex(
             }
             forward_fn(m_t, d_t);
 
-            bike::gpu::GpuWorldState st_w{};
+            const auto st_w = std::make_unique<bike::gpu::GpuWorldState>();
             const int fh_qpos_idx =
                 (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
             const float crank0 =
@@ -387,7 +411,7 @@ int bike_cpu_run_batch_ex(
                 (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq)
                     ? static_cast<float>(d_qpos[to_index(idx.rear_wheel_spin_qpos)])
                     : 0.0f;
-            bike::gpu::gpu_init_world_state(st_w, cfg_w.drivetrain, crank0, rwheel0);
+            bike::gpu::gpu_init_world_state(*st_w, cfg_w.drivetrain, crank0, rwheel0);
 
             bike::gpu::GpuModelIndices local_idx = idx;
             if (ntendon > 0 && local_idx.freehub_tendon >= 0 && local_idx.freehub_tendon < ntendon) {
@@ -403,6 +427,9 @@ int bike_cpu_run_batch_ex(
                 alignas(64) std::array<float, kMaxNq> qpos_f32{};
                 alignas(64) std::array<float, kMaxNv> qvel_f32{};
                 alignas(64) std::array<float, 3 * to_index(kMaxNbody)> xpos_f32{};
+                alignas(64) std::array<float, 9 * to_index(kMaxNbody)> xmat_f32{};
+                alignas(64) std::array<float, 3 * to_index(kMaxNjnt)> xanchor_f32{};
+                alignas(64) std::array<float, 3 * to_index(kMaxNjnt)> xaxis_f32{};
                 alignas(64) std::array<float, kMaxNv> qfrc_f32{};
                 alignas(64) std::array<float, kMaxNu> ctrl_f32{};
 
@@ -415,23 +442,41 @@ int bike_cpu_run_batch_ex(
                 for (std::size_t i = 0; i < to_index(nbody3); ++i) {
                     xpos_f32[i] = static_cast<float>(d_xpos[i]);
                 }
+                for (std::size_t i = 0; i < to_index(nbody9); ++i) {
+                    xmat_f32[i] = static_cast<float>(d_xmat[i]);
+                }
+                for (std::size_t i = 0; i < to_index(njnt3); ++i) {
+                    xanchor_f32[i] = static_cast<float>(d_xanchor[i]);
+                    xaxis_f32[i] = static_cast<float>(d_xaxis[i]);
+                }
 
-                bike::gpu::gpu_step_world_writers(
+                const bike::physics_core::Status st = bike::gpu::gpu_step_world_writers(
                     0,
                     dt_s,
                     local_idx,
-                    hf,
+                    &resolved_tyre.model,
+                    resolved_tyre.terrain.desc,
+                    terrain_f32_ptr,
+                    terrain_i32_ptr,
                     &cfg_w,
                     0,
-                    &st_w,
+                    st_w.get(),
                     qpos_f32.data(),
                     qvel_f32.data(),
                     xpos_f32.data(),
+                    xmat_f32.data(),
+                    xanchor_f32.data(),
+                    xaxis_f32.data(),
                     qfrc_f32.data(),
                     ctrl_f32.data(),
                     (local_idx.freehub_tendon >= 0) ? tendon_f32.data() : nullptr,
-                    2
+                    2,
+                    false
                 );
+                if (st != bike::physics_core::Status::ok) {
+                    writer_failed_flag.store(1, std::memory_order_relaxed);
+                    return;
+                }
 
                 for (std::size_t i = 0; i < to_index(nv); ++i) {
                     d_qfrc_applied[i] = static_cast<mjtNum>(qfrc_f32[i]);
@@ -446,6 +491,7 @@ int bike_cpu_run_batch_ex(
                 }
 
                 step_fn(m_t, d_t);
+                kinematics_fn(m_t, d_t);
 
                 if (idx.fork_travel_qpos >= 0 && idx.fork_travel_qpos < nq) {
                     const float fk = static_cast<float>(d_qpos[to_index(idx.fork_travel_qpos)]);
@@ -463,13 +509,18 @@ int bike_cpu_run_batch_ex(
 
             for (int step = 0; step < dims.n_steps; ++step) {
                 step_world();
+                if (writer_failed_flag.load(std::memory_order_relaxed) != 0) {
+                    break;
+                }
             }
 
-            bool world_finite = true;
-            for (std::size_t i = 0; i < to_index(nq); ++i) {
-                if (!std::isfinite(static_cast<double>(d_qpos[i]))) {
-                    world_finite = false;
-                    break;
+            bool world_finite = (writer_failed_flag.load(std::memory_order_relaxed) == 0);
+            if (world_finite) {
+                for (std::size_t i = 0; i < to_index(nq); ++i) {
+                    if (!std::isfinite(static_cast<double>(d_qpos[i]))) {
+                        world_finite = false;
+                        break;
+                    }
                 }
             }
             if (world_finite) {
@@ -530,7 +581,7 @@ int bike_cpu_run_batch_ex(
         mj_deleteModel(worker_models[to_index(t)]);
     }
     mj_deleteModel(m_base);
-    return 0;
+    return writer_failed_flag.load(std::memory_order_relaxed) != 0 ? -7 : 0;
 }
 
 int bike_cpu_run_batch(
@@ -539,10 +590,10 @@ int bike_cpu_run_batch(
     int n_steps,
     int num_threads,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     const double *init_qpos,
@@ -559,10 +610,10 @@ int bike_cpu_run_batch(
         n_steps,
         num_threads,
         d_idx,
-        d_hf_heights,
-        hf_num_samples,
-        hf_x_min,
-        hf_dx,
+        d_tyre_model,
+        d_terrain_desc,
+        d_terrain_f32,
+        d_terrain_i32,
         d_configs,
         per_world_config,
         init_qpos,
@@ -582,10 +633,10 @@ int bike_cpu_run_batch_sweep(
     int n_steps,
     int num_threads,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     const double *init_qpos,
@@ -602,10 +653,10 @@ int bike_cpu_run_batch_sweep(
         n_steps,
         num_threads,
         d_idx,
-        d_hf_heights,
-        hf_num_samples,
-        hf_x_min,
-        hf_dx,
+        d_tyre_model,
+        d_terrain_desc,
+        d_terrain_f32,
+        d_terrain_i32,
         d_configs,
         per_world_config,
         init_qpos,
@@ -615,6 +666,26 @@ int bike_cpu_run_batch_sweep(
         out_final_root_x_m,
         out_all_finite,
         out_elapsed_ms
+    );
+}
+
+int bike_cpu_build_tyre_and_terrain(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    const bike::gpu::GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+) {
+    return bike::gpu::build_runner_tyre_and_terrain_buffers(
+        xml_path, backend_kind, station_count, d_idx,
+        out_tyre_model, out_terrain_desc,
+        out_terrain_f32, io_f32_count,
+        out_terrain_i32, io_i32_count
     );
 }
 

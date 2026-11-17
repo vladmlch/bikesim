@@ -1352,15 +1352,7 @@ void test_spindle_probe_rejects_bad_input() {
               }),
               "missing config members reject");
 }
-} // namespace
 
-// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
-// The dispatcher's inlined callees keep every plant's exception-cleanup slot
-// live, so the frame legitimately exceeds the 8KB guard whose target is the
-// per-step realtime path — same rationale as test_contracts' large cases.
-// cppcheck-suppress throwInEntryPoint
-NATIVE_DIAG_PUSH
-NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 // The reposition law takes its gain and torque cap from SpindleConfig
 // (2026-11-16 plan task 2): the cap is the rider's crank torque ceiling
 // seated_climb.max_crank_torque_nm, the gain is the profile field
@@ -1414,7 +1406,15 @@ void test_spindle_reposition_gain_and_cap_come_from_config() {
                                 "{:.6f} vs {:.6f}", task6, task12));
     }
 }
+} // namespace
 
+// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
+// The dispatcher's inlined callees keep every plant's exception-cleanup slot
+// live, so the frame legitimately exceeds the 8KB guard whose target is the
+// per-step realtime path — same rationale as test_contracts' large cases.
+// cppcheck-suppress throwInEntryPoint
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 int main() {
     return bt::run([] {
         test_spindle_waveform_matches_python();

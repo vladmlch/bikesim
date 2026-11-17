@@ -26,6 +26,7 @@ struct GpuChainJoint {
 
 struct GpuWheelChain {
     i32 wheel_body_id = -1;
+    i32 njnt = 0;
     i32 joint_count = 0;
     GpuChainJoint joints[kMaxChainJoints]{};
 };
@@ -128,6 +129,8 @@ struct SurfaceMapView {
     SurfaceSpecPod<Real> default_surface{};
     SurfaceSectionView<Real> sections[kMaxSurfaceSections]{};
     i32 section_count = 0;
+    u8 has_surface_map = 0;
+    u8 pad[3]{};
 };
 
 enum class TyreBackendKind : i32 {
@@ -159,6 +162,7 @@ struct TyreModel {
     i32 nbody = 0;
     i32 njnt = 0;
     i32 station_count = 0;
+    Real distinct_normal_cosine = static_cast<Real>(0);
     TyreWheelSpec<Real> wheels[2]{};
     SurfaceMapView<Real> surface_map{};
 };
@@ -173,7 +177,7 @@ struct CompliantWheelStatePod {
     u8 has_tangent = 0;
     u8 has_point = 0;
     u8 has_center = 0;
-    u8 pad = 0;
+    u8 has_segment = 0;
 };
 
 template <class Real>

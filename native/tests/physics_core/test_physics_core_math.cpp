@@ -4,6 +4,7 @@
 #include "physics_core/gpu_math.hpp"
 #include "physics_core/gpu_toolkit.hpp"
 #include "physics_core/tyre_types.hpp"
+#include "tyre/profile.hpp"
 
 #if defined(__APPLE__)
 #include "test_physics_core_metal_helper.hpp"
@@ -74,8 +75,11 @@ void test_common_and_types() {
     require(kJntSlide == 2 && kJntHinge == 3, "MuJoCo joint kind constants");
     const TyreModel<float> tm{};
     require(tm.backend == TyreBackendKind::compliant_2d, "default TyreModel backend");
+    require(tm.distinct_normal_cosine == 0.0f, "default TyreModel distinct_normal_cosine");
+    require(tm.surface_map.has_surface_map == 0, "default SurfaceMapView has_surface_map");
+    require(tm.wheels[0].chain.njnt == 0, "default GpuWheelChain njnt");
     const CompliantWheelStatePod<float> cw{};
-    require(cw.segment == -1, "default CompliantWheelStatePod segment");
+    require(cw.segment == -1 && cw.has_segment == 0, "default CompliantWheelStatePod segment");
     const StationStatePod<float> st{};
     require(st.active == 0, "default StationStatePod active");
 }
@@ -153,6 +157,29 @@ void test_tanhf_portable() {
         if (!(std::abs(static_cast<double>(g) - c) <= 3e-7)) {
             throw std::runtime_error("tanhf_portable abs err > 3e-7 at x=" + std::to_string(x));
         }
+    }
+
+    // Dense sweep [-1.5, +1.5] step 5e-5 (covers [ln(2)/2, 1.5*ln(2)] z=1 range-reduction window)
+    for (int i = -30000; i <= 30000; ++i) {
+        const float x = static_cast<float>(i) * 5.0e-5f;
+        const float g = GpuToolkit::tanh(x);
+        const double c = CpuExactToolkit::tanh(static_cast<double>(x));
+        const float ref = static_cast<float>(c);
+        const std::uint32_t ulp = float_ulp_diff(g, ref);
+        if (ulp > 2u) {
+            throw std::runtime_error("tanhf_portable dense ULP > 2 at x=" + std::to_string(x) +
+                                     " ulp=" + std::to_string(ulp));
+        }
+        if (!(std::abs(static_cast<double>(g) - c) <= 3e-7)) {
+            throw std::runtime_error("tanhf_portable dense abs err > 3e-7 at x=" + std::to_string(x));
+        }
+    }
+
+    // Explicit regression points from t3-rev z=1 cancellation boundary
+    for (const float x : {0.22045f, -0.17328729f}) {
+        const float g = GpuToolkit::tanh(x);
+        const float ref = static_cast<float>(CpuExactToolkit::tanh(static_cast<double>(x)));
+        require(float_ulp_diff(g, ref) <= 2u, "tanhf_portable z=1 regression point ULP <= 2");
     }
 }
 
@@ -249,6 +276,10 @@ void test_cpu_exact_toolkit_parity() {
             CpuExactToolkit::pow2(x),
             pyfloat::pow(x, 2.0),
             "CpuExactToolkit::pow2");
+        require_bits_f64(
+            CpuExactToolkit::pow_py(x, 2.0),
+            pyfloat::pow(x, 2.0),
+            "CpuExactToolkit::pow_py");
     }
 
     // hypot2 vs biketyre::py_hypot
@@ -468,6 +499,8 @@ void test_live_apple_metal_parity() {
         req.ring_local[3u * i + 1u] = 0.0f;
         req.ring_local[3u * i + 2u] = 0.35f * std::sin(theta);
     }
+    req.tanh_inputs[0] = 0.22045f;
+    req.tanh_inputs[1] = -0.17328729f;
 
     const tm::MetalParityOutput gpu = tm::run_metal_parity_kernel(req);
     require(gpu.device_available, "Metal device must be available on Apple Silicon");

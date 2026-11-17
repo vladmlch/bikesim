@@ -54,8 +54,12 @@ struct CpuExactToolkit {
         return pyfloat::pow(x, 2.0);
     }
 
-    [[nodiscard]] static double hypot2(double a, double b) {
-        return biketyre::py_hypot(a, b);
+    [[nodiscard]] static double pow_py(double a, double b) {
+        return pyfloat::pow(a, b);
+    }
+
+    [[nodiscard]] static double hypot2(double a, double b) noexcept {
+        return exact_math::hypot2_py(a, b);
     }
 
     [[nodiscard]] static double interp_segment(

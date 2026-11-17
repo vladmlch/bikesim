@@ -12,10 +12,10 @@
 #include "../numeric_norm.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
-#include "../tyre/profile.hpp"
 #include "../writers/pyfloat.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 namespace bike::physics_core::exact_math {
@@ -28,8 +28,9 @@ using numeric::numpy_sum;
     return pyfloat::pow(x, 2.0);
 }
 
-[[nodiscard]] inline double hypot2_py(double a, double b) {
-    return biketyre::py_hypot(a, b);
+[[nodiscard]] inline double hypot2_py(double a, double b) noexcept {
+    const std::array<double, 2> v = {a, b};
+    return numeric::python_vector_norm(v);
 }
 
 [[nodiscard]] inline double interp_segment(

@@ -128,7 +128,7 @@ BIKE_HD float expf_portable(float x) noexcept {
     return pf_ldexp(ex, n);
 }
 
-// Portable exp(x) - 1 for small non-negative x in [0, ln(2)/2) without 1.0f cancellation.
+// Portable exp(x) - 1 for small x with |x| <= ln(2)/2 without 1.0f cancellation.
 BIKE_HD float expm1f_small_portable(float x) noexcept {
     const float xx = x * x;
     float px = 1.9875691500e-4f;
@@ -157,8 +157,15 @@ BIKE_HD float tanhf_portable(float x) noexcept {
     }
     const float u = 2.0f * ax;
     if (u < 0.34657359f) {
-        // Avoids (1 + u + ...) - 1 cancellation when 2*ax < ln(2)/2.
+        // Avoids (1 + u + ...) - 1 cancellation when 2*|x| < ln(2)/2.
         const float d = expm1f_small_portable(u);
+        return sign * (d / (2.0f + d));
+    }
+    if (u < 1.03972077f) {
+        // z = 1 Cody-Waite reduction (2*|x| < 1.5*ln(2)): avoids 1-bit cancellation in e^u - 1.
+        float r = u - 0.693359375f;
+        r -= -2.12194440e-4f;
+        const float d = 1.0f + 2.0f * expm1f_small_portable(r);
         return sign * (d / (2.0f + d));
     }
     const float e2x = expf_portable(u);

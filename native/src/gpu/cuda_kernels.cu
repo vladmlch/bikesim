@@ -30,14 +30,19 @@ BIKE_GLOBAL void bike_gpu_init_states_kernel(
         return;
     }
     const GpuModelIndices idx = (d_idx != nullptr) ? *d_idx : GpuModelIndices{};
-    if (idx.nq < 0 || idx.nq > kMaxNq || idx.nv < 0 || idx.nv > kMaxNv ||
-        idx.nu < 0 || idx.nu > kMaxNu || idx.nbody < 0 || idx.nbody > kMaxNbody) {
+    if (!gpu_validate_model_indices(idx)) {
         return;
     }
     const GpuWorldConfig &cfg = d_configs[per_world_config ? w : 0];
     const float *qpos_w = (d_qpos != nullptr) ? (d_qpos + static_cast<long>(w) * idx.nq) : nullptr;
-    const float crank_qpos = (qpos_w != nullptr) ? qpos_w[idx.crank_spin_qpos] : 0.0f;
-    const float rear_wheel_qpos = (qpos_w != nullptr) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
+    const int fh_qpos_idx =
+        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
+    const float crank_qpos =
+        (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq) ? qpos_w[fh_qpos_idx] : 0.0f;
+    const float rear_wheel_qpos =
+        (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
+            ? qpos_w[idx.rear_wheel_spin_qpos]
+            : 0.0f;
     gpu_init_world_state(d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos);
 }
 
@@ -66,8 +71,12 @@ BIKE_GLOBAL void bike_gpu_writers_kernel(
         return;
     }
     const GpuModelIndices idx = (d_idx != nullptr) ? *d_idx : GpuModelIndices{};
-    if (idx.nq < 0 || idx.nq > kMaxNq || idx.nv < 0 || idx.nv > kMaxNv ||
-        idx.nu < 0 || idx.nu > kMaxNu || idx.nbody < 0 || idx.nbody > kMaxNbody) {
+    if (!gpu_validate_model_indices(idx)) {
+        return;
+    }
+    if (d_tendon_range != nullptr && idx.freehub_tendon >= 0 && tendon_range_world_stride > 0 &&
+        static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + 1L >=
+            static_cast<long>(tendon_range_world_stride)) {
         return;
     }
     const GpuHeightfield1D hf{
@@ -167,22 +176,25 @@ void bike_gpu_launch_init_states(
     );
 #else
     (void)cuda_stream;
-    const bike::gpu::GpuModelIndices *idx_ptr = d_idx;
-    if (idx_ptr != nullptr && (idx_ptr->nq > bike::gpu::kMaxNq || idx_ptr->nv > bike::gpu::kMaxNv || idx_ptr->nu > bike::gpu::kMaxNu || idx_ptr->nbody > bike::gpu::kMaxNbody || idx_ptr->nq < 0 || idx_ptr->nv < 0 || idx_ptr->nu < 0 || idx_ptr->nbody < 0)) {
-        std::cerr << "bike_gpu_launch_init_states: model dimensions (nq=" << idx_ptr->nq
-                  << ", nv=" << idx_ptr->nv << ", nu=" << idx_ptr->nu << ", nbody=" << idx_ptr->nbody
-                  << ") exceed kMax bounds (" << bike::gpu::kMaxNq << ", " << bike::gpu::kMaxNv
-                  << ", " << bike::gpu::kMaxNu << ", " << bike::gpu::kMaxNbody << ")\n";
-        return;
-    }
     const bike::gpu::GpuModelIndices idx =
         (d_idx != nullptr) ? *d_idx : bike::gpu::GpuModelIndices{};
+    if (!bike::gpu::gpu_validate_model_indices(idx)) {
+        std::cerr << "bike_gpu_launch_init_states: invalid model indices or kMax bounds exceeded\n";
+        return;
+    }
+    const int fh_qpos_idx =
+        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
     for (int w = 0; w < nworld; ++w) {
         const bike::gpu::GpuWorldConfig &cfg = d_configs[per_world_config ? w : 0];
         const float *qpos_w = (d_qpos != nullptr) ? (d_qpos + static_cast<long>(w) * idx.nq) : nullptr;
-        const float crank_qpos = (qpos_w != nullptr) ? qpos_w[idx.crank_spin_qpos] : 0.0f;
+        const float crank_qpos =
+            (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq)
+                ? qpos_w[fh_qpos_idx]
+                : 0.0f;
         const float rear_wheel_qpos =
-            (qpos_w != nullptr) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
+            (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
+                ? qpos_w[idx.rear_wheel_spin_qpos]
+                : 0.0f;
         bike::gpu::gpu_init_world_state(
             d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos
         );
@@ -240,16 +252,18 @@ void bike_gpu_launch_writers(
     );
 #else
     (void)cuda_stream;
-    const bike::gpu::GpuModelIndices *idx = d_idx;
-    if (idx != nullptr && (idx->nq > bike::gpu::kMaxNq || idx->nv > bike::gpu::kMaxNv || idx->nu > bike::gpu::kMaxNu || idx->nbody > bike::gpu::kMaxNbody || idx->nq < 0 || idx->nv < 0 || idx->nu < 0 || idx->nbody < 0)) {
-        std::cerr << "bike_gpu_launch_writers: model dimensions (nq=" << idx->nq
-                  << ", nv=" << idx->nv << ", nu=" << idx->nu << ", nbody=" << idx->nbody
-                  << ") exceed kMax bounds (" << bike::gpu::kMaxNq << ", " << bike::gpu::kMaxNv
-                  << ", " << bike::gpu::kMaxNu << ", " << bike::gpu::kMaxNbody << ")\n";
-        return;
-    }
     const bike::gpu::GpuModelIndices idx_val =
         (d_idx != nullptr) ? *d_idx : bike::gpu::GpuModelIndices{};
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        std::cerr << "bike_gpu_launch_writers: invalid model indices or kMax bounds exceeded\n";
+        return;
+    }
+    if (d_tendon_range != nullptr && idx_val.freehub_tendon >= 0 && tendon_range_world_stride > 0 &&
+        static_cast<long>(2) * static_cast<long>(idx_val.freehub_tendon) + 1L >=
+            static_cast<long>(tendon_range_world_stride)) {
+        std::cerr << "bike_gpu_launch_writers: tendon_range_world_stride too small for freehub_tendon\n";
+        return;
+    }
     const bike::gpu::GpuHeightfield1D hf{
         .heights_m = d_hf_heights,
         .num_samples = hf_num_samples,
@@ -312,13 +326,15 @@ void bike_gpu_launch_step_writers(
 #else
         host_idx = *idx;
 #endif
-        if (host_idx.nq > bike::gpu::kMaxNq || host_idx.nv > bike::gpu::kMaxNv ||
-            host_idx.nu > bike::gpu::kMaxNu || host_idx.nbody > bike::gpu::kMaxNbody ||
-            host_idx.nq < 0 || host_idx.nv < 0 || host_idx.nu < 0 || host_idx.nbody < 0) {
-            std::cerr << "bike_gpu_launch_step_writers: model dimensions (nq=" << host_idx.nq
-                      << ", nv=" << host_idx.nv << ", nu=" << host_idx.nu << ", nbody=" << host_idx.nbody
-                      << ") exceed kMax bounds (" << bike::gpu::kMaxNq << ", " << bike::gpu::kMaxNv
-                      << ", " << bike::gpu::kMaxNu << ", " << bike::gpu::kMaxNbody << ")\n";
+        if (!bike::gpu::gpu_validate_model_indices(host_idx)) {
+            std::cerr << "bike_gpu_launch_step_writers: invalid model indices or kMax bounds exceeded\n";
+            return;
+        }
+        if (d_tendon_range != nullptr && host_idx.freehub_tendon >= 0 &&
+            tendon_range_world_stride > 0 &&
+            static_cast<long>(2) * static_cast<long>(host_idx.freehub_tendon) + 1L >=
+                static_cast<long>(tendon_range_world_stride)) {
+            std::cerr << "bike_gpu_launch_step_writers: tendon_range_world_stride too small for freehub_tendon\n";
             return;
         }
     }

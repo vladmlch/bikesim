@@ -134,6 +134,18 @@ void test_soft_edge_torque_and_potential() {
         require(pot == 0.0f, "soft edge potential must be zero inside safe interior");
     }
 
+    // Ban #26 / BD3: c_edge_nm_s_rad defaults to zero across GpuJointEnvelopeSpec and
+    // GpuRiderParams, and gpu_soft_edge_torque omits joint damping even inside the margin.
+    require(GpuJointEnvelopeSpec{}.c_edge_nm_s_rad == 0.0f,
+            "default GpuJointEnvelopeSpec c_edge_nm_s_rad must be zero");
+    {
+        const float q_margin = q_lo + 0.5f * margin;
+        const float tau_static = gpu_soft_edge_torque(q_margin, 0.0f, q_lo, q_hi, margin, k_edge, 0.0f);
+        const float tau_moving = gpu_soft_edge_torque(q_margin, 2.5f, q_lo, q_hi, margin, k_edge, 8.0f);
+        require(tau_moving == tau_static,
+                "gpu_soft_edge_torque must apply zero joint damping (Ban #26 / BD3)");
+    }
+
     // 2. Lower margin and past lower limit: positive restoring torque and growing
     // potential energy matching authoritative spindle_math.cpp within < 1e-5 relative error.
     float prev_tau_lo = 0.0f;
@@ -200,17 +212,21 @@ void test_write_rider_qfrc_and_ctrl() {
     const auto rider_dof = std::span{idx.rider_dof};
     const auto rider_qpos = std::span{idx.rider_qpos};
     const std::array<int, kNumRiderJoints> expected_ctrl = {8, 9, 10, 11, 3, 4, 5, 6, 7};
-    const std::array<int, kNumRiderJoints> expected_dof = {22, 23, 24, 25, 17, 18, 19, 20, 21};
-    const std::array<int, kNumRiderJoints> expected_qpos = {22, 23, 24, 25, 17, 18, 19, 20, 21};
+    const std::array<int, kNumRiderJoints> expected_dof = {23, 24, 25, 26, 18, 19, 20, 21, 22};
+    const std::array<int, kNumRiderJoints> expected_qpos = {23, 24, 25, 26, 18, 19, 20, 21, 22};
     for (std::size_t j = 0; j < kNumRiderJoints; ++j) {
         require(rider_ctrl[j] == expected_ctrl[j], "rider_ctrl index must match paired 9-joint mapping");
         require(rider_dof[j] == expected_dof[j], "rider_dof index must match paired 9-joint mapping");
         require(rider_qpos[j] == expected_qpos[j], "rider_qpos index must match paired 9-joint mapping");
     }
 
-    // 2. Verify GpuRiderParams defaults aligned with paired model.xml
+    // 2. Verify GpuRiderParams defaults aligned with paired welded.xml
     GpuRiderParams rp{};
     const std::span<const GpuJointEnvelopeSpec> joints(rp.joints);
+    for (std::size_t j = 0; j < kNumRiderJoints; ++j) {
+        require(joints[j].c_edge_nm_s_rad == 0.0f,
+                "every GpuRiderParams joint c_edge_nm_s_rad must be zero (Ban #26 / BD3)");
+    }
     const std::span<const float> kp_posture(rp.kp_posture);
     const std::span<const float> kd_posture(rp.kd_posture);
     const std::span<const float> target_qpos(rp.target_qpos_rad);

@@ -28,26 +28,26 @@ struct GpuJointEnvelopeSpec {
     int sign_flip = 0;
     float margin_rad = 0.0872664626f;
     float k_edge_nm_rad = 200.0f;
-    float c_edge_nm_s_rad = 5.0f;
+    float c_edge_nm_s_rad = 0.0f;
     float max_ext_torque_nm = 250.0f;
     float max_flex_torque_nm = 150.0f;
 };
 
-// Complete 9-DOF rider parameter table paired 1-to-1 with model.xml:
+// Complete 9-DOF rider parameter table paired 1-to-1 with welded.xml (nq = 27):
 //   joints[0..8] = {
-//     0: rider_hip_front      (qpos 22, dof 22, ctrl 8)
-//     1: rider_knee_front     (qpos 23, dof 23, ctrl 9)
-//     2: rider_hip_rear       (qpos 24, dof 24, ctrl 10)
-//     3: rider_knee_rear      (qpos 25, dof 25, ctrl 11)
-//     4: rider_torso_hinge    (qpos 17, dof 17, ctrl 3)
-//     5: rider_shoulder_left  (qpos 18, dof 18, ctrl 4)
-//     6: rider_elbow_left     (qpos 19, dof 19, ctrl 5)
-//     7: rider_shoulder_right (qpos 20, dof 20, ctrl 6)
-//     8: rider_elbow_right    (qpos 21, dof 21, ctrl 7)
+//     0: rider_hip_front      (qpos 23, dof 23, ctrl 8)
+//     1: rider_knee_front     (qpos 24, dof 24, ctrl 9)
+//     2: rider_hip_rear       (qpos 25, dof 25, ctrl 10)
+//     3: rider_knee_rear      (qpos 26, dof 26, ctrl 11)
+//     4: rider_torso_hinge    (qpos 18, dof 18, ctrl 3)
+//     5: rider_shoulder_left  (qpos 19, dof 19, ctrl 4)
+//     6: rider_elbow_left     (qpos 20, dof 20, ctrl 5)
+//     7: rider_shoulder_right (qpos 21, dof 21, ctrl 6)
+//     8: rider_elbow_right    (qpos 22, dof 22, ctrl 7)
 //   }
 //
 // Design: the 4 leg joints (slots 0..3) are passive followers of the crank. Each foot is
-// tied to its pedal by a connect_foot_* equality constraint in model.xml, so the leg joint
+// tied to its pedal by a connect_foot_* equality constraint in welded.xml, so the leg joint
 // angles follow the crank angle through the closed loop. This kernel does not drive the legs:
 // their kp_posture and kd_posture are 0, and no crank-phase target or pedaling torque is
 // applied, so their actuator ctrl is exactly 0. Their ROM soft-edge envelope torque and
@@ -59,55 +59,55 @@ struct GpuRiderParams {
         // 0: rider_hip_front (model.xml q_range = [-1.326989, +1.383011] rad = [-76.03, +79.24] deg)
         {
             .min_deg = -120.0f, .max_deg = 35.27f, .ref_deg = -43.97f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 220.0f, .c_edge_nm_s_rad = 8.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 220.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 280.0f, .max_flex_torque_nm = 140.0f,
         },
         // 1: rider_knee_front (model.xml q_range = [-1.108838, +1.331162] rad = [-63.53, +76.27] deg)
         {
             .min_deg = -139.80f, .max_deg = 0.0f, .ref_deg = -76.27f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 240.0f, .c_edge_nm_s_rad = 8.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 240.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 300.0f, .max_flex_torque_nm = 130.0f,
         },
         // 2: rider_hip_rear (model.xml q_range = [-1.621450, +1.088550] rad = [-92.90, +62.37] deg)
         {
             .min_deg = -120.0f, .max_deg = 35.27f, .ref_deg = -27.10f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 220.0f, .c_edge_nm_s_rad = 8.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 220.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 280.0f, .max_flex_torque_nm = 140.0f,
         },
         // 3: rider_knee_rear (model.xml q_range = [-1.420899, +1.019101] rad = [-81.41, +58.39] deg)
         {
             .min_deg = -139.80f, .max_deg = 0.0f, .ref_deg = -58.39f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 240.0f, .c_edge_nm_s_rad = 8.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 240.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 300.0f, .max_flex_torque_nm = 130.0f,
         },
         // 4: rider_torso_hinge (model.xml q_range = [-1.232562, +0.567438] rad = [-70.62, +32.51] deg)
         {
             .min_deg = -38.11f, .max_deg = 65.02f, .ref_deg = 32.51f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 200.0f, .c_edge_nm_s_rad = 6.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 200.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 220.0f, .max_flex_torque_nm = 180.0f,
         },
         // 5: rider_shoulder_left (model.xml q_range = [-1.773614, +2.056386] rad = [-101.62, +117.82] deg)
         {
             .min_deg = -60.0f, .max_deg = 159.44f, .ref_deg = 41.62f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 140.0f, .c_edge_nm_s_rad = 4.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 140.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 140.0f, .max_flex_torque_nm = 120.0f,
         },
         // 6: rider_elbow_left (model.xml q_range = [-2.379773, +0.240227] rad = [-136.35, +13.76] deg)
         {
             .min_deg = 0.0f, .max_deg = 150.11f, .ref_deg = 13.76f, .sign_flip = 1,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 120.0f, .c_edge_nm_s_rad = 3.5f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 120.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 110.0f, .max_flex_torque_nm = 110.0f,
         },
         // 7: rider_shoulder_right (model.xml q_range = [-1.773614, +2.056386] rad = [-101.62, +117.82] deg)
         {
             .min_deg = -60.0f, .max_deg = 159.44f, .ref_deg = 41.62f, .sign_flip = 0,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 140.0f, .c_edge_nm_s_rad = 4.0f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 140.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 140.0f, .max_flex_torque_nm = 120.0f,
         },
         // 8: rider_elbow_right (model.xml q_range = [-2.379773, +0.240227] rad = [-136.35, +13.76] deg)
         {
             .min_deg = 0.0f, .max_deg = 150.11f, .ref_deg = 13.76f, .sign_flip = 1,
-            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 120.0f, .c_edge_nm_s_rad = 3.5f,
+            .margin_rad = 0.0872664626f, .k_edge_nm_rad = 120.0f, .c_edge_nm_s_rad = 0.0f,
             .max_ext_torque_nm = 110.0f, .max_flex_torque_nm = 110.0f,
         },
     };
@@ -170,8 +170,8 @@ BIKE_HD GpuVec2 gpu_joint_q_range(
 }
 
 // Port of the restoring torque in spindle::soft_edge_scalar from
-// native/src/rider/spindle_math.cpp, with smooth boundary damping inside the
-// active edge margin. Zero inside the safe interior [q_lo + margin, q_hi - margin].
+// native/src/rider/spindle_math.cpp (zero joint damping per Ban #26 / BD3).
+// Zero inside the safe interior [q_lo + margin, q_hi - margin].
 BIKE_HD float gpu_soft_edge_torque(
     float q_rad,
     float qd_rad_s,
@@ -181,22 +181,17 @@ BIKE_HD float gpu_soft_edge_torque(
     float k_edge,
     float c_edge
 ) noexcept {
-    if (q_hi_rad <= q_lo_rad || (k_edge <= 0.0f && c_edge <= 0.0f)) {
+    (void)qd_rad_s;
+    (void)c_edge;
+    if (q_hi_rad <= q_lo_rad || k_edge <= 0.0f) {
         return 0.0f;
     }
     const float k = gpu_max(k_edge, 0.0f);
-    const float c = gpu_max(c_edge, 0.0f);
     const float m = gpu_max(margin_rad, 0.0f);
     const float margin = gpu_min(m, 0.5f * (q_hi_rad - q_lo_rad));
     const float left = gpu_max(q_lo_rad + margin - q_rad, 0.0f);
     const float right = gpu_max(q_rad - q_hi_rad + margin, 0.0f);
-    float torque = k * (left - right);
-    if (left > 0.0f || right > 0.0f) {
-        const float penetration = gpu_max(left, right);
-        const float ramp = (margin > 1e-6f) ? gpu_min(penetration / margin, 1.0f) : 1.0f;
-        torque -= c * ramp * qd_rad_s;
-    }
-    return torque;
+    return k * (left - right);
 }
 
 // Port of the elastic potential energy in spindle::soft_edge_scalar from

@@ -202,15 +202,19 @@ int bike_cpu_run_batch_ex(
         return -6;
     }
 
-    const bike::gpu::GpuModelIndices idx =
-        (d_idx != nullptr) ? *d_idx : bike::gpu::GpuModelIndices{};
     if (m_base->nq > kMaxNq || m_base->nv > kMaxNv || m_base->nu > kMaxNu || m_base->nbody > kMaxNbody) {
         std::cerr << "bike_cpu_run_batch: model dimensions exceed kMax bounds\n";
         mj_deleteModel(m_base);
         return -2;
     }
-    if (idx.nq > kMaxNq || idx.nv > kMaxNv || idx.nu > kMaxNu || idx.nbody > kMaxNbody) {
-        std::cerr << "bike_cpu_run_batch: idx dimensions exceed kMax bounds\n";
+    const bike::gpu::GpuModelIndices idx =
+        (d_idx != nullptr) ? *d_idx : bike::gpu::assets::resolve_gpu_model_indices(m_base);
+    if (!bike::gpu::gpu_validate_model_indices(idx, static_cast<int>(m_base->ntendon)) ||
+        idx.nq != static_cast<int>(m_base->nq) ||
+        idx.nv != static_cast<int>(m_base->nv) ||
+        idx.nu != static_cast<int>(m_base->nu) ||
+        idx.nbody != static_cast<int>(m_base->nbody)) {
+        std::cerr << "bike_cpu_run_batch: idx dimensions/indices invalid or mismatch model\n";
         mj_deleteModel(m_base);
         return -2;
     }
@@ -373,15 +377,24 @@ int bike_cpu_run_batch_ex(
             forward_fn(m_t, d_t);
 
             bike::gpu::GpuWorldState st_w{};
+            const int fh_qpos_idx =
+                (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
             const float crank0 =
-                (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq)
-                    ? static_cast<float>(d_qpos[to_index(idx.crank_spin_qpos)])
+                (fh_qpos_idx >= 0 && fh_qpos_idx < nq)
+                    ? static_cast<float>(d_qpos[to_index(fh_qpos_idx)])
                     : 0.0f;
             const float rwheel0 =
                 (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq)
                     ? static_cast<float>(d_qpos[to_index(idx.rear_wheel_spin_qpos)])
                     : 0.0f;
             bike::gpu::gpu_init_world_state(st_w, cfg_w.drivetrain, crank0, rwheel0);
+
+            bike::gpu::GpuModelIndices local_idx = idx;
+            if (ntendon > 0 && local_idx.freehub_tendon >= 0 && local_idx.freehub_tendon < ntendon) {
+                local_idx.freehub_tendon = 0;
+            } else {
+                local_idx.freehub_tendon = -1;
+            }
 
             float max_fork_m = 0.0f;
             float max_shock_m = 0.0f;
@@ -406,7 +419,7 @@ int bike_cpu_run_batch_ex(
                 bike::gpu::gpu_step_world_writers(
                     0,
                     dt_s,
-                    idx,
+                    local_idx,
                     hf,
                     &cfg_w,
                     0,
@@ -416,7 +429,7 @@ int bike_cpu_run_batch_ex(
                     xpos_f32.data(),
                     qfrc_f32.data(),
                     ctrl_f32.data(),
-                    tendon_f32.data(),
+                    (local_idx.freehub_tendon >= 0) ? tendon_f32.data() : nullptr,
                     2
                 );
 

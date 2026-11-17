@@ -213,13 +213,18 @@ kernel void bike_gpu_init_states_metal_kernel(
         return;
     }
     const bike::gpu::GpuModelIndices idx = idx_const;
+    if (!bike::gpu::gpu_validate_model_indices(idx)) {
+        return;
+    }
     device const bike::gpu::GpuWorldConfig &cfg = configs[per_world_config ? w : 0];
     const bike::gpu::GpuDrivetrainParams dp = cfg.drivetrain;
     bike::gpu::GpuWorldState st{};
-    device const float *qpos_w = (qpos_batch != nullptr) ? (qpos_batch + w * idx.nq) : nullptr;
+    device const float *qpos_w = (qpos_batch != nullptr) ? (qpos_batch + static_cast<long>(w) * idx.nq) : nullptr;
+    const int fh_qpos_idx =
+        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
     const float crank_qpos =
-        (qpos_w != nullptr && idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < idx.nq)
-            ? qpos_w[idx.crank_spin_qpos]
+        (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq)
+            ? qpos_w[fh_qpos_idx]
             : 0.0f;
     const float rear_wheel_qpos =
         (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
@@ -245,10 +250,7 @@ inline void bike_metal_step_writers_scalar_world(
     device float *tendon_range_batch,
     int tendon_range_world_stride
 ) {
-    if (idx.nq < 0 || idx.nq > bike::gpu::kMaxNq ||
-        idx.nv < 0 || idx.nv > bike::gpu::kMaxNv ||
-        idx.nu < 0 || idx.nu > bike::gpu::kMaxNu ||
-        idx.nbody < 0 || idx.nbody > bike::gpu::kMaxNbody) {
+    if (!bike::gpu::gpu_validate_model_indices(idx)) {
         return;
     }
     const bike::gpu::GpuWorldConfig cfg = configs[per_world_config ? w : 0];
@@ -266,17 +268,22 @@ inline void bike_metal_step_writers_scalar_world(
     const int nu = idx.nu;
     const int nbody3 = idx.nbody * 3;
 
-    device const float *qpos_src = qpos_batch + w * nq;
-    device const float *qvel_src = qvel_batch + w * nv;
-    device const float *xpos_src = xpos_batch + w * nbody3;
+    device const float *qpos_src = qpos_batch + static_cast<long>(w) * nq;
+    device const float *qvel_src = qvel_batch + static_cast<long>(w) * nv;
+    device const float *xpos_src = xpos_batch + static_cast<long>(w) * nbody3;
     for (int i = 0; i < nq; ++i) qpos_w[i] = qpos_src[i];
     for (int i = 0; i < nv; ++i) qvel_w[i] = qvel_src[i];
     for (int i = 0; i < nbody3; ++i) xpos_w[i] = xpos_src[i];
 
+    bike::gpu::GpuModelIndices local_idx = idx;
+    if (local_idx.freehub_tendon >= 0) {
+        local_idx.freehub_tendon = 0;
+    }
+
     bike::gpu::gpu_step_world_writers(
         0,
         dt_s,
-        idx,
+        local_idx,
         hf,
         &cfg,
         0,
@@ -286,21 +293,27 @@ inline void bike_metal_step_writers_scalar_world(
         xpos_w,
         qfrc_w,
         ctrl_w,
-        (tendon_range_batch != nullptr) ? tendon_w : nullptr,
+        (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) ? tendon_w : nullptr,
         2
     );
 
-    device float *qfrc_dst = qfrc_batch + w * nv;
-    device float *ctrl_dst = ctrl_batch + w * nu;
+    device float *qfrc_dst = qfrc_batch + static_cast<long>(w) * nv;
+    device float *ctrl_dst = ctrl_batch + static_cast<long>(w) * nu;
     for (int i = 0; i < nv; ++i) qfrc_dst[i] = qfrc_w[i];
     for (int i = 0; i < nu; ++i) ctrl_dst[i] = ctrl_w[i];
     states[w] = st;
 
     if (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) {
+        const long slot =
+            static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + static_cast<long>(1);
         if (tendon_range_world_stride > 0) {
-            tendon_range_batch[w * tendon_range_world_stride + 1] = tendon_w[1];
+            if (slot < static_cast<long>(tendon_range_world_stride)) {
+                tendon_range_batch[
+                    static_cast<long>(w) * static_cast<long>(tendon_range_world_stride) + slot] =
+                    tendon_w[1];
+            }
         } else if (w == 0) {
-            tendon_range_batch[1] = tendon_w[1];
+            tendon_range_batch[slot] = tendon_w[1];
         }
     }
 }
@@ -322,10 +335,7 @@ inline void bike_metal_step_writers_simd32_world(
     int tendon_range_world_stride,
     uint lane
 ) {
-    if (idx.nq < 0 || idx.nq > bike::gpu::kMaxNq ||
-        idx.nv < 0 || idx.nv > bike::gpu::kMaxNv ||
-        idx.nu < 0 || idx.nu > bike::gpu::kMaxNu ||
-        idx.nbody < 0 || idx.nbody > bike::gpu::kMaxNbody) {
+    if (!bike::gpu::gpu_validate_model_indices(idx)) {
         return;
     }
     device const bike::gpu::GpuWorldConfig &cfg = configs[per_world_config ? w : 0];
@@ -480,10 +490,16 @@ inline void bike_metal_step_writers_simd32_world(
         for (int i = 0; i < nu; ++i) ctrl_dst[i] = ctrl_w[i];
 
         if (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) {
+            const long slot =
+                static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + static_cast<long>(1);
             if (tendon_range_world_stride > 0) {
-                tendon_range_batch[w * tendon_range_world_stride + 1] = dt_out.tendon_upper_bound_rad;
+                if (slot < static_cast<long>(tendon_range_world_stride)) {
+                    tendon_range_batch[
+                        static_cast<long>(w) * static_cast<long>(tendon_range_world_stride) + slot] =
+                        dt_out.tendon_upper_bound_rad;
+                }
             } else if (w == 0) {
-                tendon_range_batch[1] = dt_out.tendon_upper_bound_rad;
+                tendon_range_batch[slot] = dt_out.tendon_upper_bound_rad;
             }
         }
     }
@@ -605,13 +621,18 @@ kernel void bike_wp_init_states_kernel(
     }
     const bike::gpu::GpuModelIndices idx =
         (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    if (!bike::gpu::gpu_validate_model_indices(idx)) {
+        return;
+    }
     device const bike::gpu::GpuWorldConfig &cfg = args->configs[args->per_world_config ? w : 0];
     const bike::gpu::GpuDrivetrainParams dp = cfg.drivetrain;
     bike::gpu::GpuWorldState st{};
-    device const float *qpos_src = (args->qpos != nullptr) ? (args->qpos + w * idx.nq) : nullptr;
+    device const float *qpos_src = (args->qpos != nullptr) ? (args->qpos + static_cast<long>(w) * idx.nq) : nullptr;
+    const int fh_qpos_idx =
+        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
     const float crank_qpos =
-        (qpos_src != nullptr && idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < idx.nq)
-            ? qpos_src[idx.crank_spin_qpos]
+        (qpos_src != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq)
+            ? qpos_src[fh_qpos_idx]
             : 0.0f;
     const float rear_wheel_qpos =
         (qpos_src != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
@@ -1051,6 +1072,10 @@ int bike_metal_launch_init_states(
         return -1;
     }
     const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        std::cerr << "[bike_metal_launch_init_states] Invalid model indices or kMax bounds exceeded\n";
+        return -1;
+    }
     MetalWritersContext &ctx = get_metal_ctx();
     if (!ctx.ok || !ctx.pso_init_states) {
         std::cerr << "[bike_metal_launch_init_states] Metal context or pipeline not initialized\n";
@@ -1143,13 +1168,17 @@ int bike_metal_launch_writers(
         return -1;
     }
     const bike::gpu::GpuModelIndices idx_val = *d_idx;
-    if (idx_val.nq <= 0 || idx_val.nq > bike::gpu::kMaxNq ||
-        idx_val.nv <= 0 || idx_val.nv > bike::gpu::kMaxNv ||
-        idx_val.nu <= 0 || idx_val.nu > bike::gpu::kMaxNu ||
-        idx_val.nbody <= 0 || idx_val.nbody > bike::gpu::kMaxNbody) {
-        std::cerr << "[bike_metal_launch_writers] Model dimensions exceed kMax bounds (nq="
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        std::cerr << "[bike_metal_launch_writers] Invalid model indices or kMax bounds exceeded (nq="
                   << idx_val.nq << ", nv=" << idx_val.nv << ", nu=" << idx_val.nu
                   << ", nbody=" << idx_val.nbody << ")\n";
+        return -1;
+    }
+    if (d_tendon_range != nullptr && idx_val.freehub_tendon >= 0 &&
+        tendon_range_world_stride > 0 &&
+        static_cast<long>(2) * static_cast<long>(idx_val.freehub_tendon) + 1L >=
+            static_cast<long>(tendon_range_world_stride)) {
+        std::cerr << "[bike_metal_launch_writers] tendon_range_world_stride too small for freehub_tendon\n";
         return -1;
     }
     MetalWritersContext &ctx = get_metal_ctx();
@@ -1295,13 +1324,11 @@ int bike_metal_benchmark_writers_only(
         return -1;
     }
     const bike::gpu::GpuModelIndices idx_val = *d_idx;
-    const bike::gpu::GpuModelIndices *norm_idx = &idx_val;
-    if (norm_idx->nq > bike::gpu::kMaxNq ||
-        norm_idx->nv > bike::gpu::kMaxNv ||
-        norm_idx->nu > bike::gpu::kMaxNu ||
-        norm_idx->nbody > bike::gpu::kMaxNbody) {
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        std::cerr << "[bike_metal_benchmark_writers_only] Invalid model indices or kMax bounds exceeded\n";
         return -1;
     }
+    const bike::gpu::GpuModelIndices *norm_idx = &idx_val;
     MetalWritersContext &ctx = get_metal_ctx();
     if (!ctx.ok || !ctx.pso_1thread || !ctx.pso_simd32) {
         return -2;
@@ -1595,7 +1622,16 @@ int bike_metal_run_hybrid_sweep(
     n_workers = std::max(1, std::min(n_workers, nworld));
 
     const bike::gpu::GpuModelIndices idx =
-        (d_idx != nullptr) ? *d_idx : bike::gpu::GpuModelIndices{};
+        (d_idx != nullptr) ? *d_idx : assets::resolve_gpu_model_indices(m_base);
+    if (!bike::gpu::gpu_validate_model_indices(idx, static_cast<int>(m_base->ntendon)) ||
+        idx.nq != static_cast<int>(m_base->nq) ||
+        idx.nv != static_cast<int>(m_base->nv) ||
+        idx.nu != static_cast<int>(m_base->nu) ||
+        idx.nbody != static_cast<int>(m_base->nbody)) {
+        std::cerr << "[bike_metal_run_hybrid_sweep] idx dimensions/indices invalid or mismatch model\n";
+        mj_deleteModel(m_base);
+        return -4;
+    }
     // The kMax bounds above keep the mjtSize -> int narrowing lossless.
     const int nq = static_cast<int>(m_base->nq);
     const int nv = static_cast<int>(m_base->nv);
@@ -1737,8 +1773,10 @@ int bike_metal_run_hybrid_sweep(
                 }
 
                 const bike::gpu::GpuWorldConfig &cfg_w = configs_v[to_index(per_world_config ? w : 0)];
+                const int fh_qpos_idx =
+                    (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
                 const float crank0 =
-                    (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq) ? qp[to_index(idx.crank_spin_qpos)] : 0.0f;
+                    (fh_qpos_idx >= 0 && fh_qpos_idx < nq) ? qp[to_index(fh_qpos_idx)] : 0.0f;
                 const float rwheel0 =
                     (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq) ? qp[to_index(idx.rear_wheel_spin_qpos)] : 0.0f;
                 bike::gpu::gpu_init_world_state(st_v[wu], cfg_w.drivetrain, crank0, rwheel0);
@@ -1780,8 +1818,10 @@ int bike_metal_run_hybrid_sweep(
             const bike::gpu::GpuWorldConfig &cfg_w = configs_v[to_index(per_world_config ? w : 0)];
             const std::span<const float> qp =
                 qpos_v.subspan(to_index(w) * to_index(nq), to_index(nq));
+            const int fh_qpos_idx =
+                (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
             const float crank0 =
-                (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq) ? qp[to_index(idx.crank_spin_qpos)] : 0.0f;
+                (fh_qpos_idx >= 0 && fh_qpos_idx < nq) ? qp[to_index(fh_qpos_idx)] : 0.0f;
             const float rwheel0 =
                 (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq) ? qp[to_index(idx.rear_wheel_spin_qpos)] : 0.0f;
             bike::gpu::gpu_init_world_state(st_v[to_index(w)], cfg_w.drivetrain, crank0, rwheel0);

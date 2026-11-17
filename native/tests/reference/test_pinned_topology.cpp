@@ -92,6 +92,10 @@ Compiled compiled() {
         "pinned.pose");
     out.config = rider::decode_spindle_config(
         runtime::project_rider_controller(physics, *out.model, pose));
+    out.config.reposition_damping_nms_rad =
+        physics.drive.pedaling.reposition_damping_nms_rad;
+    out.config.reposition_torque_limit_nm =
+        physics.seated_climb.max_crank_torque_nm;
     return out;
 }
 

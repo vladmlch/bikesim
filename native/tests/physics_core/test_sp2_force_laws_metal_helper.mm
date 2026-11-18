@@ -339,6 +339,81 @@ kernel void sp2_ratchet_kernel(
     }
     out->status = static_cast<uchar>(st);
 }
+
+kernel void sp2_torture_address_spaces_kernel(
+    constant bike::physics_core::SuspensionParams<float> &c_susp [[buffer(0)]],
+    device const bike::physics_core::SuspensionParams<float> *d_susp [[buffer(1)]],
+    constant bike::physics_core::ResistanceParams<float> &c_res [[buffer(2)]],
+    device const bike::physics_core::ResistanceParams<float> *d_res [[buffer(3)]],
+    constant bike::physics_core::BrakeHoldParams<float> &c_brake [[buffer(4)]],
+    device const bike::physics_core::BrakeHoldParams<float> *d_brake [[buffer(5)]],
+    constant bike::physics_core::RiderJointEnvelopeSpec<float> &c_env [[buffer(6)]],
+    device const bike::physics_core::RiderJointEnvelopeSpec<float> *d_env [[buffer(7)]],
+    device bike::physics_core::WorldRotationsRebaseState<float> *d_reb [[buffer(8)]],
+    device const float *qpos [[buffer(9)]],
+    device const float *qvel [[buffer(10)]],
+    device float *out_vals [[buffer(11)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    using namespace bike::physics_core;
+    if (gid != 0u) {
+        return;
+    }
+    ErrCode err = ErrCode::none;
+
+    // 1. Suspension: constant, device, and thread pointers
+    SuspensionResult<float> s_c{}, s_d{}, s_t{};
+    SuspensionParams<float> t_susp = c_susp;
+    (void)eval_suspension<float, GpuToolkit>(&c_susp, 0.05f, 0.1f, 0.02f, 0.1f, s_c, err);
+    (void)eval_suspension<float, GpuToolkit>(d_susp, 0.05f, 0.1f, 0.02f, 0.1f, s_d, err);
+    (void)eval_suspension<float, GpuToolkit>(&t_susp, 0.05f, 0.1f, 0.02f, 0.1f, s_t, err);
+
+    // 2. Brake hold: constant, device, and thread pointers
+    bool hl = false;
+    float lt = 0.0f;
+    float tq_c = 0.0f, tq_d = 0.0f, tq_t = 0.0f;
+    BrakeHoldParams<float> t_brake = c_brake;
+    (void)eval_brake_hold_wheel<float, GpuToolkit>(&c_brake, 0.5f, 0.1f, 0.0f, true, false, hl, lt, tq_c, err);
+    (void)eval_brake_hold_wheel<float, GpuToolkit>(d_brake, 0.5f, 0.1f, 0.0f, true, false, hl, lt, tq_d, err);
+    (void)eval_brake_hold_wheel<float, GpuToolkit>(&t_brake, 0.5f, 0.1f, 0.0f, true, false, hl, lt, tq_t, err);
+
+    // 3. Joint envelope: constant, device, and thread pointers
+    float qfrc_e[4]{};
+    float stored_e = 0.0f;
+    RiderJointEnvelopeSpec<float> t_env = c_env;
+    (void)eval_rider_joint_envelope<float, GpuToolkit>(&c_env, 4, 4, qpos, qfrc_e, stored_e, err);
+    (void)eval_rider_joint_envelope<float, GpuToolkit>(d_env, 4, 4, qpos, qfrc_e, stored_e, err);
+    (void)eval_rider_joint_envelope<float, GpuToolkit>(&t_env, 4, 4, qpos, qfrc_e, stored_e, err);
+
+    // 4. Resistance: constant, device, and thread pointers
+    float jr[3 * 4]{}, jp[3 * 4]{}, row[4]{}, roll[4]{}, aero[4]{};
+    float loads[1] = {100.0f};
+    uchar work[1] = {1u};
+    float xmat[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    GpuWheelChain chains[2]{};
+    ChainWheelJrFn<float, GpuToolkit, device const float *, thread const GpuWheelChain *> wjr{
+        chains, qvel, 4, 1};
+    ChainFrameJpFn<float, GpuToolkit, device const float *, device const float *, device const float *> fjp{
+        chains[0], qpos, qpos, qvel, 4, 1};
+    ResDiagField diag = ResDiagField::none;
+    ResistanceParams<float> t_res = c_res;
+    (void)eval_resistance<float, GpuToolkit>(
+        4, &c_res, qvel, loads, work, 1, 0.35f, qpos, xmat, loads, work, 1, 0.35f,
+        qpos, xmat, qpos, xmat, jr, jp, row, roll, aero, wjr, fjp, err, diag);
+    (void)eval_resistance<float, GpuToolkit>(
+        4, d_res, qvel, loads, work, 1, 0.35f, qpos, xmat, loads, work, 1, 0.35f,
+        qpos, xmat, qpos, xmat, jr, jp, row, roll, aero, wjr, fjp, err, diag);
+    (void)eval_resistance<float, GpuToolkit>(
+        4, &t_res, qvel, loads, work, 1, 0.35f, qpos, xmat, loads, work, 1, 0.35f,
+        qpos, xmat, qpos, xmat, jr, jp, row, roll, aero, wjr, fjp, err, diag);
+
+    // 5. Ratchet rebase: device and thread pointers
+    WorldRotationsRebaseState<float> t_reb = *d_reb;
+    (void)rebase_world_rotations_2pi<float, GpuToolkit>(d_reb, err);
+    (void)rebase_world_rotations_2pi<float, GpuToolkit>(&t_reb, err);
+
+    out_vals[0] = s_c.shock_total + s_d.shock_total + s_t.shock_total + tq_c + tq_d + tq_t + stored_e + roll[0];
+}
 )MSL";
     return combined;
 }
@@ -451,6 +526,35 @@ MetalSp2Output run_metal_sp2_parity(const MetalSp2Request &req) {
             out.error_message = std::string("Metal MSL compile error: ") +
                                 (err != nil ? [[err localizedDescription] UTF8String] : "unknown");
             return out;
+        }
+
+        // Verify MSL < 3.2 compilation (MTLLanguageVersion3_0 and MTLLanguageVersion3_1)
+        // matching warp-metal's wp_metal_load_library target, including constant/device/thread
+        // address-space instantiations in sp2_torture_address_spaces_kernel.
+        for (const MTLLanguageVersion ver : {MTLLanguageVersion3_0, MTLLanguageVersion3_1}) {
+            MTLCompileOptions *ver_opts = [[MTLCompileOptions alloc] init];
+            ver_opts.mathMode = MTLMathModeSafe;
+            ver_opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+            ver_opts.languageVersion = ver;
+            NSError *ver_err = nil;
+            id<MTLLibrary> ver_lib = [device newLibraryWithSource:ns_src options:ver_opts error:&ver_err];
+            if (ver_lib == nil) {
+                out.error_message = std::string("Metal MSL 3.x compile error: ") +
+                                    (ver_err != nil ? [[ver_err localizedDescription] UTF8String] : "unknown");
+                return out;
+            }
+            id<MTLFunction> torture_fn = [ver_lib newFunctionWithName:@"sp2_torture_address_spaces_kernel"];
+            if (torture_fn == nil) {
+                out.error_message = "Missing sp2_torture_address_spaces_kernel in MSL 3.x library";
+                return out;
+            }
+            id<MTLComputePipelineState> torture_pso =
+                [device newComputePipelineStateWithFunction:torture_fn error:&ver_err];
+            if (torture_pso == nil) {
+                out.error_message = std::string("Metal MSL 3.x torture PSO error: ") +
+                                    (ver_err != nil ? [[ver_err localizedDescription] UTF8String] : "unknown");
+                return out;
+            }
         }
 
         auto make_pso = [&](NSString *name) -> id<MTLComputePipelineState> {

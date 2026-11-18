@@ -163,28 +163,32 @@ BIKE_HD float expf_portable(float x) noexcept {
 }
 
 // Cephes-style natural log over IEEE bit-extraction + strict + - * (no FMA, no platform logf).
+// Classify NaN/±0/<0/+Inf and normalize subnormals purely in u32 integer bits so GPU hardware
+// DAZ/FTZ produces exact 0-bit parity with CPU FP32.
 BIKE_HD float logf_portable(float x) noexcept {
-    if (pf_isnan(x)) {
+    const u32 bits = pf_f32_to_u32(x);
+    u32 abs_bits = bits & 0x7fffffffu;
+    if (abs_bits > 0x7f800000u) {
         return x;
     }
-    if (x == 0.0f) {
-        return -(3.402823466e+38f * 2.0f);
+    if (abs_bits == 0u) {
+        return pf_u32_to_f32(0xff800000u);
     }
-    if (x < 0.0f) {
+    if ((bits & 0x80000000u) != 0u) {
         return pf_u32_to_f32(0x7fc00000u);
     }
-    if (pf_isinf(x)) {
+    if (abs_bits == 0x7f800000u) {
         return x;
     }
-    u32 bits = pf_f32_to_u32(x);
     int e = 0;
-    if ((bits & 0x7f800000u) == 0u) {
-        x *= 8388608.0f;
-        bits = pf_f32_to_u32(x);
-        e = -23;
+    if ((abs_bits & 0x7f800000u) == 0u) {
+        while ((abs_bits & 0x00800000u) == 0u) {
+            abs_bits <<= 1u;
+            e -= 1;
+        }
     }
-    e += static_cast<int>(bits >> 23u) - 126;
-    float m = pf_u32_to_f32((bits & 0x007fffffu) | 0x3f000000u);
+    e += static_cast<int>(abs_bits >> 23u) - 126;
+    float m = pf_u32_to_f32((abs_bits & 0x007fffffu) | 0x3f000000u);
     // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cephes threshold sqrt(0.5); MSL has no <numbers>
     const float kSqrtHf = 0.707106781186547524f;
     if (m < kSqrtHf) {
@@ -213,14 +217,23 @@ BIKE_HD float logf_portable(float x) noexcept {
 }
 
 BIKE_HD float powf_portable(float base, float exp) noexcept {
-    if (exp == 0.0f || base == 1.0f) {
+    const u32 base_bits = pf_f32_to_u32(base);
+    const u32 exp_bits = pf_f32_to_u32(exp);
+    const u32 abs_base = base_bits & 0x7fffffffu;
+    const u32 abs_exp = exp_bits & 0x7fffffffu;
+    if (abs_exp == 0u || base_bits == 0x3f800000u) {
         return 1.0f;
     }
-    if (pf_isnan(base) || pf_isnan(exp)) {
+    if (abs_base > 0x7f800000u || abs_exp > 0x7f800000u) {
         return pf_u32_to_f32(0x7fc00000u);
     }
-    if (base == 0.0f) {
-        return exp > 0.0f ? 0.0f : (3.402823466e+38f * 2.0f);
+    if (abs_base == 0u) {
+        return (exp_bits & 0x80000000u) == 0u
+            ? 0.0f
+            : pf_u32_to_f32(0x7f800000u);
+    }
+    if (base_bits == 0x7f800000u) {
+        return (exp_bits & 0x80000000u) == 0u ? base : 0.0f;
     }
     return expf_portable(exp * logf_portable(base));
 }

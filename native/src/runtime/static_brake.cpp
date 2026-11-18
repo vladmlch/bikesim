@@ -90,15 +90,17 @@ std::vector<double> StaticBrake::hold_qfrc(
         .engage_radps = hold_.engage_radps,
         .release_radps = hold_.release_radps,
     };
-    for (const auto &[dof, demand, latch] :
-         {std::tuple{front_, front, &latch_front_},
-          std::tuple{rear_, rear, &latch_rear_}}) {
+    std::optional<double> next_front = latch_front_;
+    std::optional<double> next_rear = latch_rear_;
+    for (const auto &[dof, demand, next_latch] :
+         {std::tuple{front_, front, &next_front},
+          std::tuple{rear_, rear, &next_rear}}) {
         const std::size_t di = static_cast<std::size_t>(dof);
         const double theta = qpos[static_cast<std::size_t>(
             jnt_qposadr[static_cast<std::size_t>(dof_jntid[di])])];
         const double omega = qvel[di];
-        bool has_latch = latch->has_value();
-        double latch_theta = latch->value_or(0.0);
+        bool has_latch = next_latch->has_value();
+        double latch_theta = next_latch->value_or(0.0);
         double out_torque = 0.0;
         auto err = bike::physics_core::ErrCode::none;
         const auto st = bike::physics_core::eval_brake_hold_wheel<
@@ -107,9 +109,16 @@ std::vector<double> StaticBrake::hold_qfrc(
             has_latch, latch_theta, out_torque, err);
         if (st != bike::physics_core::Status::ok)
             throw std::invalid_argument("non-finite wheel state for brake hold");
-        *latch = has_latch ? std::optional<double>(latch_theta) : std::nullopt;
+        if (advance) {
+            *next_latch =
+                has_latch ? std::optional<double>(latch_theta) : std::nullopt;
+        }
         if (!has_latch) continue;
         out[di] = out_torque;
+    }
+    if (advance) {
+        latch_front_ = next_front;
+        latch_rear_ = next_rear;
     }
     return out;
 }

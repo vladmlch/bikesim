@@ -38,6 +38,7 @@
 #include <random>
 #include <ranges>
 #include <span>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -100,9 +101,13 @@ void require_bits_f64(double actual, double expected, std::string_view what) {
 }
 
 void require_bits_f32(float actual, float expected, std::string_view what) {
-    if (std::bit_cast<std::uint32_t>(actual) !=
-        std::bit_cast<std::uint32_t>(expected)) {
-        throw std::runtime_error(std::string(what) + ": 32-bit mismatch");
+    const auto ua = std::bit_cast<std::uint32_t>(actual);
+    const auto ue = std::bit_cast<std::uint32_t>(expected);
+    if (ua != ue) {
+        std::ostringstream oss;
+        oss << what << ": 32-bit mismatch (actual=0x" << std::hex << ua
+            << ", expected=0x" << ue << ")";
+        throw std::runtime_error(oss.str());
     }
 }
 
@@ -1110,6 +1115,143 @@ SuspensionParams<Real> to_core_susp(const nativecfg::SuspensionConfig &c) {
     require(max_cl_raw > 1.0e-4, "clutch raw q=5000 cancellation observed");
     require(max_fh_reb <= 5.0e-6, "freehub rebased q=5000 FP32 <= 5e-6 rad");
     require(max_cl_reb <= 5.0e-6, "clutch rebased q=5000 FP32 <= 5e-6 rad");
+
+    // Direct <float, GpuToolkit> rebase_world_rotations_2pi boundary-gap assertion
+    // (preserving rebased freehub_boundary / clutch_boundary across subsequent FP32 steps
+    // without calling ratchet_reset_bound).
+    {
+        const double r64 = 22.0 / 39.0;
+        const float r32 = 22.0f / 39.0f;
+        const double turns = 20.0 * (2.0 * std::numbers::pi);
+        const double qw_d = turns + 0.37;
+        const double qs_d = qw_d / r64 + 0.0012;
+        const double qc_d = qs_d - 0.0007;
+
+        const float qw_f = static_cast<float>(qw_d);
+        const float qs_f = static_cast<float>(qs_d);
+        const float qc_f = static_cast<float>(qc_d);
+
+        bool h_fh32 = false;
+        bool h_cl32 = false;
+        float b_fh32 = 0.0f;
+        float b_cl32 = 0.0f;
+        ErrCode err32 = ErrCode::none;
+        require(bike::physics_core::ratchet_reset_bound<float, GpuToolkit>(
+                    r32, qs_f, qw_f, h_fh32, b_fh32, err32) == Status::ok,
+                "direct FP32 reset freehub");
+        require(bike::physics_core::ratchet_reset_bound<float, GpuToolkit>(
+                    1.0f, qc_f, qs_f, h_cl32, b_cl32, err32) == Status::ok,
+                "direct FP32 reset clutch");
+
+        WorldRotationsRebaseState<float> reb32{};
+        reb32.front_wheel_qpos = qw_f;
+        reb32.rear_wheel_qpos = qw_f;
+        reb32.crank_qpos = qc_f;
+        reb32.drive_shaft_qpos = qs_f;
+        reb32.freehub_ratio = r32;
+        reb32.freehub_boundary = b_fh32;
+        reb32.clutch_boundary = b_cl32;
+        reb32.brake_latch[0] = qw_f - 0.001f;
+        reb32.brake_latch[1] = qw_f + 0.002f;
+        reb32.has_freehub_boundary = 1;
+        reb32.has_clutch_boundary = 1;
+        reb32.has_brake_latch[0] = 1;
+        reb32.has_brake_latch[1] = 1;
+
+        require(bike::physics_core::rebase_world_rotations_2pi<float, GpuToolkit>(&reb32, err32) ==
+                    Status::ok,
+                "direct <float, GpuToolkit> rebase_world_rotations_2pi");
+        require(std::abs(reb32.front_wheel_qpos) <= static_cast<float>(std::numbers::pi) + 1.0e-4f &&
+                    std::abs(reb32.rear_wheel_qpos) <= static_cast<float>(std::numbers::pi) + 1.0e-4f &&
+                    std::abs(reb32.crank_qpos) <= static_cast<float>(std::numbers::pi) + 1.0e-4f &&
+                    std::abs(reb32.drive_shaft_qpos) <= static_cast<float>(std::numbers::pi) + 1.0e-4f,
+                "direct FP32 rebased qpos in [-pi, pi]");
+
+        const float gap_fh_rebased =
+            (r32 * reb32.drive_shaft_qpos - reb32.rear_wheel_qpos) - reb32.freehub_boundary;
+        const float gap_cl_rebased =
+            (reb32.crank_qpos - reb32.drive_shaft_qpos) - reb32.clutch_boundary;
+        require(std::abs(gap_fh_rebased) <= 2.0e-5f,
+                "direct FP32 rebased freehub boundary gap preserved");
+        require(std::abs(gap_cl_rebased) <= 2.0e-5f,
+                "direct FP32 rebased clutch boundary gap preserved");
+
+        // Advance one step using the rebased freehub_boundary / clutch_boundary directly.
+        const float d_qs = 0.01f;
+        const float d_qw = 0.01f * r32 - 0.0003f;
+        const float d_qc = 0.01f + 0.0002f;
+        bool has_fh_step = (reb32.has_freehub_boundary != 0);
+        bool has_cl_step = (reb32.has_clutch_boundary != 0);
+        float b_fh_step = reb32.freehub_boundary;
+        float b_cl_step = reb32.clutch_boundary;
+        require(bike::physics_core::ratchet_prepare_bound<float, GpuToolkit>(
+                    r32, reb32.drive_shaft_qpos + d_qs, reb32.rear_wheel_qpos + d_qw,
+                    has_fh_step, b_fh_step, err32) == Status::ok,
+                "direct FP32 prepare freehub after rebase");
+        require(bike::physics_core::ratchet_prepare_bound<float, GpuToolkit>(
+                    1.0f, reb32.crank_qpos + d_qc, reb32.drive_shaft_qpos + d_qs,
+                    has_cl_step, b_cl_step, err32) == Status::ok,
+                "direct FP32 prepare clutch after rebase");
+
+        const float gap_fh_step =
+            (r32 * (reb32.drive_shaft_qpos + d_qs) - (reb32.rear_wheel_qpos + d_qw)) - b_fh_step;
+        const float gap_cl_step =
+            ((reb32.crank_qpos + d_qc) - (reb32.drive_shaft_qpos + d_qs)) - b_cl_step;
+
+        bool h_fh64 = false;
+        bool h_cl64 = false;
+        double b_fh64 = 0.0;
+        double b_cl64 = 0.0;
+        (void)bike::physics_core::ratchet_reset_bound<double, CpuExactToolkit>(
+            r64, static_cast<double>(qs_f), static_cast<double>(qw_f), h_fh64, b_fh64, err64);
+        (void)bike::physics_core::ratchet_reset_bound<double, CpuExactToolkit>(
+            1.0, static_cast<double>(qc_f), static_cast<double>(qs_f), h_cl64, b_cl64, err64);
+        (void)bike::physics_core::ratchet_prepare_bound<double, CpuExactToolkit>(
+            r64, static_cast<double>(qs_f) + static_cast<double>(d_qs),
+            static_cast<double>(qw_f) + static_cast<double>(d_qw), h_fh64, b_fh64, err64);
+        (void)bike::physics_core::ratchet_prepare_bound<double, CpuExactToolkit>(
+            1.0, static_cast<double>(qc_f) + static_cast<double>(d_qc),
+            static_cast<double>(qs_f) + static_cast<double>(d_qs), h_cl64, b_cl64, err64);
+        const double ref_gap_fh =
+            (r64 * (static_cast<double>(qs_f) + static_cast<double>(d_qs)) -
+             (static_cast<double>(qw_f) + static_cast<double>(d_qw))) -
+            b_fh64;
+        const double ref_gap_cl =
+            ((static_cast<double>(qc_f) + static_cast<double>(d_qc)) -
+             (static_cast<double>(qs_f) + static_cast<double>(d_qs))) -
+            b_cl64;
+        require(std::abs(static_cast<double>(gap_fh_step) - ref_gap_fh) <= 2.0e-5,
+                "direct FP32 rebased freehub step gap <= 2e-5 rad");
+        require(std::abs(static_cast<double>(gap_cl_step) - ref_gap_cl) <= 2.0e-5,
+                "direct FP32 rebased clutch step gap <= 2e-5 rad");
+
+        // motor_clutch = false mode: drive_shaft_qpos carries crank_spin, has_clutch_boundary = 0
+        WorldRotationsRebaseState<float> reb32_noclutch{};
+        reb32_noclutch.front_wheel_qpos = qw_f;
+        reb32_noclutch.rear_wheel_qpos = qw_f;
+        reb32_noclutch.crank_qpos = qc_f;
+        reb32_noclutch.drive_shaft_qpos = qc_f;
+        reb32_noclutch.freehub_ratio = r32;
+        bool h_nocl = false;
+        float b_nocl = 0.0f;
+        require(bike::physics_core::ratchet_reset_bound<float, GpuToolkit>(
+                    r32, qc_f, qw_f, h_nocl, b_nocl, err32) == Status::ok,
+                "direct FP32 reset motor_clutch=false");
+        reb32_noclutch.freehub_boundary = b_nocl;
+        reb32_noclutch.clutch_boundary = 0.123f;
+        reb32_noclutch.has_freehub_boundary = 1;
+        reb32_noclutch.has_clutch_boundary = 0;
+        require(bike::physics_core::rebase_world_rotations_2pi<float, GpuToolkit>(
+                    &reb32_noclutch, err32) == Status::ok,
+                "direct FP32 rebase motor_clutch=false");
+        require_bits_f32(reb32_noclutch.clutch_boundary, 0.123f,
+                         "motor_clutch=false clutch_boundary unchanged");
+        const float gap_nocl =
+            (r32 * reb32_noclutch.drive_shaft_qpos - reb32_noclutch.rear_wheel_qpos) -
+            reb32_noclutch.freehub_boundary;
+        require(std::abs(gap_nocl) <= 2.0e-5f,
+                "motor_clutch=false rebased freehub gap preserved");
+    }
 }
 
 #if defined(__APPLE__)
@@ -1119,12 +1261,51 @@ SuspensionParams<Real> to_core_susp(const nativecfg::SuspensionConfig &c) {
     auto &req = *req_ptr;
     req.physics_core_dir = BIKE_PHYSICS_CORE_SRC_DIR;
 
-    // 1. logf & powf (256 points each)
+    // 1. logf & powf (256 regular points + subnormals & IEEE edge cases)
     for (int i = 0; i < 256; ++i) {
         const float x = 0.01f + static_cast<float>(i) * 0.5f;
         req.log_in.push_back(x);
         req.pow_base.push_back(x);
         req.pow_exp.push_back(0.10f + static_cast<float>(i % 15) * 0.1f);
+    }
+    const std::array<float, 12> special_vals{
+        std::bit_cast<float>(0x00000001u),
+        std::bit_cast<float>(0x00000123u),
+        std::bit_cast<float>(0x003fffffu),
+        std::bit_cast<float>(0x007fffffu),
+        std::bit_cast<float>(0x00800000u),
+        0.0f,
+        -0.0f,
+        1.0f,
+        -1.0f,
+        std::numeric_limits<float>::infinity(),
+        -std::numeric_limits<float>::infinity(),
+        std::numeric_limits<float>::quiet_NaN(),
+    };
+    const std::array<float, 7> special_exps{
+        0.25f,
+        0.50f,
+        0.0f,
+        -0.0f,
+        -1.0f,
+        std::bit_cast<float>(0x00000001u),
+        std::numeric_limits<float>::quiet_NaN(),
+    };
+    for (const float v : special_vals) {
+        req.log_in.push_back(v);
+        for (const float e : special_exps) {
+            req.pow_base.push_back(v);
+            req.pow_exp.push_back(e);
+        }
+    }
+    for (const float v : {0.0f, -0.0f, 1.0f, -1.0f,
+                          std::numeric_limits<float>::infinity(),
+                          -std::numeric_limits<float>::infinity(),
+                          std::numeric_limits<float>::quiet_NaN()}) {
+        for (const float e : {1.0f, std::bit_cast<float>(0x80000001u)}) {
+            req.pow_base.push_back(v);
+            req.pow_exp.push_back(e);
+        }
     }
 
     // 2. Suspension (256 cases: 128 open + 128 lockout_firm)
@@ -1269,6 +1450,8 @@ SuspensionParams<Real> to_core_susp(const nativecfg::SuspensionConfig &c) {
     // Assert 0-bit Host float vs Metal MTLMathModeSafe parity on ALL outputs
     for (std::size_t i = 0; i < req.log_in.size(); ++i) {
         require_bits_f32(gpu.log_out[i], GpuToolkit::log(req.log_in[i]), "Metal logf_portable 0-bit");
+    }
+    for (std::size_t i = 0; i < req.pow_base.size(); ++i) {
         require_bits_f32(gpu.pow_out[i], GpuToolkit::pow_py(req.pow_base[i], req.pow_exp[i]),
                          "Metal powf_portable 0-bit");
     }

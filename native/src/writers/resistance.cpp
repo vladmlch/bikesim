@@ -261,23 +261,20 @@ void ResistanceWriter::compute_validated(const mjData *d,
         return bike::physics_core::Status::ok;
     };
 
-    bool jac_invalid = false;
+    std::exception_ptr caught_exc;
     auto frame_jp_fn = [&](const double *pt_ptr,
                            double *out_jp,
                            bike::physics_core::ErrCode &local_err) noexcept
         -> bike::physics_core::Status {
-        (void)out_jp;
         const auto pt_span = std::views::counted(pt_ptr, model_access::kXYZ);
         const std::array<double, model_access::kXYZ> pt_arr{
             pt_span[0], pt_span[1], pt_span[2]};
         try {
-            point_jacobian_into(m_, d, frame_, pt_arr, jp_);
-        } catch (const std::invalid_argument &) {
-            jac_invalid = true;
-            local_err = bike::physics_core::ErrCode::out_of_bounds_chain;
-            return bike::physics_core::Status::invalid_argument;
+            point_jacobian_into(
+                m_, d, frame_, pt_arr,
+                std::views::counted(out_jp, model_access::kXYZ * nv_));
         } catch (...) {
-            jac_invalid = true;
+            caught_exc = std::current_exception();
             local_err = bike::physics_core::ErrCode::out_of_bounds_chain;
             return bike::physics_core::Status::invalid_argument;
         }
@@ -305,9 +302,8 @@ void ResistanceWriter::compute_validated(const mjData *d,
         rolling_.data(), aerodynamic_.data(),
         wheel_jr_fn, frame_jp_fn, err, diag);
     if (st != bike::physics_core::Status::ok) {
-        if (jac_invalid) {
-            point_jacobian_into(m_, d, frame_, std::array<double, model_access::kXYZ>{}, jp_);
-            throw std::invalid_argument("point Jacobian: invalid input");
+        if (caught_exc) {
+            std::rethrow_exception(caught_exc);
         }
         throw_resistance_error(diag);
     }

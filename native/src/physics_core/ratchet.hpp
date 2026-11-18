@@ -146,6 +146,8 @@ struct WorldRotationsRebaseState {
     Real front_wheel_qpos = BIKE_REAL(Real, 0.0);
     Real rear_wheel_qpos = BIKE_REAL(Real, 0.0);
     Real crank_qpos = BIKE_REAL(Real, 0.0);
+    // Carries the freehub driver qpos: `drive_shaft_spin` when `motor_clutch=true`,
+    // or `crank_spin` (with `has_clutch_boundary=0`) when `motor_clutch=false`.
     Real drive_shaft_qpos = BIKE_REAL(Real, 0.0);
     Real freehub_ratio = BIKE_REAL(Real, 1.0);
     Real freehub_boundary = BIKE_REAL(Real, 0.0);

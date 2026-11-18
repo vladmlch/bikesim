@@ -72,10 +72,6 @@ struct CoilParams {
     Real stroke_mm = BIKE_REAL(Real, 0.0);
     Real bumper_length_mm = BIKE_REAL(Real, 0.0);
     Real bumper_peak_n = BIKE_REAL(Real, 0.0);
-
-    BIKE_HD Real bumper_engage_mm() const noexcept {
-        return stroke_mm - bumper_length_mm;
-    }
 };
 
 template <class Real>
@@ -93,7 +89,6 @@ struct SuspensionParams {
     EndStopParams<Real> end_stops{};
 };
 
-// NOLINTNEXTLINE(performance-enum-size) compact diagnostic tag for CPU exception parity
 enum class SuspDiagField : u8 {
     none = 0,
     air_displaced_volume,
@@ -540,8 +535,9 @@ BIKE_HD Status eval_suspension(
     const Real stroke_limit_mm = cfg->coil.stroke_mm;
     Real shock_bumper = BIKE_REAL(Real, 0.0);
     if (stroke_mm <= stroke_limit_mm) {
-        const Real excess_mm =
-            TK::max(BIKE_REAL(Real, 0.0), stroke_mm - cfg->coil.bumper_engage_mm());
+        const Real excess_mm = TK::max(
+            BIKE_REAL(Real, 0.0),
+            stroke_mm - (cfg->coil.stroke_mm - cfg->coil.bumper_length_mm));
         shock_bumper =
             cfg->coil.bumper_peak_n *
             TK::pow2(excess_mm / cfg->coil.bumper_length_mm);

@@ -21,7 +21,6 @@ struct ResistanceParams {
     Real point_body_m[3]{};
 };
 
-// NOLINTNEXTLINE(performance-enum-size) compact diagnostic tag for CPU exception parity
 enum class ResDiagField : u8 {
     none = 0,
     invalid_nv,

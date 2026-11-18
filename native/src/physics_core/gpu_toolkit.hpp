@@ -37,8 +37,20 @@ struct GpuToolkit {
         return expf_portable(x);
     }
 
+    BIKE_HD static float log(float x) noexcept {
+        return logf_portable(x);
+    }
+
+    BIKE_HD static float pow_py(float a, float b) noexcept {
+        return powf_portable(a, b);
+    }
+
     BIKE_HD static float tanh(float x) noexcept {
         return tanhf_portable(x);
+    }
+
+    BIKE_HD static float floor(float x) noexcept {
+        return pf_floor(x);
     }
 
     BIKE_HD static float sq(float x) noexcept {
@@ -47,6 +59,10 @@ struct GpuToolkit {
 
     BIKE_HD static float pow2(float x) noexcept {
         return x * x;
+    }
+
+    BIKE_HD static float pow3(float x) noexcept {
+        return (x * x) * x;
     }
 
     BIKE_HD static float hypot2(float a, float b) noexcept {
@@ -86,6 +102,17 @@ struct GpuToolkit {
         float s = 0.0f;
         for (int i = 0; i < n; ++i) {
             s += a[i] * b[i];
+        }
+        return s;
+    }
+
+    template <class PtrVals, class PtrMask>
+    BIKE_HD static float masked_sum(int n, PtrVals vals, PtrMask mask) noexcept {
+        float s = 0.0f;
+        for (int i = 0; i < n; ++i) {
+            if (mask[i] != 0) {
+                s += vals[i];
+            }
         }
         return s;
     }

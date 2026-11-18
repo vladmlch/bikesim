@@ -153,6 +153,96 @@ BIKE_HD Status chain_point_jacobian(
     );
 }
 
+template <
+    class Real,
+    class TK,
+    class PtrAxis,
+    class PtrJr>
+BIKE_HD Status chain_angular_jacobian(
+    const BIKE_THREAD GpuWheelChain &chain,
+    PtrAxis jnt_xaxis,
+    int body_id,
+    int nv,
+    int njnt,
+    PtrJr out_jr,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+
+    if (chain.joint_count < 0 || chain.joint_count > kMaxChainJoints ||
+        nv <= 0 || nv > kMaxNv || njnt <= 0 || njnt > kMaxNjnt ||
+        body_id <= 0) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::out_of_bounds;
+    }
+    if (chain.wheel_body_id >= 0 && chain.wheel_body_id != body_id) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::invalid_argument;
+    }
+    if (jnt_xaxis == nullptr || out_jr == nullptr) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::invalid_argument;
+    }
+
+    for (int k = 0; k < chain.joint_count; ++k) {
+        const GpuChainJoint j = chain.joints[k];
+        if (j.joint_id < 0 || j.joint_id >= njnt ||
+            j.dof_adr < 0 || j.dof_adr >= nv) {
+            err = ErrCode::out_of_bounds_chain;
+            return Status::out_of_bounds;
+        }
+        if (j.joint_type != kJntHinge && j.joint_type != kJntSlide) {
+            err = ErrCode::out_of_bounds_chain;
+            return Status::invalid_argument;
+        }
+    }
+
+    for (int r = 0; r < 3; ++r) {
+        const int row_base = r * nv;
+        for (int c = 0; c < nv; ++c) {
+            out_jr[row_base + c] = static_cast<Real>(0);
+        }
+    }
+
+    for (int k = 0; k < chain.joint_count; ++k) {
+        const GpuChainJoint j = chain.joints[k];
+        if (j.joint_type == kJntHinge) {
+            const int a3 = 3 * j.joint_id;
+            const int d = j.dof_adr;
+            out_jr[0 * nv + d] = jnt_xaxis[a3 + 0];
+            out_jr[1 * nv + d] = jnt_xaxis[a3 + 1];
+            out_jr[2 * nv + d] = jnt_xaxis[a3 + 2];
+        }
+    }
+
+    return Status::ok;
+}
+
+template <
+    class Real,
+    class TK,
+    class PtrAxis,
+    class PtrJr>
+BIKE_HD Status chain_angular_jacobian(
+    const BIKE_THREAD GpuWheelChain &chain,
+    PtrAxis jnt_xaxis,
+    int body_id,
+    int nv,
+    PtrJr out_jr,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    const int njnt = (chain.njnt > 0) ? chain.njnt : kMaxNjnt;
+    return chain_angular_jacobian<Real, TK>(
+        chain,
+        jnt_xaxis,
+        body_id,
+        nv,
+        njnt,
+        out_jr,
+        err
+    );
+}
+
 } // namespace bike::physics_core
 
 BIKE_GPU_SHARED_CODE_END

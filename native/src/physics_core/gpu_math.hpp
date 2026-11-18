@@ -4,8 +4,12 @@
 
 #include "common.hpp"
 
-#if !defined(__METAL_VERSION__)
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+#include <bit>
 #include <cmath>
+#elif defined(__CUDACC__)
+#include <cmath>
+#include <cstring>
 #endif
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel math: positional float arguments match the CUDA/MSL ABI. Register: docs/TESTING.md GPU kernel row.
@@ -102,6 +106,34 @@ BIKE_HD float pf_clamp(float x, float lo, float hi) noexcept {
     return x < lo ? lo : (x > hi ? hi : x);
 }
 
+BIKE_HD u32 pf_f32_to_u32(float x) noexcept {
+#if defined(__METAL_VERSION__)
+    return as_type<u32>(x);
+#elif defined(__CUDA_ARCH__)
+    return static_cast<u32>(__float_as_uint(x));
+#elif defined(__CUDACC__)
+    u32 u = 0;
+    std::memcpy(&u, &x, sizeof(u));
+    return u;
+#else
+    return std::bit_cast<u32>(x);
+#endif
+}
+
+BIKE_HD float pf_u32_to_f32(u32 u) noexcept {
+#if defined(__METAL_VERSION__)
+    return as_type<float>(u);
+#elif defined(__CUDA_ARCH__)
+    return __uint_as_float(u);
+#elif defined(__CUDACC__)
+    float x = 0.0f;
+    std::memcpy(&x, &u, sizeof(x));
+    return x;
+#else
+    return std::bit_cast<float>(u);
+#endif
+}
+
 // Cephes-style Cody-Waite range reduction over strict + - * floor ldexp (no FMA).
 BIKE_HD float expf_portable(float x) noexcept {
     if (pf_isnan(x)) {
@@ -128,6 +160,82 @@ BIKE_HD float expf_portable(float x) noexcept {
     px = px * x + 5.0000001201e-1f;
     const float ex = 1.0f + x + px * xx;
     return pf_ldexp(ex, n);
+}
+
+// Cephes-style natural log over IEEE bit-extraction + strict + - * (no FMA, no platform logf).
+// Classify NaN/±0/<0/+Inf and normalize subnormals purely in u32 integer bits so GPU hardware
+// DAZ/FTZ produces exact 0-bit parity with CPU FP32.
+BIKE_HD float logf_portable(float x) noexcept {
+    const u32 bits = pf_f32_to_u32(x);
+    u32 abs_bits = bits & 0x7fffffffu;
+    if (abs_bits > 0x7f800000u) {
+        return x;
+    }
+    if (abs_bits == 0u) {
+        return pf_u32_to_f32(0xff800000u);
+    }
+    if ((bits & 0x80000000u) != 0u) {
+        return pf_u32_to_f32(0x7fc00000u);
+    }
+    if (abs_bits == 0x7f800000u) {
+        return x;
+    }
+    int e = 0;
+    if ((abs_bits & 0x7f800000u) == 0u) {
+        while ((abs_bits & 0x00800000u) == 0u) {
+            abs_bits <<= 1u;
+            e -= 1;
+        }
+    }
+    e += static_cast<int>(abs_bits >> 23u) - 126;
+    float m = pf_u32_to_f32((abs_bits & 0x007fffffu) | 0x3f000000u);
+    // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cephes threshold sqrt(0.5); MSL has no <numbers>
+    const float kSqrtHf = 0.707106781186547524f;
+    if (m < kSqrtHf) {
+        m *= 2.0f;
+        e -= 1;
+    }
+    const float z = m - 1.0f;
+    const float z2 = z * z;
+    float y = 7.0376836292e-2f;
+    y = y * z - 1.1514610310e-1f;
+    y = y * z + 1.1676998740e-1f;
+    y = y * z - 1.2420140846e-1f;
+    y = y * z + 1.4249322787e-1f;
+    y = y * z - 1.6668057665e-1f;
+    y = y * z + 2.0000714765e-1f;
+    y = y * z - 2.4999993993e-1f;
+    y = y * z + 3.3333331174e-1f;
+    y = y * z * z2;
+    // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked Cody-Waite split; MSL has no <numbers>
+    const float kLn2Hi = 0.693359375f;
+    const float kLn2Lo = -2.12194440e-4f;
+    const float ef = static_cast<float>(e);
+    y += ef * kLn2Lo;
+    y -= 0.5f * z2;
+    return z + y + ef * kLn2Hi;
+}
+
+BIKE_HD float powf_portable(float base, float exp) noexcept {
+    const u32 base_bits = pf_f32_to_u32(base);
+    const u32 exp_bits = pf_f32_to_u32(exp);
+    const u32 abs_base = base_bits & 0x7fffffffu;
+    const u32 abs_exp = exp_bits & 0x7fffffffu;
+    if (abs_exp == 0u || base_bits == 0x3f800000u) {
+        return 1.0f;
+    }
+    if (abs_base > 0x7f800000u || abs_exp > 0x7f800000u) {
+        return pf_u32_to_f32(0x7fc00000u);
+    }
+    if (abs_base == 0u) {
+        return (exp_bits & 0x80000000u) == 0u
+            ? 0.0f
+            : pf_u32_to_f32(0x7f800000u);
+    }
+    if (base_bits == 0x7f800000u) {
+        return (exp_bits & 0x80000000u) == 0u ? base : 0.0f;
+    }
+    return expf_portable(exp * logf_portable(base));
 }
 
 // Portable exp(x) - 1 for small x with |x| <= ln(2)/2 without 1.0f cancellation.

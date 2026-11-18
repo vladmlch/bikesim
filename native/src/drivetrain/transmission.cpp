@@ -3,6 +3,8 @@
 #include "../engine_call.hpp"
 #include "../model_topology.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/ratchet.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -152,8 +154,11 @@ namespace drivetrain {
 
     double Transmission::relative(const mjData *d, double ratio) const {
         const auto q = buffer(d->qpos, model_->nq);
-        return ratio * q[static_cast<std::size_t>(driver_qpos_)] -
-               q[static_cast<std::size_t>(driven_qpos_)];
+        return bike::physics_core::ratchet_phi<
+            double, bike::physics_core::CpuExactToolkit>(
+            ratio,
+            q[static_cast<std::size_t>(driver_qpos_)],
+            q[static_cast<std::size_t>(driven_qpos_)]);
     }
 
     double Transmission::geometry(mjData *d) {
@@ -312,7 +317,19 @@ namespace drivetrain {
                     update.state.last_tension_n = 0.;
             linearize_candidate(data, update, phi);
         } else {
-            update.state.boundary = relative(data);
+            const auto q = buffer(data->qpos, model_->nq);
+            bool has_boundary = false;
+            double boundary = 0.;
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::ratchet_reset_bound<
+                double, bike::physics_core::CpuExactToolkit>(
+                update.state.ratio,
+                q[static_cast<std::size_t>(driver_qpos_)],
+                q[static_cast<std::size_t>(driven_qpos_)],
+                has_boundary, boundary, err);
+            if (st != bike::physics_core::Status::ok)
+                throw std::invalid_argument("invalid ratchet reset state");
+            update.state.boundary = boundary;
             update.range[1] = *update.state.boundary;
             update.state.range = update.range;
         }
@@ -334,9 +351,19 @@ namespace drivetrain {
                     update.state.boundary ? std::min(*update.state.boundary, phi) : phi;
             linearize_candidate(data, update, phi);
         } else {
-            const double phi = relative(data);
-            update.state.boundary =
-                    update.state.boundary ? std::min(*update.state.boundary, phi) : phi;
+            const auto q = buffer(data->qpos, model_->nq);
+            bool has_boundary = update.state.boundary.has_value();
+            double boundary = update.state.boundary.value_or(0.);
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::ratchet_prepare_bound<
+                double, bike::physics_core::CpuExactToolkit>(
+                update.state.ratio,
+                q[static_cast<std::size_t>(driver_qpos_)],
+                q[static_cast<std::size_t>(driven_qpos_)],
+                has_boundary, boundary, err);
+            if (st != bike::physics_core::Status::ok)
+                throw std::invalid_argument("invalid ratchet prepare state");
+            update.state.boundary = boundary;
             update.range[1] = *update.state.boundary;
             update.state.range = update.range;
         }
@@ -374,13 +401,21 @@ namespace drivetrain {
         const GearingConfig base_gear = update.gear;
         update.state.ratio = ratio;
         if (!geometric_) {
-            const double previous = relative(data, from);
+            const auto q = buffer(data->qpos, model_->nq);
             update.coefficients[0] = ratio;
             update.state.coefficients = update.coefficients;
-            const double current = relative(data, ratio);
-            update.state.boundary = update.state.boundary
-                                        ? *update.state.boundary + current - previous
-                                        : current;
+            bool has_boundary = update.state.boundary.has_value();
+            double boundary = update.state.boundary.value_or(0.);
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::ratchet_shift_ratio_bound<
+                double, bike::physics_core::CpuExactToolkit>(
+                from, ratio,
+                q[static_cast<std::size_t>(driver_qpos_)],
+                q[static_cast<std::size_t>(driven_qpos_)],
+                has_boundary, boundary, err);
+            if (st != bike::physics_core::Status::ok)
+                throw std::invalid_argument("invalid ratchet shift state");
+            update.state.boundary = boundary;
             update.range[1] = *update.state.boundary;
             update.state.range = update.range;
             evaluate_candidate(data, update);

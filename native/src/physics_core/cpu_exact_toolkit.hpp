@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ranges>
+#include <span>
 
 namespace bike::physics_core {
 
@@ -42,8 +44,16 @@ struct CpuExactToolkit {
         return std::exp(x);
     }
 
+    [[nodiscard]] static double log(double x) noexcept {
+        return std::log(x);
+    }
+
     [[nodiscard]] static double tanh(double x) noexcept {
         return std::tanh(x);
+    }
+
+    [[nodiscard]] static double floor(double x) noexcept {
+        return std::floor(x);
     }
 
     [[nodiscard]] static double sq(double x) noexcept {
@@ -52,6 +62,10 @@ struct CpuExactToolkit {
 
     [[nodiscard]] static double pow2(double x) {
         return pyfloat::pow(x, 2.0);
+    }
+
+    [[nodiscard]] static double pow3(double x) {
+        return pyfloat::pow(x, 3.0);
     }
 
     [[nodiscard]] static double pow_py(double a, double b) {
@@ -90,6 +104,34 @@ struct CpuExactToolkit {
 
     [[nodiscard]] static double dot(int n, const double *a, const double *b) noexcept {
         return blas::ddot(n, a, 1, b, 1);
+    }
+
+    [[nodiscard]] static double masked_sum(
+        int n, const double *vals, const bool *mask
+    ) noexcept {
+        if (n <= 0 || vals == nullptr || mask == nullptr) {
+            return 0.0;
+        }
+        const std::span<const double> v = std::views::counted(vals, n);
+        const std::span<const bool> m = std::views::counted(mask, n);
+        double f_result = 0.0;
+        double c_sum = 0.0;
+        for (std::size_t i = 0; i < v.size(); ++i) {
+            if (!m[i]) {
+                continue;
+            }
+            const double x = v[i];
+            const double t = f_result + x;
+            if (std::isfinite(t)) {
+                if (std::abs(f_result) >= std::abs(x)) {
+                    c_sum += (f_result - t) + x;
+                } else {
+                    c_sum += (x - t) + f_result;
+                }
+            }
+            f_result = t;
+        }
+        return f_result + c_sum;
     }
 
     [[nodiscard]] static double norm2_ddot(const double *a) noexcept {

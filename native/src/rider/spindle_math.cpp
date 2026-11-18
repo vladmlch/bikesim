@@ -7,6 +7,8 @@
 #include "../numeric_numpy.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/joint_envelope.hpp"
 #include "spindle_linalg.hpp"
 
 #include <numbers>
@@ -436,13 +438,14 @@ namespace spindle {
         const double k = validation::finite(stiffness_nm_rad,
                                             "joint edge state");
         const double m = validation::finite(margin_rad, "joint edge state");
-        if (hi <= lo || k < 0 || m < 0)
+        bike::physics_core::SoftEdgeResult<double> res{};
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::soft_edge_scalar<
+            double, bike::physics_core::CpuExactToolkit>(
+            value, lo, hi, k, m, res, err);
+        if (st != bike::physics_core::Status::ok)
             throw std::invalid_argument("invalid soft edge parameters");
-        const double margin = std::min(m, (hi - lo) / 2.);
-        const double left = std::max(lo + margin - value, 0.);
-        const double right = std::max(value - hi + margin, 0.);
-        return {.torque = k * (left - right),
-                .stored_j = .5 * k * (left * left + right * right)};
+        return {.torque = res.torque, .stored_j = res.stored_j};
     }
 
     std::vector<SoftEdgeRow>

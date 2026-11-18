@@ -242,6 +242,7 @@ private:
     double dissipative_power_start_w_ = 0.0;
     std::optional<double> last_time_s_;
 
-    void accumulate_validated(const mjData *d, double dt,
-                              std::span<double> out);
+    [[nodiscard]] CoreStatus
+    accumulate_core(const mjData *d, double dt, std::span<double> out,
+                    const char *&err_msg, bool &overflow_err);
 };

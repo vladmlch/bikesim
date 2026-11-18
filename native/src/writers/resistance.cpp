@@ -25,14 +25,11 @@
 #include "resistance.hpp"
 #include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
-#include "../engine_call.hpp"
 #include "../model_access.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
-#include <exception>
-#include <new>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -48,7 +45,7 @@ namespace {
     // iterable yields 0 — same value this returns (int 0 vs 0.0 compare equal
     // in the `Fn > 0` gate).
     double py_sum(std::span<const double> loads,
-                  std::span<const bool> working) {
+                  std::span<const bool> working) noexcept {
         double f_result = 0.0;
         double c_sum = 0.0;
         for (std::size_t i = 0; i < loads.size(); ++i) {
@@ -67,6 +64,15 @@ namespace {
         return f_result + c_sum;
     }
 
+    template<typename T>
+    [[nodiscard]] bool try_readonly_buffer(const T *data, mjtSize count,
+                                           std::span<const T> &out) noexcept {
+        if (count < 0 || (data == nullptr && count > 0))
+            return false;
+        out = std::views::counted(data, static_cast<std::ptrdiff_t>(count));
+        return true;
+    }
+
     // physical_mapping.py:6-11 — resolve_id. Site contract: BODY lookups
     // additionally reject the world body (id 0 can never host a force);
     // other kinds keep the plain name check — routed through the shared
@@ -77,23 +83,39 @@ namespace {
 
     // external_resistance.py:21-23 — _rolling_moment (validation-free core).
     // math.tanh is libm tanh, same as std::tanh here.
-    double rolling_moment(double crr, double load, double radius, double speed,
-                          double taper) {
-        return validation::derived(-crr * load * radius * std::tanh(speed / taper), "rolling_moment.torque");
+    double rolling_moment_raw(double crr, double load, double radius,
+                              double speed, double taper) noexcept {
+        return -crr * load * radius * std::tanh(speed / taper);
     }
 
-    // physical_mapping.py:24-37 — point_jacobian_into's checks + the jacp-only
-    // mj_jac call (the rotational half is skipped in the source too). The
-    // shared checked boundary keeps this site's recorded contract verbatim —
-    // Python's single `0 < body_id < nbody` gate → JacobianBody::
-    // physical_strict — while replacing the raw destination pointer with a
-    // span that gets the exact 3*nv check.
-    void point_jacobian_into(const mjModel *m, const mjData *d, int body_id,
-                             const std::array<double, 3> &point,
-                             std::span<mjtNum> jp) {
-        model_access::point_jacobian_into(
-            m, d, body_id, point, jp,
-            model_access::JacobianBody::physical_strict, "point Jacobian");
+    // Non-throwing twin of model_access::point_jacobian_into with the
+    // JacobianBody::physical_strict body gate (0 < body_id < nbody).
+    [[nodiscard]] bool try_point_jacobian_into(
+            const mjModel *m, const mjData *d, int body_id,
+            const std::array<double, 3> &point, std::span<mjtNum> jp,
+            const char *&err_msg) noexcept {
+        for (const double v: point) {
+            if (!std::isfinite(v)) {
+                err_msg = "invalid world point";
+                return false;
+            }
+        }
+        if (!(0 < body_id && body_id < m->nbody)) {
+            err_msg = "point Jacobian requires a physical body";
+            return false;
+        }
+        if (m->nv < 0) {
+            err_msg = "point Jacobian needs a nonnegative model width";
+            return false;
+        }
+        const auto nv_u = static_cast<std::size_t>(m->nv);
+        const auto k_xyz = static_cast<std::size_t>(model_access::kXYZ);
+        if (jp.size() / k_xyz != nv_u || jp.size() % k_xyz != 0) {
+            err_msg = "point Jacobian destination must be 3*nv elements";
+            return false;
+        }
+        mj_jac(m, d, jp.data(), nullptr, point.data(), body_id);
+        return true;
     }
 } // namespace
 
@@ -154,37 +176,35 @@ void ResistanceWriter::components_into(const mjData *d,
             "resistance compute needs a live mjData");
     if (out.size() != kComponentCount)
         throw std::invalid_argument("resistance component view count");
-    compute_validated(d, front, rear);
+    const char *err_msg = nullptr;
+    bool overflow_err = false;
+    const CoreStatus status =
+        compute_core(d, front, rear, err_msg, overflow_err);
+    if (status != CoreStatus::ok) {
+        if (overflow_err)
+            throw std::overflow_error(
+                err_msg != nullptr ? err_msg : "resistance overflow");
+        throw std::invalid_argument(
+            err_msg != nullptr ? err_msg : "resistance compute failed");
+    }
     export_views(out);
 }
 
-// The warm-core twin of components_into: the same precondition gates
-// (plus the per-side patch-shape gate the kernel also enforces) report
-// CoreStatus::invalid_input instead of throwing, and residual kernel
-// rejections are caught and mapped so no exception escapes — noexcept is
-// proved by the catch-all. The kernel's own throw construction stays on
-// the failure path only; a valid tick allocates nothing.
+// The warm-core twin of components_into: runs compute_core directly with
+// zero throw, zero try/catch, and zero heap allocation so it is proved
+// noexcept and BIKE_NONBLOCKING.
 CoreStatus ResistanceWriter::try_components_into(
         const mjData *d, const TireSideInput &front,
         const TireSideInput &rear,
         std::span<ForceComponentView> out) const noexcept {
-    if (d == nullptr || out.size() != kComponentCount ||
-        front.patch_loads.size() != front.patch_working.size() ||
-        rear.patch_loads.size() != rear.patch_working.size())
+    if (d == nullptr || out.size() != kComponentCount)
         return CoreStatus::invalid_input;
-    try {
-        compute_validated(d, front, rear);
-    } catch (const std::bad_alloc &) {
-        return CoreStatus::engine_failure;
-    } catch (const engine::EngineFailure &) {
-        // EngineFailure derives std::exception — it must be caught before
-        // the generic mapping classifies an engine error as bad input.
-        return CoreStatus::engine_failure;
-    } catch (const std::exception &) {
-        return CoreStatus::invalid_input;
-    } catch (...) {
-        return CoreStatus::engine_failure;
-    }
+    const char *err_msg = nullptr;
+    bool overflow_err = false;
+    const CoreStatus status =
+        compute_core(d, front, rear, err_msg, overflow_err);
+    if (status != CoreStatus::ok)
+        return status;
     export_views(out);
     return CoreStatus::ok;
 }
@@ -220,26 +240,43 @@ std::vector<ResistanceWriter::Component> ResistanceWriter::components(
     };
 }
 
-// Extracted unchanged from the original components() body — including the
-// patch-shape gate and the derived() overflow gates, whose exception
-// types are part of the observable contract.
-void ResistanceWriter::compute_validated(const mjData *d,
-                                         const TireSideInput &front,
-                                         const TireSideInput &rear) const {
+// Non-throwing arithmetic kernel shared by components_into and
+// try_components_into — preserves exact binary64 operation order and
+// reports all domain/overflow rejections via CoreStatus + err_msg /
+// overflow_err.
+CoreStatus ResistanceWriter::compute_core(const mjData *d,
+                                          const TireSideInput &front,
+                                          const TireSideInput &rear,
+                                          const char *&err_msg,
+                                          bool &overflow_err) const noexcept {
+    err_msg = nullptr;
+    overflow_err = false;
+    if (d == nullptr) {
+        err_msg = "resistance compute needs a live mjData";
+        return CoreStatus::invalid_input;
+    }
     if (front.patch_loads.size() != front.patch_working.size() ||
-        rear.patch_loads.size() != rear.patch_working.size())
-        throw std::invalid_argument(
+        rear.patch_loads.size() != rear.patch_working.size()) {
+        err_msg =
             "resistance_components: patch_loads and patch_working must have "
-            "equal length");
+            "equal length";
+        return CoreStatus::invalid_input;
+    }
 
-    const std::span<const mjtNum> xpos =
-            std::views::counted(d->xpos, model_access::kXYZ * m_->nbody);
-    const std::span<const mjtNum> xmat = std::views::counted(
-        d->xmat, model_access::kRotationElements * m_->nbody);
-    const std::span<const mjtNum> qvel = std::views::counted(d->qvel, m_->nv);
+    std::span<const mjtNum> xpos{};
+    std::span<const mjtNum> xmat{};
+    std::span<const mjtNum> qvel{};
+    if (!try_readonly_buffer(d->xpos, model_access::kXYZ * m_->nbody, xpos) ||
+        !try_readonly_buffer(
+            d->xmat, model_access::kRotationElements * m_->nbody, xmat) ||
+        !try_readonly_buffer(d->qvel, m_->nv, qvel)) {
+        err_msg = "invalid mjData buffer extents";
+        return CoreStatus::invalid_input;
+    }
     // Bounded element reads (and element addresses) — -Wunsafe-buffer-usage
     // rejects raw indexing/arithmetic on the mjData pointers.
-    const auto at = [](std::span<const mjtNum> s, int i) -> const mjtNum & {
+    const auto at = [](std::span<const mjtNum> s, int i) noexcept
+        -> const mjtNum & {
         return s[static_cast<std::size_t>(i)];
     };
 
@@ -255,7 +292,18 @@ void ResistanceWriter::compute_validated(const mjData *d,
         const TireSideInput &snap = *snap_p;
         // Fn = sum(p.normal_load_n for p in snapshot.patches
         //          if p.working_surface)
-        const double Fn = validation::derived(py_sum(snap.patch_loads, snap.patch_working), "ExternalResistanceApplier.normal_load");
+        const double Fn = py_sum(snap.patch_loads, snap.patch_working);
+        if (!std::isfinite(Fn)) {
+            err_msg = "ExternalResistanceApplier.normal_load";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+        if (!(0 < body && body < m_->nbody) ||
+            jr_.size() != static_cast<std::size_t>(model_access::kXYZ) *
+                              static_cast<std::size_t>(nv_)) {
+            err_msg = "point Jacobian requires a physical body";
+            return CoreStatus::invalid_input;
+        }
         // axis = data.xmat[body].reshape(3, 3)[:, 1] — the body's world
         // y-axis, column 1 of the row-major 3x3 block.
         const std::array<double, model_access::kXYZ> axis = {
@@ -276,8 +324,13 @@ void ResistanceWriter::compute_validated(const mjData *d,
         const double radius = snap.effective_radius_m;
         if (Fn > 0.0 && radius > 0.0) {
             const double moment =
-                    rolling_moment(cfg_.crr, Fn, radius, omega,
-                                   cfg_.rolling_taper_rad_s);
+                    rolling_moment_raw(cfg_.crr, Fn, radius, omega,
+                                       cfg_.rolling_taper_rad_s);
+            if (!std::isfinite(moment)) {
+                err_msg = "rolling_moment.torque";
+                overflow_err = true;
+                return CoreStatus::invalid_input;
+            }
             // rolling += moment * row — two separately-rounded elementwise
             // ops in numpy (temp product, then in-place add).
             for (int i = 0; i < nv_; ++i)
@@ -299,8 +352,15 @@ void ResistanceWriter::compute_validated(const mjData *d,
         point[static_cast<std::size_t>(i)] =
                 at(xpos, model_access::kXYZ * frame_ + i) +
                 rotp[static_cast<std::size_t>(i)];
-    validation::derived_array(point, "ExternalResistanceApplier.point");
-    point_jacobian_into(m_, d, frame_, point, jp_);
+    for (const double v: point) {
+        if (!std::isfinite(v)) {
+            err_msg = "ExternalResistanceApplier.point";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
+    if (!try_point_jacobian_into(m_, d, frame_, point, jp_, err_msg))
+        return CoreStatus::invalid_input;
     // velocity = self._jp @ data.qvel
     std::array<double, model_access::kXYZ> velocity{};
     blas::dgemv(blas::Order::row_major, blas::Transpose::no,
@@ -319,25 +379,50 @@ void ResistanceWriter::compute_validated(const mjData *d,
     // not a sequential fold — same-libcall contract applies here too.
     // np.sqrt is libm sqrt. (Distinct from the CPython vector_norm — see
     // numeric_norm.hpp; this site stays on the BLAS oracle.)
-    if (!cfg_.allow_spatial && relative[1] != 0.0)
-        throw std::invalid_argument("drag velocity must be planar X-Z");
+    if (!cfg_.allow_spatial && relative[1] != 0.0) {
+        err_msg = "drag velocity must be planar X-Z";
+        return CoreStatus::invalid_input;
+    }
     const double norm = std::sqrt(
         blas::ddot(model_access::kXYZ, relative.data(), 1, relative.data(),
                    1));
-    validation::derived(norm, "ExternalResistanceApplier.velocity_norm");
+    if (!std::isfinite(norm)) {
+        err_msg = "ExternalResistanceApplier.velocity_norm";
+        overflow_err = true;
+        return CoreStatus::invalid_input;
+    }
     const double t =
             ((-0.5 * cfg_.rho_kg_m3) * cfg_.cda_m2) * norm;
     std::array<double, model_access::kXYZ> force{};
     for (int i = 0; i < model_access::kXYZ; ++i)
         force[static_cast<std::size_t>(i)] =
                 t * relative[static_cast<std::size_t>(i)];
-    validation::derived_array(force, "ExternalResistanceApplier.drag_force");
+    for (const double v: force) {
+        if (!std::isfinite(v)) {
+            err_msg = "ExternalResistanceApplier.drag_force";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
 
     // 'aerodynamic': self._jp.T @ force (same gemv-trans path as row_
     // above); beta = 0 fully overwrites the member like the fresh vector.
     blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
                 model_access::kXYZ, nv_, 1.0, jp_.data(), nv_,
                 force.data(), 1, 0.0, aerodynamic_.data(), 1);
-    validation::derived_array(rolling_, "ExternalResistanceApplier.rolling");
-    validation::derived_array(aerodynamic_, "ExternalResistanceApplier.aerodynamic");
+    for (const double v: rolling_) {
+        if (!std::isfinite(v)) {
+            err_msg = "ExternalResistanceApplier.rolling";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
+    for (const double v: aerodynamic_) {
+        if (!std::isfinite(v)) {
+            err_msg = "ExternalResistanceApplier.aerodynamic";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
+    return CoreStatus::ok;
 }

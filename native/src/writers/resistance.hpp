@@ -50,13 +50,11 @@ public:
     // compute_components' insertion order, each ForceKind::resistance —
     // over persistent member storage valid until the next compute.
     // components_into is the checked convenience boundary:
-    // std::invalid_argument on a null mjData or wrong view count, then
-    // components()' arithmetic verbatim. try_components_into is the
+    // std::invalid_argument/std::overflow_error on bad input or overflow,
+    // running compute_core verbatim. try_components_into is the
     // prevalidated warm-core entry: same preconditions (plus the
-    // per-side patch-shape gate) through CoreStatus, no throw/string
-    // construction or allocation in its own code (residual kernel
-    // rejections are caught and mapped — see the .cpp), so it is proved
-    // noexcept.
+    // per-side patch-shape gate) through CoreStatus, with zero throw,
+    // string construction, or allocation inside BIKE_NONBLOCKING.
     static constexpr std::size_t kComponentCount = 2;
     void components_into(const mjData *d, const TireSideInput &front,
                          const TireSideInput &rear,
@@ -94,13 +92,17 @@ private:
     // realtime code.
     mutable std::vector<mjtNum> jr_, jp_;
 
-    // components()'s arithmetic verbatim on the member buffers — the
-    // patch-shape gate, rolling-moment and drag computation, and the
-    // derived() validation — filling rolling_/aerodynamic_ (row_ is the
-    // shared per-side row). Kept throwing so both boundaries share one
-    // kernel and the original rejection types reach the caller.
-    void compute_validated(const mjData *d, const TireSideInput &front,
-                           const TireSideInput &rear) const;
+    // Non-throwing kernel shared by components_into and try_components_into:
+    // runs the patch-shape gate, rolling-moment and drag computation, and
+    // finiteness checks, filling rolling_/aerodynamic_ (row_ is the shared
+    // per-side row). On failure, returns a non-ok CoreStatus and sets
+    // err_msg (and overflow_err when components_into must throw
+    // std::overflow_error instead of std::invalid_argument).
+    [[nodiscard]] CoreStatus compute_core(const mjData *d,
+                                          const TireSideInput &front,
+                                          const TireSideInput &rear,
+                                          const char *&err_msg,
+                                          bool &overflow_err) const noexcept;
 
     // Publish the insertion-ordered views over the member components.
     // noexcept: spans over construction-sized storage only.

@@ -409,16 +409,15 @@ void lift_wheel_stations(const Vec3 &p_hub,
                          const std::vector<std::array<double, 3>> &local,
                          std::vector<double> &points_out) noexcept {
     const std::size_t n = local.size();
-    blas::dgemm(blas::Order::row_major, blas::Transpose::no,
-                blas::Transpose::yes, static_cast<int>(n),
-                model_access::kXYZ, model_access::kXYZ, 1.0, &local[0][0],
-                model_access::kXYZ, xmat_wheel.data(), model_access::kXYZ, 0.0,
-                points_out.data(), model_access::kXYZ);
+    constexpr std::size_t kDim = static_cast<std::size_t>(model_access::kXYZ);
     for (std::size_t i = 0; i < n; ++i) {
-        const std::size_t off = static_cast<std::size_t>(model_access::kXYZ) * i;
-        for (std::size_t k = 0; k < static_cast<std::size_t>(model_access::kXYZ);
-             ++k) {
-            points_out[off + k] += p_hub[k];
+        const auto &loc = local[i];
+        const std::size_t off = kDim * i;
+        for (std::size_t k = 0; k < kDim; ++k) {
+            const std::size_t row = kDim * k;
+            points_out[off + k] =
+                p_hub[k] + xmat_wheel[row + 0] * loc[0] +
+                xmat_wheel[row + 1] * loc[1] + xmat_wheel[row + 2] * loc[2];
         }
     }
 }

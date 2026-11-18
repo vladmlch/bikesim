@@ -5,8 +5,6 @@
 #include "writers/compliant_3d_tire.hpp"
 
 #include "cblas_abi.hpp"
-#include "engine_call.hpp"
-#include "interval_clock.hpp"
 #include "model_access.hpp"
 #include "validation.hpp"
 
@@ -15,9 +13,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <limits>
-#include <new>
 #include <numbers>
 #include <ranges>
 #include <span>
@@ -30,6 +26,7 @@
 namespace {
 
 using Vec3 = std::array<double, model_access::kXYZ>;
+constexpr std::string_view kBackendName = "compliant_3d";
 
 class InvalidGeometryError final : public std::runtime_error {
 public:
@@ -111,11 +108,77 @@ Vec3 cross3(const Vec3 &a, const Vec3 &b) noexcept {
             a[0] * b[1] - a[1] * b[0]};
 }
 
-void point_jacobian_into(const mjModel *m, const mjData *d, int body_id,
-                         const Vec3 &point, std::span<mjtNum> jp) {
-    model_access::point_jacobian_into(
-        m, d, body_id, point, jp, model_access::JacobianBody::physical,
-        "point Jacobian body");
+template <typename T>
+[[nodiscard]] bool try_readonly_buffer(const T *data, mjtSize count,
+                                       std::span<const T> &out) noexcept {
+    if (count < 0 || (data == nullptr && count > 0)) {
+        return false;
+    }
+    out = std::views::counted(data, static_cast<std::ptrdiff_t>(count));
+    return true;
+}
+
+[[nodiscard]] bool try_interval_id(double time, double dt, std::int64_t &out,
+                                   const char *&err_msg,
+                                   bool &overflow_err) noexcept {
+    if (!std::isfinite(time) || time < 0.0) {
+        err_msg = "invalid tire.interval_id.time";
+        return false;
+    }
+    if (!std::isfinite(dt) || dt <= 0.0) {
+        err_msg = "invalid tire.interval_id.dt";
+        return false;
+    }
+    const double quotient = time / dt;
+    if (!std::isfinite(quotient) || quotient >= 0x1p63) {
+        err_msg = "tire.interval_id";
+        overflow_err = true;
+        return false;
+    }
+    double base = std::floor(quotient);
+    const double fraction = quotient - base;
+    if (fraction > 0.5 || (fraction == 0.5 && std::fmod(base, 2.0) != 0.0)) {
+        base += 1.0;
+    }
+    if (base >= 0x1p63) {
+        err_msg = "tire.interval_id";
+        overflow_err = true;
+        return false;
+    }
+    out = static_cast<std::int64_t>(base);
+    return true;
+}
+
+[[nodiscard]] bool try_point_jacobian_into(const mjModel *m, const mjData *d,
+                                           int body_id, const Vec3 &point,
+                                           std::span<mjtNum> jacp,
+                                           const char *&err_msg) noexcept {
+    for (const double v : point) {
+        if (!std::isfinite(v)) {
+            err_msg = "invalid world point";
+            return false;
+        }
+    }
+    if (body_id < 0 || body_id >= m->nbody) {
+        err_msg = "point Jacobian body: invalid model ID";
+        return false;
+    }
+    if (body_id == 0) {
+        err_msg = "point Jacobian requires a physical body";
+        return false;
+    }
+    if (m->nv < 0) {
+        err_msg = "point Jacobian needs a nonnegative model width";
+        return false;
+    }
+    const auto nv_u = static_cast<std::size_t>(m->nv);
+    const auto k_xyz = static_cast<std::size_t>(model_access::kXYZ);
+    if (jacp.size() / k_xyz != nv_u || jacp.size() % k_xyz != 0) {
+        err_msg = "point Jacobian destination must be 3*nv elements";
+        return false;
+    }
+    mj_jac(m, d, jacp.data(), nullptr, point.data(), body_id);
+    return true;
 }
 
 struct NeumaierSum {
@@ -239,21 +302,25 @@ void validate_wheel_params(const Compliant3dWheelParams &p,
     }
 }
 
-void normalize_unit_axis(const Vec3 &raw, Vec3 &out, const char *label) {
+[[nodiscard]] bool try_normalize_unit(const Vec3 &raw, Vec3 &out) noexcept {
     for (const double v : raw) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument(std::string(label) + " must be finite");
-        }
+        if (!std::isfinite(v)) return false;
     }
     const double len = norm3(raw);
-    if (!(len > 1e-12)) {
-        throw std::invalid_argument(std::string(label) +
-                                    " must have nonzero length");
-    }
+    if (!(len > 1e-12)) return false;
     out = {raw[0] / len, raw[1] / len, raw[2] / len};
+    return true;
 }
 
-void build_wheel_plane_basis(const Vec3 &a_hat, Vec3 &e1, Vec3 &e2) {
+void normalize_unit_axis(const Vec3 &raw, Vec3 &out, const char *label) {
+    if (!try_normalize_unit(raw, out)) {
+        throw std::invalid_argument(std::string(label) +
+                                    " must be finite and nonzero");
+    }
+}
+
+[[nodiscard]] bool try_build_wheel_plane_basis(const Vec3 &a_hat, Vec3 &e1,
+                                               Vec3 &e2) noexcept {
     const Vec3 d_perp = {
         a_hat[2] * a_hat[0],
         a_hat[2] * a_hat[1],
@@ -270,9 +337,9 @@ void build_wheel_plane_basis(const Vec3 &a_hat, Vec3 &e1, Vec3 &e2) {
         const Vec3 ortho = {r_ref[0] - proj * a_hat[0],
                             r_ref[1] - proj * a_hat[1],
                             r_ref[2] - proj * a_hat[2]};
-        normalize_unit_axis(ortho, e1, "wheel-plane fallback basis");
+        if (!try_normalize_unit(ortho, e1)) return false;
     }
-    normalize_unit_axis(cross3(e1, a_hat), e2, "wheel-plane e2 basis");
+    return try_normalize_unit(cross3(e1, a_hat), e2);
 }
 
 struct WheelPose3d {
@@ -288,9 +355,10 @@ struct CrownArc {
     double r_search = 0.0;
 };
 
-void query_crown_at(const Compliant3dTerrainCallbacks &terrain,
-                    const CrownArc &arc, double theta,
-                    bike::terrain::TorusClosestPoint3d &q) {
+[[nodiscard]] CoreStatus query_crown_at(
+    const Compliant3dTerrainCallbacks &terrain, const CrownArc &arc,
+    double theta, bike::terrain::TorusClosestPoint3d &q,
+    const char *&err_msg) noexcept {
     const double ct = std::cos(theta);
     const double st = std::sin(theta);
     const Vec3 c = {
@@ -300,22 +368,26 @@ void query_crown_at(const Compliant3dTerrainCallbacks &terrain,
     };
     q = terrain.closest_point_fn(terrain.ctx, c, arc.r_search);
     if (q.status == bike::terrain::QueryStatus3d::invalid_input) {
-        throw std::invalid_argument(
-            "terrain3d closest_point returned invalid_input");
+        err_msg = "terrain3d closest_point returned invalid_input";
+        return CoreStatus::invalid_input;
     }
     if (q.status == bike::terrain::QueryStatus3d::outside) {
-        throw InvalidGeometryError(
-            "terrain3d closest_point outside terrain bounds");
+        err_msg = "terrain3d closest_point outside terrain bounds";
+        return CoreStatus::invalid_geometry;
     }
+    return CoreStatus::ok;
 }
 
-void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
-                        const WheelPose3d &pose,
-                        const Compliant3dWheelParams &params,
-                        CrownContact &out) {
+[[nodiscard]] CoreStatus find_crown_contact(
+    const Compliant3dTerrainCallbacks &terrain, const WheelPose3d &pose,
+    const Compliant3dWheelParams &params, CrownContact &out,
+    const char *&err_msg) noexcept {
     Vec3 e1{};
     Vec3 e2{};
-    build_wheel_plane_basis(pose.a_hat, e1, e2);
+    if (!try_build_wheel_plane_basis(pose.a_hat, e1, e2)) {
+        err_msg = "wheel-plane basis must be finite and nonzero";
+        return CoreStatus::invalid_input;
+    }
 
     const double r_crown = params.crown_radius_m;
     const double r_major = params.major_radius_m();
@@ -330,16 +402,22 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
     constexpr double kThetaMax = 5.0 * std::numbers::pi / 12.0;
 
     bike::terrain::TorusClosestPoint3d q_mid{};
-    query_crown_at(terrain, arc, 0.0, q_mid);
+    if (const CoreStatus st = query_crown_at(terrain, arc, 0.0, q_mid, err_msg);
+        st != CoreStatus::ok) {
+        return st;
+    }
     const double airborne_chord = 2.0 * r_major * std::sin(0.5 * kThetaMax);
     if (q_mid.signed_distance_m > r_crown + airborne_chord) {
         Vec3 n_hat{};
-        normalize_unit_axis(q_mid.normal_world, n_hat, "terrain normal");
+        if (!try_normalize_unit(q_mid.normal_world, n_hat)) {
+            err_msg = "terrain normal must be finite and nonzero";
+            return CoreStatus::invalid_input;
+        }
         out.delta = r_crown - q_mid.signed_distance_m;
         out.point = q_mid.surface_point_world_m;
         out.normal = n_hat;
         out.surface = q_mid.surface;
-        return;
+        return CoreStatus::ok;
     }
 
     constexpr std::size_t kCoarseCount = 17;
@@ -356,7 +434,11 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
         if (i == kMidIndex) {
             ds_coarse[i] = q_mid.signed_distance_m;
         } else {
-            query_crown_at(terrain, arc, theta, q_tmp);
+            if (const CoreStatus st =
+                    query_crown_at(terrain, arc, theta, q_tmp, err_msg);
+                st != CoreStatus::ok) {
+                return st;
+            }
             ds_coarse[i] = q_tmp.signed_distance_m;
             if (q_tmp.signed_distance_m < q_best.signed_distance_m) {
                 q_best = q_tmp;
@@ -408,8 +490,14 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
         double x2 = a + inv_phi * (b - a);
         bike::terrain::TorusClosestPoint3d q1{};
         bike::terrain::TorusClosestPoint3d q2{};
-        query_crown_at(terrain, arc, x1, q1);
-        query_crown_at(terrain, arc, x2, q2);
+        if (const CoreStatus st = query_crown_at(terrain, arc, x1, q1, err_msg);
+            st != CoreStatus::ok) {
+            return st;
+        }
+        if (const CoreStatus st = query_crown_at(terrain, arc, x2, q2, err_msg);
+            st != CoreStatus::ok) {
+            return st;
+        }
         if (q1.signed_distance_m < q_best.signed_distance_m) q_best = q1;
         if (q2.signed_distance_m < q_best.signed_distance_m) q_best = q2;
 
@@ -419,7 +507,11 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
                 x2 = x1;
                 q2 = q1;
                 x1 = b - inv_phi * (b - a);
-                query_crown_at(terrain, arc, x1, q1);
+                if (const CoreStatus st =
+                        query_crown_at(terrain, arc, x1, q1, err_msg);
+                    st != CoreStatus::ok) {
+                    return st;
+                }
                 if (q1.signed_distance_m < q_best.signed_distance_m) {
                     q_best = q1;
                 }
@@ -428,7 +520,11 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
                 x1 = x2;
                 q1 = q2;
                 x2 = a + inv_phi * (b - a);
-                query_crown_at(terrain, arc, x2, q2);
+                if (const CoreStatus st =
+                        query_crown_at(terrain, arc, x2, q2, err_msg);
+                    st != CoreStatus::ok) {
+                    return st;
+                }
                 if (q2.signed_distance_m < q_best.signed_distance_m) {
                     q_best = q2;
                 }
@@ -451,8 +547,14 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
         };
         bike::terrain::TorusClosestPoint3d qa{};
         bike::terrain::TorusClosestPoint3d qb{};
-        query_crown_at(terrain, arc, a, qa);
-        query_crown_at(terrain, arc, b, qb);
+        if (const CoreStatus st = query_crown_at(terrain, arc, a, qa, err_msg);
+            st != CoreStatus::ok) {
+            return st;
+        }
+        if (const CoreStatus st = query_crown_at(terrain, arc, b, qb, err_msg);
+            st != CoreStatus::ok) {
+            return st;
+        }
         double ga = stationarity(a, qa.normal_world);
         double gb = stationarity(b, qb.normal_world);
         if (ga < 0.0 && gb > 0.0) {
@@ -464,7 +566,11 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
                     tm = 0.5 * (a + b);
                 }
                 bike::terrain::TorusClosestPoint3d qm{};
-                query_crown_at(terrain, arc, tm, qm);
+                if (const CoreStatus st =
+                        query_crown_at(terrain, arc, tm, qm, err_msg);
+                    st != CoreStatus::ok) {
+                    return st;
+                }
                 if (qm.signed_distance_m <= q_best.signed_distance_m + 1e-13) {
                     q_best = qm;
                 }
@@ -482,15 +588,19 @@ void find_crown_contact(const Compliant3dTerrainCallbacks &terrain,
     }
 
     Vec3 n_hat{};
-    normalize_unit_axis(q_best.normal_world, n_hat, "terrain normal");
+    if (!try_normalize_unit(q_best.normal_world, n_hat)) {
+        err_msg = "terrain normal must be finite and nonzero";
+        return CoreStatus::invalid_input;
+    }
     out.delta = r_crown - q_best.signed_distance_m;
     out.point = q_best.surface_point_world_m;
     out.normal = n_hat;
     out.surface = q_best.surface;
+    return CoreStatus::ok;
 }
 
-void build_road_basis(const Vec3 &a_hat, const Vec3 &n_hat, Vec3 &tx,
-                      Vec3 &ty) {
+[[nodiscard]] bool try_build_road_basis(const Vec3 &a_hat, const Vec3 &n_hat,
+                                        Vec3 &tx, Vec3 &ty) noexcept {
     const Vec3 tx_raw = cross3(a_hat, n_hat);
     const double tx_len = norm3(tx_raw);
     if (tx_len > 1e-8) {
@@ -502,9 +612,9 @@ void build_road_basis(const Vec3 &a_hat, const Vec3 &n_hat, Vec3 &tx,
         const Vec3 ortho = {ref[0] - proj * n_hat[0],
                             ref[1] - proj * n_hat[1],
                             ref[2] - proj * n_hat[2]};
-        normalize_unit_axis(ortho, tx, "road tangent tx fallback");
+        if (!try_normalize_unit(ortho, tx)) return false;
     }
-    normalize_unit_axis(cross3(n_hat, tx), ty, "road tangent ty");
+    return try_normalize_unit(cross3(n_hat, tx), ty);
 }
 
 struct PatchValues {
@@ -513,33 +623,24 @@ struct PatchValues {
     double slip_mps = 0.0;
 };
 
-void fill_patch(const Vec3 &point, const Vec3 &normal, PatchValues vals,
-                const Vec3 &world_force, TirePatch &out) {
+[[nodiscard]] bool try_fill_patch(const Vec3 &point, const Vec3 &normal,
+                                  PatchValues vals, const Vec3 &world_force,
+                                  TirePatch &out) noexcept {
     for (const double v : point) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument(
-                "contact point must be a finite 3D vector");
-        }
+        if (!std::isfinite(v)) return false;
     }
     for (const double v : normal) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument(
-                "contact normal must be a finite 3D vector");
-        }
+        if (!std::isfinite(v)) return false;
     }
-    if (std::abs(norm3(normal) - 1.0) > 1e-6) {
-        throw std::invalid_argument("expected a 3D unit contact normal");
-    }
+    if (std::abs(norm3(normal) - 1.0) > 1e-6) return false;
     if (!(std::isfinite(vals.normal_load_n) &&
           std::isfinite(vals.tangent_force_n) &&
           std::isfinite(vals.slip_mps)) ||
         vals.normal_load_n < 0.0) {
-        throw std::invalid_argument("invalid contact load, force or slip");
+        return false;
     }
     for (const double v : world_force) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument("contact world force must be finite");
-        }
+        if (!std::isfinite(v)) return false;
     }
     out.point_m = point;
     out.normal = normal;
@@ -549,6 +650,7 @@ void fill_patch(const Vec3 &point, const Vec3 &normal, PatchValues vals,
     out.working_surface = true;
     out.native_world_force_n = world_force;
     out.couple_world_nm = {0.0, 0.0, 0.0};
+    return true;
 }
 
 double effective_radius(const std::vector<TirePatch> &patches,
@@ -756,6 +858,7 @@ Compliant3dTireWriter::Compliant3dTireWriter(const mjModel *m,
     qfrc_diss_stage_.resize(nv_u);
 
     constexpr std::size_t kStringCap = 32;
+    constexpr std::size_t kStatusCap = 64;
     for (std::size_t s = 0; s < 2; ++s) {
         snapshot_stage_[s].patches.reserve(kMaxSnapshotPatches);
         snapshot_stage_[s].backend.reserve(kStringCap);
@@ -764,7 +867,11 @@ Compliant3dTireWriter::Compliant3dTireWriter(const mjModel *m,
         probe_snapshots_[s].patches.reserve(kMaxSnapshotPatches);
         probe_snapshots_[s].backend.reserve(kStringCap);
         diagnostics_stage_[s].surface.reserve(kStringCap);
+        diagnostics_stage_[s].calibration_status.reserve(kStatusCap);
+        diagnostics_stage_[s].capability_status.reserve(kStatusCap);
         diagnostics_[s].surface.reserve(kStringCap);
+        diagnostics_[s].calibration_status.reserve(kStatusCap);
+        diagnostics_[s].capability_status.reserve(kStatusCap);
     }
 }
 
@@ -984,39 +1091,33 @@ std::vector<double> Compliant3dTireWriter::state() const {
 
 void Compliant3dTireWriter::compute_into(const mjData *d, double dt,
                                          std::span<double> out) {
-    if (d == nullptr) {
-        throw std::invalid_argument("tire compute needs a live mjData");
+    const char *err_msg = nullptr;
+    bool overflow_err = false;
+    const CoreStatus status =
+        accumulate_core(d, dt, out, err_msg, overflow_err);
+    if (status == CoreStatus::ok) return;
+    if (status == CoreStatus::invalid_geometry) {
+        throw InvalidGeometryError(
+            err_msg != nullptr ? err_msg
+                               : "terrain3d closest_point outside terrain bounds");
     }
-    if (out.size() != static_cast<std::size_t>(nv_) ||
-        (out.data() == nullptr && !out.empty())) {
-        throw std::invalid_argument("tire output width");
+    if (overflow_err) {
+        throw std::overflow_error(err_msg != nullptr ? err_msg
+                                                     : "tire overflow");
     }
-    accumulate_validated(d, dt, out);
+    throw std::invalid_argument(err_msg != nullptr ? err_msg
+                                                   : "tire compute failed");
 }
 
 CoreStatus Compliant3dTireWriter::try_compute_into(
     const mjData *d, double dt, std::span<double> out) noexcept {
-    if (d == nullptr || out.size() != static_cast<std::size_t>(nv_) ||
-        (out.data() == nullptr && !out.empty()) || !std::isfinite(dt) ||
-        dt <= 0.0 ||
-        (last_time_s_.has_value() &&
-         static_cast<double>(d->time) <= *last_time_s_)) {
-        return CoreStatus::invalid_input;
-    }
+    const char *err_msg = nullptr;
+    bool overflow_err = false;
     try {
-        accumulate_validated(d, dt, out);
-    } catch (const std::bad_alloc &) {
-        return CoreStatus::engine_failure;
-    } catch (const engine::EngineFailure &) {
-        return CoreStatus::engine_failure;
-    } catch (const InvalidGeometryError &) {
-        return CoreStatus::invalid_geometry;
-    } catch (const std::exception &) {
-        return CoreStatus::invalid_input;
+        return accumulate_core(d, dt, out, err_msg, overflow_err);
     } catch (...) {
         return CoreStatus::engine_failure;
     }
-    return CoreStatus::ok;
 }
 
 std::vector<double> Compliant3dTireWriter::qfrc(const mjData *d, double dt) {
@@ -1024,27 +1125,60 @@ std::vector<double> Compliant3dTireWriter::qfrc(const mjData *d, double dt) {
     return qfrc_out_;
 }
 
-void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
-                                                 std::span<double> out) {
-    if (!std::isfinite(dt_arg) || dt_arg <= 0.0) {
-        throw std::invalid_argument("invalid tire interval");
+CoreStatus Compliant3dTireWriter::accumulate_core(const mjData *d, double dt,
+                                                  std::span<double> out,
+                                                  const char *&err_msg,
+                                                  bool &overflow_err) {
+    err_msg = nullptr;
+    overflow_err = false;
+
+    if (d == nullptr) {
+        err_msg = "tire compute needs a live mjData";
+        return CoreStatus::invalid_input;
     }
-    const double dt = dt_arg;
+    if (out.size() != static_cast<std::size_t>(nv_) ||
+        (out.data() == nullptr && !out.empty())) {
+        err_msg = "tire output width";
+        return CoreStatus::invalid_input;
+    }
+    if (!std::isfinite(dt) || dt <= 0.0) {
+        err_msg = "invalid tire interval";
+        return CoreStatus::invalid_input;
+    }
     const double time = static_cast<double>(d->time);
+    if (!std::isfinite(time) || time < 0.0) {
+        err_msg = "contact snapshot needs finite nonnegative time";
+        return CoreStatus::invalid_input;
+    }
     if (last_time_s_.has_value() && time <= *last_time_s_) {
-        throw std::invalid_argument(
-            "tire state can advance only once per increasing timestamp");
+        err_msg = "tire state can advance only once per increasing timestamp";
+        return CoreStatus::invalid_input;
+    }
+    std::int64_t interval_id = 0;
+    if (!try_interval_id(time, dt, interval_id, err_msg, overflow_err) ||
+        interval_id < 0) {
+        if (err_msg == nullptr) {
+            err_msg = "contact snapshot needs a nonnegative interval ID";
+        }
+        return CoreStatus::invalid_input;
+    }
+
+    std::span<const mjtNum> xpos{};
+    std::span<const mjtNum> xmat{};
+    std::span<const mjtNum> qvel{};
+    if (!try_readonly_buffer(d->geom_xpos, model_access::kXYZ * m_->ngeom,
+                             xpos) ||
+        !try_readonly_buffer(d->xmat,
+                             model_access::kRotationElements * m_->nbody,
+                             xmat) ||
+        !try_readonly_buffer(d->qvel, m_->nv, qvel)) {
+        err_msg = "invalid mjData buffer extents";
+        return CoreStatus::invalid_input;
     }
 
     std::ranges::fill(out, 0.0);
     std::ranges::fill(qfrc_diss_stage_, 0.0);
 
-    const std::span<const mjtNum> xpos = model_access::readonly_buffer(
-        d->geom_xpos, model_access::kXYZ * m_->ngeom);
-    const std::span<const mjtNum> xmat = model_access::readonly_buffer(
-        d->xmat, model_access::kRotationElements * m_->nbody);
-    const std::span<const mjtNum> qvel =
-        model_access::readonly_buffer(d->qvel, m_->nv);
     const double normal_cosine =
         std::cos(cfg_.distinct_normal_deg * (std::numbers::pi / 180.0));
     const bool track_mode = (cfg_.surface_mode == "track");
@@ -1066,19 +1200,37 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
             static_cast<std::size_t>(body);
 
         const Vec3 p_hub = {xpos[g3], xpos[g3 + 1], xpos[g3 + 2]};
+        for (const double v : p_hub) {
+            if (!std::isfinite(v)) {
+                err_msg = "wheel axis must be a finite 3D vector";
+                return CoreStatus::invalid_input;
+            }
+        }
         const Vec3 a_raw = {xmat[b9 + 1], xmat[b9 + 4], xmat[b9 + 7]};
         Vec3 a_hat{};
-        normalize_unit_axis(a_raw, a_hat, "wheel body spin axis");
-
-        CrownContact contact{};
-        find_crown_contact(cfg_.terrain, {.p_hub = p_hub, .a_hat = a_hat}, p,
-                           contact);
-        if (!std::isfinite(contact.delta)) {
-            throw std::invalid_argument("tire deflection must be finite");
+        if (!try_normalize_unit(a_raw, a_hat)) {
+            err_msg = "wheel body spin axis must be finite and nonzero";
+            return CoreStatus::invalid_input;
         }
 
-        point_jacobian_into(m_, d, body, contact.point, jac_contact_);
-        point_jacobian_into(m_, d, body, p_hub, jac_center_);
+        CrownContact contact{};
+        if (const CoreStatus st = find_crown_contact(
+                cfg_.terrain, {.p_hub = p_hub, .a_hat = a_hat}, p, contact,
+                err_msg);
+            st != CoreStatus::ok) {
+            return st;
+        }
+        if (!std::isfinite(contact.delta)) {
+            err_msg = "tire deflection must be finite";
+            return CoreStatus::invalid_input;
+        }
+
+        if (!try_point_jacobian_into(m_, d, body, contact.point, jac_contact_,
+                                     err_msg) ||
+            !try_point_jacobian_into(m_, d, body, p_hub, jac_center_,
+                                     err_msg)) {
+            return CoreStatus::invalid_input;
+        }
 
         Vec3 v_c{};
         Vec3 v_hub{};
@@ -1094,7 +1246,10 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
         const double delta_dot = -dot3(v_c, contact.normal);
         Vec3 tx{};
         Vec3 ty{};
-        build_road_basis(a_hat, contact.normal, tx, ty);
+        if (!try_build_road_basis(a_hat, contact.normal, tx, ty)) {
+            err_msg = "road tangent basis degenerate";
+            return CoreStatus::invalid_input;
+        }
 
         const double vsx = dot3(v_c, tx);
         const double vsy = dot3(v_c, ty);
@@ -1268,36 +1423,27 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
         TireSnapshot &snap = snapshot_stage_[s];
         snap.patches.clear();
         snap.time_s = time;
-        snap.backend = "compliant_3d";
+        snap.backend.assign(kBackendName.data(), kBackendName.size());
         snap.geometric_contact = (contact.delta > 0.0);
         snap.wheel_axis_m = p_hub;
         if (contact.delta > 0.0) {
             if (snap.patches.size() >= kMaxSnapshotPatches) {
-                throw std::invalid_argument(
-                    "tire snapshot patch capacity exceeded");
+                err_msg = "tire snapshot patch capacity exceeded";
+                return CoreStatus::invalid_input;
             }
-            snap.patches.emplace_back();
-            fill_patch(contact.point, contact.normal,
-                       {.normal_load_n = fn,
-                        .tangent_force_n = fx,
-                        .slip_mps = v_s},
-                       force_world, snap.patches.back());
-        }
-        snap.interval_id = interval_clock::interval_id(time, dt);
-        if (!std::isfinite(time) || time < 0.0) {
-            throw std::invalid_argument(
-                "contact snapshot needs finite nonnegative time");
-        }
-        if (snap.interval_id < 0) {
-            throw std::invalid_argument(
-                "contact snapshot needs a nonnegative interval ID");
-        }
-        for (const double v : p_hub) {
-            if (!std::isfinite(v)) {
-                throw std::invalid_argument(
-                    "wheel axis must be a finite 3D vector");
+            TirePatch patch{};
+            if (!try_fill_patch(
+                    contact.point, contact.normal,
+                    {.normal_load_n = fn,
+                     .tangent_force_n = fx,
+                     .slip_mps = v_s},
+                    force_world, patch)) {
+                err_msg = "invalid contact patch values";
+                return CoreStatus::invalid_input;
             }
+            snap.patches.push_back(patch);
         }
+        snap.interval_id = interval_id;
         snap.effective_radius_m = effective_radius(snap.patches, p_hub);
 
         const double u_shear_new =
@@ -1319,7 +1465,7 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
         diag.normal_load_n = fn;
         diag.tangent_force_n = fx;
         diag.friction_coefficient = mu;
-        diag.surface = surface_name;
+        diag.surface.assign(surface_name.data(), surface_name.size());
         diag.branch_release_loss_j = std::max(release_loss, 0.0);
         diag.brush_loss_j = brush_loss;
         diag.radial_energy_j = u_rad;
@@ -1335,18 +1481,35 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
         diag.dissipated_power_w = rad_diss_side + side_brush_loss / dt;
     }
 
-    validation::derived_array(out, "Compliant3dTireWriter.qfrc");
-    validation::derived_array(qfrc_diss_stage_,
-                              "Compliant3dTireWriter.qfrc_dissipative");
-    for (const double value : {energy, loss, radial_loss_power}) {
-        validation::derived(value, "Compliant3dTireWriter.energy_or_power");
+    for (const double v : out) {
+        if (!std::isfinite(v)) {
+            err_msg = "Compliant3dTireWriter.qfrc";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
+    for (const double v : qfrc_diss_stage_) {
+        if (!std::isfinite(v)) {
+            err_msg = "Compliant3dTireWriter.qfrc_dissipative";
+            overflow_err = true;
+            return CoreStatus::invalid_input;
+        }
+    }
+    if (!std::isfinite(energy) || !std::isfinite(loss) ||
+        !std::isfinite(radial_loss_power)) {
+        err_msg = "Compliant3dTireWriter.energy_or_power";
+        overflow_err = true;
+        return CoreStatus::invalid_input;
     }
     const double diss_power_start =
         (nv_ > 0)
             ? -blas::ddot(nv_, qfrc_diss_stage_.data(), 1, qvel.data(), 1)
             : 0.0;
-    validation::derived(diss_power_start,
-                        "Compliant3dTireWriter.dissipative_power_start_w");
+    if (!std::isfinite(diss_power_start)) {
+        err_msg = "Compliant3dTireWriter.dissipative_power_start_w";
+        overflow_err = true;
+        return CoreStatus::invalid_input;
+    }
 
     states_ = new_states;
     for (std::size_t s = 0; s < 2; ++s) {
@@ -1360,6 +1523,7 @@ void Compliant3dTireWriter::accumulate_validated(const mjData *d, double dt_arg,
     radial_dissipation_power_w_ = radial_loss_power;
     dissipative_power_start_w_ = diss_power_start;
     last_time_s_ = time;
+    return CoreStatus::ok;
 }
 
 double Compliant3dTireWriter::stored_energy(const mjData *d) const {
@@ -1388,8 +1552,20 @@ double Compliant3dTireWriter::stored_energy(const mjData *d) const {
         normalize_unit_axis(a_raw, a_hat, "wheel body spin axis");
 
         CrownContact contact{};
-        find_crown_contact(cfg_.terrain, {.p_hub = p_hub, .a_hat = a_hat}, p,
-                           contact);
+        const char *err_msg = nullptr;
+        const CoreStatus st_crown = find_crown_contact(
+            cfg_.terrain, {.p_hub = p_hub, .a_hat = a_hat}, p, contact,
+            err_msg);
+        if (st_crown == CoreStatus::invalid_geometry) {
+            throw InvalidGeometryError(
+                err_msg != nullptr
+                    ? err_msg
+                    : "terrain3d closest_point outside terrain bounds");
+        }
+        if (st_crown != CoreStatus::ok) {
+            throw std::invalid_argument(
+                err_msg != nullptr ? err_msg : "invalid crown contact");
+        }
         if (!std::isfinite(contact.delta)) {
             throw std::invalid_argument("tire deflection must be finite");
         }
@@ -1416,7 +1592,7 @@ void Compliant3dTireWriter::probe_compute_into(const mjData *d, double dt,
     }
     Compliant3dTireWriter probe(*this);
     probe.last_time_s_.reset();
-    probe.accumulate_validated(d, dt, out);
+    probe.compute_into(d, dt, out);
     probe_snapshots_ = probe.snapshots_;
     probe_committed_ = probe.committed_;
 }

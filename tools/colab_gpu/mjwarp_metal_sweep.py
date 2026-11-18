@@ -390,8 +390,11 @@ def run_mjwarp_metal_parameter_sweep(
         tr_np = np.tile(m.tendon_range.astype(np.float32)[None, :, :], (nworld, 1, 1))
         m_wp.tendon_range = wp.array(tr_np, dtype=wp.vec2f, device=device)
 
+    eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+    eff_njmax = max(int(njmax), int(d0.nefc) + 64)
+
     def _init_data() -> Any:
-        data_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=nconmax, njmax=njmax)
+        data_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
         mjwarp.forward(m_wp, data_b)
         tr_ptr, tr_stride = _resolve_tendon_range_binding(m_wp, nworld)
         wm_rt.launch_init_states(
@@ -563,6 +566,9 @@ def run_mjwarp_metal_tyre_backend_scaling_benchmark(
     tier_results: list[dict[str, Any]] = []
     baseline_us: float | None = None
 
+    eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+    eff_njmax = max(int(njmax), int(d0.nefc) + 64)
+
     for tier in TYRE_BACKEND_TIERS:
         backend = str(tier["backend"])
         station_count = int(tier["station_count"])
@@ -578,7 +584,7 @@ def run_mjwarp_metal_tyre_backend_scaling_benchmark(
             lib, model_xml_path, backend, station_count, idx_bytes, device=device
         )
 
-        d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=nconmax, njmax=njmax)
+        d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
         mjwarp.forward(m_wp, d_b)
 
         wm_rt.launch_init_states(

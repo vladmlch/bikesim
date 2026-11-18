@@ -286,6 +286,99 @@ def _prepare_initial_mjdata(m: Any, xml_path: Path | str) -> Any:
     return d
 
 
+def stage_welded_fixture_assets(welded_xml_path: Path | str, out_dir: Path | str) -> Path:
+    """Stage `welded.xml` (`nq = 27, dt = 1.25 ms`) with `hfield_data.bin` and kinematics-valid `captured_bootstrap.json`.
+
+    Matches `TempWeldedAssetDir` + `build_welded_initial_state` in `native/tests/gpu/test_gpu_batch_runners.cpp`:
+      - Exports the model's flat `z = 0` normalized heightfield (`m.hfield_data`) as little-endian float64 `hfield_data.bin`.
+      - Advances both `root_x` and `rider_root_x` to `2.0 m` (preserving bike-rider `connect` equality constraints),
+        compresses both tyres by `15 mm` against `z = 0`, and initializes forward road/wheel/crank/drive-shaft speeds.
+    """
+    import shutil
+
+    src_xml = Path(welded_xml_path).resolve()
+    dst_dir = Path(out_dir).resolve()
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    dst_xml = dst_dir / src_xml.name
+    shutil.copy2(src_xml, dst_xml)
+
+    m = mujoco.MjModel.from_xml_path(str(dst_xml))
+    if int(m.nhfielddata) > 0:
+        hf_id = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_HFIELD, "road"))
+        if hf_id < 0:
+            hf_id = 0
+        terrain_geom = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "terrain"))
+        pos_z = float(m.geom_pos[terrain_geom, 2]) if terrain_geom >= 0 else 0.0
+        sz = float(m.hfield_size[hf_id, 2])
+        flat_norm = float(np.float32((0.0 - pos_z) / sz)) if sz > 0.0 else 0.0
+        m.hfield_data[:] = flat_norm
+        hf_f64 = np.asarray(m.hfield_data, dtype="<f8")
+        (dst_dir / "hfield_data.bin").write_bytes(hf_f64.tobytes())
+
+    d = mujoco.MjData(m)
+    mujoco.mj_resetData(m, d)
+
+    def _jid(name: str) -> int:
+        return int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_JOINT, name))
+
+    rx = _jid("root_x")
+    rz = _jid("root_z")
+    rrx = _jid("rider_root_x")
+    rrz = _jid("rider_root_z")
+    fw_spin = _jid("front_wheel_spin")
+    rw_spin = _jid("rear_wheel_spin")
+    cr_spin = _jid("crank_spin")
+    ds_spin = _jid("drive_shaft_spin")
+
+    if rx >= 0:
+        d.qpos[int(m.jnt_qposadr[rx])] = 2.0
+    if rrx >= 0:
+        d.qpos[int(m.jnt_qposadr[rrx])] = 2.0
+    mujoco.mj_forward(m, d)
+
+    f_body = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "front_wheel"))
+    r_body = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_BODY, "rear_wheel"))
+    f_geom = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "front_contact"))
+    if f_geom < 0:
+        f_geom = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "geom_front_contact"))
+    r_geom = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "rear_contact"))
+    if r_geom < 0:
+        r_geom = int(mujoco.mj_name2id(m, mujoco.mjtObj.mjOBJ_GEOM, "geom_rear_contact"))
+
+    f_r = float(m.geom_size[f_geom, 0])
+    r_r = float(m.geom_size[r_geom, 0])
+    min_clear = min(float(d.xpos[f_body, 2]) - f_r, float(d.xpos[r_body, 2]) - r_r)
+    dz = -0.015 - min_clear
+    if rz >= 0:
+        d.qpos[int(m.jnt_qposadr[rz])] += dz
+    if rrz >= 0:
+        d.qpos[int(m.jnt_qposadr[rrz])] += dz
+    if rx >= 0:
+        d.qvel[int(m.jnt_dofadr[rx])] = 5.0
+    if rrx >= 0:
+        d.qvel[int(m.jnt_dofadr[rrx])] = 5.0
+    if fw_spin >= 0:
+        d.qvel[int(m.jnt_dofadr[fw_spin])] = 5.0 / f_r
+    if rw_spin >= 0:
+        d.qvel[int(m.jnt_dofadr[rw_spin])] = 5.0 / r_r
+    if cr_spin >= 0:
+        d.qvel[int(m.jnt_dofadr[cr_spin])] = 6.0
+    if ds_spin >= 0:
+        d.qvel[int(m.jnt_dofadr[ds_spin])] = 6.0
+    mujoco.mj_forward(m, d)
+
+    bootstrap = {
+        "state": {
+            "model_dims": {"nq": int(m.nq), "nv": int(m.nv)},
+            "integration_state": [0.0] + d.qpos.tolist() + d.qvel.tolist(),
+        }
+    }
+    (dst_dir / "captured_bootstrap.json").write_text(
+        json.dumps(bootstrap, indent=2) + "\n", encoding="utf-8"
+    )
+    return dst_xml
+
+
 def _summarize_distribution(values: np.ndarray) -> dict[str, float]:
     arr = np.asarray(values, dtype=np.float64)
     return {

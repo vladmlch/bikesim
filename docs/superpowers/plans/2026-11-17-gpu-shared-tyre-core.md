@@ -1,6 +1,6 @@
 # Subproject 1: Shared GPU/CPU Tyre & Terrain Force Core Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Extract a single-source, allocation-free, header-only C++ template force core (`native/src/physics_core/`) shared bitwise-identically by CPU FP64 (`TireWriter` `compliant_2d`, `DistributedTireWriter` `distributed_2d_reference`, `ProfileQuery` `O(1)` scanner, `SignedProfile`) and deterministically by Apple Metal FP32 and NVIDIA CUDA FP32 on the live `nq = 27` clutch model, gated by an engine-free Schema v1 digest oracle.
 
@@ -96,11 +96,11 @@ Budget allocation across 3 stages and 9 tasks:
   - `int bike::cli::run_recording_digest(int argc, const char *const *argv, std::ostream &out, std::ostream &err);`
   - Engine-free static library `bike_recording_digest_cli` and uninstalled executable `bin/bike-recording-digest`.
 
-- [ ] **Step 1: Update `docs/agents/simulation-decisions.md` Item 29 & Rejected Item 13**
+- [x] **Step 1: Update `docs/agents/simulation-decisions.md` Item 29 & Rejected Item 13**
 
 Edit `docs/agents/simulation-decisions.md:268-274` (Item 29) and `:824-825` (Rejected Item 13) to lock in: CPU `FP64` remains the sole physics-acceptance oracle (`0` changed bits gated by `bike-recording-digest` and golden tests), while both **Apple Silicon Metal (`FP32`)** and **NVIDIA CUDA (`FP32`)** are authorized first-class parallel batch contours for `dt = 1.25 ms` `SolverType.NEWTON` rollouts under `clean_split` (`fwd_velocity` before `make_constraint`, ending in `implicit`) with documented Wave 3 baselines (`M4 Metal`: `|dqpos| max 9.07e-6`, `|dqvel| max 7.25e-3`, `133.7k` ws/s `8.9×` 16T C++; `L4 CUDA`: `|dqpos| max 8.92e-6`, `|dqvel| max 7.13e-3`, `652.2k` ws/s `43.4×` 16T C++).
 
-- [ ] **Step 2: Write the failing `test_recording_digest.cpp` & wire `native/tests/recording/CMakeLists.txt`**
+- [x] **Step 2: Write the failing `test_recording_digest.cpp` & wire `native/tests/recording/CMakeLists.txt`**
 
 ```cpp
 // native/tests/recording/test_recording_digest.cpp
@@ -146,12 +146,12 @@ if(BUILD_TESTING)
 endif()
 ```
 
-- [ ] **Step 3: Run `recording_digest` target (`RED`)**
+- [x] **Step 3: Run `recording_digest` target (`RED`)**
 
 Run: `cmake --build build/native-release --target recording_digest`
 Expected: FAIL — `recording/digest.hpp` and `bike_recording_digest_cli` not found.
 
-- [ ] **Step 4: Implement `digest.{hpp,cpp}`, `recording_digest.{hpp,cpp}`, `recording_digest_main.cpp`, and `RecordingApplication.cmake`**
+- [x] **Step 4: Implement `digest.{hpp,cpp}`, `recording_digest.{hpp,cpp}`, `recording_digest_main.cpp`, and `RecordingApplication.cmake`**
 
 ```cpp
 // native/src/recording/digest.hpp
@@ -212,12 +212,12 @@ set_target_properties(bike-recording-digest PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 ```
 
-- [ ] **Step 5: Run `recording_digest` & `reference.native_platform_linkage` (`GREEN`)**
+- [x] **Step 5: Run `recording_digest` & `reference.native_platform_linkage` (`GREEN`)**
 
 Run: `mise run test '^(recording_catalog|recording_digest|reference\.native_platform_linkage)$'`
 Expected: PASS (`3/3` green; `otool -L build/native-release/bin/bike-recording-digest` has no `libmujoco`).
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 
 ```bash
 git add docs/agents/simulation-decisions.md native/src/recording/digest.{hpp,cpp} \
@@ -240,7 +240,7 @@ git commit -m "feat(sp1): add engine-free Schema v1 bike-recording-digest and up
 - Consumes: `bin/bike-ride`, `bin/bike-recording-digest`, `bike::recording::{compute_recording_digest, compare_recording_digests, digest_from_json}`.
 - Produces: Frozen baseline 24,000-step digest JSONs + CTest `golden_episode_digest` (`[--episode <all|welded|distributed>]`).
 
-- [ ] **Step 1: Generate the 4 baseline 30 s DuckDB episodes via `bike-ride` and digest them**
+- [x] **Step 1: Generate the 4 baseline 30 s DuckDB episodes via `bike-ride` and digest them**
 
 ```bash
 mkdir -p /tmp/sp1_golden_runs tests/fixtures/episode-digest/darwin-arm64
@@ -265,7 +265,7 @@ done
 rm -rf /tmp/sp1_golden_runs
 ```
 
-- [ ] **Step 2: Implement `test_golden_episode_digest.cpp` & register in `CMakeLists.txt`**
+- [x] **Step 2: Implement `test_golden_episode_digest.cpp` & register in `CMakeLists.txt`**
 
 ```cpp
 // native/tests/recording/test_golden_episode_digest.cpp
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
 
 Register `golden_episode_digest` in `CMakeLists.txt` with `LABELS "recording;golden;slow"` (outside `native/tests/recording/` loop so it uses `bike_test_fixtures` + `bike_recording_digest_cli` + `bike_platform` without `libmujoco`).
 
-- [ ] **Step 3: Run targeted `golden_episode_digest` & Stage-1 `check_change.sh` (`GREEN`)**
+- [x] **Step 3: Run targeted `golden_episode_digest` & Stage-1 `check_change.sh` (`GREEN`)**
 
 Run:
 1. `mise run test '^golden_episode_digest$'` -> PASS (`4/4` episodes match `0` bit diffs).
@@ -320,7 +320,7 @@ Expected: exits `0` (`<= 5 min`).
   - `struct CpuExactToolkit` & `struct GpuToolkit`: `div`, `sqrt`, `abs`, `isfinite`, `isnan`, `exp`, `tanh`, `pow_py`, `dot2`, `dot3`, `dot`, `gemv_n3`, `gemv_t3`, `ring_lift`, `interp_segment`, `hypot2`, `max`, `min`, `clamp`.
   - Templated tri-target POD views/states in `tyre_types.hpp`: `GpuChainJoint`, `GpuWheelChain`, `PolylineView<Real>`, `SignedProfileView<Real>`, `StationRingView<Real>`, `HingeDensityView<Real>`, `CompliantMaterialView<Real>`, `SurfaceSectionView<Real>`, `SurfaceMapView<Real>`, `TyreWheelSpec<Real>`, `TyreModel<Real>`, `CompliantWheelStatePod<Real>`, `StationStatePod<Real>` (with `using GpuTyreModel = TyreModel<float>;` etc.).
 
-- [ ] **Step 1: Write failing `test_physics_core_math.cpp` covering CPU, Host-FP32, & Apple Metal parity**
+- [x] **Step 1: Write failing `test_physics_core_math.cpp` covering CPU, Host-FP32, & Apple Metal parity**
 
 ```cpp
 // native/tests/physics_core/test_physics_core_math.cpp (core assertions)
@@ -342,12 +342,12 @@ void test_portable_math_and_metal_parity() {
 }
 ```
 
-- [ ] **Step 2: Run `test_physics_core_math` (`RED`)**
+- [x] **Step 2: Run `test_physics_core_math` (`RED`)**
 
 Run: `cmake --build build/native-release --target test_physics_core_math`
 Expected: FAIL — `physics_core/` headers do not exist yet.
 
-- [ ] **Step 3: Implement `common.hpp`, `gpu_math.hpp`, `gpu_toolkit.hpp`, `tyre_types.hpp`, `exact_math.hpp`, `cpu_exact_toolkit.hpp`**
+- [x] **Step 3: Implement `common.hpp`, `gpu_math.hpp`, `gpu_toolkit.hpp`, `tyre_types.hpp`, `exact_math.hpp`, `cpu_exact_toolkit.hpp`**
 
 ```cpp
 // native/src/physics_core/gpu_math.hpp (key portable FP32 primitives)
@@ -389,12 +389,12 @@ BIKE_HD float interp_segment_unfused(float s, float x, float x0, float y0, float
 
 Protect tri-target raw pointers/C-arrays in `common.hpp`, `gpu_math.hpp`, `gpu_toolkit.hpp`, `tyre_types.hpp` with `BIKE_GPU_SHARED_CODE_BEGIN`/`_END` + `NOLINTBEGIN` matching `gpu/common.hpp:52`, ensure standalone `#include` cleanliness for `check_headers`, and keep `exact_math.hpp` & `cpu_exact_toolkit.hpp` host-only (`#if defined(__METAL_VERSION__) || defined(__CUDA_ARCH__) #error`).
 
-- [ ] **Step 4: Run `test_physics_core_math` (`GREEN`)**
+- [x] **Step 4: Run `test_physics_core_math` (`GREEN`)**
 
 Run: `mise run test '^test_physics_core_math$'`
 Expected: PASS (`0` ULP diffs Host `GpuToolkit` vs Apple Metal device, `<= 2 ULP` vs `CpuExactToolkit`).
 
-- [ ] **Step 5: Commit Task 3**
+- [x] **Step 5: Commit Task 3**
 
 ```bash
 git add native/src/physics_core/{common,gpu_math,gpu_toolkit,tyre_types,exact_math,cpu_exact_toolkit}.hpp \
@@ -421,16 +421,16 @@ git commit -m "feat(sp1): add tri-target physics_core math, toolkits, and POD vi
   - `template <class Real, class TK> BIKE_HD Status profile_height(const SignedProfileView<Real> &sp, Real x, Real &out_h, ErrCode &err) noexcept;`
   - `template <class Real, class TK> BIKE_HD Status signed_profile_query(const SignedProfileView<Real> &sp, Real px, Real pz, Real &out_dist, Real out_normal[2], Real out_pt[2], int &out_seg, bool &out_nonsmooth, ErrCode &err) noexcept;`
 
-- [ ] **Step 1: Write failing `test_terrain_scanner.cpp` (`>= 20,000` queries + RTSan `BIKE_NONBLOCKING`)**
+- [x] **Step 1: Write failing `test_terrain_scanner.cpp` (`>= 20,000` queries + RTSan `BIKE_NONBLOCKING`)**
 
 Test `scan_polyline_contact<double, CpuExactToolkit, O1CpuMultiSupport>` against frozen reference outputs of `ProfileQuery::contact` across actual `flat.toml` and `rough_uphill_extreme.toml` polylines plus `>= 20,000` adversarial queries (airborne expansion `min_dist >= radius`, exact/near `1e-12` ties with `previous_segment`, unkept `endpoint_keep == false` interior vertices winning `argmin`, exact endpoints, steep corners, all invalid-argument throws), asserting **0-bit `std::memcmp` parity** and zero heap allocations.
 
-- [ ] **Step 2: Run `test_terrain_scanner` (`RED`)**
+- [x] **Step 2: Run `test_terrain_scanner` (`RED`)**
 
 Run: `cmake --build build/native-release --target test_terrain_scanner`
 Expected: FAIL — `terrain_scanner.hpp` does not exist yet.
 
-- [ ] **Step 3: Commit 4a — Verbatim Extract of `SignedProfile` & `ProfileQuery` Mechanics**
+- [x] **Step 3: Commit 4a — Verbatim Extract of `SignedProfile` & `ProfileQuery` Mechanics**
 
 Implement `terrain_distance.hpp` (`profile_height` + `signed_profile_query` preserving `< 1e-12` floor, `std::logic_error` via `ErrCode::logic_no_closest` -> `Status::logic_error`, `nonsmooth` check) and initial `terrain_scanner.hpp`. Delegate `biketyre::SignedProfile` and `biketyre::ProfileQuery::contact` to `<double, CpuExactToolkit>`, run `native_distance_tests`, `reference.tyre_road_profile`, and `test_terrain_scanner`, then commit Commit 4a:
 
@@ -440,7 +440,7 @@ git add native/src/physics_core/{terrain_scanner,terrain_distance}.hpp \
 git commit -m "refactor(sp1): verbatim extract ProfileQuery and SignedProfile to physics_core"
 ```
 
-- [ ] **Step 4: Commit 4b — Replace 5 Scratch Vectors with Stateless `O(1)` Scanner**
+- [x] **Step 4: Commit 4b — Replace 5 Scratch Vectors with Stateless `O(1)` Scanner**
 
 Update `terrain_scanner.hpp` with the verified stateless two-pass `O(1)`-register loop (matching our verified `o1_polyline_scanner.hpp`):
 
@@ -468,12 +468,12 @@ const bool multi = MultiSupportPolicy::template evaluate<Real, TK>(pl, win_lo, w
 
 Delete `detail::Candidates`, `candidates`, `candidates_into`, `endpoint_keep_into`, `cand_scratch_`, `keep_scratch_`, `near_scratch_`, `normals_scratch_`, `dots_scratch_` from `native/src/tyre/profile.{hpp,cpp}` (`:43-99, :114-118`).
 
-- [ ] **Step 5: Verify `test_terrain_scanner` & CPU parity (`GREEN`)**
+- [x] **Step 5: Verify `test_terrain_scanner` & CPU parity (`GREEN`)**
 
 Run: `mise run test '^(test_terrain_scanner|native_distance_tests|reference\.tyre_road_profile)$'`
 Expected: PASS (`0` bit diffs across all `>= 20,000` + track queries; zero allocations).
 
-- [ ] **Step 6: Commit 4b**
+- [x] **Step 6: Commit 4b**
 
 ```bash
 git add native/src/physics_core/terrain_scanner.hpp native/src/tyre/profile.{hpp,cpp}
@@ -499,18 +499,18 @@ git commit -m "perf(sp1): replace 24k scratch vectors in ProfileQuery::contact w
   - `HostTyreUploadBundle build_gpu_tyre_model(const mjModel *m, const mjData *d, const nativecfg::TireConfig &cfg, int front_geom, int rear_geom);` (owning backing vectors for `TyreModel<double>` / `TyreModel<float>` views)
   - Updated `bike::gpu::GpuModelIndices` (`sizeof == 240`, `60` ints).
 
-- [ ] **Step 1: Update GPU unit tests (`RED`) for `nq = 27`, `c_edge = 0`, upload rejections, & `long` stride**
+- [x] **Step 1: Update GPU unit tests (`RED`) for `nq = 27`, `c_edge = 0`, upload rejections, & `long` stride**
 
 1. Update `native/tests/gpu/test_gpu_model_geometry.cpp:89` from `tools/fp32_probe/artifacts/common/model.xml` (`nq = 26`) to `tests/fixtures/model/welded.xml` (`nq = 27`), asserting `sizeof(GpuModelIndices) == 240`, `drive_shaft_spin_qpos == 14`, `drive_shaft_spin_dof == 14`, `crank_clutch_tendon == 1`, `front_wheel` (`5`-DOF chain: `root_x, root_z, root_pitch, fork_travel, front_wheel_spin`), `rear_wheel` (`6`-DOF chain), and `chain_point_jacobian` exact match vs `mj_jac` (after calling `forward()` post `Stepper::set_state`, `stepper.cpp:594`).
 2. Assert `build_gpu_tyre_model` rejects `TabulatedRadial` (`mat.table.has_value()`), non-zero `geom_pos`, non-identity `geom_quat`, `geom_bodyid != wheel_body`, `joint_id >= njnt`, and `station_count > 128`.
 3. Update `test_gpu_rider.cpp:130, 198-209` (`rider_qpos`/`rider_dof` `{23,24,25,26,18,19,20,21,22}`, zero damping when `c_edge` zeroed), `test_gpu_drivetrain_resistance.cpp` (`drive_shaft_spin_qpos` freehub driver), and `test_gpu_batch_step.cpp` (`sizeof == 240`, `2 * idx.freehub_tendon + 1` stride).
 
-- [ ] **Step 2: Run updated GPU tests (`RED`)**
+- [x] **Step 2: Run updated GPU tests (`RED`)**
 
 Run: `mise run test '^bike_test_gpu_(model_geometry|rider|drivetrain_resistance|batch_step)$'`
 Expected: FAIL — `sizeof(GpuModelIndices) == 228 != 240`, `c_edge != 0`, `kinematics.hpp` absent.
 
-- [ ] **Step 3: Implement `kinematics.hpp`, `tyre_upload.{hpp,cpp}`, and Nov 16 Audit closures**
+- [x] **Step 3: Implement `kinematics.hpp`, `tyre_upload.{hpp,cpp}`, and Nov 16 Audit closures**
 
 ```cpp
 // native/src/physics_core/kinematics.hpp (world-frame xanchor/xaxis ancestor Jacobian)
@@ -558,7 +558,7 @@ Apply all Nov 16 Audit fixes verbatim:
 - **`tendon_range_batch` indexing (`batch_step.hpp:216` & `metal_batch_runner.mm:301`)**: Use `static_cast<long>(w) * tendon_range_world_stride + 2 * idx.freehub_tendon + 1` with bounds gate `2 * idx.freehub_tendon + 1 < tendon_range_world_stride`.
 - **`rider_kernel.hpp` `c_edge` zeroing**: Set `.c_edge_nm_s_rad = 0.0f` at `:31` AND across all 9 joints in `GpuRiderParams::joints[0..8]` (`:62-111`), and remove `:197` `torque -= c * ramp * qd_rad_s`.
 
-- [ ] **Step 4: Run GPU tests & Stage-2 `check_change.sh` (`GREEN`)**
+- [x] **Step 4: Run GPU tests & Stage-2 `check_change.sh` (`GREEN`)**
 
 ```bash
 mise run test '^bike_test_gpu_(model_geometry|rider|drivetrain_resistance|batch_step)$'
@@ -591,11 +591,11 @@ Expected: all 4 GPU tests pass and `check_change.sh` exits `0` (`<= 5 min`).
   - `struct NoOpIo { using MultiSupportPolicy = NoMultiSupport; /* inline no-op record hooks */ };`
   - `template <class Real, class TK, class Io = NoOpIo> BIKE_HD Status step_compliant_wheel(const TyreModel<Real> &model, int side, Real dt, const Real *qvel, const Real *body_xpos, const Real *jnt_xanchor, const Real *jnt_xaxis, CompliantWheelStatePod<Real> &state, Real *out_qfrc, Io &io, ErrCode &err) noexcept;`
 
-- [ ] **Step 1: Add `test_compliant_step_fp32_vs_fp64` to `test_physics_core_math.cpp` (`RED`)**
+- [x] **Step 1: Add `test_compliant_step_fp32_vs_fp64` to `test_physics_core_math.cpp` (`RED`)**
 
 Drive `step_compliant_wheel<double, CpuExactToolkit, NoOpIo>` and `step_compliant_wheel<float, GpuToolkit, NoOpIo>` across `20` loaded + airborne + cornering ticks (`welded.xml`), asserting `0` nonfinite outputs and `<= 5e-5` relative normal/tangent force agreement.
 
-- [ ] **Step 2: Implement `tyre_contact.hpp` & `tyre_compliant.hpp`**
+- [x] **Step 2: Implement `tyre_contact.hpp` & `tyre_compliant.hpp`**
 
 ```cpp
 // native/src/physics_core/tyre_compliant.hpp (3-gate continuity + airborne segment persistence)
@@ -615,17 +615,17 @@ state.segment = contact.segment_id;
 state.has_segment = true;
 ```
 
-- [ ] **Step 3: Wire `contact/laws.hpp`, `writers/tire_common.cpp`, and `writers/tire.cpp` through `<double, CpuExactToolkit>`**
+- [x] **Step 3: Wire `contact/laws.hpp`, `writers/tire_common.cpp`, and `writers/tire.cpp` through `<double, CpuExactToolkit>`**
 
 Keep `TireWriter`'s atomic dual-wheel staging, `radial_tables_` fallback when `mat.table.has_value()`, `pyfloat::pow(xi_new, 2.0)` inside `CompliantCpuIo` (`tire.cpp:904, 909`), exact exception order (`Status::logic_error` -> `std::logic_error` at `tire.cpp:667-669`), and zero bare MuJoCo C-API call tokens in comments.
 
-- [ ] **Step 4: Run `compliant_2d` parity & `welded` golden digest (`GREEN`)**
+- [x] **Step 4: Run `compliant_2d` parity & `welded` golden digest (`GREEN`)**
 
 Run: `mise run test '^(test_physics_core_math|reference\.native_tire|reference\.native_pneumatic_tire)$'`
 And run: `./build/native-release/native/tests/recording/golden_episode_digest ./build/native-release/bin/bike-ride --episode welded`
 Expected: PASS (`0` bit diffs across all `24,000` steps of `welded_flat` & `welded_rough_uphill_extreme`).
 
-- [ ] **Step 5: Commit Task 6**
+- [x] **Step 5: Commit Task 6**
 
 ```bash
 git add native/src/physics_core/{tyre_contact,tyre_compliant}.hpp \
@@ -651,11 +651,11 @@ git commit -m "feat(sp1): extract compliant_2d tyre physics into physics_core wi
   - `template <class Real, class TK> BIKE_HD Status station_response(Real delta, Real rate, Real weight, const HingeDensityView<Real> &density, Real &out_force, Real &out_energy, ErrCode &err) noexcept;`
   - `template <class Real, class TK, class Io = NoOpIo> BIKE_HD Status step_distributed_wheel(const TyreModel<Real> &model, int side, Real dt, const Real *qvel, const Real *body_xpos, const Real *body_xmat, const Real *jnt_xanchor, const Real *jnt_xaxis, StationStatePod<Real> *states, Real *out_qfrc, Io &io, ErrCode &err) noexcept;`
 
-- [ ] **Step 1: Add `test_distributed_step_fp32_vs_fp64` to `test_physics_core_math.cpp` (`RED`)**
+- [x] **Step 1: Add `test_distributed_step_fp32_vs_fp64` to `test_physics_core_math.cpp` (`RED`)**
 
 Step all `128` tread stations over `20` ticks (`distributed.toml`), verifying matching active station bitmasks and `<= 5e-5` normal/shear load parity between `<double, CpuExactToolkit>` and `<float, GpuToolkit>`.
 
-- [ ] **Step 2: Implement `tyre_distributed.hpp` & delegate `station.cpp` / `distributed_tire.cpp`**
+- [x] **Step 2: Implement `tyre_distributed.hpp` & delegate `station.cpp` / `distributed_tire.cpp`**
 
 Follow exact `distributed_tire.cpp:592-854` sequence:
 1. `chain_point_jacobian<Real, TK, true>` once at `center` (`jp_center`, `jr`).
@@ -663,12 +663,12 @@ Follow exact `distributed_tire.cpp:592-854` sequence:
 3. Per active station: `signed_profile_query`, `vel = jp_center @ qvel + cross(jr @ qvel, arm)`, plain fold `rate = -((v0*n0 + v1*n1) + v2*n2)` (`:690-693`), `station_response`, unconditional `transport_bristle`, `brush_step`, `jac_station^T @ f_world` (`:673-681`).
 4. Detached stations reset `{active = false, xi = 0}`; `DistributedCpuIo` receives `0.5 * k_s * pyfloat::pow(old.xi, 2.0)` (`:507, 738, 780`), `numpy_sum`, `PythonSum` `effective_radius_m`, `distinct`/`separate` checks, preserving exact validation order (`:592-854`).
 
-- [ ] **Step 3: Run distributed tests & all 4 `golden_episode_digest` episodes (`GREEN`)**
+- [x] **Step 3: Run distributed tests & all 4 `golden_episode_digest` episodes (`GREEN`)**
 
 Run: `mise run test '^(test_physics_core_math|native_station_tests|reference\.distributed_tire_reference|reference\.native_distributed_tire|reference\.native_distributed_stands|golden_episode_digest)$'`
 Expected: PASS (`0` bit diffs across all 4 × 30 s golden episodes and all distributed reference tests).
 
-- [ ] **Step 4: Commit Task 7**
+- [x] **Step 4: Commit Task 7**
 
 ```bash
 git add native/src/physics_core/tyre_distributed.hpp native/src/tyre/station.{hpp,cpp} \
@@ -691,24 +691,24 @@ git commit -m "feat(sp1): extract distributed_2d_reference into physics_core wit
 - Consumes: Ordered MSL/CUDA device headers (`common`, `gpu_math`, `gpu_toolkit`, `tyre_types`, `kinematics`, `terrain_scanner`, `terrain_distance`, `tyre_contact`, `tyre_compliant`, `tyre_distributed`), `tyre_upload` (Task 5), `step_compliant_wheel` (Task 6), `step_distributed_wheel` (Task 7).
 - Produces: Unified `bike_gpu_writers_kernel` / `bike_wp_writers_metal_kernel` / `bike_metal_step_writers_kernel` / `bike_metal_benchmark_writers_only` supporting `compliant_2d` & `distributed_2d_reference` (`xmat`, `xanchor`, `xaxis`, `d_tyre_model`), with `num_lateral_ribs` and all `simd32` kernels deleted.
 
-- [ ] **Step 1: Rewrite `test_gpu_tire.cpp` & update `test_gpu_batch_runners.cpp` (`RED`)**
+- [x] **Step 1: Rewrite `test_gpu_tire.cpp` & update `test_gpu_batch_runners.cpp` (`RED`)**
 
 Rewrite `test_gpu_tire.cpp` to assert FP32 vs FP64 parity for `step_compliant_wheel` + `step_distributed_wheel` (`welded.xml` `nq = 27`, `rough_uphill_extreme`), and update `test_gpu_batch_runners.cpp` to pass `(xmat, xanchor, xaxis, TyreModel<float>)`, test BOTH `compliant_2d` and `distributed_2d_reference` on CPU & `metal:0` (`<= 2e-5` 1-step), and assert nonzero error returns for invalid bounds (`nworld <= 0`, `idx.nq != m->nq`, `joint_id >= njnt`, `station_count > 128`).
 
-- [ ] **Step 2: Delete `gpu/tire_kernel.hpp`, strip `num_lateral_ribs` & `simd32`, and wire Metal + CUDA + CPU**
+- [x] **Step 2: Delete `gpu/tire_kernel.hpp`, strip `num_lateral_ribs` & `simd32`, and wire Metal + CUDA + CPU**
 
 1. Update `build_msl_shader_source()` (`metal_batch_runner.mm:101-120`) to prepend `#pragma METAL fp contract(off)\n` and stitch ONLY the ordered `../physics_core/` device headers (`common.hpp`, `gpu_math.hpp`, `gpu_toolkit.hpp`, `tyre_types.hpp`, `kinematics.hpp`, `terrain_scanner.hpp`, `terrain_distance.hpp`, `tyre_contact.hpp`, `tyre_compliant.hpp`, `tyre_distributed.hpp`), and set `MTLMathModeSafe` + `MTLMathFloatingPointFunctionsPrecise` in `make_compile_options()` (`:879`).
 2. Update `tools/colab_gpu/build_cuda_writers.py:174` (`--use_fast_math` -> `--fmad=false`, add `-I<native/src>`), `metal_hybrid_sweep.py:96,100` (`-ffast-math` -> `-ffp-contract=off`, add `-I<native/src>`), and `cpu_batch_sweep.py:105,109,122,127` (`-ffast-math` -> `-ffp-contract=off`, add `-I<native/src>`).
 3. Enforce `clean_split` (`fwd_velocity` before `constraint.make_constraint`, ending in `implicit`) in `mjwarp_metal_sweep.py` and `mjwarp_batch_sweep.py`, delete `num_lateral_ribs` & all `simd32` kernels (`use_simd32`), update `bike_metal_benchmark_writers_only` (`metal_batch_runner.mm:1280`, `metal_hybrid_sweep.py:181`), and pass `xmat`, `xanchor`, `xaxis`, and `TyreModel<float>` through all runner ABIs with explicit nonzero status on bounds violation.
 
-- [ ] **Step 3: Sync `docs/TESTING.md:1054-1060` & verify GPU CTests (`GREEN`)**
+- [x] **Step 3: Sync `docs/TESTING.md:1054-1060` & verify GPU CTests (`GREEN`)**
 
 Update `docs/TESTING.md:1054-1056` to replace `tire_kernel.hpp` with the 10 tri-target `physics_core` device headers and `sizeof(GpuModelIndices) == 240`.
 
 Run: `mise run test '^bike_test_gpu_(tire|batch_step|batch_runners|model_geometry|rider|drivetrain_resistance)$'`
 Expected: PASS (`6/6` tests green).
 
-- [ ] **Step 4: Commit Task 8**
+- [x] **Step 4: Commit Task 8**
 
 ```bash
 git rm native/src/gpu/tire_kernel.hpp
@@ -727,16 +727,16 @@ git commit -m "feat(sp1): wire physics_core across Metal, CUDA, and CPU runners 
 - Consumes: All Task 1–8 commits on `feat/gpu-shared-tyre-core`.
 - Produces: Recorded `native` + `full` green gate rows in `.git/bike-gate/timings.tsv`.
 
-- [ ] **Step 1: Run Level-2 `native` gate (compile + all static-analysis sweeps + ordinary CTest)**
+- [x] **Step 1: Run Level-2 `native` gate (compile + all static-analysis sweeps + ordinary CTest)**
 
 Run: `bash tools/run_tests.sh native`
 Expected: exit `0` (`~11–12 min`; `configure`, `build`, `ctest`, `scripts`, `cppcheck`, `context`, `diagnostic-controls`, `contracts`, `frontends`, `headers`, `odr`, `tidy` all green).
 
-- [ ] **Step 2: Run Level-3 `full` gate (`native` + `slow` + `package` labels)**
+- [x] **Step 2: Run Level-3 `full` gate (`native` + `slow` + `package` labels)**
 
 Run: `bash tools/run_tests.sh full`
 Expected: exit `0` (`~35 min`; includes `golden_episode_digest`, `reference.native_tire`, `reference.native_distributed_tire`, `reference.distributed_tire_reference`, `reference.native_distributed_stands`).
 
-- [ ] **Step 3: Optional Colab CUDA `build_cuda_writers.py --fmad=false` + `clean_split` parity smoke**
+- [x] **Step 3: Optional Colab CUDA `build_cuda_writers.py --fmad=false` + `clean_split` parity smoke**
 
 If executing on Colab NVIDIA CUDA, compile `cuda_kernels.cu` via `tools/colab_gpu/build_cuda_writers.py` (`--fmad=false`), run 1-step & 80-step `mjwarp_batch_sweep.py` (`clean_split`), **immediately execute `colab stop`**, and verify `colab sessions` reports `0` active VMs.

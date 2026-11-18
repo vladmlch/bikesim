@@ -33,7 +33,9 @@ namespace terrain = bike::terrain;
                         .slip_stiffness_per_load =
                                 registered.slip_stiffness_per_load,
                         .stribeck_speed_mps =
-                                registered.stribeck_speed_mps},
+                                registered.stribeck_speed_mps,
+                        .crr_delta = registered.crr_delta,
+                        .load_sensitivity = registered.load_sensitivity},
             .sections = {}};
 }
 

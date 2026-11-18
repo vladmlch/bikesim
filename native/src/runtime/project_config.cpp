@@ -187,11 +187,16 @@ Value suspension(const mdl::BuildRequest& request,
             {"damping_n_s_m", real(physics_config.end_stops.damping_n_s_m)}}}}}};
 }
 
-Value surface(const trn::SurfaceSpec& s) {
-    return Value{Object{{"name", text(s.name)}, {"mu_peak", real(s.mu_peak)},
+Value surface(const trn::SurfaceSpec& s, bool include_stage_a) {
+    Object out{{"name", text(s.name)}, {"mu_peak", real(s.mu_peak)},
         {"mu_slide", real(s.mu_slide)},
         {"slip_stiffness_per_load", real(s.slip_stiffness_per_load)},
-        {"stribeck_speed_mps", real(s.stribeck_speed_mps)}}};
+        {"stribeck_speed_mps", real(s.stribeck_speed_mps)}};
+    if (include_stage_a) {
+        if (s.crr_delta != 0.) out.emplace_back("crr_delta", real(s.crr_delta));
+        if (s.load_sensitivity != 0.) out.emplace_back("load_sensitivity", real(s.load_sensitivity));
+    }
+    return Value{std::move(out)};
 }
 Value density(const cfg::HingeDensity& d) {
     return Value{Object{{"knots_m", reals(d.knots_m)},
@@ -228,13 +233,18 @@ Value tire(const mdl::BuildRequest& request,
         }
         set(out, side, std::move(params));
     }
+    const bool include_stage_a = (tires.backend != "compliant_2d");
     if (tires.surface_mode == "track") {
         Array sections;
-        for (const auto& s : track.surface_sections)
-            sections.push_back(Value{Object{{"start_m", real(s.start_m)},
-                {"end_m", real(s.end_m)}, {"surface", surface(trn::get_surface(s.surface))}}});
+        for (const auto& s : track.surface_sections) {
+            Object sec{{"start_m", real(s.start_m)},
+                {"end_m", real(s.end_m)},
+                {"surface", surface(trn::get_surface(s.surface), include_stage_a)}};
+            if (s.blend_m > 0.) sec.emplace_back("blend_m", real(s.blend_m));
+            sections.push_back(Value{std::move(sec)});
+        }
         set(out, "surface_map", Value{Object{
-            {"surface", surface(trn::get_surface(track.surface))},
+            {"surface", surface(trn::get_surface(track.surface), include_stage_a)},
             {"sections", Value{std::move(sections)}}}});
     }
     if (tires.backend == "distributed_2d_reference") {
@@ -251,7 +261,7 @@ Value tire(const mdl::BuildRequest& request,
             {"half_angle_deg", real(tier->half_angle_deg)},
             {"discretised_brush", Value{tier->discretised_brush}},
             {"timestep_s", real(tier->timestep_s)}}};
-        if (p.surface) set(pneumatic, "surface", surface(trn::get_surface(*p.surface)));
+        if (p.surface) set(pneumatic, "surface", surface(trn::get_surface(*p.surface), include_stage_a));
         set(pneumatic, "front", field(field(input, "pneumatic"), "front"));
         set(pneumatic, "rear", field(field(input, "pneumatic"), "rear"));
         const auto x = request.field.track_x();

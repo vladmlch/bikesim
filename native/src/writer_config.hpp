@@ -260,6 +260,11 @@ namespace nativecfg {
             return req(d, key).finite_real(d.child(key));
         }
         template <class N>
+        [[nodiscard]] double opt_num(const Dict<N> &d, std::string_view key,
+                                     double fallback) {
+            return d.contains(key) ? req_f64(d, key) : fallback;
+        }
+        template <class N>
         [[nodiscard]] int req_int(const Dict<N> &d, std::string_view key) {
             return req(d, key).integer32(d.child(key));
         }
@@ -457,7 +462,7 @@ namespace nativecfg {
             }
             if (name.ends_with(".surface")) {
                 constexpr auto required = keys("name", "mu_peak", "mu_slide", "slip_stiffness_per_load", "stribeck_speed_mps");
-                constexpr auto optional = keys();
+                constexpr auto optional = keys("crr_delta", "load_sensitivity");
                 exact_at(d, required, optional, d.path);
                 return;
             }
@@ -469,7 +474,7 @@ namespace nativecfg {
             }
             if (name == "tire.surface_map.sections") {
                 constexpr auto required = keys("start_m", "end_m", "surface");
-                constexpr auto optional = keys();
+                constexpr auto optional = keys("blend_m");
                 exact_at(d, required, optional, d.path);
                 return;
             }
@@ -646,6 +651,8 @@ namespace nativecfg {
             c.mu_slide = req_f64(d, "mu_slide");
             c.slip_stiffness_per_load = req_f64(d, "slip_stiffness_per_load");
             c.stribeck_speed_mps = req_f64(d, "stribeck_speed_mps");
+            c.crr_delta = opt_num(d, "crr_delta", 0.0);
+            c.load_sensitivity = opt_num(d, "load_sensitivity", 0.0);
             return c;
         }
 
@@ -843,6 +850,7 @@ namespace nativecfg {
                         .surface = surface_spec_from_dict(
                             req_dict(sec, "surface"),
                             section_path + ".surface"),
+                        .blend_m = opt_num(sec, "blend_m", 0.0),
                     });
                 }
                 c.surface_map = std::move(map);

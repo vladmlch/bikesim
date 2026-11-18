@@ -79,7 +79,8 @@ inline constexpr std::array<std::string_view, 2> sides{"front", "rear"};
     p.discretised_brush = tier.discretised_brush; p.timestep_s = tier.timestep_s;
     p.front = bt::tyres::front_tyre(); p.rear = bt::tyres::rear_tyre();
     p.surface = nativecfg::SurfaceSpec{.name=surface.name, .mu_peak=surface.mu_peak, .mu_slide=surface.mu_slide,
-        .slip_stiffness_per_load=surface.slip_stiffness_per_load, .stribeck_speed_mps=surface.stribeck_speed_mps};
+        .slip_stiffness_per_load=surface.slip_stiffness_per_load, .stribeck_speed_mps=surface.stribeck_speed_mps,
+        .crr_delta=surface.crr_delta, .load_sensitivity=surface.load_sensitivity};
     // RoadProfile.from_samples uses x[1]-x[0], not the rounded literal .005.
     p.profile = {.x0_m=x.front(), .dx_m=x[1] - x[0], .z_m=std::vector<double>(x.size(), 0.)};
     return out;

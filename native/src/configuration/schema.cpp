@@ -586,11 +586,11 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "surface", .entry =
          {.required = "name mu_peak mu_slide slip_stiffness_per_load "
           "stribeck_speed_mps",
-          .optional = ""}},
+          .optional = "crr_delta load_sensitivity"}},
         {.name = "tire.surface_map", .entry = {.required = "surface sections",
           .optional = ""}},
         {.name = "tire.surface_map.sections", .entry = {.required = "start_m end_m surface",
-          .optional = ""}},
+          .optional = "blend_m"}},
         {.name = "drive", .entry =
          {.required = "gearing pedaling shifting assist "
           "drive_mode transmission_model human_torque_nm "

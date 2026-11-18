@@ -261,12 +261,14 @@ namespace nativecfg {
     struct SurfaceSpec {
         std::string name;
         double mu_peak{}, mu_slide{}, slip_stiffness_per_load{}, stribeck_speed_mps{};
+        double crr_delta{}, load_sensitivity{};
     };
 
     // SurfaceSection — a half-open material interval on the track axis.
     struct SurfaceSection {
         double start_m{}, end_m{};
         SurfaceSpec surface;
+        double blend_m{};
     };
 
     // SurfaceMap (terrain/surface.py:160-206): a default material plus sorted

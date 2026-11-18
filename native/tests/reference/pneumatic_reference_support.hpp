@@ -154,7 +154,9 @@ using bike::geometry::detail::np_linspace;
             .mu_peak = registered.mu_peak,
             .mu_slide = registered.mu_slide,
             .slip_stiffness_per_load = registered.slip_stiffness_per_load,
-            .stribeck_speed_mps = registered.stribeck_speed_mps};
+            .stribeck_speed_mps = registered.stribeck_speed_mps,
+            .crr_delta = registered.crr_delta,
+            .load_sensitivity = registered.load_sensitivity};
 }
 
 // ALL_SURFACES order: ('asphalt', 'hardpack', 'loose', 'wet', 'scree').

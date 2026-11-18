@@ -1206,6 +1206,9 @@ void test_resolved_profiles() {
                   [](cfg::SimulationPhysicsConfig& c) {
                       c.tires.backend = "pneumatic";
                       c.tires.pneumatic.tier = "fast";
+                      // Pneumatic carcass + tread_loss_crr + crr_delta own
+                      // rolling loss; external crr is zeroed like distributed.
+                      c.resistance.crr = 0.0;
                       // The pneumatic TOML drops the [tires.front]/[rear]
                       // mu overrides — the parameters stay at their
                       // declared defaults.
@@ -1466,6 +1469,22 @@ void test_wire_validation() {
         make_number("-0.1");
     expect_invalid("invalid config.rider_contacts.arm_reach_m",
                    [&] { cfg::wire::validate_rider_contacts(contacts); });
+
+    // Stage A optional wire members on surface and tire.surface_map.sections.
+    mutated = wire;
+    {
+        Value& sm = member_mut(member_mut(mutated, "tire", "wire"), "surface_map", "tire");
+        Value& surf = member_mut(sm, "surface", "surface_map");
+        object_of(surf).emplace_back("crr_delta", make_number("0.0025"));
+        object_of(surf).emplace_back("load_sensitivity", make_number("0.08"));
+        Value sec_surf = surf;
+        Value sec = make_object({{"start_m", make_number("2.0")},
+                                 {"end_m", make_number("5.0")},
+                                 {"surface", std::move(sec_surf)},
+                                 {"blend_m", make_number("0.4")}});
+        member_mut(sm, "sections", "surface_map") = make_array({std::move(sec)});
+    }
+    cfg::wire::validate_config(mutated);
 }
 
 void test_rider() {

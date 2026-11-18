@@ -38,6 +38,11 @@ tier = "fast"
 # [tires.pneumatic.rear]
 # pressure_bar = 1.7
 
+[resistance]
+# Pneumatic carcass hysteresis + tread_loss_crr + surface crr_delta carry
+# rolling dissipation directly — the generic crr writer would double-count it.
+crr = 0.0
+
 [drive]
 # Mid-drive with a one-way motor clutch (user, 2026-11-05): pedalling
 # forward engages it and drives the chainring; backward, or slower than the

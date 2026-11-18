@@ -6,13 +6,17 @@
 
 namespace bike::terrain {
 namespace {
+// Stage A calibrated 5-surface registry (Spec §2.1):
+// Note that `wet` (wet hard-packed dirt) has lower mu_peak than `loose` gravel (0.50 vs 0.55)
+// due to water-film lubrication, yet remains a consolidated substrate with higher longitudinal
+// shear stiffness (10.0 > 7.0) and lower micro-rolling loss (crr_delta 0.0035 < 0.0060).
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) schema/config tables are built once at startup; a throw is a fatal defect there
 const std::array<SurfaceSpec,5> registry{{
-    {.name="asphalt",.mu_peak=1.05,.mu_slide=.75,.slip_stiffness_per_load=15.,.stribeck_speed_mps=4.5,.description="dry asphalt"},
-    {.name="hardpack",.mu_peak=.80,.mu_slide=.60,.slip_stiffness_per_load=12.,.stribeck_speed_mps=4.5,.description="dry hard-packed dirt"},
-    {.name="loose",.mu_peak=.55,.mu_slide=.45,.slip_stiffness_per_load=7.,.stribeck_speed_mps=4.5,.description="loose gravel over hardpack"},
-    {.name="wet",.mu_peak=.50,.mu_slide=.40,.slip_stiffness_per_load=10.,.stribeck_speed_mps=4.5,.description="wet dirt"},
-    {.name="scree",.mu_peak=.45,.mu_slide=.38,.slip_stiffness_per_load=4.5,.stribeck_speed_mps=4.5,.description="alpine scree: loose rock debris over bedrock"}
+    {.name="asphalt",.mu_peak=1.05,.mu_slide=.75,.slip_stiffness_per_load=15.,.stribeck_speed_mps=4.5,.crr_delta=0.,.load_sensitivity=.06,.description="dry asphalt"},
+    {.name="hardpack",.mu_peak=.80,.mu_slide=.60,.slip_stiffness_per_load=12.,.stribeck_speed_mps=4.5,.crr_delta=.0025,.load_sensitivity=.08,.description="dry hard-packed dirt"},
+    {.name="loose",.mu_peak=.55,.mu_slide=.45,.slip_stiffness_per_load=7.,.stribeck_speed_mps=4.5,.crr_delta=.0060,.load_sensitivity=.12,.description="loose gravel over hardpack"},
+    {.name="wet",.mu_peak=.50,.mu_slide=.40,.slip_stiffness_per_load=10.,.stribeck_speed_mps=4.5,.crr_delta=.0035,.load_sensitivity=.12,.description="wet dirt"},
+    {.name="scree",.mu_peak=.45,.mu_slide=.38,.slip_stiffness_per_load=4.5,.stribeck_speed_mps=4.5,.crr_delta=.0080,.load_sensitivity=.15,.description="alpine scree: loose rock debris over bedrock"}
 }};
 }
 void SurfaceSpec::validate() const {
@@ -21,6 +25,9 @@ void SurfaceSpec::validate() const {
     detail::positive(slip_stiffness_per_load,"SurfaceSpec.slip_stiffness_per_load");
     detail::positive(stribeck_speed_mps,"SurfaceSpec.stribeck_speed_mps");
     if(mu_slide>mu_peak) throw std::invalid_argument("SurfaceSpec.mu_slide exceeds mu_peak");
+    detail::nonnegative(crr_delta,"SurfaceSpec.crr_delta");
+    detail::nonnegative(load_sensitivity,"SurfaceSpec.load_sensitivity");
+    if(load_sensitivity>0.5) throw std::invalid_argument("SurfaceSpec.load_sensitivity exceeds 0.5");
 }
 double SurfaceSpec::mu(double speed) const {
     validate(); detail::finite(speed,"SurfaceSpec.sliding_speed_mps");
@@ -45,6 +52,7 @@ const SurfaceSpec& get_surface(std::string_view name) {
 void SurfaceSection::validate() const {
     detail::finite(start_m,"SurfaceSection.start_m"); detail::finite(end_m,"SurfaceSection.end_m");
     if(!(0.<=start_m && start_m<end_m)) throw std::invalid_argument("surface interval must satisfy 0 <= start < end");
+    detail::nonnegative(blend_m,"SurfaceSection.blend_m");
     (void)get_surface(surface);
 }
 SurfaceMap::SurfaceMap(SurfaceSpec surface,std::vector<SurfaceSection> sections):surface_(std::move(surface)),sections_(std::move(sections)) {
@@ -58,8 +66,36 @@ const SurfaceSpec& SurfaceMap::at(double x) const {
     return surface_;
 }
 void SurfaceMap::validate() const {
-    surface_.validate(); double previous=0.;
-    for(const auto& s:sections_) { s.validate(); if(s.start_m<previous) throw std::invalid_argument("SurfaceMap.sections: unordered or overlapping intervals"); previous=s.end_m; }
+    surface_.validate();
+    const std::size_t n=sections_.size();
+    for(std::size_t i=0;i<n;++i) {
+        const auto& sec=sections_[i];
+        sec.validate();
+        double b_left=0.;
+        if(i==0) {
+            if(sec.start_m>0.) {
+                b_left=sec.blend_m;
+                if(sec.start_m<.5*b_left)
+                    throw std::invalid_argument("SurfaceMap.sections[0].blend_m: transition extends before x = 0");
+            }
+        } else {
+            const auto& prev=sections_[i-1];
+            if(sec.start_m<prev.end_m)
+                throw std::invalid_argument("SurfaceMap.sections: unordered or overlapping intervals");
+            if(sec.start_m==prev.end_m) {
+                if(prev.blend_m!=sec.blend_m)
+                    throw std::invalid_argument("SurfaceMap.sections: adjacent sections must have equal blend_m");
+                b_left=sec.blend_m;
+            } else {
+                if(sec.start_m-prev.end_m<.5*prev.blend_m+.5*sec.blend_m)
+                    throw std::invalid_argument("SurfaceMap.sections: transition windows overlap across gap");
+                b_left=sec.blend_m;
+            }
+        }
+        const double b_right=sec.blend_m;
+        if(sec.end_m-sec.start_m<.5*b_left+.5*b_right)
+            throw std::invalid_argument("SurfaceMap.sections: section shorter than transition half-widths");
+    }
 }
 std::vector<SurfaceSpec> SurfaceMap::surfaces() const {
     std::vector<SurfaceSpec> out{surface_};

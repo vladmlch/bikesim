@@ -230,7 +230,7 @@
   },
   "resistance": {
     "cda_m2": 0.5,
-    "crr": 0.015,
+    "crr": 0.0,
     "point_body_m": {
       "$tuple": [
         0.0,

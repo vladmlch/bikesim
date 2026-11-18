@@ -357,11 +357,61 @@ namespace nativecfg {
         validate(s.rear, "config.tire.distributed.rear");
     }
     inline void validate(const SurfaceSpec &s, std::string_view path = "config.tire.surface") {
-        validation::positive(s.mu_peak, std::string(path) + ".mu_peak");
-        validation::positive(s.mu_slide, std::string(path) + ".mu_slide");
-        validation::positive(s.slip_stiffness_per_load, std::string(path) + ".slip_stiffness_per_load");
-        validation::positive(s.stribeck_speed_mps, std::string(path) + ".stribeck_speed_mps");
-        if (s.mu_slide > s.mu_peak) throw std::invalid_argument(std::string(path) + ".mu_slide");
+        const std::string p(path);
+        validation::positive(s.mu_peak, p + ".mu_peak");
+        validation::positive(s.mu_slide, p + ".mu_slide");
+        validation::positive(s.slip_stiffness_per_load, p + ".slip_stiffness_per_load");
+        validation::positive(s.stribeck_speed_mps, p + ".stribeck_speed_mps");
+        if (s.mu_slide > s.mu_peak) throw std::invalid_argument(p + ".mu_slide");
+        validation::nonnegative(s.crr_delta, p + ".crr_delta");
+        validation::nonnegative(s.load_sensitivity, p + ".load_sensitivity");
+        if (s.load_sensitivity > 0.5) throw std::invalid_argument(p + ".load_sensitivity");
+    }
+    inline void validate(const SurfaceMap &map, std::string_view path = "config.tire.surface_map") {
+        const std::string p(path);
+        validate(map.surface, p + ".surface");
+        const std::size_t n = map.sections.size();
+        for (std::size_t i = 0; i < n; ++i) {
+            const auto &section = map.sections[i];
+            const std::string sp = p + ".sections." + std::to_string(i);
+            validation::nonnegative(section.start_m, sp + ".start_m");
+            validation::positive(section.end_m, sp + ".end_m");
+            if (section.start_m >= section.end_m) throw std::invalid_argument(sp + ": unordered interval");
+            validation::nonnegative(section.blend_m, sp + ".blend_m");
+            validate(section.surface, sp + ".surface");
+        }
+        if (n == 0) return;
+        std::vector<std::size_t> order(n);
+        for (std::size_t i = 0; i < n; ++i) order[i] = i;
+        std::ranges::stable_sort(order, {}, [&](std::size_t idx) { return map.sections[idx].start_m; });
+        for (std::size_t k = 0; k < n; ++k) {
+            const auto &sec = map.sections[order[k]];
+            const std::string sp = p + ".sections." + std::to_string(order[k]);
+            double b_left = 0.0;
+            if (k == 0) {
+                if (sec.start_m > 0.0) {
+                    b_left = sec.blend_m;
+                    if (sec.start_m < 0.5 * b_left)
+                        throw std::invalid_argument(sp + ".blend_m: transition extends before x = 0");
+                }
+            } else {
+                const auto &prev = map.sections[order[k - 1]];
+                if (sec.start_m < prev.end_m)
+                    throw std::invalid_argument(p + ": overlapping sections");
+                if (sec.start_m == prev.end_m) {
+                    if (prev.blend_m != sec.blend_m)
+                        throw std::invalid_argument(sp + ".blend_m: adjacent sections must have equal blend_m");
+                    b_left = sec.blend_m;
+                } else {
+                    if (sec.start_m - prev.end_m < 0.5 * prev.blend_m + 0.5 * sec.blend_m)
+                        throw std::invalid_argument(sp + ".blend_m: transition windows overlap across gap");
+                    b_left = sec.blend_m;
+                }
+            }
+            const double b_right = sec.blend_m;
+            if (sec.end_m - sec.start_m < 0.5 * b_left + 0.5 * b_right)
+                throw std::invalid_argument(sp + ".blend_m: section shorter than transition half-widths");
+        }
     }
     // TyreSpecs.__post_init__ (tyre.py:83-109): positive geometry,
     // pressure and fitted factors, nonnegative carcass/rate/loss
@@ -471,21 +521,6 @@ namespace nativecfg {
         validation::positive(s.distinct_normal_deg, "config.tire.distinct_normal_deg");
         if (s.significance_fraction > 1. || s.distinct_normal_deg >= 180.) throw std::invalid_argument("config.tire.support_thresholds");
         if (s.surface_mode == "track" && !s.surface_map) throw std::invalid_argument("config.tire.surface_map");
-        if (s.surface_map) {
-            validate(s.surface_map->surface, "config.tire.surface_map.surface");
-            for (std::size_t i = 0; i < s.surface_map->sections.size(); ++i) {
-                const auto &section = s.surface_map->sections[i];
-                const std::string path = "config.tire.surface_map.sections." + std::to_string(i);
-                validation::nonnegative(section.start_m, path + ".start_m");
-                validation::positive(section.end_m, path + ".end_m");
-                if (section.start_m >= section.end_m) throw std::invalid_argument(path + ": unordered interval");
-                validate(section.surface, path + ".surface");
-            }
-            for (std::size_t i = 0; i < s.surface_map->sections.size(); ++i)
-                for (std::size_t j = i + 1; j < s.surface_map->sections.size(); ++j)
-                    if (std::max(s.surface_map->sections[i].start_m, s.surface_map->sections[j].start_m) <
-                        std::min(s.surface_map->sections[i].end_m, s.surface_map->sections[j].end_m))
-                        throw std::invalid_argument("config.tire.surface_map: overlapping sections");
-        }
+        if (s.surface_map) validate(*s.surface_map, "config.tire.surface_map");
     }
 }

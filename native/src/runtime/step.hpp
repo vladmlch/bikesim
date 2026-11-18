@@ -34,6 +34,7 @@
 #include "../writers/writer_types.hpp"
 #include "config.hpp"
 #include "control.hpp"
+#include "launch_support.hpp"
 #include "static_brake.hpp"
 
 class Stepper;
@@ -114,12 +115,12 @@ struct RawStep {
     // period close forwards the closing measured datum to the rest.
     std::optional<double> mechanical_energy_j;
     std::optional<WireObject> elastic_energy_j;
-    bool invalid_controller = false;
     WireObject effort_base;
     // The typed baseline accompanies the wire channels, so accounting a
     // committed prefix after an engine failure never reads a later attempt.
     std::optional<rider::EffortDiagnostics> effort_state;
     ConstraintSnapshot constraint_snapshot;
+    bool invalid_controller = false;
     bool full = false;
 };
 
@@ -212,6 +213,14 @@ struct StepState {
     rider::RiderSenses senses{};
     std::optional<rider::SpindleController::State> rider_controller;
     rider::RiderIntent::State rider_intent{};
+    std::unique_ptr<LaunchSupportState> launch_support;
+
+    StepState();
+    ~StepState();
+    StepState(const StepState &);
+    StepState &operator=(const StepState &);
+    StepState(StepState &&) noexcept;
+    StepState &operator=(StepState &&) noexcept;
 };
 
 // The two-snapshot map _contacts returns ('front' then 'rear'), with
@@ -416,6 +425,9 @@ public:
         return spatial_ != nullptr;
     }
     [[nodiscard]] bool has_steer_balance() const noexcept;
+    [[nodiscard]] bool has_launch_support() const noexcept;
+    [[nodiscard]] std::optional<LaunchSupportState>
+    launch_support_state() const noexcept;
     void set_direct_steer_torque_nm(double torque_nm);
     [[nodiscard]] double direct_steer_torque_nm() const noexcept;
     [[nodiscard]] int steer_qposadr() const noexcept;
@@ -529,7 +541,8 @@ private:
         std::span<const double, 2> wheel_x_m,
         std::span<const double, 3> frame_up,
         std::span<const double> qvel_start,
-        std::span<const double> qpos_start = {});
+        std::span<const double> qpos_start = {},
+        std::span<const double> wheel_y_m = {});
     [[nodiscard]] double forward_speed_mps(
         std::span<const double> qpos,
         std::span<const double> qvel) const noexcept;
@@ -539,7 +552,13 @@ private:
     // kinematics — the startup callers' sources (the interval fold stages
     // its own copies before settle_welds republishes endpoint kinematics).
     [[nodiscard]] std::array<double, 2> current_wheel_x_m() const;
+    [[nodiscard]] std::array<double, 2> current_wheel_y_m() const;
     [[nodiscard]] std::array<double, 3> current_frame_up() const;
+    [[nodiscard]] std::vector<RoadSample> spatial_road_samples(
+        std::span<const double> qpos,
+        // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) paired wheel X/Y arrays
+        std::span<const double, 2> wheel_x_m,
+        std::span<const double, 2> wheel_y_m) const;
     // The settle latch's entry list for the startup acquisitions — empty
     // when no rider contacts or no settle latched yet.
     [[nodiscard]] std::span<const std::pair<std::string,
@@ -695,8 +714,9 @@ private:
     // NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) vector<bool> is a bitset; the span<const bool> contract needs contiguous bool storage
     std::array<std::unique_ptr<bool[]>, 2> patch_working_{};
     std::array<std::size_t, 2> patch_working_capacity_{};
-    // rider_state wheel_x_m staging ('front','rear' order).
+    // rider_state wheel_x_m / wheel_y_m staging ('front','rear' order).
     std::array<double, 2> wheel_x_m_{};
+    std::array<double, 2> wheel_y_m_{};
     std::unique_ptr<SpatialStepExtension> spatial_;
 };
 

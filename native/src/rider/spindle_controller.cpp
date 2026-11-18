@@ -24,6 +24,7 @@
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
 #include "spindle_linalg.hpp"
+#include "attachment_wrench.hpp"
 
 namespace rider {
 namespace {
@@ -35,6 +36,12 @@ constexpr std::array<std::string_view, 11> kReferenceJoints{
     "rider_torso_hinge",
     "rider_shoulder_left", "rider_elbow_left",
     "rider_shoulder_right", "rider_elbow_right",
+    "rider_hip_front", "rider_knee_front", "rider_ankle_front",
+    "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
+constexpr std::array<std::string_view, 13> kReferenceJoints3d{
+    "rider_torso_hinge",
+    "rider_shoulder_abduction_left", "rider_shoulder_left", "rider_elbow_left",
+    "rider_shoulder_abduction_right", "rider_shoulder_right", "rider_elbow_right",
     "rider_hip_front", "rider_knee_front", "rider_ankle_front",
     "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
 constexpr std::array<std::string_view, 2> kSides{"front", "rear"};
@@ -85,6 +92,82 @@ NATIVE_DIAG_POP
                                 int joint) {
     const auto p = row3(d->xanchor, m->njnt * 3, joint, "xanchor");
     return {p[0], p[1], p[2]};
+}
+
+[[nodiscard]] Vec3 joint_axis(const mjModel *m, const mjData *d,
+                              int joint) {
+    const auto a = row3(d->xaxis, m->njnt * 3, joint, "xaxis");
+    return {a[0], a[1], a[2]};
+}
+
+[[nodiscard]] Vec3 cross3(const Vec3 &a, const Vec3 &b) {
+    return {a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]};
+}
+
+[[nodiscard]] double dot3(const Vec3 &a, const Vec3 &b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+[[nodiscard]] double norm3_sq(const Vec3 &v) {
+    return dot3(v, v);
+}
+
+[[nodiscard]] bool solve_3x3(const std::array<double, 9> &mat, bool transpose,
+                             const Vec3 &rhs, Vec3 &out) {
+    std::array<std::array<double, 4>, 3> aug{};
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 3; ++j)
+            aug[i][j] = transpose ? mat[3 * j + i] : mat[3 * i + j];
+        aug[i][3] = rhs[i];
+    }
+    for (std::size_t col = 0; col < 3; ++col) {
+        std::size_t pivot = col;
+        double best = std::abs(aug[col][col]);
+        for (std::size_t r = col + 1; r < 3; ++r) {
+            const double val = std::abs(aug[r][col]);
+            if (val > best) {
+                best = val;
+                pivot = r;
+            }
+        }
+        if (best <= 1e-10) return false;
+        if (pivot != col) std::swap(aug[col], aug[pivot]);
+        const double inv = 1. / aug[col][col];
+        for (std::size_t j = col; j < 4; ++j) aug[col][j] *= inv;
+        for (std::size_t r = 0; r < 3; ++r) {
+            if (r == col) continue;
+            const double factor = aug[r][col];
+            for (std::size_t j = col; j < 4; ++j)
+                aug[r][j] -= factor * aug[col][j];
+        }
+    }
+    out = {aug[0][3], aug[1][3], aug[2][3]};
+    return true;
+}
+
+[[nodiscard]] Vec3 body_point_vel(const Mat3 &r, const Vec3 &p0,
+                                  const std::array<double, 6> &v_free,
+                                  const Vec3 &p) {
+    const Vec3 omega_w = mat_vec(r, {v_free[3], v_free[4], v_free[5]});
+    const Vec3 r_vec{p[0] - p0[0], p[1] - p0[1], p[2] - p0[2]};
+    const Vec3 wxr = cross3(omega_w, r_vec);
+    return {v_free[0] + wxr[0], v_free[1] + wxr[1], v_free[2] + wxr[2]};
+}
+
+[[nodiscard]] Vec3 body_point_acc(const Mat3 &r, const Vec3 &p0,
+                                  const std::array<double, 6> &v_free,
+                                  const std::array<double, 6> &a_free,
+                                  const Vec3 &p) {
+    const Vec3 omega_w = mat_vec(r, {v_free[3], v_free[4], v_free[5]});
+    const Vec3 alpha_w = mat_vec(r, {a_free[3], a_free[4], a_free[5]});
+    const Vec3 r_vec{p[0] - p0[0], p[1] - p0[1], p[2] - p0[2]};
+    const Vec3 axr = cross3(alpha_w, r_vec);
+    const Vec3 wxwxr = cross3(omega_w, cross3(omega_w, r_vec));
+    return {a_free[0] + axr[0] + wxwxr[0],
+            a_free[1] + axr[1] + wxwxr[1],
+            a_free[2] + axr[2] + wxwxr[2]};
 }
 
 [[nodiscard]] Vec3 vec_sub(const Vec3 &a, const Vec3 &b) {
@@ -248,6 +331,68 @@ void validate_planar_support(const mjModel *m, const mjData *d,
     return id;
 }
 
+void validate_spatial_pedal_boxes(const mjModel *m, const mjData *d,
+                                  std::span<const int> geoms) {
+    const auto geom_types =
+        model_access::readonly_buffer(m->geom_type, m->ngeom);
+    for (const int geom : geoms) {
+        model_access::require_id(geom, m->ngeom, "pedal geom");
+        if (geom_types[static_cast<std::size_t>(geom)] != mjGEOM_BOX)
+            throw std::invalid_argument("rider support geometry must be a box");
+        const auto origin = row3(d->geom_xpos, m->ngeom * 3, geom, "geom_xpos");
+        const auto r = row9(d->geom_xmat, m->ngeom * 9, geom, "geom_xmat");
+        const auto half = row3(m->geom_size, m->ngeom * 3, geom, "geom_size");
+        for (const double v : origin)
+            if (!std::isfinite(v))
+                throw std::invalid_argument("invalid box geometry");
+        for (const double v : r)
+            if (!std::isfinite(v))
+                throw std::invalid_argument("invalid box geometry");
+        for (const double h : half)
+            if (!std::isfinite(h) || h <= 0.)
+                throw std::invalid_argument("box dimensions must be positive");
+    }
+}
+
+void synthesize_shoulder_abduction_defaults(SpindleConfig &cfg,
+                                            double rider_mass_kg) {
+    constexpr double kPi4 = std::numbers::pi / 4.;
+    constexpr double kPi8 = std::numbers::pi / 8.;
+    const double scale = rider_mass_kg > 0. ? rider_mass_kg / 80. : 1.;
+    const auto curve_at = [scale](double angle) {
+        const double ratio = angle / 0.85;
+        return 65.0 * scale * std::exp(-0.5 * ratio * ratio);
+    };
+    const spindle::JointEnvelope abd_env{
+        .neutral_anatomical_rad = 0.,
+        .direction = 1,
+        .minimum_anatomical_rad = -kPi4,
+        .maximum_anatomical_rad = kPi4,
+        .provenance = "3D shoulder horizontal abduction"};
+    const spindle::TorqueCurve abd_curve{
+        .angles_rad = {-kPi4, -kPi8, 0., kPi8, kPi4},
+        .torques_nm = {curve_at(-kPi4), curve_at(-kPi8), curve_at(0.),
+                       curve_at(kPi8), curve_at(kPi4)},
+        .vmax_rad_s = 8.0,
+        .hill_c = 0.25,
+        .eccentric_ratio = 1.4,
+        .source = "3D shoulder horizontal abduction (Chaffin/Stobbe)"};
+    for (const char *name :
+         {"rider_shoulder_abduction_left", "rider_shoulder_abduction_right"}) {
+        const std::string key(name);
+        if (!cfg.envelopes.empty() && !cfg.envelopes.contains(key))
+            cfg.envelopes.emplace(key, abd_env);
+        if (cfg.has_strength) {
+            if (!cfg.strength_coordinates.contains(key))
+                cfg.strength_coordinates.emplace(key, abd_env);
+            if (!cfg.strength.contains(key))
+                cfg.strength.emplace(
+                    key, DirectionalStrength{.positive = abd_curve,
+                                             .negative = abd_curve});
+        }
+    }
+}
+
 } // namespace
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror lean_limit.py
@@ -361,6 +506,20 @@ SpindleController::SpindleController(const mjModel *model,
                          "spindle reposition damping gain");
     validation::positive(config_.reposition_torque_limit_nm,
                          "spindle reposition torque limit");
+    spatial_3d_ = (model->nq != model->nv) &&
+                  mj_name2id(model, mjOBJ_JOINT, "root_free") >= 0;
+    for (int body = 0; body < model->nbody; ++body) {
+        const char *name = mj_id2name(model, mjOBJ_BODY, body);
+        if (name != nullptr &&
+            std::string_view(name).starts_with("rider_"))
+            rider_bodies_.push_back(body);
+    }
+    const auto mass = model_access::readonly_buffer(
+        model->body_mass, model->nbody, "body_mass");
+    for (const int body : rider_bodies_)
+        rider_mass_ += mass[static_cast<std::size_t>(body)];
+    if (spatial_3d_)
+        synthesize_shoulder_abduction_defaults(config_, rider_mass_);
     target_data_.reset(engine::make_data(model));
     previous_target_data_.reset(engine::make_data(model));
     coasting_target_data_.reset(engine::make_data(model));
@@ -372,12 +531,12 @@ SpindleController::SpindleController(const mjModel *model,
         model_access::readonly_buffer(model->jnt_limited, model->njnt);
     const auto joint_range = model_access::readonly_buffer(
         model->jnt_range, model->njnt * 2);
-    for (const auto name : kReferenceJoints) {
+    const auto add_reference_joint = [&](std::string_view name) {
         const int joint =
             mj_name2id(model, mjOBJ_JOINT, std::string(name).c_str());
         if (joint < 0) {
             locked_joints_.emplace_back(name);
-            continue;
+            return;
         }
         const auto j = static_cast<std::size_t>(joint);
         const int actuator = mj_name2id(
@@ -396,6 +555,11 @@ SpindleController::SpindleController(const mjModel *model,
                 std::string(name),
                 Vec2{joint_range[base], joint_range[base + 1]});
         }
+    };
+    if (spatial_3d_) {
+        for (const auto name : kReferenceJoints3d) add_reference_joint(name);
+    } else {
+        for (const auto name : kReferenceJoints) add_reference_joint(name);
     }
     // The strength file and the envelope file must agree on the
     // q->anatomical mapping, or a curve could silently bound the wrong
@@ -437,6 +601,25 @@ SpindleController::SpindleController(const mjModel *model,
     }
     reset_activation();
     resolve_model_layout(qpos_adrs, dof_adrs);
+    if (spatial_3d_) {
+        saddle_eq_ = mj_name2id(model, mjOBJ_EQUALITY, "weld_saddle");
+        const int sad_car = mj_name2id(model, mjOBJ_BODY, "rider_saddle_carrier");
+        saddle_body_ = sad_car >= 0 ? sad_car : pelvis_body_;
+        saddle_site_ = mj_name2id(model, mjOBJ_SITE, "site_rider_saddle");
+        saddle_eq_reactions_.emplace(model);
+        saddle_lstsq_.emplace(model->nv, 6, 1);
+        saddle_qfrc_.assign(static_cast<std::size_t>(model->nv), 0.);
+        for (const int abd_jnt : hip_abd_joints_) {
+            if (abd_jnt < 0) continue;
+            const auto j = static_cast<std::size_t>(abd_jnt);
+            if (!joint_limited[j]) continue;
+            const auto base = j * 2;
+            envelope_qpos_adrs_.push_back(qpos_adrs[j]);
+            envelope_dof_adrs_.push_back(dof_adrs[j]);
+            envelope_lower_.push_back(joint_range[base]);
+            envelope_upper_.push_back(joint_range[base + 1]);
+        }
+    }
     if (config_.legacy && config_.legacy->pedal_attachment != "spindle")
         legacy_ = std::make_unique<bike::rider::LegacyController>(*this);
 }
@@ -484,22 +667,60 @@ void SpindleController::resolve_model_layout(
     frame_body_ = mj_name2id(model, mjOBJ_BODY, "frame");
     torso_body_ = mj_name2id(model, mjOBJ_BODY, "rider_torso");
     crank_body_ = mj_name2id(model, mjOBJ_BODY, "crank");
-    frame_pitch_joint_ = require_joint(model, "root_pitch");
-    rider_pitch_joint_ = require_joint(model, "rider_root_pitch");
-    const int frame_x_jnt = mj_name2id(model, mjOBJ_JOINT, "root_x");
-    const int frame_z_jnt = mj_name2id(model, mjOBJ_JOINT, "root_z");
-    frame_root_x_dof_ =
-        frame_x_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(frame_x_jnt)];
-    frame_root_z_dof_ =
-        frame_z_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(frame_z_jnt)];
-    frame_pitch_dof_ = dof_adrs[static_cast<std::size_t>(frame_pitch_joint_)];
-    const int rider_x_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_x");
-    const int rider_z_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_z");
-    rider_root_x_dof_ =
-        rider_x_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(rider_x_jnt)];
-    rider_root_z_dof_ =
-        rider_z_jnt < 0 ? -1 : dof_adrs[static_cast<std::size_t>(rider_z_jnt)];
-    rider_pitch_dof_ = dof_adrs[static_cast<std::size_t>(rider_pitch_joint_)];
+    if (spatial_3d_) {
+        const int frame_free = require_joint(model, "root_free");
+        const int rider_free = require_joint(model, "rider_root_free");
+        frame_free_dof_ = dof_adrs[static_cast<std::size_t>(frame_free)];
+        rider_free_dof_ = dof_adrs[static_cast<std::size_t>(rider_free)];
+        saddle_pitch_joint_ = require_joint(model, "rider_saddle_pitch");
+        saddle_pitch_dof_ =
+            dof_adrs[static_cast<std::size_t>(saddle_pitch_joint_)];
+        steer_joint_ = require_joint(model, "steer_joint");
+        hip_abd_joints_[0] =
+            require_joint(model, "rider_hip_abduction_front");
+        hip_abd_joints_[1] = require_joint(model, "rider_hip_abduction_rear");
+        hip_abd_dofs_[0] =
+            dof_adrs[static_cast<std::size_t>(hip_abd_joints_[0])];
+        hip_abd_dofs_[1] =
+            dof_adrs[static_cast<std::size_t>(hip_abd_joints_[1])];
+        for (const auto side : kArmSides) {
+            const auto s = side_index(side);
+            const auto stem = std::string(side);
+            shoulder_abd_joints_[s] = require_joint(
+                model, ("rider_shoulder_abduction_" + stem).c_str());
+            shoulder_joints_[s] =
+                require_joint(model, ("rider_shoulder_" + stem).c_str());
+            elbow_joints_[s] =
+                require_joint(model, ("rider_elbow_" + stem).c_str());
+        }
+    } else {
+        frame_pitch_joint_ = require_joint(model, "root_pitch");
+        rider_pitch_joint_ = require_joint(model, "rider_root_pitch");
+        const int frame_x_jnt = mj_name2id(model, mjOBJ_JOINT, "root_x");
+        const int frame_z_jnt = mj_name2id(model, mjOBJ_JOINT, "root_z");
+        frame_root_x_dof_ =
+            frame_x_jnt < 0
+                ? -1
+                : dof_adrs[static_cast<std::size_t>(frame_x_jnt)];
+        frame_root_z_dof_ =
+            frame_z_jnt < 0
+                ? -1
+                : dof_adrs[static_cast<std::size_t>(frame_z_jnt)];
+        frame_pitch_dof_ =
+            dof_adrs[static_cast<std::size_t>(frame_pitch_joint_)];
+        const int rider_x_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_x");
+        const int rider_z_jnt = mj_name2id(model, mjOBJ_JOINT, "rider_root_z");
+        rider_root_x_dof_ =
+            rider_x_jnt < 0
+                ? -1
+                : dof_adrs[static_cast<std::size_t>(rider_x_jnt)];
+        rider_root_z_dof_ =
+            rider_z_jnt < 0
+                ? -1
+                : dof_adrs[static_cast<std::size_t>(rider_z_jnt)];
+        rider_pitch_dof_ =
+            dof_adrs[static_cast<std::size_t>(rider_pitch_joint_)];
+    }
     crank_joint_ = require_joint(model, "crank_spin");
     crank_spin_dof_ =
         dof_adrs[static_cast<std::size_t>(crank_joint_)];
@@ -558,8 +779,12 @@ void SpindleController::resolve_model_layout(
         std::ranges::copy(eq_data.subspan(base + 3, 3).first<3>(),
                           weld_grip_offset_[side_index(side)].begin());
     }
-    validate_planar_support(model, target_data_.get(),
-                            std::span{pedal_geoms_});
+    if (spatial_3d_)
+        validate_spatial_pedal_boxes(model, target_data_.get(),
+                                     std::span{pedal_geoms_});
+    else
+        validate_planar_support(model, target_data_.get(),
+                                std::span{pedal_geoms_});
     for (const auto side : kSides) {
         const auto s = side_index(side);
         leg_geometry_[s] = spindle::leg_loop_geometry(
@@ -577,49 +802,127 @@ void SpindleController::resolve_model_layout(
                     static_cast<std::size_t>(entry - joints_.begin()));
         }
     }
-    const Vec3 trunk = vec_sub(pose_.shoulder, pose_.hip);
-    const Vec3 upper = vec_sub(pose_.elbow, pose_.shoulder);
-    const Vec3 lower = vec_sub(pose_.grip, pose_.elbow);
-    arm_upper_m_ = np_norm(upper);
-    arm_lower_m_ = np_norm(lower);
-    arm_upper_angle0_ = std::atan2(upper[2], upper[0]);
-    arm_lower_angle0_ = std::atan2(lower[2], lower[0]);
-    arm_branch_ =
-        numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
-    {
-        const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
-        const double reach =
-            (arm_upper_m_ + arm_lower_m_) * config_.arm_reach_fraction;
-        const auto first =
-            spindle::two_link_ik(goal, np_norm(trunk), reach, -1);
-        const auto second =
-            spindle::two_link_ik(goal, np_norm(trunk), reach, 1);
-        const auto &neutral =
-            numeric::math_sin(first.angles[0]) >= numeric::math_sin(second.angles[0])
-                ? first
-                : second;
-        neutral_torso_saturated_ = neutral.saturated;
-        neutral_torso_q_ = config_.legacy && config_.legacy->pedal_attachment != "spindle"
-            ? std::atan2(trunk[2],trunk[0])-neutral.angles[0] : 0.;
+    if (spatial_3d_) {
+        std::array<Vec3, 2> sh0{};
+        std::array<Vec3, 2> gr0{};
+        for (const std::size_t s : {0U, 1U}) {
+            sh0[s] = body_pos(model, target_data_.get(), upper_arm_bodies_[s]);
+            const Vec3 el0 =
+                body_pos(model, target_data_.get(), forearm_bodies_[s]);
+            gr0[s] = site_pos(model, target_data_.get(), grip_sites_[s]);
+            const Vec3 u0 = vec_sub(el0, sh0[s]);
+            const Vec3 l0 = vec_sub(gr0[s], el0);
+            const Vec3 dp0 = vec_sub(gr0[s], sh0[s]);
+            arm3d_upper_m_[s] = np_norm(u0);
+            arm3d_lower_m_[s] = np_norm(l0);
+            arm3d_psi0_[s] = std::atan2(dp0[1], dp0[0]);
+            const double cos_el0 = std::clamp(
+                dot3(u0, l0) / (arm3d_upper_m_[s] * arm3d_lower_m_[s]),
+                -1., 1.);
+            arm3d_elbow0_[s] = std::acos(cos_el0);
+            arm3d_beta_ua0_[s] =
+                std::atan2(-u0[2], std::hypot(u0[0], u0[1]));
+        }
+        arm_upper_m_ = arm3d_upper_m_[0];
+        arm_lower_m_ = arm3d_lower_m_[0];
+        neutral_torso_saturated_ = false;
+        neutral_torso_q_ = 0.;
+        if (!config_.envelopes.empty() &&
+            (!config_.legacy || config_.legacy->pedal_attachment == "spindle")) {
+            const Vec2 hip_xz = xz(pose_.hip);
+            const Vec2 crank_xz{
+                (pose_.pedal_front[0] + pose_.pedal_rear[0]) / 2.,
+                (pose_.pedal_front[2] + pose_.pedal_rear[2]) / 2.};
+            std::array<double, 2> hips_at_tdc{};
+            for (const std::size_t s : {0U, 1U}) {
+                const double tdc_phase =
+                    -std::numbers::pi / 2. + (s == 0 ? 0. : std::numbers::pi);
+                const Vec2 spindle_pos = spindle::spindle_xz(
+                    crank_xz, crank_length_m_, tdc_phase,
+                    leg_geometry_[s].side_sign);
+                hips_at_tdc[s] = spindle::leg_joint_q(
+                    leg_geometry_[s], hip_xz, spindle_pos, 0.)[0];
+            }
+            const auto within = [&](const std::string &name, double q) {
+                const auto entry = config_.envelopes.find(name);
+                if (entry == config_.envelopes.end())
+                    throw std::out_of_range(name);
+                const Vec2 range = spindle::joint_q_range(entry->second);
+                return range[0] - 1e-12 <= q && q <= range[1] + 1e-12;
+            };
+            const Vec3 hinge =
+                joint_anchor(model, target_data_.get(), torso_joint_);
+            const std::array<Vec3, 2> sh_local{
+                vec_sub(sh0[0], hinge), vec_sub(sh0[1], hinge)};
+            const auto feasible_3d = [&](double lean) {
+                if (!within("rider_torso_hinge", lean)) return false;
+                const double c = numeric::math_cos(lean);
+                const double sn = numeric::math_sin(lean);
+                const Mat3 torso_r{c, 0., sn, 0., 1., 0., -sn, 0., c};
+                for (const auto side : kArmSides) {
+                    const auto s = side_index(side);
+                    const Vec3 sh_w = vec_add(hinge, mat_vec(torso_r, sh_local[s]));
+                    const auto ik = solve_arm_ik_3d(s, torso_r, sh_w, gr0[s]);
+                    if (ik.saturated) return false;
+                    const auto stem = std::string(side);
+                    if (!within("rider_shoulder_abduction_" + stem, ik.q_abd) ||
+                        !within("rider_shoulder_" + stem, ik.q_sh) ||
+                        !within("rider_elbow_" + stem, ik.q_el))
+                        return false;
+                }
+                return within("rider_hip_front", hips_at_tdc[0] - lean) &&
+                       within("rider_hip_rear", hips_at_tdc[1] - lean);
+            };
+            if (!feasible_3d(0.))
+                throw std::invalid_argument(
+                    "neutral seated posture lies outside reachable joint ROM");
+            if (feasible_3d(0.8)) {
+                lean_limit_rad_ = 0.8;
+            } else {
+                double low = 0., high = 0.8;
+                while (high - low > 1e-3) {
+                    const double middle = 0.5 * (low + high);
+                    if (feasible_3d(middle)) low = middle;
+                    else high = middle;
+                }
+                lean_limit_rad_ = low;
+            }
+        }
+    } else {
+        const Vec3 trunk = vec_sub(pose_.shoulder, pose_.hip);
+        const Vec3 upper = vec_sub(pose_.elbow, pose_.shoulder);
+        const Vec3 lower = vec_sub(pose_.grip, pose_.elbow);
+        arm_upper_m_ = np_norm(upper);
+        arm_lower_m_ = np_norm(lower);
+        arm_upper_angle0_ = std::atan2(upper[2], upper[0]);
+        arm_lower_angle0_ = std::atan2(lower[2], lower[0]);
+        arm_branch_ =
+            numeric::math_sin(arm_lower_angle0_ - arm_upper_angle0_) >= 0. ? 1 : -1;
+        {
+            const Vec2 goal{xz(vec_sub(pose_.grip, pose_.hip))};
+            const double reach =
+                (arm_upper_m_ + arm_lower_m_) * config_.arm_reach_fraction;
+            const auto first =
+                spindle::two_link_ik(goal, np_norm(trunk), reach, -1);
+            const auto second =
+                spindle::two_link_ik(goal, np_norm(trunk), reach, 1);
+            const auto &neutral =
+                numeric::math_sin(first.angles[0]) >= numeric::math_sin(second.angles[0])
+                    ? first
+                    : second;
+            neutral_torso_saturated_ = neutral.saturated;
+            neutral_torso_q_ = config_.legacy && config_.legacy->pedal_attachment != "spindle"
+                ? std::atan2(trunk[2],trunk[0])-neutral.angles[0] : 0.;
+        }
+        if (!config_.envelopes.empty() && (!config_.legacy || config_.legacy->pedal_attachment == "spindle"))
+            lean_limit_rad_ =
+                rider::lean_limit_rad(pose_, config_.envelopes,
+                                      crank_length_m_, -std::numbers::pi / 2.);
     }
-    if (!config_.envelopes.empty() && (!config_.legacy || config_.legacy->pedal_attachment == "spindle"))
-        lean_limit_rad_ =
-            rider::lean_limit_rad(pose_, config_.envelopes,
-                                  crank_length_m_, -std::numbers::pi / 2.);
     for (const auto &joint : joints_) {
         joint_torques_nm_.emplace_back(joint.name, 0.);
         joint_capacity_nm_.emplace_back(joint.name, 0.);
     }
-    for (int body = 0; body < model->nbody; ++body) {
-        const char *name = mj_id2name(model, mjOBJ_BODY, body);
-        if (name != nullptr &&
-            std::string_view(name).starts_with("rider_"))
-            rider_bodies_.push_back(body);
-    }
-    const auto mass = model_access::readonly_buffer(
-        model->body_mass, model->nbody, "body_mass");
-    for (const int body : rider_bodies_)
-        rider_mass_ += mass[static_cast<std::size_t>(body)];
 }
 
 SpindleController::~SpindleController() = default;
@@ -631,6 +934,10 @@ void SpindleController::reset_activation() {
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
                        {"rear", PedalRecoveryState{}}};
+    has_prev_press_3d_ = false;
+    prev_press_time_3d_ = -1.;
+    prev_f_passive_3d_ = {0., 0.};
+    prev_max_press_3d_ = 0.;
 }
 
 spindle::Vec2 SpindleController::leg_targets(const mjData *data,
@@ -670,6 +977,43 @@ SpindleController::joint_index(const std::string &name) const {
     return static_cast<std::size_t>(found - joints_.begin());
 }
 
+SpindleController::ArmIk3dResult SpindleController::solve_arm_ik_3d(
+    std::size_t side, const Mat3 &torso_r, const Vec3 &shoulder_world,
+    const Vec3 &grip_world) const {
+    const spindle::ArmGeometry3d geom{
+        .upper_arm_m = arm3d_upper_m_[side],
+        .forearm_grip_m = arm3d_lower_m_[side],
+        .psi0_rad = arm3d_psi0_[side],
+        .beta_ua0_rad = arm3d_beta_ua0_[side],
+        .elbow_flexion0_rad = arm3d_elbow0_[side]};
+    const spindle::ArmIkResult3d res =
+        spindle::solve_arm_ik_3d(geom, torso_r, shoulder_world, grip_world);
+    return {
+        .q_abd = res.shoulder_abduction_q,
+        .q_sh = res.shoulder_q,
+        .q_el = res.elbow_q,
+        .saturated = res.saturated,
+    };
+}
+
+void SpindleController::arm_grip_jacobian_3d(
+    const mjData *data, std::size_t side, std::array<double, 9> &out) const {
+    const Vec3 g = site_pos(model_, data, grip_sites_[side]);
+    const Vec3 p_sh = body_pos(model_, data, upper_arm_bodies_[side]);
+    const Vec3 p_el = body_pos(model_, data, forearm_bodies_[side]);
+    const Vec3 u0 = joint_axis(model_, data, shoulder_abd_joints_[side]);
+    const Vec3 u1 = joint_axis(model_, data, shoulder_joints_[side]);
+    const Vec3 u2 = joint_axis(model_, data, elbow_joints_[side]);
+    const Vec3 c0 = cross3(u0, vec_sub(g, p_sh));
+    const Vec3 c1 = cross3(u1, vec_sub(g, p_sh));
+    const Vec3 c2 = cross3(u2, vec_sub(g, p_el));
+    for (std::size_t r = 0; r < 3; ++r) {
+        out[3 * r + 0] = c0[r];
+        out[3 * r + 1] = c1[r];
+        out[3 * r + 2] = c2[r];
+    }
+}
+
 double SpindleController::ik_target_elbow_flexion_rad(
     const mjData *data, double torso_lean_rad) const {
     const auto pelvis_r = body_mat(model_, data, pelvis_body_);
@@ -689,11 +1033,17 @@ double SpindleController::ik_target_elbow_flexion_rad(
                 vec_add(steer_pos, mat_vec(steer_r, weld_grip_offset_[s]));
         }
     }
-    const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
-    const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
+    double frame_minus_pelvis_pitch = 0.;
+    if (spatial_3d_) {
+        const Mat3 relative_r = mat_t_mul(frame_r, pelvis_r);
+        frame_minus_pelvis_pitch = -std::atan2(relative_r[2], relative_r[0]);
+    } else {
+        const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
+        const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
+        frame_minus_pelvis_pitch = spindle::wrap_angle(frame_pitch - pelvis_pitch);
+    }
     const double torso_q =
-        neutral_torso_q_ + torso_lean_rad +
-        spindle::wrap_angle(frame_pitch - pelvis_pitch);
+        neutral_torso_q_ + torso_lean_rad + frame_minus_pelvis_pitch;
     const auto torso_r_actual = body_mat(model_, data, torso_body_);
     double delta = torso_q -
         model_access::readonly_buffer(data->qpos, model_->nq,
@@ -705,20 +1055,30 @@ double SpindleController::ik_target_elbow_flexion_rad(
     const double cd = numeric::math_cos(delta), sd = numeric::math_sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
-    const auto torso_r = mat_mul(rot, torso_r_actual);
+    const auto torso_r =
+        spatial_3d_ ? mat_mul(torso_r_actual, rot) : mat_mul(rot, torso_r_actual);
     double min_flexion = std::numeric_limits<double>::infinity();
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
-        const Vec3 shoulder = vec_add(
-            hinge,
-            mat_vec(rot,
-                    vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
-                            hinge)));
-        const Vec3 diff = vec_sub(grips[s], shoulder);
-        const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
-        const auto ik = spindle::two_link_ik(
-            arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
-        min_flexion = std::min(min_flexion, std::abs(ik.angles[1]));
+        if (spatial_3d_) {
+            const Vec3 sh_local = mat_t_vec(
+                torso_r_actual,
+                vec_sub(body_pos(model_, data, upper_arm_bodies_[s]), hinge));
+            const Vec3 shoulder = vec_add(hinge, mat_vec(torso_r, sh_local));
+            const auto ik = solve_arm_ik_3d(s, torso_r, shoulder, grips[s]);
+            min_flexion = std::min(min_flexion, arm3d_elbow0_[s] - ik.q_el);
+        } else {
+            const Vec3 shoulder = vec_add(
+                hinge,
+                mat_vec(rot,
+                        vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
+                                hinge)));
+            const Vec3 diff = vec_sub(grips[s], shoulder);
+            const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
+            const auto ik = spindle::two_link_ik(
+                arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
+            min_flexion = std::min(min_flexion, std::abs(ik.angles[1]));
+        }
     }
     return min_flexion;
 }
@@ -764,9 +1124,14 @@ SpindleController::upper_targets(const mjData *data,
     }
     double torso_q = neutral_torso_q_ +
                      (posture == nullptr ? 0. : posture->torso_lean_rad);
-    const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
-    const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
-    torso_q += spindle::wrap_angle(frame_pitch - pelvis_pitch);
+    if (spatial_3d_) {
+        const Mat3 relative_r = mat_t_mul(frame_r, pelvis_r);
+        torso_q -= std::atan2(relative_r[2], relative_r[0]);
+    } else {
+        const double frame_pitch = std::atan2(frame_r[2], frame_r[0]);
+        const double pelvis_pitch = std::atan2(pelvis_r[2], pelvis_r[0]);
+        torso_q += spindle::wrap_angle(frame_pitch - pelvis_pitch);
+    }
     const auto torso_r_actual = body_mat(model_, data, torso_body_);
     std::vector<std::pair<std::string, double>> targets;
     targets.emplace_back("rider_torso_hinge", torso_q);
@@ -784,30 +1149,46 @@ SpindleController::upper_targets(const mjData *data,
     const double cd = numeric::math_cos(delta), sd = numeric::math_sin(delta);
     const std::array<double, 9> rot{cd, 0., sd, 0., 1., 0., -sd, 0., cd};
     const Vec3 hinge = joint_anchor(model_, data, torso_joint_);
-    const auto torso_r = mat_mul(rot, torso_r_actual);
+    const auto torso_r =
+        spatial_3d_ ? mat_mul(torso_r_actual, rot) : mat_mul(rot, torso_r_actual);
     std::array<Vec3, 2> shoulders{};
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
-        shoulders[s] =
-            vec_add(hinge,
-                    mat_vec(rot,
-                            vec_sub(body_pos(model_, data,
-                                             upper_arm_bodies_[s]),
-                                    hinge)));
+        if (spatial_3d_) {
+            const Vec3 sh_local = mat_t_vec(
+                torso_r_actual,
+                vec_sub(body_pos(model_, data, upper_arm_bodies_[s]), hinge));
+            shoulders[s] = vec_add(hinge, mat_vec(torso_r, sh_local));
+        } else {
+            shoulders[s] =
+                vec_add(hinge,
+                        mat_vec(rot,
+                                vec_sub(body_pos(model_, data,
+                                                 upper_arm_bodies_[s]),
+                                        hinge)));
+        }
     }
     for (const auto side : kArmSides) {
         const auto s = side_index(side);
-        const Vec3 diff = vec_sub(grips[s], shoulders[s]);
-        const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
-        const auto ik = spindle::two_link_ik(
-            arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
-        arm_saturated = arm_saturated || ik.saturated;
         const auto stem = std::string(side);
-        targets.emplace_back("rider_shoulder_" + stem,
-                             arm_upper_angle0_ - ik.angles[0]);
-        targets.emplace_back("rider_elbow_" + stem,
-                             (arm_lower_angle0_ - arm_upper_angle0_) -
-                                 ik.angles[1]);
+        if (spatial_3d_) {
+            const auto ik = solve_arm_ik_3d(s, torso_r, shoulders[s], grips[s]);
+            arm_saturated = arm_saturated || ik.saturated;
+            targets.emplace_back("rider_shoulder_abduction_" + stem, ik.q_abd);
+            targets.emplace_back("rider_shoulder_" + stem, ik.q_sh);
+            targets.emplace_back("rider_elbow_" + stem, ik.q_el);
+        } else {
+            const Vec3 diff = vec_sub(grips[s], shoulders[s]);
+            const Vec2 arm_target = mat_t_vec_xz(torso_r, diff);
+            const auto ik = spindle::two_link_ik(
+                arm_target, arm_upper_m_, arm_lower_m_, arm_branch_);
+            arm_saturated = arm_saturated || ik.saturated;
+            targets.emplace_back("rider_shoulder_" + stem,
+                                 arm_upper_angle0_ - ik.angles[0]);
+            targets.emplace_back("rider_elbow_" + stem,
+                                 (arm_lower_angle0_ - arm_upper_angle0_) -
+                                     ik.angles[1]);
+        }
     }
     // saturated_ik.update(torso=..., arms=...) — insertion order.
     named_set(saturated_ik_, "torso", neutral_torso_saturated_);
@@ -1397,26 +1778,59 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 leg_dofs[s][i] = static_cast<std::size_t>(
                     joints_[leg_joint_index_[s][i]].dof_adr);
         }
-        const std::array<std::size_t, 5> upper_slots{
-            joint_index("rider_torso_hinge"),
-            joint_index("rider_shoulder_left"),
-            joint_index("rider_elbow_left"),
-            joint_index("rider_shoulder_right"),
-            joint_index("rider_elbow_right")};
+        const Vec3 frame_pos = body_pos(model_, data, frame_body_);
+        const Vec3 pelvis_pos = body_pos(model_, data, pelvis_body_);
+        const Vec3 frame_y{frame_r[1], frame_r[4], frame_r[7]};
+        const Vec3 frame_up{frame_r[2], frame_r[5], frame_r[8]};
+        std::array<double, 6> f_vel6{};
+        std::array<double, 6> p_vel6{};
+        double pelvis_rel_pitch_rate_3d = 0.;
+        if (spatial_3d_) {
+            for (std::size_t k = 0; k < 6; ++k) {
+                f_vel6[k] = qvel[static_cast<std::size_t>(frame_free_dof_) + k];
+                p_vel6[k] = qvel[static_cast<std::size_t>(rider_free_dof_) + k];
+            }
+            const Vec3 omega_w_frame =
+                mat_vec(frame_r, {f_vel6[3], f_vel6[4], f_vel6[5]});
+            const Vec3 omega_w_pelvis =
+                mat_vec(pelvis_r, {p_vel6[3], p_vel6[4], p_vel6[5]});
+            pelvis_rel_pitch_rate_3d =
+                dot3(frame_y, vec_sub(omega_w_pelvis, omega_w_frame));
+        }
+        std::array<std::size_t, 5> upper_slots{};
+        std::array<std::size_t, 7> upper_slots_3d{};
+        if (spatial_3d_) {
+            upper_slots_3d = {
+                joint_index("rider_torso_hinge"),
+                joint_index("rider_shoulder_abduction_left"),
+                joint_index("rider_shoulder_left"),
+                joint_index("rider_elbow_left"),
+                joint_index("rider_shoulder_abduction_right"),
+                joint_index("rider_shoulder_right"),
+                joint_index("rider_elbow_right")};
+        } else {
+            upper_slots = {
+                joint_index("rider_torso_hinge"),
+                joint_index("rider_shoulder_left"),
+                joint_index("rider_elbow_left"),
+                joint_index("rider_shoulder_right"),
+                joint_index("rider_elbow_right")};
+        }
         const auto upper = upper_targets(data, &command.posture);
         for (const auto &[name, target] : upper) {
             const auto index = joint_index(name);
             const auto &joint = joints_[index];
             // Positive hinge torque applies the restoring -y reaction
             // to the pelvis.
+            const double rel_pitch_rate =
+                spatial_3d_
+                    ? pelvis_rel_pitch_rate_3d
+                    : (qvel[static_cast<std::size_t>(rider_pitch_dof_)] -
+                       qvel[static_cast<std::size_t>(frame_pitch_dof_)]);
             const double torque =
                 name == "rider_torso_hinge"
                     ? config_.joint_kp_nm_rad * pelvis_pitch +
-                          config_.joint_kd_nms_rad *
-                              (qvel[static_cast<std::size_t>(
-                                   rider_pitch_dof_)] -
-                               qvel[static_cast<std::size_t>(
-                                   frame_pitch_dof_)])
+                          config_.joint_kd_nms_rad * rel_pitch_rate
                     : config_.joint_kp_nm_rad *
                               spindle::wrap_angle(
                                   target -
@@ -1437,6 +1851,147 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 return 0.;
             return directional_limit(joints_[idx].name, data, sign);
         };
+        std::array<std::array<double, 9>, 2> j_grip_3d{};
+        std::array<bool, 2> arm3d_valid{false, false};
+        std::array<Vec3, 2> arm3d_gamma{};
+        std::array<std::array<std::size_t, 3>, 2> arm3d_dof{};
+        std::array<Vec3, 2> arm3d_tau{};
+        if (spatial_3d_) {
+            constexpr double kMaxHandForceN = 285.0;
+            std::array<Vec3, 2> f_posture{};
+            double eta_hand = 1.0;
+            for (const std::size_t s : {0U, 1U}) {
+                arm_grip_jacobian_3d(data, s, j_grip_3d[s]);
+                const std::size_t idx0 = upper_slots_3d[1U + 3U * s];
+                const std::size_t idx1 = upper_slots_3d[2U + 3U * s];
+                const std::size_t idx2 = upper_slots_3d[3U + 3U * s];
+                if (!steady_state) {
+                    for (const std::size_t idx : {idx0, idx1, idx2}) {
+                        const double cap_p = usable_slot_capacity(idx, 1.);
+                        const double cap_n = usable_slot_capacity(idx, -1.);
+                        requested[idx] = std::clamp(requested[idx], -cap_n, cap_p);
+                        priority_requested[idx] = requested[idx];
+                    }
+                }
+                const auto dof_of = [&](std::size_t idx) {
+                    return static_cast<std::size_t>(joints_[idx].dof_adr);
+                };
+                Vec3 tau_post{
+                    requested[idx0] - (steady_state ? 0. : bias[dof_of(idx0)]),
+                    requested[idx1] - (steady_state ? 0. : bias[dof_of(idx1)]),
+                    requested[idx2] - (steady_state ? 0. : bias[dof_of(idx2)])};
+                const double max_post_n = steady_state ? kMaxHandForceN : 235.0;
+                if (solve_3x3(j_grip_3d[s], true, tau_post, f_posture[s])) {
+                    const double f_norm = std::sqrt(norm3_sq(f_posture[s]));
+                    if (f_norm > max_post_n) {
+                        const double scale = max_post_n / f_norm;
+                        tau_post = {tau_post[0] * scale, tau_post[1] * scale,
+                                    tau_post[2] * scale};
+                        requested[idx0] =
+                            tau_post[0] + (steady_state ? 0. : bias[dof_of(idx0)]);
+                        requested[idx1] =
+                            tau_post[1] + (steady_state ? 0. : bias[dof_of(idx1)]);
+                        requested[idx2] =
+                            tau_post[2] + (steady_state ? 0. : bias[dof_of(idx2)]);
+                        priority_requested[idx0] = requested[idx0];
+                        priority_requested[idx1] = requested[idx1];
+                        priority_requested[idx2] = requested[idx2];
+                        f_posture[s] = {
+                            f_posture[s][0] * scale,
+                            f_posture[s][1] * scale,
+                            f_posture[s][2] * scale};
+                        if (steady_state) eta_hand = 0.;
+                    }
+                }
+            }
+            if (eta_hand > 0.) {
+                const Vec3 p_steer = joint_anchor(model_, data, steer_joint_);
+                const Vec3 u_steer = joint_axis(model_, data, steer_joint_);
+                std::array<Vec3, 2> t_steer{};
+                for (const std::size_t s : {0U, 1U}) {
+                    const Vec3 g = site_pos(model_, data, grip_sites_[s]);
+                    t_steer[s] = cross3(u_steer, vec_sub(g, p_steer));
+                }
+                const double d_steer =
+                    norm3_sq(t_steer[0]) + norm3_sq(t_steer[1]);
+                if (d_steer > 1e-8) {
+                    const double tau_post_steer =
+                        dot3(t_steer[0], f_posture[0]) +
+                        dot3(t_steer[1], f_posture[1]);
+                    const double scale_steer =
+                        (command.steer_torque_target_nm - tau_post_steer) / d_steer;
+                    std::array<Vec3, 2> f_steer_raw{};
+                    for (const std::size_t s : {0U, 1U}) {
+                        f_steer_raw[s] = {
+                            scale_steer * t_steer[s][0],
+                            scale_steer * t_steer[s][1],
+                            scale_steer * t_steer[s][2]};
+                        const double q2 = norm3_sq(f_steer_raw[s]);
+                        if (q2 > 1e-16) {
+                            const double q1 =
+                                2. * dot3(f_posture[s], f_steer_raw[s]);
+                            const double q0 =
+                                norm3_sq(f_posture[s]) -
+                                kMaxHandForceN * kMaxHandForceN;
+                            const double disc =
+                                std::max(0., q1 * q1 - 4. * q2 * q0);
+                            const double eta_s = std::clamp(
+                                (-q1 + std::sqrt(disc)) / (2. * q2), 0., 1.);
+                            eta_hand = std::min(eta_hand, eta_s);
+                        }
+                        const auto &jmat = j_grip_3d[s];
+                        for (std::size_t k = 0; k < 3; ++k) {
+                            const double dtau =
+                                jmat[k] * f_steer_raw[s][0] +
+                                jmat[3 + k] * f_steer_raw[s][1] +
+                                jmat[6 + k] * f_steer_raw[s][2];
+                            const std::size_t slot =
+                                upper_slots_3d[1U + 3U * s + k];
+                            const double tau0 = requested[slot];
+                            if (dtau > 1e-12) {
+                                eta_hand = std::min(
+                                    eta_hand,
+                                    std::max(0., (usable_slot_capacity(slot, 1.) - tau0) / dtau));
+                            } else if (dtau < -1e-12) {
+                                eta_hand = std::min(
+                                    eta_hand,
+                                    std::max(0., (-usable_slot_capacity(slot, -1.) - tau0) / dtau));
+                            }
+                        }
+                    }
+                    for (const std::size_t s : {0U, 1U}) {
+                        const Vec3 f_cmd{
+                            eta_hand * f_steer_raw[s][0],
+                            eta_hand * f_steer_raw[s][1],
+                            eta_hand * f_steer_raw[s][2]};
+                        const auto &jmat = j_grip_3d[s];
+                        for (std::size_t k = 0; k < 3; ++k) {
+                            const double delta_tau =
+                                jmat[k] * f_cmd[0] +
+                                jmat[3 + k] * f_cmd[1] +
+                                jmat[6 + k] * f_cmd[2];
+                            const std::size_t slot =
+                                upper_slots_3d[1U + 3U * s + k];
+                            requested[slot] += delta_tau;
+                            priority_requested[slot] += delta_tau;
+                        }
+                    }
+                }
+            }
+            for (const std::size_t s : {0U, 1U}) {
+                if (solve_3x3(j_grip_3d[s], false, frame_up, arm3d_gamma[s]))
+                    arm3d_valid[s] = true;
+                for (std::size_t k = 0; k < 3; ++k) {
+                    const std::size_t slot = upper_slots_3d[1U + 3U * s + k];
+                    arm3d_dof[s][k] =
+                        static_cast<std::size_t>(joints_[slot].dof_adr);
+                    const double cap = usable_slot_capacity(
+                        slot, requested[slot] >= 0. ? 1. : -1.);
+                    arm3d_tau[s][k] =
+                        std::min(std::max(requested[slot], -cap), cap);
+                }
+            }
+        }
         std::array<bool, 2> arm_valid{false, false};
         std::array<double, 2> arm_gamma_sh{0., 0.};
         std::array<double, 2> arm_gamma_el{0., 0.};
@@ -1444,40 +1999,44 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         std::array<std::size_t, 2> arm_el_dof{0U, 0U};
         std::array<double, 2> arm_tau_sh{0., 0.};
         std::array<double, 2> arm_tau_el{0., 0.};
-        for (const auto side : kArmSides) {
-            const auto s = side_index(side);
-            const Vec2 sh_xz = mat_t_vec_xz(
-                frame_r,
-                vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
-                        crank_world));
-            const Vec2 el_xz = mat_t_vec_xz(
-                frame_r,
-                vec_sub(body_pos(model_, data, forearm_bodies_[s]),
-                        crank_world));
-            const Vec2 gr_xz = mat_t_vec_xz(
-                frame_r,
-                vec_sub(site_pos(model_, data, grip_sites_[s]),
-                        crank_world));
-            const double det =
-                -(gr_xz[1] - sh_xz[1]) * (gr_xz[0] - el_xz[0]) +
-                (gr_xz[1] - el_xz[1]) * (gr_xz[0] - sh_xz[0]);
-            if (std::abs(det) <= 1e-12)
-                continue;
-            arm_valid[s] = true;
-            arm_gamma_sh[s] = -(gr_xz[1] - el_xz[1]) / det;
-            arm_gamma_el[s] = (gr_xz[1] - sh_xz[1]) / det;
-            const std::size_t sh_idx = upper_slots[1U + 2U * s];
-            const std::size_t el_idx = upper_slots[2U + 2U * s];
-            arm_sh_dof[s] = static_cast<std::size_t>(joints_[sh_idx].dof_adr);
-            arm_el_dof[s] = static_cast<std::size_t>(joints_[el_idx].dof_adr);
-            const double sh_cap = usable_slot_capacity(
-                sh_idx, requested[sh_idx] >= 0. ? 1. : -1.);
-            const double el_cap = usable_slot_capacity(
-                el_idx, requested[el_idx] >= 0. ? 1. : -1.);
-            arm_tau_sh[s] =
-                std::min(std::max(requested[sh_idx], -sh_cap), sh_cap);
-            arm_tau_el[s] =
-                std::min(std::max(requested[el_idx], -el_cap), el_cap);
+        if (!spatial_3d_) {
+            for (const auto side : kArmSides) {
+                const auto s = side_index(side);
+                const Vec2 sh_xz = mat_t_vec_xz(
+                    frame_r,
+                    vec_sub(body_pos(model_, data, upper_arm_bodies_[s]),
+                            crank_world));
+                const Vec2 el_xz = mat_t_vec_xz(
+                    frame_r,
+                    vec_sub(body_pos(model_, data, forearm_bodies_[s]),
+                            crank_world));
+                const Vec2 gr_xz = mat_t_vec_xz(
+                    frame_r,
+                    vec_sub(site_pos(model_, data, grip_sites_[s]),
+                            crank_world));
+                const double det =
+                    -(gr_xz[1] - sh_xz[1]) * (gr_xz[0] - el_xz[0]) +
+                    (gr_xz[1] - el_xz[1]) * (gr_xz[0] - sh_xz[0]);
+                if (std::abs(det) <= 1e-12)
+                    continue;
+                arm_valid[s] = true;
+                arm_gamma_sh[s] = -(gr_xz[1] - el_xz[1]) / det;
+                arm_gamma_el[s] = (gr_xz[1] - sh_xz[1]) / det;
+                const std::size_t sh_idx = upper_slots[1U + 2U * s];
+                const std::size_t el_idx = upper_slots[2U + 2U * s];
+                arm_sh_dof[s] =
+                    static_cast<std::size_t>(joints_[sh_idx].dof_adr);
+                arm_el_dof[s] =
+                    static_cast<std::size_t>(joints_[el_idx].dof_adr);
+                const double sh_cap = usable_slot_capacity(
+                    sh_idx, requested[sh_idx] >= 0. ? 1. : -1.);
+                const double el_cap = usable_slot_capacity(
+                    el_idx, requested[el_idx] >= 0. ? 1. : -1.);
+                arm_tau_sh[s] =
+                    std::min(std::max(requested[sh_idx], -sh_cap), sh_cap);
+                arm_tau_el[s] =
+                    std::min(std::max(requested[el_idx], -el_cap), el_cap);
+            }
         }
         std::array<std::array<std::size_t, 2>, 2> leg_slots{};
         std::array<std::array<double, 2>, 2> leg_cap_pos{};
@@ -1520,9 +2079,92 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         std::vector<double> imposed(static_cast<std::size_t>(model_->nv), 0.);
         std::vector<double> inertia(static_cast<std::size_t>(model_->nv), 0.);
         const Vec3 frame_pitch_anchor =
-            joint_anchor(model_, data, frame_pitch_joint_);
+            spatial_3d_ ? frame_pos
+                        : joint_anchor(model_, data, frame_pitch_joint_);
         const Vec3 rider_pitch_anchor =
-            joint_anchor(model_, data, rider_pitch_joint_);
+            spatial_3d_ ? pelvis_pos
+                        : joint_anchor(model_, data, rider_pitch_joint_);
+        std::array<double, 2> hip_abd_lever{0., 0.};
+        if (spatial_3d_) {
+            for (const std::size_t s : {0U, 1U}) {
+                const Vec3 u_abd_local = mat_t_vec(
+                    frame_r, joint_axis(model_, data, hip_abd_joints_[s]));
+                const Vec3 r_hp_frame = mat_t_vec(
+                    frame_r,
+                    vec_sub(body_pos(model_, data, pedal_bodies_[s]),
+                            hip_world[s]));
+                hip_abd_lever[s] =
+                    u_abd_local[2] * r_hp_frame[0] -
+                    u_abd_local[0] * r_hp_frame[2];
+            }
+        }
+        const auto compute_press_state_3d =
+            [&](double c_acc, const std::array<double, 6> &f_acc6,
+                const std::array<double, 6> &p_acc6,
+                const std::array<double, 7> &u_acc7) -> PressState {
+            std::ranges::fill(imposed, 0.);
+            for (std::size_t k = 0; k < 6; ++k)
+                imposed[static_cast<std::size_t>(rider_free_dof_) + k] =
+                    p_acc6[k];
+            const Vec3 alpha_w_frame =
+                mat_vec(frame_r, {f_acc6[3], f_acc6[4], f_acc6[5]});
+            const Vec3 alpha_w_pelvis =
+                mat_vec(pelvis_r, {p_acc6[3], p_acc6[4], p_acc6[5]});
+            const double pelvis_rel_pitch_acc =
+                dot3(frame_y, vec_sub(alpha_w_pelvis, alpha_w_frame));
+            imposed[static_cast<std::size_t>(saddle_pitch_dof_)] =
+                -pelvis_rel_pitch_acc;
+            for (std::size_t k = 0; k < 7; ++k)
+                imposed[static_cast<std::size_t>(
+                    joints_[upper_slots_3d[k]].dof_adr)] = u_acc7[k];
+            for (const std::size_t s : {0U, 1U}) {
+                const Vec3 a_hip_w = body_point_acc(
+                    pelvis_r, pelvis_pos, p_vel6, p_acc6, hip_world[s]);
+                const Vec3 a_frame_w = body_point_acc(
+                    frame_r, frame_pos, f_vel6, f_acc6, hip_world[s]);
+                const Vec3 a_rel_frame =
+                    mat_t_vec(frame_r, vec_sub(a_hip_w, a_frame_w));
+                imposed[leg_dofs[s][0]] =
+                    jacobians[s][0] * c_acc + djacs[s][0] * rate * rate -
+                    gammas_x[s][0] * a_rel_frame[0] -
+                    gammas[s][0] * a_rel_frame[2] - pelvis_rel_pitch_acc;
+                imposed[leg_dofs[s][1]] =
+                    jacobians[s][1] * c_acc + djacs[s][1] * rate * rate -
+                    gammas_x[s][1] * a_rel_frame[0] -
+                    gammas[s][1] * a_rel_frame[2];
+                if (std::abs(hip_abd_lever[s]) > 0.05) {
+                    imposed[static_cast<std::size_t>(hip_abd_dofs_[s])] =
+                        -a_rel_frame[1] / hip_abd_lever[s];
+                }
+            }
+            engine::mul_m(model_, data, inertia.data(), imposed.data());
+            double f_grips_up = 0.;
+            for (const std::size_t s : {0U, 1U}) {
+                if (!arm3d_valid[s]) continue;
+                for (std::size_t k = 0; k < 3; ++k) {
+                    const std::size_t dof = arm3d_dof[s][k];
+                    f_grips_up +=
+                        arm3d_gamma[s][k] *
+                        (bias[dof] + inertia[dof] - arm3d_tau[s][k]);
+                }
+            }
+            const auto rd_free = static_cast<std::size_t>(rider_free_dof_);
+            const double root_rx = bias[rd_free + 0] + inertia[rd_free + 0];
+            const double root_ry = bias[rd_free + 1] + inertia[rd_free + 1];
+            const double root_rz = bias[rd_free + 2] + inertia[rd_free + 2];
+            PressState out;
+            out.max_total_press_n =
+                frame_r[2] * root_rx + frame_r[5] * root_ry +
+                frame_r[8] * root_rz - f_grips_up;
+            for (const std::size_t s : {0U, 1U}) {
+                const auto dof0 = leg_dofs[s][0];
+                const auto dof1 = leg_dofs[s][1];
+                out.f_passive[s] =
+                    gammas[s][0] * (bias[dof0] + inertia[dof0]) +
+                    gammas[s][1] * (bias[dof1] + inertia[dof1]);
+            }
+            return out;
+        };
         const auto compute_press_state =
             [&](double c_acc, const std::array<double, 3> &f_acc,
                 const std::array<double, 3> &p_acc,
@@ -1612,7 +2254,24 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
         // It damps the leg relative to the motion the crank and pelvis
         // impose, never the crank rotation itself.
         std::array<Vec2, 2> qdot_leg_kin{};
-        {
+        if (spatial_3d_) {
+            for (const std::size_t si : {0U, 1U}) {
+                const Vec3 v_hip_w = body_point_vel(
+                    pelvis_r, pelvis_pos, p_vel6, hip_world[si]);
+                const Vec3 v_frame_w = body_point_vel(
+                    frame_r, frame_pos, f_vel6, hip_world[si]);
+                const Vec2 hip_vel_xz = mat_t_vec_xz(
+                    frame_r, vec_sub(v_hip_w, v_frame_w));
+                qdot_leg_kin[si][0] =
+                    jacobians[si][0] * rate -
+                    gammas_x[si][0] * hip_vel_xz[0] -
+                    gammas[si][0] * hip_vel_xz[1] - pelvis_rel_pitch_rate_3d;
+                qdot_leg_kin[si][1] =
+                    jacobians[si][1] * rate -
+                    gammas_x[si][1] * hip_vel_xz[0] -
+                    gammas[si][1] * hip_vel_xz[1];
+            }
+        } else {
             const auto rd = [&](int dof) {
                 return dof >= 0 ? qvel[static_cast<std::size_t>(dof)] : 0.;
             };
@@ -1668,9 +2327,12 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             std::array<double, 2> f_rest_n{};
             double crank_press_ceiling_nm =
                 std::numeric_limits<double>::infinity();
+            const double saddle_reserve_n =
+                (spatial_3d_ && !steady_state) ? 50.0 : 0.0;
             for (const std::size_t s : {0U, 1U}) {
                 f_task_press_max[s] = std::max(
-                    0., ps.max_total_press_n - f_min[1U - s] - f_floor[s]);
+                    0., ps.max_total_press_n - saddle_reserve_n -
+                            f_min[1U - s] - f_floor[s]);
                 f_rest_n[s] = std::max(f_weight[s], 0.);
                 if (shares[s] > 0. && press_per_nm[s] > 1e-12) {
                     crank_press_ceiling_nm = std::min(
@@ -1807,8 +2469,13 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 }
             }
         };
-        PressState ps = compute_press_state(
-            0., {0., 0., 0.}, {0., 0., 0.}, {0., 0., 0., 0., 0.});
+        PressState ps =
+            spatial_3d_
+                ? compute_press_state_3d(
+                      0., {0., 0., 0., 0., 0., 0.}, {0., 0., 0., 0., 0., 0.},
+                      {0., 0., 0., 0., 0., 0., 0.})
+                : compute_press_state(
+                      0., {0., 0., 0.}, {0., 0., 0.}, {0., 0., 0., 0., 0.});
         if (!steady_state && target_data_) {
             mj_copyData(target_data_.get(), model_, data);
             bool first_fwd = true;
@@ -1867,18 +2534,32 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 const auto rd = [&](int dof) {
                     return dof >= 0 ? qa[static_cast<std::size_t>(dof)] : 0.;
                 };
-                std::array<double, 5> u_acc{};
-                for (std::size_t k = 0; k < 5; ++k)
-                    u_acc[k] = rd(joints_[upper_slots[k]].dof_adr);
                 cached_req = cur_req;
                 cached_prio = cur_prio;
-                cached_P = compute_press_state(
-                    rd(crank_spin_dof_),
-                    {rd(frame_root_x_dof_), rd(frame_root_z_dof_),
-                     rd(frame_pitch_dof_)},
-                    {rd(rider_root_x_dof_), rd(rider_root_z_dof_),
-                     rd(rider_pitch_dof_)},
-                    u_acc);
+                if (spatial_3d_) {
+                    std::array<double, 6> f_acc6{};
+                    std::array<double, 6> p_acc6{};
+                    for (std::size_t k = 0; k < 6; ++k) {
+                        f_acc6[k] = qa[static_cast<std::size_t>(frame_free_dof_) + k];
+                        p_acc6[k] = qa[static_cast<std::size_t>(rider_free_dof_) + k];
+                    }
+                    std::array<double, 7> u_acc7{};
+                    for (std::size_t k = 0; k < 7; ++k)
+                        u_acc7[k] = rd(joints_[upper_slots_3d[k]].dof_adr);
+                    cached_P = compute_press_state_3d(
+                        rd(crank_spin_dof_), f_acc6, p_acc6, u_acc7);
+                } else {
+                    std::array<double, 5> u_acc{};
+                    for (std::size_t k = 0; k < 5; ++k)
+                        u_acc[k] = rd(joints_[upper_slots[k]].dof_adr);
+                    cached_P = compute_press_state(
+                        rd(crank_spin_dof_),
+                        {rd(frame_root_x_dof_), rd(frame_root_z_dof_),
+                         rd(frame_pitch_dof_)},
+                        {rd(rider_root_x_dof_), rd(rider_root_z_dof_),
+                         rd(rider_pitch_dof_)},
+                        u_acc);
+                }
                 has_cached_eval = true;
                 return cached_P;
             };
@@ -1922,35 +2603,234 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
                 const double J21 =
                     (P1.max_total_press_n - P.max_total_press_n) / kEps;
                 const double det = J00 * J11 - J01 * J10;
-                if (std::abs(det) < 1e-12)
-                    break;
-                const double dp0 = -(J11 * r0 - J01 * r1) / det;
-                const double dp1 = -(-J10 * r0 + J00 * r1) / det;
-                const double dp2 = r2 + J20 * dp0 + J21 * dp1;
+                double dp0 = 0.;
+                double dp1 = 0.;
+                double dp2 = 0.;
+                if (spatial_3d_ && std::abs(det) < 0.25) {
+                    dp0 = 0.5 * r0;
+                    dp1 = 0.5 * r1;
+                    dp2 = 0.5 * r2;
+                } else {
+                    if (std::abs(det) < 1e-12)
+                        break;
+                    dp0 = -(J11 * r0 - J01 * r1) / det;
+                    dp1 = -(-J10 * r0 + J00 * r1) / det;
+                    dp2 = r2 + J20 * dp0 + J21 * dp1;
+                    const double max_dp = std::max(
+                        {std::abs(dp0), std::abs(dp1), std::abs(dp2)});
+                    if (spatial_3d_ && max_dp > 150.) {
+                        dp0 = 0.5 * r0;
+                        dp1 = 0.5 * r1;
+                        dp2 = 0.5 * r2;
+                    }
+                }
                 double alpha = 1.;
                 PressState ps_next = ps;
                 PressState P_next = P;
-                for (int ls = 0; ls < 5; ++ls) {
+                bool accepted = false;
+                const int max_ls = spatial_3d_ ? 8 : 5;
+                for (int ls = 0; ls < max_ls; ++ls) {
                     ps_next = {
                         .f_passive = {ps.f_passive[0] + alpha * dp0,
                                       ps.f_passive[1] + alpha * dp1},
                         .max_total_press_n =
                             ps.max_total_press_n + alpha * dp2};
+                    if (spatial_3d_ &&
+                        (ps_next.max_total_press_n < 0. ||
+                         std::abs(ps_next.f_passive[0]) > 650. ||
+                         std::abs(ps_next.f_passive[1]) > 650.)) {
+                        alpha *= .5;
+                        continue;
+                    }
                     P_next = eval_or_base(ps_next);
                     const double next_err = std::max(
                         {std::abs(P_next.f_passive[0] - ps_next.f_passive[0]),
                          std::abs(P_next.f_passive[1] - ps_next.f_passive[1]),
                          std::abs(P_next.max_total_press_n -
                                   ps_next.max_total_press_n)});
-                    if (next_err < err)
+                    if (next_err < err) {
+                        accepted = true;
                         break;
+                    }
                     alpha *= .5;
                 }
+                if (spatial_3d_ && !accepted)
+                    break;
                 ps = ps_next;
                 P = P_next;
             }
         }
+        if (spatial_3d_ && !steady_state) {
+            if (!has_prev_press_3d_ || data->time <= prev_press_time_3d_ ||
+                data->time < 0.01) {
+                has_prev_press_3d_ = true;
+                prev_f_passive_3d_ = ps.f_passive;
+                prev_max_press_3d_ = ps.max_total_press_n;
+            } else {
+                constexpr double kPressEmaAlpha3d = 0.25;
+                prev_f_passive_3d_[0] +=
+                    kPressEmaAlpha3d * (ps.f_passive[0] - prev_f_passive_3d_[0]);
+                prev_f_passive_3d_[1] +=
+                    kPressEmaAlpha3d * (ps.f_passive[1] - prev_f_passive_3d_[1]);
+                prev_max_press_3d_ +=
+                    kPressEmaAlpha3d * (ps.max_total_press_n - prev_max_press_3d_);
+                ps.f_passive = prev_f_passive_3d_;
+                ps.max_total_press_n = prev_max_press_3d_;
+            }
+            prev_press_time_3d_ = data->time;
+        }
         populate_leg_torques(ps, true);
+        if (spatial_3d_ && !steady_state && command.enabled && target_data_ &&
+            saddle_eq_ >= 0 && saddle_site_ >= 0 &&
+            saddle_eq_reactions_.has_value() && saddle_lstsq_.has_value()) {
+            const Vec3 sad_pos = site_pos(model_, data, saddle_site_);
+            const Vec3 u_steer = joint_axis(model_, data, steer_joint_);
+            const Vec3 u_frame = mat_t_vec(frame_r, u_steer);
+            const Vec3 g_l = mat_t_vec(
+                frame_r,
+                vec_sub(site_pos(model_, data, grip_sites_[0]), frame_pos));
+            const Vec3 g_r = mat_t_vec(
+                frame_r,
+                vec_sub(site_pos(model_, data, grip_sites_[1]), frame_pos));
+            const std::array<double, 2> k_roll{
+                g_l[1] * u_frame[2] - g_l[2] * u_frame[1],
+                g_r[1] * u_frame[2] - g_r[2] * u_frame[1]};
+            if (std::abs(k_roll[0]) > 0.05 && std::abs(k_roll[1]) > 0.05) {
+                const auto ctrl_buf = model_access::mutable_buffer(
+                    target_data_->ctrl, model_->nu, "ctrl");
+                const auto live_ctrl = model_access::readonly_buffer(
+                    data->ctrl, model_->nu, "ctrl");
+                std::ranges::copy(live_ctrl, ctrl_buf.begin());
+                for (int roll_it = 0; roll_it < 3; ++roll_it) {
+                    const std::vector<double> exc_r = limit_torques(
+                        requested, data, requested_filled, priority_requested);
+                    for (std::size_t i = 0; i < n; ++i) {
+                        const auto &joint = joints_[i];
+                        if (joint.actuator_id < 0)
+                            continue;
+                        const double speed =
+                            qvel[static_cast<std::size_t>(joint.dof_adr)];
+                        double del = exc_r[i];
+                        if (std::abs(speed) >= config_.joint_speed_limit_rad_s &&
+                            del * speed > 0.)
+                            del = 0.;
+                        ctrl_buf[static_cast<std::size_t>(joint.actuator_id)] =
+                            command_enabled_ ? del : 0.;
+                    }
+                    mj_forwardSkip(model_, target_data_.get(), mjSTAGE_VEL, 1);
+                    std::ranges::fill(saddle_qfrc_, 0.);
+                    saddle_eq_reactions_->equality_qfrc_into(
+                        target_data_.get(), saddle_eq_, saddle_qfrc_);
+                    const rider::BodyWrench bw = rider::body_wrench(
+                        model_, target_data_.get(), *saddle_lstsq_,
+                        saddle_qfrc_, saddle_body_, sad_pos);
+                    const double sad_fn =
+                        bw.wrench[0] * frame_up[0] +
+                        bw.wrench[1] * frame_up[1] +
+                        bw.wrench[2] * frame_up[2];
+                    const double sad_mx =
+                        bw.wrench[3] * frame_r[0] +
+                        bw.wrench[4] * frame_r[3] +
+                        bw.wrench[5] * frame_r[6];
+                    const double mx_tol = 0.015 * std::max(0., sad_fn);
+                    const double mx_target =
+                        std::clamp(sad_mx, -mx_tol, mx_tol);
+                    const double d_mx = sad_mx - mx_target;
+                    if (std::abs(d_mx) <= 0.2)
+                        break;
+                    constexpr double kMaxRollHandN = 285.0;
+                    std::array<double, 2> a_min{-1e9, -1e9};
+                    std::array<double, 2> a_max{1e9, 1e9};
+                    for (const std::size_t s : {0U, 1U}) {
+                        const std::size_t idx0 = upper_slots_3d[1U + 3U * s];
+                        const std::size_t idx1 = upper_slots_3d[2U + 3U * s];
+                        const std::size_t idx2 = upper_slots_3d[3U + 3U * s];
+                        const Vec3 tau_net{
+                            requested[idx0] -
+                                bias[static_cast<std::size_t>(
+                                    joints_[idx0].dof_adr)],
+                            requested[idx1] -
+                                bias[static_cast<std::size_t>(
+                                    joints_[idx1].dof_adr)],
+                            requested[idx2] -
+                                bias[static_cast<std::size_t>(
+                                    joints_[idx2].dof_adr)]};
+                        Vec3 f_cur{};
+                        static_cast<void>(
+                            solve_3x3(j_grip_3d[s], true, tau_net, f_cur));
+                        const double q1 = 2. * dot3(f_cur, u_steer);
+                        const double q0 =
+                            norm3_sq(f_cur) - kMaxRollHandN * kMaxRollHandN;
+                        if (q0 >= 0.) {
+                            a_min[s] = 0.;
+                            a_max[s] = 0.;
+                        } else {
+                            const double disc =
+                                std::max(0., q1 * q1 - 4. * q0);
+                            const double rdisc = std::sqrt(disc);
+                            a_min[s] =
+                                std::max(a_min[s], 0.5 * (-q1 - rdisc));
+                            a_max[s] =
+                                std::min(a_max[s], 0.5 * (-q1 + rdisc));
+                        }
+                        const auto &jmat = j_grip_3d[s];
+                        for (std::size_t k = 0; k < 3; ++k) {
+                            const double dtau_u = jmat[k] * u_steer[0] +
+                                                  jmat[3 + k] * u_steer[1] +
+                                                  jmat[6 + k] * u_steer[2];
+                            const std::size_t slot =
+                                upper_slots_3d[1U + 3U * s + k];
+                            const double tau0 = requested[slot];
+                            const double lo =
+                                -usable_slot_capacity(slot, -1.) - tau0;
+                            const double hi =
+                                usable_slot_capacity(slot, 1.) - tau0;
+                            if (dtau_u > 1e-12) {
+                                a_min[s] = std::max(a_min[s], lo / dtau_u);
+                                a_max[s] = std::min(a_max[s], hi / dtau_u);
+                            } else if (dtau_u < -1e-12) {
+                                a_min[s] = std::max(a_min[s], hi / dtau_u);
+                                a_max[s] = std::min(a_max[s], lo / dtau_u);
+                            }
+                        }
+                        if (a_min[s] > a_max[s]) {
+                            a_min[s] = 0.;
+                            a_max[s] = 0.;
+                        }
+                    }
+                    const double req_mx = -d_mx;
+                    std::array<double, 2> alpha_roll{
+                        std::clamp(0.5 * req_mx / k_roll[0], a_min[0], a_max[0]),
+                        std::clamp(0.5 * req_mx / k_roll[1], a_min[1], a_max[1])};
+                    double rem =
+                        req_mx - (k_roll[0] * alpha_roll[0] +
+                                  k_roll[1] * alpha_roll[1]);
+                    if (std::abs(rem) > 0.05) {
+                        alpha_roll[0] = std::clamp(
+                            alpha_roll[0] + rem / k_roll[0], a_min[0], a_max[0]);
+                        rem = req_mx - (k_roll[0] * alpha_roll[0] +
+                                        k_roll[1] * alpha_roll[1]);
+                        alpha_roll[1] = std::clamp(
+                            alpha_roll[1] + rem / k_roll[1], a_min[1], a_max[1]);
+                    }
+                    if (std::abs(alpha_roll[0]) + std::abs(alpha_roll[1]) <= 1e-6)
+                        break;
+                    for (const std::size_t s : {0U, 1U}) {
+                        const auto &jmat = j_grip_3d[s];
+                        for (std::size_t k = 0; k < 3; ++k) {
+                            const double dtau =
+                                alpha_roll[s] * (jmat[k] * u_steer[0] +
+                                                 jmat[3 + k] * u_steer[1] +
+                                                 jmat[6 + k] * u_steer[2]);
+                            const std::size_t slot =
+                                upper_slots_3d[1U + 3U * s + k];
+                            requested[slot] += dtau;
+                            priority_requested[slot] += dtau;
+                        }
+                    }
+                }
+            }
+        }
         support_diagnostics_ = {.present = true,
                                 .stance_front = shares[0] >= .5,
                                 .stance_rear = shares[1] >= .5};

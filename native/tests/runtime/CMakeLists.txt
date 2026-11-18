@@ -107,3 +107,14 @@ if(BUILD_TESTING)
   set_tests_properties(runtime_spatial_ride PROPERTIES
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_ride>")
 endif()
+
+add_executable(runtime_spatial_launch test_spatial_launch.cpp)
+bike_startup_target_policy(runtime_spatial_launch "${_test_repo_root}/native")
+target_link_libraries(runtime_spatial_launch PRIVATE bike_test_fixtures bike_app)
+  bike_rewrite_mujoco_load_name(runtime_spatial_launch
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME runtime_spatial_launch COMMAND runtime_spatial_launch)
+  set_tests_properties(runtime_spatial_launch PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:runtime_spatial_launch>")
+endif()

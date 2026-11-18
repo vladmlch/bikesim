@@ -1,6 +1,6 @@
 # rider domain contract tests. The same app/library graph is exercised
 # by both executables; registration never invokes them.
-foreach(_rider_test IN ITEMS rider_constraints rider_contacts rider_steer_balance)
+foreach(_rider_test IN ITEMS rider_constraints rider_contacts rider_steer_balance rider_spatial_spindle)
   string(REGEX REPLACE "^rider_" "" _rider_src "${_rider_test}")
   add_executable(${_rider_test} "test_${_rider_src}.cpp")
   bike_startup_target_policy(${_rider_test} "${_test_repo_root}/native")

@@ -8,6 +8,7 @@
 // trees the binding boxes after the mutable section commits.
 
 #include "step.hpp"
+#include "launch_support.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -906,6 +907,115 @@ WireObject com_observations(const mjModel *m, const mjData *d) {
     return out;
 }
 
+struct SpatialRoadHfield {
+    bool valid = false;
+    int nrow = 0;
+    int ncol = 0;
+    std::size_t adr = 0;
+    double x_min = 0.0;
+    double y_min = 0.0;
+    double dx = 1.0;
+    double dy = 1.0;
+    double elev = 1.0;
+    double z_pos = 0.0;
+
+    [[nodiscard]] double sample(std::span<const float> hfield_data,
+                                std::array<double, 2> xy) const noexcept {
+        const double fx = std::clamp((xy[0] - x_min) / dx, 0.0,
+                                     static_cast<double>(ncol - 1));
+        const double fy = std::clamp((xy[1] - y_min) / dy, 0.0,
+                                     static_cast<double>(nrow - 1));
+        const int ix0 = std::min(static_cast<int>(std::floor(fx)), ncol - 2);
+        const int iy0 = std::min(static_cast<int>(std::floor(fy)), nrow - 2);
+        const double tx = fx - static_cast<double>(ix0);
+        const double ty = fy - static_cast<double>(iy0);
+        const auto z_at = [&](int ix, int iy) noexcept {
+            const std::size_t idx =
+                adr + static_cast<std::size_t>(iy) *
+                          static_cast<std::size_t>(ncol) +
+                static_cast<std::size_t>(ix);
+            return static_cast<double>(hfield_data[idx]) * elev + z_pos;
+        };
+        const double z00 = z_at(ix0, iy0);
+        const double z10 = z_at(ix0 + 1, iy0);
+        const double z01 = z_at(ix0, iy0 + 1);
+        const double z11 = z_at(ix0 + 1, iy0 + 1);
+        return (1.0 - tx) * (1.0 - ty) * z00 + tx * (1.0 - ty) * z10 +
+               (1.0 - tx) * ty * z01 + tx * ty * z11;
+    }
+};
+
+[[nodiscard]] SpatialRoadHfield extract_spatial_road_hfield(const mjModel *m) {
+    SpatialRoadHfield out;
+    if (m == nullptr || m->nhfield <= 0 || m->ngeom <= 0)
+        return out;
+    const int t_idx = mj_name2id(m, mjOBJ_GEOM, "terrain");
+    if (t_idx < 0)
+        return out;
+    const auto gtype = ibuf(m->geom_type, m->ngeom);
+    if (gtype[static_cast<std::size_t>(t_idx)] != mjGEOM_HFIELD)
+        return out;
+    const auto gdataid = ibuf(m->geom_dataid, m->ngeom);
+    const int h_idx = gdataid[static_cast<std::size_t>(t_idx)];
+    if (h_idx < 0 || h_idx >= m->nhfield)
+        return out;
+    const auto nrows = ibuf(m->hfield_nrow, m->nhfield);
+    const auto ncols = ibuf(m->hfield_ncol, m->nhfield);
+    const auto adrs = ibuf(m->hfield_adr, m->nhfield);
+    const int nr = nrows[static_cast<std::size_t>(h_idx)];
+    const int nc = ncols[static_cast<std::size_t>(h_idx)];
+    const int adr = adrs[static_cast<std::size_t>(h_idx)];
+    if (nr < 2 || nc < 2 || adr < 0)
+        return out;
+    const auto total =
+        static_cast<std::size_t>(nr) * static_cast<std::size_t>(nc);
+    if (static_cast<std::size_t>(adr) + total >
+        static_cast<std::size_t>(m->nhfielddata))
+        return out;
+    const auto hsize = buf(m->hfield_size, 4 * m->nhfield);
+    const auto gpos = buf(m->geom_pos, 3 * m->ngeom);
+    const auto hu = static_cast<std::size_t>(h_idx);
+    const auto tu = static_cast<std::size_t>(t_idx);
+    const double rx = hsize[4U * hu + 0U];
+    const double ry = hsize[4U * hu + 1U];
+    const double elev = hsize[4U * hu + 2U];
+    if (!(rx > 0.0) || !(ry > 0.0) || !(elev > 0.0))
+        return out;
+    out.valid = true;
+    out.nrow = nr;
+    out.ncol = nc;
+    out.adr = static_cast<std::size_t>(adr);
+    out.x_min = gpos[3U * tu + 0U] - rx;
+    out.y_min = gpos[3U * tu + 1U] - ry;
+    out.dx = (2.0 * rx) / static_cast<double>(nc - 1);
+    out.dy = (2.0 * ry) / static_cast<double>(nr - 1);
+    out.elev = elev;
+    out.z_pos = gpos[3U * tu + 2U];
+    return out;
+}
+
+double interp_vertices_z(const std::vector<std::array<double, 2>> &vertices,
+                         double x) noexcept {
+    if (vertices.empty())
+        return 0.0;
+    if (x <= vertices.front()[0] || vertices.size() == 1U)
+        return vertices.front()[1];
+    if (x >= vertices.back()[0])
+        return vertices.back()[1];
+    const auto it = std::ranges::upper_bound(
+        vertices, x, {}, [](const std::array<double, 2> &v) { return v[0]; });
+    const auto idx1 =
+        static_cast<std::size_t>(std::distance(vertices.begin(), it));
+    const std::size_t idx0 = idx1 > 0U ? idx1 - 1U : 0U;
+    const double x0 = vertices[idx0][0];
+    const double x1 = vertices[idx1][0];
+    const double dx = x1 - x0;
+    if (!(dx > 0.0))
+        return vertices[idx0][1];
+    const double t = (x - x0) / dx;
+    return vertices[idx0][1] + t * (vertices[idx1][1] - vertices[idx0][1]);
+}
+
 } // namespace
 
 // ---- the step.hpp-published constraint observers -------------------------
@@ -1071,6 +1181,9 @@ struct SpatialStepExtension {
     bool steer_balance_seeded = false;
     std::optional<bike::rider::SteerBalance> steer_balance;
     std::vector<double> steer_qfrc;
+    std::optional<LaunchSupport> launch_support;
+    std::vector<double> launch_qfrc;
+    SpatialRoadHfield road_hfield{};
 };
 
 namespace {
@@ -1185,17 +1298,37 @@ PhysicalStep::PhysicalStep(
                               : -1;
             std::optional<bike::rider::SteerBalance> steer_balance;
             if (config_.spatial.has_value() && steer_qp >= 0 &&
-                steer_df >= 0 && !rider_control_.has_value() &&
-                !config_.rider_present) {
+                steer_df >= 0) {
                 const double total_mass_kg =
                     numpy_sum(buf(m->body_mass, m->nbody));
-                const auto preset =
-                    total_mass_kg > 60.0
-                        ? bike::rider::SteerRiderPreset::lumped
-                        : bike::rider::SteerRiderPreset::none;
-                steer_balance.emplace(*config_.spatial, config_.timestep_s,
-                                      preset);
+                if (rider_control_.has_value()) {
+                    steer_balance.emplace(*config_.spatial, config_.timestep_s,
+                                          total_mass_kg);
+                } else if (!config_.rider_present) {
+                    const auto preset =
+                        total_mass_kg > 60.0
+                            ? bike::rider::SteerRiderPreset::lumped
+                            : bike::rider::SteerRiderPreset::none;
+                    steer_balance.emplace(*config_.spatial, config_.timestep_s,
+                                          preset);
+                }
             }
+            std::optional<LaunchSupport> launch_support;
+            if (config_.spatial.has_value() &&
+                config_.spatial->start_mode ==
+                    bike::spatial::SpatialStartMode::standstill &&
+                config_.spatial->start_support.has_value()) {
+                launch_support.emplace(LaunchSupportConfig{
+                    .spec = *config_.spatial->start_support,
+                    .root_free_qposadr = free_qpos,
+                    .root_free_dofadr = free_dof,
+                    .standstill_speed_mps = config_.launch.standstill_speed_mps,
+                    .initially_armed = true,
+                });
+            }
+            std::vector<double> launch_qfrc;
+            if (launch_support.has_value())
+                launch_qfrc.assign(static_cast<std::size_t>(m->nv), 0.0);
             spatial_ = std::make_unique<SpatialStepExtension>(
                 SpatialStepExtension{
                     .root_free_qposadr = free_qpos,
@@ -1207,7 +1340,10 @@ PhysicalStep::PhysicalStep(
                     .steer_balance_seeded = false,
                     .steer_balance = std::move(steer_balance),
                     .steer_qfrc = std::vector<double>(
-                        static_cast<std::size_t>(m->nv), 0.0)});
+                        static_cast<std::size_t>(m->nv), 0.0),
+                    .launch_support = launch_support,
+                    .launch_qfrc = std::move(launch_qfrc),
+                    .road_hfield = extract_spatial_road_hfield(m)});
         } else {
             root_x_qposadr_ = joint_qposadr(m, "root_x");
             root_x_dofadr_ = joint_dofadr(m, "root_x");
@@ -1237,7 +1373,7 @@ PhysicalStep::PhysicalStep(
         const mjData *d = stepper_->data();
         update_rider_senses(settled_grip_entries(), current_wheel_x_m(),
                             current_frame_up(), buf(d->qvel, m->nv),
-                            buf(d->qpos, m->nq));
+                            buf(d->qpos, m->nq), current_wheel_y_m());
     }
     // native_reference has no applied tire writer: its solved contact
     // rows are read by RuntimeContactQuery after the engine solve.
@@ -1304,12 +1440,26 @@ bool PhysicalStep::has_steer_balance() const noexcept {
     return spatial_ != nullptr && spatial_->steer_balance.has_value();
 }
 
+bool PhysicalStep::has_launch_support() const noexcept {
+    return spatial_ != nullptr && spatial_->launch_support.has_value();
+}
+
+std::optional<LaunchSupportState>
+PhysicalStep::launch_support_state() const noexcept {
+    if (spatial_ == nullptr || !spatial_->launch_support.has_value())
+        return std::nullopt;
+    return spatial_->launch_support->state();
+}
+
 void PhysicalStep::set_direct_steer_torque_nm(double torque_nm) {
     if (!std::isfinite(torque_nm))
         throw std::invalid_argument("direct steer torque must be finite");
     if (spatial_ == nullptr || spatial_->steer_dofadr < 0)
         throw std::logic_error(
             "direct steer torque requires a spatial model with steer_joint");
+    if (rider_control_.has_value())
+        throw std::logic_error(
+            "direct steer torque is disabled for articulated_3d");
     spatial_->direct_steer_torque_nm = torque_nm;
     spatial_->direct_steer_override = true;
 }
@@ -1475,8 +1625,33 @@ PhysicalStep::apply_forces_body(
                               wheel_bodies_[0])],
                           xpos[3 * static_cast<std::size_t>(
                               wheel_bodies_[1])]};
-            rider_state_ = rider_kinematic_state(
-                m, d, road_profile_, wheel_x_m_, config_.road_lookahead_m);
+            wheel_y_m_ = {xpos[3 * static_cast<std::size_t>(
+                              wheel_bodies_[0]) + 1],
+                          xpos[3 * static_cast<std::size_t>(
+                              wheel_bodies_[1]) + 1]};
+            if (spatial_ != nullptr) {
+                const auto qpos_span = buf(d->qpos, m->nq);
+                const auto qvel_span = buf(d->qvel, m->nv);
+                for (const double v : qpos_span)
+                    if (!std::isfinite(v))
+                        throw std::invalid_argument("rider state qpos");
+                for (const double v : qvel_span)
+                    if (!std::isfinite(v))
+                        throw std::invalid_argument("rider state qvel");
+                if (!std::isfinite(d->time) || d->time < 0.)
+                    throw std::invalid_argument("rider state time");
+                rider_state_ = RiderKinematicState{
+                    .qpos = std::vector<double>(qpos_span.begin(),
+                                                qpos_span.end()),
+                    .qvel = std::vector<double>(qvel_span.begin(),
+                                                qvel_span.end()),
+                    .rider_time_s = d->time,
+                    .road = spatial_road_samples(qpos_span, wheel_x_m_,
+                                                 wheel_y_m_)};
+            } else {
+                rider_state_ = rider_kinematic_state(
+                    m, d, road_profile_, wheel_x_m_, config_.road_lookahead_m);
+            }
         }
         const bool automatic_effort =
             active && config_.intent.enabled &&
@@ -1702,10 +1877,12 @@ PhysicalStep::apply_forces_body(
             accumulator_.add(tick.component_names[i],
                              tick.components[i].values);
         stepper_->drive().commit(tick);
+        double steer_torque_target_nm = 0.0;
         if (active && spatial_ != nullptr && spatial_->steer_dofadr >= 0) {
-            double steer_torque_nm = spatial_->direct_steer_torque_nm;
+            double steer_torque_nm =
+                rider_control_.has_value() ? 0.0 : spatial_->direct_steer_torque_nm;
             if (!initializing_ && spatial_->steer_balance.has_value() &&
-                !spatial_->direct_steer_override) {
+                (rider_control_.has_value() || !spatial_->direct_steer_override)) {
                 if (advance) {
                     const auto qpos_now = buf(d->qpos, m->nq);
                     const auto qvel_now = buf(d->qvel, m->nv);
@@ -1730,17 +1907,45 @@ PhysicalStep::apply_forces_body(
                     }
                     steer_torque_nm =
                         spatial_->steer_balance->step(step_, obs);
-                    spatial_->direct_steer_torque_nm = steer_torque_nm;
                 } else {
                     steer_torque_nm =
                         spatial_->steer_balance->held_torque_nm();
                 }
             }
-            if (steer_torque_nm != 0.0) {
-                std::ranges::fill(spatial_->steer_qfrc, 0.0);
-                spatial_->steer_qfrc[static_cast<std::size_t>(
-                    spatial_->steer_dofadr)] = steer_torque_nm;
-                accumulator_.add("act_rider_steer", spatial_->steer_qfrc);
+            if (rider_control_.has_value()) {
+                steer_torque_target_nm = steer_torque_nm;
+                spatial_->direct_steer_torque_nm = 0.0;
+            } else {
+                spatial_->direct_steer_torque_nm = steer_torque_nm;
+                if (steer_torque_nm != 0.0) {
+                    std::ranges::fill(spatial_->steer_qfrc, 0.0);
+                    spatial_->steer_qfrc[static_cast<std::size_t>(
+                        spatial_->steer_dofadr)] = steer_torque_nm;
+                    accumulator_.add("act_rider_steer", spatial_->steer_qfrc);
+                }
+            }
+        }
+        if (active && !initializing_ && spatial_ != nullptr &&
+            spatial_->launch_support.has_value() && frame_body_ >= 0) {
+            const auto qpos_now = buf(d->qpos, m->nq);
+            const auto qvel_now = buf(d->qvel, m->nv);
+            const auto xpos_now = buf(d->xpos, 3 * m->nbody);
+            const auto fu = static_cast<std::size_t>(frame_body_);
+            const std::array<double, 3> frame_pos{
+                xpos_now[3U * fu], xpos_now[3U * fu + 1U],
+                xpos_now[3U * fu + 2U]};
+            const double weight = spatial_->launch_support->compute_into(
+                LaunchSupportInput{
+                    .qpos = qpos_now,
+                    .qvel = qvel_now,
+                    .frame_pos_world_m = frame_pos,
+                    .forward_speed_mps = forward_speed_mps(qpos_now, qvel_now),
+                    .motor_braking = brakes.motor_braking,
+                    .advance = advance,
+                },
+                spatial_->launch_qfrc);
+            if (weight > 0.0) {
+                accumulator_.add("launch_support", spatial_->launch_qfrc);
             }
         }
         if (rider_control_.has_value()) {
@@ -1752,6 +1957,7 @@ PhysicalStep::apply_forces_body(
                 stepper_->drive().config().drive_mode == "articulated_effort"
                     ? pedaling.effort_nm
                     : 0.;
+            command.steer_torque_target_nm = steer_torque_target_nm;
             command.enabled = control.rider_enabled;
             command.posture = control.posture.value_or(rider::RiderPosture{});
             command.crank_target_phase_rad = crank_goal;
@@ -2102,6 +2308,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         // settle_welds' interval swap republishes endpoint kinematics
         // on its way out, so stage the start positions first (M-P2).
         const std::array<double, 2> senses_wheel_x = current_wheel_x_m();
+        const std::array<double, 2> senses_wheel_y = current_wheel_y_m();
         const std::array<double, 3> senses_frame_up = current_frame_up();
         if (rider_control_.has_value()) {
             in.settle = stepper_->rider_contacts().settle_welds(
@@ -2176,7 +2383,7 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
             update_intent_signals(signals_in);
         }
         update_rider_senses(in.settle.entries, senses_wheel_x,
-                            senses_frame_up, v, q);
+                            senses_frame_up, v, q, senses_wheel_y);
         in.loss_step = loss_increment(components, in.qvel_mid, dt);
         if (rider_control_.has_value())
             in.rider_diag =
@@ -3165,6 +3372,78 @@ std::array<double, 2> PhysicalStep::current_wheel_x_m() const {
             xpos[3 * static_cast<std::size_t>(wheel_bodies_[1])]};
 }
 
+std::array<double, 2> PhysicalStep::current_wheel_y_m() const {
+    const mjModel *m = stepper_->model();
+    const mjData *d = stepper_->data();
+    const auto xpos = buf(d->xpos, 3 * m->nbody);
+    return {xpos[3 * static_cast<std::size_t>(wheel_bodies_[0]) + 1],
+            xpos[3 * static_cast<std::size_t>(wheel_bodies_[1]) + 1]};
+}
+
+std::vector<RoadSample> PhysicalStep::spatial_road_samples(
+    std::span<const double> qpos,
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) paired wheel X/Y arrays
+    std::span<const double, 2> wheel_x_m,
+    std::span<const double, 2> wheel_y_m) const {
+    if (spatial_ == nullptr ||
+        std::cmp_less(qpos.size(), spatial_->root_free_qposadr + 7)) {
+        return road_profile_.samples(wheel_x_m, config_.road_lookahead_m);
+    }
+    const auto qa = static_cast<std::size_t>(spatial_->root_free_qposadr);
+    const bike::spatial::Quat quat = bike::spatial::quat_normalized(
+        {qpos[qa + 3U], qpos[qa + 4U], qpos[qa + 5U], qpos[qa + 6U]});
+    const auto heading = bike::spatial::horizontal_heading_unit(quat);
+    const double hx = heading.valid ? heading.hx : 1.0;
+    const double hy = heading.valid ? heading.hy : 0.0;
+    const double rx = wheel_x_m[1];
+    const double ry = wheel_y_m[1];
+    const double s_front_pos = std::max(
+        0.0, (wheel_x_m[0] - rx) * hx + (wheel_y_m[0] - ry) * hy);
+    constexpr double kSpacingM = 0.05;
+    const double lookahead = config_.road_lookahead_m;
+    const int count =
+        static_cast<int>(std::floor(lookahead / kSpacingM + 1e-12));
+    std::vector<double> ss;
+    ss.reserve(static_cast<std::size_t>(count) + 3U);
+    ss.push_back(0.0);
+    ss.push_back(s_front_pos);
+    for (int k = 0; k < count; ++k) {
+        ss.push_back(s_front_pos + static_cast<double>(k + 1) * kSpacingM);
+    }
+    ss.push_back(s_front_pos + lookahead);
+    std::ranges::sort(ss);
+
+    const mjModel *m = stepper_->model();
+    const std::span<const float> hfield_data =
+        spatial_->road_hfield.valid
+            ? std::views::counted(m->hfield_data, m->nhfielddata)
+            : std::span<const float>{};
+    const auto z_at_s = [&](double s) noexcept {
+        const double wx = rx + s * hx;
+        const double wy = ry + s * hy;
+        if (spatial_->road_hfield.valid) {
+            return spatial_->road_hfield.sample(hfield_data, {wx, wy});
+        }
+        return interp_vertices_z(vertices_, wx);
+    };
+    constexpr double kGradStepM = 0.05;
+    std::vector<RoadSample> out;
+    out.reserve(ss.size());
+    for (const double s : ss) {
+        const double height = z_at_s(s);
+        const double z_plus = z_at_s(s + kGradStepM);
+        const double z_minus = z_at_s(s - kGradStepM);
+        const double grade = (z_plus - z_minus) / (2.0 * kGradStepM);
+        if (!std::isfinite(s) || !std::isfinite(height) ||
+            !std::isfinite(grade)) {
+            throw std::invalid_argument("spatial road sample field");
+        }
+        out.push_back(RoadSample{
+            .x_m = s, .height_m = height, .grade = grade});
+    }
+    return out;
+}
+
 std::array<double, 3> PhysicalStep::current_frame_up() const {
     const mjModel *m = stepper_->model();
     const mjData *d = stepper_->data();
@@ -3188,7 +3467,8 @@ void PhysicalStep::update_rider_senses(
     std::span<const double, 3> frame_up,
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) preserve defaultless legacy arg order
     std::span<const double> qvel_start,
-    std::span<const double> qpos_start) {
+    std::span<const double> qpos_start,
+    std::span<const double> wheel_y_m) {
     rider::RiderSenses s = rider_senses_;
     // The settled weld reactions this instant's settle latched — grip
     // entries carry the world-frame force on the rider, projected on the
@@ -3209,14 +3489,33 @@ void PhysicalStep::update_rider_senses(
     s.speed_mps = forward_speed_mps(qpos_eff, qvel_start);
     if (stepper_->has_drive())
         s.rear_teeth = stepper_->drive().state().shifting.rear_teeth;
-    s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
-    s.surface_ahead = config_.surface_labels.at(
-        wheel_x_m[0] + config_.road_lookahead_m);
-    // The same lookahead window and preview the intent layer computes —
-    // evaluated on this interval's start positions, not the control
-    // tick's cached rider_state_.
-    s.grade_ahead = road_grade_preview(road_profile_.samples(
-        wheel_x_m, config_.road_lookahead_m));
+    if (spatial_ != nullptr &&
+        !std::cmp_less(qpos_eff.size(), spatial_->root_free_qposadr + 7)) {
+        const auto qa = static_cast<std::size_t>(spatial_->root_free_qposadr);
+        const bike::spatial::Quat quat = bike::spatial::quat_normalized(
+            {qpos_eff[qa + 3U], qpos_eff[qa + 4U],
+             qpos_eff[qa + 5U], qpos_eff[qa + 6U]});
+        const auto heading = bike::spatial::horizontal_heading_unit(quat);
+        const double hx = heading.valid ? heading.hx : 1.0;
+        const std::array<double, 2> wy =
+            wheel_y_m.size() == 2U
+                ? std::array<double, 2>{wheel_y_m[0], wheel_y_m[1]}
+                : current_wheel_y_m();
+        s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
+        s.surface_ahead = config_.surface_labels.at(
+            wheel_x_m[0] + hx * config_.road_lookahead_m);
+        s.grade_ahead = road_grade_preview(
+            spatial_road_samples(qpos_eff, wheel_x_m, wy));
+    } else {
+        s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
+        s.surface_ahead = config_.surface_labels.at(
+            wheel_x_m[0] + config_.road_lookahead_m);
+        // The same lookahead window and preview the intent layer computes —
+        // evaluated on this interval's start positions, not the control
+        // tick's cached rider_state_.
+        s.grade_ahead = road_grade_preview(road_profile_.samples(
+            wheel_x_m, config_.road_lookahead_m));
+    }
     rider_senses_ = s;
 }
 
@@ -3349,6 +3648,9 @@ StepState PhysicalStep::state() const {
     if (rider_control_.has_value())
         s.rider_controller = rider_control_->state();
     s.rider_intent = rider_intent_.state();
+    if (spatial_ != nullptr && spatial_->launch_support.has_value())
+        s.launch_support = std::make_unique<LaunchSupportState>(
+            spatial_->launch_support->state());
     return s;
 }
 
@@ -3397,7 +3699,51 @@ void PhysicalStep::restore(const StepState &s) {
         spatial_->steer_balance_seeded = false;
         if (spatial_->steer_balance.has_value())
             spatial_->steer_balance->reset();
+        if (spatial_->launch_support.has_value()) {
+            if (s.launch_support != nullptr)
+                spatial_->launch_support->restore(*s.launch_support);
+            else
+                spatial_->launch_support->reset();
+        }
     }
 }
+
+StepState::StepState() = default;
+StepState::~StepState() = default;
+StepState::StepState(const StepState &other)
+    : step(other.step),
+      generation(other.generation),
+      measurement_decimation(other.measurement_decimation),
+      applied_control(other.applied_control),
+      held_control(other.held_control),
+      held_rider_terms(other.held_rider_terms),
+      rollback_hold(other.rollback_hold),
+      research_accounting_valid(other.research_accounting_valid),
+      initializing(other.initializing),
+      filters(other.filters),
+      balance(other.balance),
+      crash(other.crash),
+      contacts(other.contacts),
+      contact_query(other.contact_query),
+      probe_query(other.probe_query),
+      energy(other.energy),
+      brake_latch(other.brake_latch),
+      signals(other.signals),
+      senses(other.senses),
+      rider_controller(other.rider_controller),
+      rider_intent(other.rider_intent),
+      launch_support(other.launch_support != nullptr
+                         ? std::make_unique<LaunchSupportState>(
+                               *other.launch_support)
+                         : nullptr) {}
+StepState &StepState::operator=(const StepState &other) {
+    if (this == &other)
+        return *this;
+    StepState copy(other);
+    *this = std::move(copy);
+    return *this;
+}
+StepState::StepState(StepState &&) noexcept = default;
+StepState &StepState::operator=(StepState &&) noexcept = default;
 
 } // namespace runtime

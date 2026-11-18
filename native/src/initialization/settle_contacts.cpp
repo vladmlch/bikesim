@@ -25,11 +25,16 @@ struct PhaseAHoldState {
     const SetupContext* owner = nullptr;
     int free_qpos = -1;
     int free_dof = -1;
+    int rider_free_qpos = -1;
+    int rider_free_dof = -1;
     int steer_qpos = -1;
     int steer_dof = -1;
     double d_roll = 0.;
     double d_y = 0.;
     double d_psi = 0.;
+    double d_rider_roll = 0.;
+    double d_rider_y = 0.;
+    double d_rider_psi = 0.;
     double d_steer = 0.;
     double psi0 = 0.;
 };
@@ -69,14 +74,21 @@ double crank_hold_torque(SetupContext const& context) {
            -context.physics.equilibrium_crank_hold_kd_nms_rad*qvel[static_cast<std::size_t>(crank.dof)];
 }
 
-void add_phase_a_hold(const SetupContext& context, std::vector<double>& hold) {
-    const auto& state = phase_a_hold_storage();
-    const mjModel* m = context.stepper.model();
-    const mjData* d = context.stepper.data();
-    const auto qpos = std::views::counted(d->qpos, m->nq);
-    const auto qvel = std::views::counted(d->qvel, m->nv);
-    const auto fq = static_cast<std::size_t>(state.free_qpos);
-    const auto fd = static_cast<std::size_t>(state.free_dof);
+struct FreeRyyHoldSpec {
+    int free_qpos = -1;
+    int free_dof = -1;
+    double d_roll = 0.;
+    double d_y = 0.;
+    double d_psi = 0.;
+    double psi0 = 0.;
+};
+
+void add_free_ryy_hold(std::span<const double> qpos,
+                       std::span<const double> qvel,
+                       const FreeRyyHoldSpec& spec,
+                       std::vector<double>& hold) {
+    const auto fq = static_cast<std::size_t>(spec.free_qpos);
+    const auto fd = static_cast<std::size_t>(spec.free_dof);
     const bike::spatial::Quat q_curr{
         qpos[fq + 3U], qpos[fq + 4U], qpos[fq + 5U], qpos[fq + 6U]};
     const auto eul = bike::spatial::euler_zyx(q_curr);
@@ -86,18 +98,45 @@ void add_phase_a_hold(const SetupContext& context, std::vector<double>& hold) {
         throw std::runtime_error("spatial Phase A hold encountered gimbal lock");
 
     // Euler roll axis (phi) is intrinsic body +X -> maps 1-to-1 to free_dof + 3.
-    hold[fd + 3U] += -kPhaseAKRoll * eul.roll_rad - state.d_roll * rates.roll_rate_rad_s;
+    hold[fd + 3U] += -kPhaseAKRoll * eul.roll_rad - spec.d_roll * rates.roll_rate_rad_s;
     // Euler yaw axis (psi) is world +Z -> covector R^T * (0, 0, tau_psi_w)^T.
     const double tau_psi_w =
-        -kPhaseAKPsi * (eul.yaw_rad - state.psi0) -
-        state.d_psi * rates.yaw_rate_rad_s;
+        -kPhaseAKPsi * (eul.yaw_rad - spec.psi0) -
+        spec.d_psi * rates.yaw_rate_rad_s;
     const auto tau_psi_b = bike::spatial::rotate_world_to_body(q_curr, {0., 0., tau_psi_w});
     hold[fd + 3U] += tau_psi_b[0];
     hold[fd + 4U] += tau_psi_b[1];
     hold[fd + 5U] += tau_psi_b[2];
 
-    // Lateral corridor hold (y -> 0) and temporary steer_joint lock (delta -> 0).
-    hold[fd + 1U] += -kPhaseAKY * qpos[fq + 1U] - state.d_y * qvel[fd + 1U];
+    // Lateral corridor hold (y -> 0).
+    hold[fd + 1U] += -kPhaseAKY * qpos[fq + 1U] - spec.d_y * qvel[fd + 1U];
+}
+
+void add_phase_a_hold(const SetupContext& context, std::vector<double>& hold) {
+    const auto& state = phase_a_hold_storage();
+    const mjModel* m = context.stepper.model();
+    const mjData* d = context.stepper.data();
+    const auto qpos = std::views::counted(d->qpos, m->nq);
+    const auto qvel = std::views::counted(d->qvel, m->nv);
+    add_free_ryy_hold(qpos, qvel, {
+        .free_qpos = state.free_qpos,
+        .free_dof = state.free_dof,
+        .d_roll = state.d_roll,
+        .d_y = state.d_y,
+        .d_psi = state.d_psi,
+        .psi0 = state.psi0,
+    }, hold);
+    if (state.rider_free_dof >= 0) {
+        add_free_ryy_hold(qpos, qvel, {
+            .free_qpos = state.rider_free_qpos,
+            .free_dof = state.rider_free_dof,
+            .d_roll = state.d_rider_roll,
+            .d_y = state.d_rider_y,
+            .d_psi = state.d_rider_psi,
+            .psi0 = state.psi0,
+        }, hold);
+    }
+    // Temporary steer_joint lock (delta -> 0).
     if (state.steer_dof >= 0) {
         const auto sq = static_cast<std::size_t>(state.steer_qpos);
         const auto sd = static_cast<std::size_t>(state.steer_dof);
@@ -138,6 +177,22 @@ PhaseAHoldScope::PhaseAHoldScope(SetupContext& context) {
     const double m_psi = diag_inertia(free_root->dof + 5);
     const double m_delta = diag_inertia(steer.dof);
 
+    int rider_free_qpos = -1;
+    int rider_free_dof = -1;
+    double d_rider_roll = 0.;
+    double d_rider_y = 0.;
+    double d_rider_psi = 0.;
+    const int rider_free_id = mj_name2id(m, mjOBJ_JOINT, "rider_root_free");
+    if (rider_free_id >= 0 &&
+        std::views::counted(m->jnt_type, m->njnt)[static_cast<std::size_t>(rider_free_id)] == mjJNT_FREE) {
+        const auto r_idx = static_cast<std::size_t>(rider_free_id);
+        rider_free_qpos = std::views::counted(m->jnt_qposadr, m->njnt)[r_idx];
+        rider_free_dof = std::views::counted(m->jnt_dofadr, m->njnt)[r_idx];
+        d_rider_roll = capped_damping({.inertia = diag_inertia(rider_free_dof + 3), .stiffness = kPhaseAKRoll, .dt = dt});
+        d_rider_y = capped_damping({.inertia = diag_inertia(rider_free_dof + 1), .stiffness = kPhaseAKY, .dt = dt});
+        d_rider_psi = capped_damping({.inertia = diag_inertia(rider_free_dof + 5), .stiffness = kPhaseAKPsi, .dt = dt});
+    }
+
     const auto qpos = std::views::counted(d->qpos, m->nq);
     const auto fq = static_cast<std::size_t>(free_root->qpos);
     const bike::spatial::Quat q_init{
@@ -150,11 +205,16 @@ PhaseAHoldScope::PhaseAHoldScope(SetupContext& context) {
         .owner = &context,
         .free_qpos = free_root->qpos,
         .free_dof = free_root->dof,
+        .rider_free_qpos = rider_free_qpos,
+        .rider_free_dof = rider_free_dof,
         .steer_qpos = steer.qpos,
         .steer_dof = steer.dof,
         .d_roll = capped_damping({.inertia = m_phi, .stiffness = kPhaseAKRoll, .dt = dt}),
         .d_y = capped_damping({.inertia = m_yy, .stiffness = kPhaseAKY, .dt = dt}),
         .d_psi = capped_damping({.inertia = m_psi, .stiffness = kPhaseAKPsi, .dt = dt}),
+        .d_rider_roll = d_rider_roll,
+        .d_rider_y = d_rider_y,
+        .d_rider_psi = d_rider_psi,
         .d_steer = capped_damping({.inertia = m_delta, .stiffness = kPhaseAKSteer, .dt = dt}),
         .psi0 = eul.yaw_rad,
     };

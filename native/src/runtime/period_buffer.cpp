@@ -1,5 +1,6 @@
 #include "period_buffer.hpp"
 #include "samples.hpp"
+#include "../spatial/frames.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -65,9 +66,74 @@ std::optional<std::vector<double>> spatial_wrench(
 }
 } // namespace
 
+namespace {
+std::optional<rider::AttachmentSample> decompose_spatial_wrench(
+    std::span<const double> wrench, std::span<const double> normal,
+    const std::string &kind, bool rotational, double half_patch_m,
+    double gap_m, const std::optional<std::vector<double>> &pull_direction,
+    std::span<const double> qpos) {
+    if (wrench.size() < 6 || normal.size() != 3 ||
+        !std::ranges::all_of(normal, [](double v) { return std::isfinite(v); }))
+        return std::nullopt;
+    const double n_len = std::sqrt(
+        normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+    if (n_len < 1e-12) return std::nullopt;
+    const std::array<double, 3> n_unit{
+        normal[0] / n_len, normal[1] / n_len, normal[2] / n_len};
+    const std::array<double, 3> f_rider{wrench[0], wrench[1], wrench[2]};
+    const double normal_n =
+        f_rider[0] * n_unit[0] + f_rider[1] * n_unit[1] + f_rider[2] * n_unit[2];
+    const std::array<double, 3> f_tan{
+        f_rider[0] - normal_n * n_unit[0],
+        f_rider[1] - normal_n * n_unit[1],
+        f_rider[2] - normal_n * n_unit[2]};
+    const double tangent_n = std::sqrt(
+        f_tan[0] * f_tan[0] + f_tan[1] * f_tan[1] + f_tan[2] * f_tan[2]);
+    double moment_nm = 0.;
+    if (rotational) {
+        std::array<double, 3> frame_y{0., 1., 0.};
+        if (qpos.size() >= 7) {
+            const bike::spatial::Quat quat{qpos[3], qpos[4], qpos[5], qpos[6]};
+            frame_y = bike::spatial::rotate_body_to_world(quat, {0., 1., 0.});
+        }
+        moment_nm =
+            wrench[3] * frame_y[0] + wrench[4] * frame_y[1] + wrench[5] * frame_y[2];
+    }
+    double pull_n = 0.;
+    if (pull_direction.has_value()) {
+        const std::vector<double> &direction = *pull_direction;
+        if (direction.size() != 3 ||
+            !std::ranges::all_of(direction, [](double v) { return std::isfinite(v); }))
+            return std::nullopt;
+        const double f_norm = std::sqrt(
+            f_rider[0] * f_rider[0] + f_rider[1] * f_rider[1] + f_rider[2] * f_rider[2]);
+        if (kind == "grip") {
+            pull_n = f_norm;
+        } else {
+            const double d_len = std::sqrt(
+                direction[0] * direction[0] + direction[1] * direction[1] +
+                direction[2] * direction[2]);
+            if (d_len < 1e-12) return std::nullopt;
+            const double dot_bike =
+                (-f_rider[0] * direction[0] - f_rider[1] * direction[1] -
+                 f_rider[2] * direction[2]) / d_len;
+            if (dot_bike > 0.) pull_n = f_norm;
+        }
+    }
+    return rider::AttachmentSample{.kind = kind,
+                                   .normal_n = normal_n,
+                                   .tangent_n = tangent_n,
+                                   .moment_nm = moment_nm,
+                                   .gap_m = gap_m,
+                                   .pull_n = pull_n,
+                                   .half_patch_m = half_patch_m};
+}
+} // namespace
+
 AttachmentSamples evaluate_attachments(const RawStep &raw,
                                          rider::LeastSquaresWorkspace &workspace) {
     AttachmentSamples samples;
+    const bool is_spatial = raw.qpos.size() != raw.qvel.size();
     for (const auto &[name, item] : raw.attachment_raw) {
         const auto rider_wrench = spatial_wrench(item.rider_jac, item.rider_qfrc, workspace);
         const auto bike_wrench = spatial_wrench(item.bike_jac, item.bike_qfrc, workspace);
@@ -77,15 +143,31 @@ AttachmentSamples evaluate_attachments(const RawStep &raw,
         const auto &wb = *bike_wrench;
         const auto force = std::span<const double>(wr).first(3);
         const double scale = std::max(1., std::sqrt(sample_wire::dot(force, force)));
-        bool valid = true;
-        for (std::size_t i = 0; i < wr.size(); ++i)
-            valid = valid && std::abs(wb[i] + wr[i]) <= 1e-4 * scale + 1e-4 * std::abs(wr[i]);
-        for (const std::size_t i : std::array<std::size_t, 3>{1, 3, 5})
-            valid = valid && std::abs(wr[i]) <= 1e-6 * scale;
-        if (valid)
-            samples.emplace_back(name, rider::decompose_wrench(
-                wr, item.normal, item.kind, item.rotational, item.half_patch_m,
-                item.gap_m, item.pull_direction));
+        if (is_spatial) {
+            bool valid =
+                std::ranges::all_of(wr, [](double v) { return std::isfinite(v); }) &&
+                std::ranges::all_of(wb, [](double v) { return std::isfinite(v); });
+            for (std::size_t i = 0; i < wr.size(); ++i)
+                valid = valid &&
+                        std::abs(wb[i] + wr[i]) <= 1e-3 * scale + 1e-3 * std::abs(wr[i]);
+            if (valid) {
+                if (auto sample = decompose_spatial_wrench(
+                        wr, item.normal, item.kind, item.rotational,
+                        item.half_patch_m, item.gap_m, item.pull_direction,
+                        raw.qpos))
+                    samples.emplace_back(name, std::move(*sample));
+            }
+        } else {
+            bool valid = true;
+            for (std::size_t i = 0; i < wr.size(); ++i)
+                valid = valid && std::abs(wb[i] + wr[i]) <= 1e-4 * scale + 1e-4 * std::abs(wr[i]);
+            for (const std::size_t i : std::array<std::size_t, 3>{1, 3, 5})
+                valid = valid && std::abs(wr[i]) <= 1e-6 * scale;
+            if (valid)
+                samples.emplace_back(name, rider::decompose_wrench(
+                    wr, item.normal, item.kind, item.rotational, item.half_patch_m,
+                    item.gap_m, item.pull_direction));
+        }
     }
     // evaluate_attachments visits sorted attachment names, while error
     // reporting below keeps the original raw-map insertion order.

@@ -51,6 +51,7 @@ using Mat3 = std::array<double, 9>;
 inline constexpr double HIP_ABOVE_SADDLE_M = 0.060;
 inline constexpr double ANKLE_ABOVE_PEDAL_M = 0.115;
 inline constexpr double ELBOW_FLEXION_DEG = 15.0;
+inline constexpr double ELBOW_FLEXION_3D_DEG = 30.0;
 inline constexpr double GRIP_FROM_WRIST_FRACTION = 0.60;
 inline constexpr double HEAD_RADIUS_M = 0.110;
 inline constexpr double NECK_LENGTH_M = 0.050;
@@ -61,6 +62,13 @@ inline constexpr double KNEE_FLEXION_BDC_MAX_DEG = 60.0;
 // half-width). PEDAL_LATERAL_OFFSET_M is geometry's cockpit constant
 // (geometry::PEDAL_LATERAL_OFFSET_M, 0.115 — reused verbatim).
 inline constexpr double ARM_LATERAL_OFFSET_M = 0.10;
+inline constexpr double GRIP_LATERAL_OFFSET_3D_M = 0.360;
+inline constexpr double SHOULDER_HALF_WIDTH_REF_M = 0.190;
+inline constexpr double SHOULDER_WIDTH_REF_STATURE_M = 1.80;
+inline constexpr double SIT_BONE_HALF_SPACING_M = 0.055;
+inline constexpr double SADDLE_CARRIER_MASS_KG = 0.05;
+inline constexpr double HIP_CARRIER_MASS_KG = 0.02;
+inline constexpr double SHOULDER_CARRIER_MASS_KG = 0.02;
 
 // rider.py DE_LEVA_MASS_FRACTIONS — body-mass fractions; a nullopt return
 // mirrors the dict KeyError (out_of_range with repr(name)).
@@ -95,6 +103,25 @@ struct SeatedPose {
     double knee_flexion_bdc_deg = 0.0;
 };
 
+struct SeatedPose3d {
+    SeatedPose sagittal{};
+    Vec3 shoulder_left{};
+    Vec3 shoulder_right{};
+    Vec3 elbow_left{};
+    Vec3 elbow_right{};
+    Vec3 wrist_left{};
+    Vec3 wrist_right{};
+    Vec3 grip_left{};
+    Vec3 grip_right{};
+    double b_shoulder_m = 0.0;
+    double psi0_left_rad = 0.0;
+    double psi0_right_rad = 0.0;
+    double beta_ua0_rad = 0.0;
+    double elbow_flexion0_rad = 0.0;
+    double upper_arm_m = 0.0;
+    double forearm_grip_m = 0.0;
+};
+
 // ---------------------------------------------------------------------------
 // rider.py module-level helpers — same names/signatures.
 // ---------------------------------------------------------------------------
@@ -111,6 +138,8 @@ struct SeatedPose {
 // solve_seated_pose(specs, rider) — Python argument order (specs first).
 [[nodiscard]] SeatedPose solve_seated_pose(const BikeSpecs &specs,
                                            const RiderSpecs &rider);
+[[nodiscard]] SeatedPose3d solve_seated_pose_3d(const BikeSpecs &specs,
+                                               const RiderSpecs &rider);
 
 // RiderSpecs.seated_pose(specs=None) — the member-method port; the
 // solver takes the record as geometry input; only positions and angles
@@ -118,6 +147,9 @@ struct SeatedPose {
 [[nodiscard]] SeatedPose seated_pose(
         const RiderSpecs &rider, const BikeSpecs &specs);
 [[nodiscard]] SeatedPose seated_pose(const RiderSpecs &rider);
+[[nodiscard]] SeatedPose3d seated_pose_3d(
+        const RiderSpecs &rider, const BikeSpecs &specs);
+[[nodiscard]] SeatedPose3d seated_pose_3d(const RiderSpecs &rider);
 
 // RiderSpecs.compute_rider_centers_of_mass(specs=None) — ordered
 // (name, (com, mass)) entries in the dict's insertion order.
@@ -185,14 +217,47 @@ struct ArticulatedPose {
 // ArticulatedPose.__post_init__ — "invalid shape or non-finite <name>".
 void validate_articulated_pose(const ArticulatedPose &pose);
 
+// 3D articulated pose with lateral shoulder/elbow/grip coordinates (+Y left, -Y right).
+struct ArticulatedPose3d {
+    SaddleGeometry saddle{};
+    Vec3 hip{};
+    Vec3 shoulder_center{};
+    Vec3 head_center{};
+    Vec3 shoulder_left{};
+    Vec3 shoulder_right{};
+    Vec3 elbow_left{};
+    Vec3 elbow_right{};
+    Vec3 grip_left{};
+    Vec3 grip_right{};
+    Vec3 knee_front{};
+    Vec3 knee_rear{};
+    Vec3 ankle_front{};
+    Vec3 ankle_rear{};
+    Vec3 pedal_front{};
+    Vec3 pedal_rear{};
+    double b_shoulder_m = 0.0;
+    double psi0_left_rad = 0.0;
+    double psi0_right_rad = 0.0;
+    double beta_ua0_rad = 0.0;
+    double elbow_flexion0_rad = 0.0;
+    double upper_arm_m = 0.0;
+    double forearm_grip_m = 0.0;
+};
+void validate_articulated_pose_3d(const ArticulatedPose3d &pose);
+[[nodiscard]] ArticulatedPose to_articulated_pose(const ArticulatedPose3d &pose);
+
 // geometry_pose(rider, specs).
 [[nodiscard]] ArticulatedPose geometry_pose(const RiderSpecs &rider,
                                             const BikeSpecs &specs);
+[[nodiscard]] ArticulatedPose3d geometry_pose_3d(const RiderSpecs &rider,
+                                                const BikeSpecs &specs);
 
 // Build-pose (qpos = 0) anatomical angle (radians) for a named rider joint.
 [[nodiscard]] double pose_neutral_anatomical_rad(const SeatedPose &pose,
                                                  std::string_view joint_name);
 [[nodiscard]] double pose_neutral_anatomical_rad(const ArticulatedPose &pose,
+                                                 std::string_view joint_name);
+[[nodiscard]] double pose_neutral_anatomical_rad(const ArticulatedPose3d &pose,
                                                  std::string_view joint_name);
 
 // Populate each envelope's neutral_anatomical_rad from the build pose and
@@ -200,5 +265,8 @@ void validate_articulated_pose(const ArticulatedPose &pose);
 [[nodiscard]] configuration::JointEnvelopeMap
 with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
                          const ArticulatedPose &pose);
+[[nodiscard]] configuration::JointEnvelopeMap
+with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
+                         const ArticulatedPose3d &pose);
 
 } // namespace bike::model

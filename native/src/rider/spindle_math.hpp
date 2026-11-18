@@ -21,6 +21,8 @@
 
 namespace spindle {
     using Vec2 = std::array<double, 2>;
+    using Vec3 = std::array<double, 3>;
+    using Mat3 = std::array<double, 9>;
 
     // ---- seated_climb.py ---------------------------------------------------
     // crank_effort_ceiling: bounded torque request for a power target.
@@ -41,6 +43,31 @@ namespace spindle {
     };
     [[nodiscard]] IkResult two_link_ik(Vec2 target_xz, double upper_m,
                                        double lower_m, int elbow_sign);
+
+    // ---- 3D Rz -> Rm -> Rm arm IK -----------------------------------------
+    struct ArmGeometry3d {
+        double upper_arm_m = 0.;
+        double forearm_grip_m = 0.;
+        double psi0_rad = 0.;
+        double beta_ua0_rad = 0.;
+        double elbow_flexion0_rad = 0.;
+    };
+
+    struct ArmIkResult3d {
+        double shoulder_abduction_q = 0.;
+        double shoulder_q = 0.;
+        double elbow_q = 0.;
+        double elbow_flexion_rad = 0.;
+        bool saturated = false;
+    };
+
+    [[nodiscard]] ArmIkResult3d solve_arm_ik_3d_local(const ArmGeometry3d &geom,
+                                                      const Vec3 &d_torso);
+
+    [[nodiscard]] ArmIkResult3d solve_arm_ik_3d(const ArmGeometry3d &geom,
+                                                const Mat3 &torso_r,
+                                                const Vec3 &shoulder_world,
+                                                const Vec3 &grip_world);
 
     // ---- leg_loop.py -------------------------------------------------------
     // LegLoopGeometry: planar two-link leg with rigid shank-foot.

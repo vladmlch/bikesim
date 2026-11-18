@@ -34,7 +34,7 @@ endif()
 
 # Native startup: the same app/library graph is exercised by all three
 # model-boundary executables. Registration never invokes the executable.
-foreach(_model_test IN ITEMS model_mjcf model_export model_compat model_spatial_topology)
+foreach(_model_test IN ITEMS model_mjcf model_export model_compat model_spatial_topology model_spatial_articulated_rider)
   string(REGEX REPLACE "^model_" "" _model_src "${_model_test}")
   add_executable(${_model_test} "test_${_model_src}.cpp")
   bike_startup_target_policy(${_model_test} "${_test_repo_root}/native")

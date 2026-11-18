@@ -105,6 +105,72 @@ namespace spindle {
         return {.angles = {hip, knee}, .saturated = saturated};
     }
 
+    ArmIkResult3d solve_arm_ik_3d_local(const ArmGeometry3d &geom,
+                                        const Vec3 &d_torso) {
+        const double l_ua =
+            validation::positive(geom.upper_arm_m, "3D upper arm length");
+        const double l_fg =
+            validation::positive(geom.forearm_grip_m, "3D forearm-grip length");
+        const double psi0 = validation::finite(geom.psi0_rad, "3D arm azimuth");
+        const double beta_ua0 =
+            validation::finite(geom.beta_ua0_rad, "3D upper arm pitch");
+        const double el0 =
+            validation::finite(geom.elbow_flexion0_rad, "3D elbow flexion");
+        for (const double v : d_torso)
+            validation::finite(v, "3D arm IK target");
+
+        const double rho = std::hypot(d_torso[0], d_torso[1]);
+        const double r = std::sqrt(rho * rho + d_torso[2] * d_torso[2]);
+        const double psi =
+            rho > 1e-12 ? std::atan2(d_torso[1], d_torso[0]) : psi0;
+        const double q_abd = wrap_angle(psi - psi0);
+
+        const double r_min = std::abs(l_ua - l_fg) + 1e-6;
+        const double r_max = l_ua + l_fg - 1e-6;
+        if (r_max <= r_min)
+            throw std::invalid_argument("3D arm IK links are too small");
+        const double r_eff = std::clamp(r, r_min, r_max);
+        const bool saturated = (r != r_eff) || (rho <= 1e-12);
+
+        const double gamma = std::atan2(-d_torso[2], rho);
+        const double cos_el = std::clamp(
+            (r_eff * r_eff - l_ua * l_ua - l_fg * l_fg) / (2.0 * l_ua * l_fg),
+            -1.0, 1.0);
+        const double theta_el = std::acos(cos_el);
+        const double alpha =
+            std::atan2(l_fg * numeric::math_sin(theta_el),
+                       l_ua + l_fg * numeric::math_cos(theta_el));
+        const double beta_ua = gamma + alpha;
+        const double q_sh = wrap_angle(beta_ua - beta_ua0);
+        const double q_el = wrap_angle(el0 - theta_el);
+
+        return {.shoulder_abduction_q = q_abd,
+                .shoulder_q = q_sh,
+                .elbow_q = q_el,
+                .elbow_flexion_rad = theta_el,
+                .saturated = saturated};
+    }
+
+    ArmIkResult3d solve_arm_ik_3d(const ArmGeometry3d &geom,
+                                  const Mat3 &torso_r,
+                                  const Vec3 &shoulder_world,
+                                  const Vec3 &grip_world) {
+        for (const double v : torso_r)
+            validation::finite(v, "3D torso rotation");
+        for (const double v : shoulder_world)
+            validation::finite(v, "3D shoulder world position");
+        for (const double v : grip_world)
+            validation::finite(v, "3D grip world position");
+        const Vec3 diff{grip_world[0] - shoulder_world[0],
+                        grip_world[1] - shoulder_world[1],
+                        grip_world[2] - shoulder_world[2]};
+        const Vec3 d_torso{
+            torso_r[0] * diff[0] + torso_r[3] * diff[1] + torso_r[6] * diff[2],
+            torso_r[1] * diff[0] + torso_r[4] * diff[1] + torso_r[7] * diff[2],
+            torso_r[2] * diff[0] + torso_r[5] * diff[1] + torso_r[8] * diff[2]};
+        return solve_arm_ik_3d_local(geom, d_torso);
+    }
+
     double planar_angle(Vec2 direction) {
         require2(direction, "planar direction");
         return std::atan2(-direction[0], -direction[1]);

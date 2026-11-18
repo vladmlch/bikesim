@@ -30,6 +30,8 @@
 #include "spindle_math.hpp"
 #include "response_allocation.hpp"
 #include "legacy_diagnostics.hpp"
+#include "equality_reactions.hpp"
+#include "least_squares.hpp"
 
 namespace bike::rider { class LegacyController; }
 
@@ -131,6 +133,9 @@ struct RiderCommand {
     // pose — always beside a zero effort request and a negative
     // crank_target_rate_rad_s, which the command decoder enforces.
     bool crank_reposition = false;
+    // Spatial 3D differential hand-steering target torque around steer_joint
+    // (allocated across left/right arms via grip Jacobian transpose; zero in planar).
+    double steer_torque_target_nm = 0.;
 };
 
 // Insertion-ordered name->T pairs — mirrors Python dict ordering on the
@@ -391,6 +396,18 @@ private:
     // _predict_target_state — detached kinematics on a scratch mjData.
     void predict_target_state(const mjData *data, mjData *scratch,
                               bool reverse) const;
+    struct ArmIk3dResult {
+        double q_abd = 0.;
+        double q_sh = 0.;
+        double q_el = 0.;
+        bool saturated = false;
+    };
+    [[nodiscard]] ArmIk3dResult solve_arm_ik_3d(
+        std::size_t side, const std::array<double, 9> &torso_r,
+        const std::array<double, 3> &shoulder_world,
+        const std::array<double, 3> &grip_world) const;
+    void arm_grip_jacobian_3d(
+        const mjData *data, std::size_t side, std::array<double, 9> &out) const;
     // self.joints[name] — the resolved reference-joint slot; locked
     // joints miss like the oracle's dict KeyError (std::out_of_range).
     [[nodiscard]] std::size_t joint_index(const std::string &name) const;
@@ -454,13 +471,30 @@ private:
     std::array<int, 2> grip_sites_{-1, -1};
     std::array<std::array<double, 3>, 2> weld_grip_offset_{};
     std::array<spindle::LegLoopGeometry, 2> leg_geometry_{};
+    int frame_free_dof_ = -1;
+    int rider_free_dof_ = -1;
+    int saddle_pitch_joint_ = -1;
+    int saddle_pitch_dof_ = -1;
+    int steer_joint_ = -1;
+    int saddle_eq_ = -1;
+    int saddle_body_ = -1;
+    int saddle_site_ = -1;
+    int arm_branch_ = 1;
+    std::array<int, 2> hip_abd_joints_{-1, -1};
+    std::array<int, 2> hip_abd_dofs_{-1, -1};
+    std::array<int, 2> shoulder_abd_joints_{-1, -1};
+    std::array<int, 2> shoulder_joints_{-1, -1};
+    std::array<int, 2> elbow_joints_{-1, -1};
+    std::array<double, 2> arm3d_upper_m_{0., 0.};
+    std::array<double, 2> arm3d_lower_m_{0., 0.};
+    std::array<double, 2> arm3d_psi0_{0., 0.};
+    std::array<double, 2> arm3d_beta_ua0_{0., 0.};
+    std::array<double, 2> arm3d_elbow0_{0., 0.};
     double arm_upper_m_ = 0.;
     double arm_lower_m_ = 0.;
     double arm_upper_angle0_ = 0.;
     double arm_lower_angle0_ = 0.;
-    int arm_branch_ = 1;
     double neutral_torso_q_ = 0.;
-    bool neutral_torso_saturated_ = false;
     std::optional<double> lean_limit_rad_;
     std::vector<int> rider_bodies_;
     double rider_mass_ = 0.;
@@ -469,8 +503,11 @@ private:
 
     // Mutable controller state (the bootstrap-owned fields). Ordered
     // entries preserve the oracle's dict insertion order on the wire.
+    bool spatial_3d_ = false;
+    bool neutral_torso_saturated_ = false;
     bool enabled_ = true;
     bool command_enabled_ = true;
+    bool has_prev_press_3d_ = false;
     NamedEntries<JointTerms> last_terms_;
     NamedEntries<std::array<double,2>> pd_split_;
     NamedEntries<bool> saturated_ik_{{"front", false}, {"rear", false}};
@@ -493,6 +530,12 @@ private:
     std::unique_ptr<mjData, decltype(&mj_deleteData)> target_data_;
     std::unique_ptr<mjData, decltype(&mj_deleteData)> previous_target_data_;
     std::unique_ptr<mjData, decltype(&mj_deleteData)> coasting_target_data_;
+    std::optional<rider::EqualityReactions> saddle_eq_reactions_;
+    std::optional<rider::LeastSquaresWorkspace> saddle_lstsq_;
+    std::vector<double> saddle_qfrc_;
+    double prev_press_time_3d_ = -1.;
+    std::array<double, 2> prev_f_passive_3d_{0., 0.};
+    double prev_max_press_3d_ = 0.;
 };
 
 } // namespace rider

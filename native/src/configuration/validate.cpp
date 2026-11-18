@@ -946,7 +946,7 @@ void post_init(const ResearchConfig &config) {
 void post_init(RiderSpecs &specs) {
     if (!in_set(specs.variant,
                 std::initializer_list<std::string_view>{
-                    "none", "lumped", "articulated_planar"}))
+                    "none", "lumped", "articulated_planar", "articulated_3d"}))
         fail("rider variant must be one of ('none', 'lumped', "
              "'articulated_planar'), got " +
              detail::py_repr_str(specs.variant));
@@ -1910,6 +1910,48 @@ RiderPosture standing_posture() {
     posture.use_saddle = false;
     detail::post_init(posture);  // cls(...) runs __post_init__ at construction
     return posture;
+}
+
+JointEnvelope default_shoulder_abduction_envelope() {
+    constexpr double kLimitRad = 45.0 * std::numbers::pi / 180.0;
+    return JointEnvelope{
+        .neutral_anatomical_rad = 0.0,
+        .direction = 1,
+        .minimum_anatomical_rad = -kLimitRad,
+        .maximum_anatomical_rad = +kLimitRad,
+        .provenance = "3D horizontal shoulder abduction/adduction ROM (Chaffin/Stobbe/Garner & Pandy; +-45 deg)"};
+}
+
+JointEnvelope default_hip_abduction_envelope() {
+    constexpr double kLimitRad = 25.0 * std::numbers::pi / 180.0;
+    return JointEnvelope{
+        .neutral_anatomical_rad = 0.0,
+        .direction = 1,
+        .minimum_anatomical_rad = -kLimitRad,
+        .maximum_anatomical_rad = +kLimitRad,
+        .provenance = "3D passive hip abduction/adduction ROM (+-25 deg)"};
+}
+
+TorqueCurve default_shoulder_abduction_torque_curve(double mass_kg) {
+    const double m = scalar(mass_kg, "rider mass", std::nullopt, true);
+    const double peak = 65.0 * (m / 80.0);
+    constexpr double kWidthRad = 0.85;
+    constexpr double kMaxRad = 45.0 * std::numbers::pi / 180.0;
+    std::vector<double> angles{
+        -kMaxRad, -0.5 * kMaxRad, 0.0, 0.5 * kMaxRad, kMaxRad};
+    std::vector<double> torques;
+    torques.reserve(angles.size());
+    for (const double a : angles) {
+        const double z = a / kWidthRad;
+        torques.push_back(peak * std::exp(-0.5 * z * z));
+    }
+    return TorqueCurve{
+        .angles_rad = std::move(angles),
+        .torques_nm = std::move(torques),
+        .vmax_rad_s = 8.0,
+        .hill_c = 0.25,
+        .eccentric_ratio = 1.4,
+        .source = "3D horizontal shoulder abduction/adduction strength (Chaffin/Stobbe/Garner & Pandy; 65 N*m @ 80 kg)"};
 }
 
 PedalIntent pedal_intent(double phase_rad, double cadence_rad_s,

@@ -1,3 +1,4 @@
+#include "articulated_rider.hpp"
 #include "builder_internal.hpp"
 #include "../diag.hpp"
 #include "../engine_call.hpp"
@@ -29,9 +30,17 @@ std::string generate_mjcf(const BuildRequest& request) {
     if(crank && build_request.mode!="ride") throw std::invalid_argument("the pedalled crankset is a ride-mode model; mode '"+build_request.mode+"' builds a rigid crankset");
     auto rider=resolve_rider(build_request.rider?RiderArg(*build_request.rider):RiderArg(std::monostate{}),build_request.include_rider,"lumped");
     std::optional<ArticulatedPose> articulated;
+    std::optional<ArticulatedPose3d> articulated_3d;
     if(rider.variant=="articulated_planar") {
+        if(build_request.spatial.has_value())
+            throw std::invalid_argument("spatial 3D ride requires rider variant 'articulated_3d', 'lumped', or 'none'");
         if(!physical) throw std::invalid_argument("articulated_planar requires physical ride mode");
         articulated=geometry_pose(rider,build_request.bike);
+    } else if(rider.variant=="articulated_3d") {
+        if(!physical || !build_request.spatial.has_value())
+            throw std::invalid_argument("articulated_3d requires physical ride mode with spatial config");
+        articulated_3d=geometry_pose_3d(rider,build_request.bike);
+        articulated=to_articulated_pose(*articulated_3d);
     }
     if(physical && physics->drive_mode=="articulated_effort" && !articulated) throw std::invalid_argument("articulated_effort requires articulated_planar rider");
     // Source validation is independent of environment creation; all bad
@@ -66,7 +75,24 @@ std::string generate_mjcf(const BuildRequest& request) {
     build_contact_exclusions(root);build_actuators(root,context);build_sensors(root,context);
     if(physical) {
         finish_physical_topology(root,context);
-        if(context.articulated) {
+        if(articulated_3d) {
+            for(auto* value:frame.direct("geom")) if(value->get("name").starts_with("geom_rider_")) (void)frame.remove(value);
+            std::optional<configuration::JointEnvelopeMap> envelopes;
+            if(context.physics->articulated.joint_envelope_path) {
+                envelopes=with_pose_neutral_angles(
+                    configuration::load_joint_envelopes(*context.physics->articulated.joint_envelope_path),
+                    *articulated_3d);
+                for(const std::string_view abd_name : {"rider_shoulder_abduction_left","rider_shoulder_abduction_right"}) {
+                    const auto it=std::ranges::find_if(*envelopes,[&](const auto& item){return item.first==abd_name;});
+                    if(it==envelopes->end())
+                        envelopes->emplace_back(std::string(abd_name),configuration::default_shoulder_abduction_envelope());
+                }
+            }
+            build_articulated_rider_3d(world,*articulated_3d,split_paired_arm_masses(segment_masses(context.rider.mass_kg,context.rider.helmet_mass_kg)),
+                envelopes?&*envelopes:nullptr,context.physics->articulated.pedal_attachment=="spindle");
+            add_rider_actuators(root);
+            finish_rider_attachments_3d(root,context,*articulated_3d);
+        } else if(context.articulated) {
             for(auto* value:frame.direct("geom")) if(value->get("name").starts_with("geom_rider_")) (void)frame.remove(value);
             std::optional<configuration::JointEnvelopeMap> envelopes;
             if(context.physics->articulated.joint_envelope_path)

@@ -47,8 +47,18 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
     auto& stepper = context.stepper;
     mjModel* m = stepper.model();
     mjData* d = stepper.data();
-    if (m->nq != m->nv + 1)
-        throw std::invalid_argument("spatial 3D equilibrium requires single freejoint root_free");
+    const auto jnt_type = std::views::counted(m->jnt_type, m->njnt);
+    const int rider_free_id = mj_name2id(m, mjOBJ_JOINT, "rider_root_free");
+    const bool has_rider_free =
+        rider_free_id >= 0 &&
+        jnt_type[static_cast<std::size_t>(rider_free_id)] == mjJNT_FREE;
+    const mjtSize expected_nq = m->nv + 1 + (has_rider_free ? 1 : 0);
+    if (m->nq != expected_nq)
+        throw std::invalid_argument(
+            "spatial 3D equilibrium requires root_free (and optional rider_root_free)");
+    const int rfd = has_rider_free
+        ? std::views::counted(m->jnt_dofadr, m->njnt)[static_cast<std::size_t>(rider_free_id)]
+        : -1;
 
     const auto nv = static_cast<std::size_t>(m->nv);
     const auto fq = static_cast<std::size_t>(args.free_root.qpos);
@@ -70,16 +80,26 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
     // NOLINTNEXTLINE(modernize-make-unique) same frame-budget constraint
     const auto incoming_step = std::unique_ptr<runtime::StepState>{
         new runtime::StepState(context.physical.state())};
+    std::unique_ptr<writers::RiderContactsState> rider_state;
+    std::optional<writers::RiderContactsProbe> rider_probe;
+    if (stepper.has_rider_contacts()) {
+        rider_state = std::make_unique<writers::RiderContactsState>(
+            stepper.rider_contacts().state());
+        rider_probe = stepper.rider_contacts().probe();
+    }
 
     std::vector<std::size_t> internal_dofs;
     std::vector<double> scales{0.05, 0.10, 0.10};
     const auto dof_jnt = std::views::counted(m->dof_jntid, m->nv);
-    const auto jnt_type = std::views::counted(m->jnt_type, m->njnt);
     for (std::size_t i = 0; i < nv; ++i) {
         if (i >= fd && i < fd + 6U) continue;
         if (std::cmp_equal(i, fw.dof) || std::cmp_equal(i, rw.dof)) continue;
         internal_dofs.push_back(i);
-        scales.push_back(jnt_type[static_cast<std::size_t>(dof_jnt[i])] == mjJNT_SLIDE ? 0.05 : 0.20);
+        const bool is_rider_trans =
+            has_rider_free && std::cmp_greater_equal(i, rfd) && std::cmp_less(i, rfd + 3);
+        const bool is_slide =
+            jnt_type[static_cast<std::size_t>(dof_jnt[i])] == mjJNT_SLIDE;
+        scales.push_back((is_slide || is_rider_trans) ? 0.05 : 0.20);
     }
 
     const bool has_compliant_3d = stepper.has_tire() && stepper.tire_writer().is_compliant_3d();
@@ -117,6 +137,12 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
         }
         for (std::size_t k = 0; k < 4U; ++k) scales.push_back(0.005);
     }
+    const std::size_t roff = scales.size();
+    if (rider_state) {
+        for (std::size_t k = 0; k < rider_state->supports.size(); ++k) scales.push_back(0.005);
+        for (std::size_t s = 0; s < rider_state->grip_xi_local.size(); ++s)
+            for (std::size_t axis = 0; axis < 3U; ++axis) scales.push_back(0.005);
+    }
 
     const std::size_t n_var = scales.size();
     std::vector<double> dq(nv, 0.);
@@ -137,8 +163,31 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
         for (std::size_t k = 0; k < internal_dofs.size(); ++k)
             dq[internal_dofs[k]] = scales[3U + k] * y[3U + k];
 
+        auto next_rider = rider_state
+            ? std::make_unique<writers::RiderContactsState>(*rider_state)
+            : nullptr;
+        if (next_rider) {
+            std::size_t idx = roff;
+            for (std::size_t k = 0; k < next_rider->supports.size(); ++k) {
+                next_rider->supports[k].xi = rider_state->supports[k].xi + scales[idx] * y[idx];
+                ++idx;
+            }
+            for (std::size_t s = 0; s < next_rider->grip_xi_local.size(); ++s) {
+                for (std::size_t axis = 0; axis < 3U; ++axis) {
+                    next_rider->grip_xi_local[s][axis] =
+                        rider_state->grip_xi_local[s][axis] + scales[idx] * y[idx];
+                    ++idx;
+                }
+            }
+        }
+
         context.physical.restore(*incoming_step);
         stepper.mutate([&] { stepper.drive().restore(*incoming_drive); });
+        if (next_rider) {
+            auto probe = rider_probe;
+            stepper.rider_contacts().assign_state(
+                writers::RiderContactsState(*next_rider), std::move(probe));
+        }
 
         const auto qpos = std::views::counted(d->qpos, m->nq);
         const auto qvel = std::views::counted(d->qvel, m->nv);
@@ -185,14 +234,24 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
         const double cap_f = max_hold * u_f;
         const double cap_r = max_hold * u_r;
         if (k_hold > 0. && (cap_f > 0. || cap_r > 0.)) {
+            std::vector<double> efc_f(static_cast<std::size_t>(d->nefc), 0.);
+            std::vector<double> non_fric(nv, 0.);
+            const auto efc_types = std::views::counted(d->efc_type, d->nefc);
+            const auto efc_forces = std::views::counted(d->efc_force, d->nefc);
+            for (int e = 0; e < d->nefc; ++e) {
+                const auto idx = static_cast<std::size_t>(e);
+                if (efc_types[idx] != mjCNSTR_FRICTION_DOF)
+                    efc_f[idx] = efc_forces[idx];
+            }
+            stepper.mutate([&] { engine::mul_jac_t_vec(m, d, non_fric.data(), efc_f.data()); });
             const auto bias = std::views::counted(d->qfrc_bias, m->nv);
             const auto applied = std::views::counted(d->qfrc_applied, m->nv);
             const auto passive = std::views::counted(d->qfrc_passive, m->nv);
             const double tau_req_f = cap_f > 0.
-                ? std::clamp(bias[fw_d] - applied[fw_d] - passive[fw_d], -cap_f, cap_f)
+                ? std::clamp(bias[fw_d] - applied[fw_d] - passive[fw_d] - non_fric[fw_d], -cap_f, cap_f)
                 : 0.;
             const double tau_req_r = cap_r > 0.
-                ? std::clamp(bias[rw_d] - applied[rw_d] - passive[rw_d], -cap_r, cap_r)
+                ? std::clamp(bias[rw_d] - applied[rw_d] - passive[rw_d] - non_fric[rw_d], -cap_r, cap_r)
                 : 0.;
             const double theta_latch_f = theta_w_f + tau_req_f / k_hold;
             const double theta_latch_r = theta_w_r + tau_req_r / k_hold;
@@ -210,6 +269,10 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
             stepper.mutate([&] { stepper.drive().restore(*incoming_drive); });
             if (has_compliant_3d)
                 stepper.tire_writer().set_state(Compliant3dTireWriter::state_names(), candidate_tire_row);
+            if (next_rider) {
+                auto probe = rider_probe;
+                stepper.rider_contacts().assign_state(std::move(*next_rider), std::move(probe));
+            }
             stepper.note_posvel_stale();
             apply_initial_forces(context, false);
             stepper.forward();
@@ -226,7 +289,7 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
     for (int round = 0; round < 4; ++round) {
         y_seed = best_y;
         place_spatial(y_seed);
-        const bool polish = acceleration_residual(context) < 1.;
+        const bool polish = acceleration_residual(context) < 25.;
 
         for (std::size_t i = 0; i < nv; ++i) {
             basis[i] = 1.;

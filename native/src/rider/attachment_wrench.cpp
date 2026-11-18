@@ -327,6 +327,79 @@ namespace rider {
                     "attachment wrench leaves the planar model");
         }
 
+        void check_newton_only(std::span<const double> bike_wrench,
+                               std::span<const double> rider_wrench) {
+            const double scale = std::max(1., norm(first3(rider_wrench)));
+            if (!all_close(bike_wrench, negated(rider_wrench), 1e-3,
+                           1e-3 * scale))
+                throw std::invalid_argument(
+                    "attachment wrenches fail Newton third law");
+        }
+
+        bool is_spatial_bike_model(const mjModel *m) noexcept {
+            return m != nullptr && m->nq != m->nv &&
+                   mj_name2id(m, mjOBJ_JOINT, "root_free") >= 0 &&
+                   mj_name2id(m, mjOBJ_JOINT, "rider_root_free") >= 0;
+        }
+
+        // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional args mirror decompose_wrench
+        AttachmentSample decompose_wrench_3d(
+            std::span<const double> wrench, std::span<const double> normal,
+            const std::string &kind, bool rotational, double half_patch_m,
+            double gap_m,
+            const std::optional<std::vector<double>> &pull_direction,
+            const Vec3 &frame_y) {
+            // NOLINTEND(bugprone-easily-swappable-parameters)
+            if (normal.size() != 3 || !all_finite(normal))
+                throw std::invalid_argument(
+                    "attachment sample needs a finite 3D normal");
+            const double length = norm(normal);
+            if (length < 1e-12)
+                throw std::invalid_argument(
+                    "attachment normal has zero magnitude");
+            const Vec3 n_unit{normal[0] / length, normal[1] / length,
+                              normal[2] / length};
+            const Vec3 f_rider{at(wrench, 0), at(wrench, 1), at(wrench, 2)};
+            const double normal_n = blas::ddot(3, f_rider.data(), 1, n_unit.data(), 1);
+            const Vec3 f_tan{f_rider[0] - normal_n * n_unit[0],
+                             f_rider[1] - normal_n * n_unit[1],
+                             f_rider[2] - normal_n * n_unit[2]};
+            const double tangent_n = norm(f_tan);
+            double moment_nm = 0.;
+            if (rotational) {
+                const Vec3 m_rider{at(wrench, 3), at(wrench, 4), at(wrench, 5)};
+                moment_nm = blas::ddot(3, m_rider.data(), 1, frame_y.data(), 1);
+            }
+            double pull_n = 0.;
+            if (pull_direction.has_value()) {
+                const std::vector<double> &direction = *pull_direction;
+                if (direction.size() != 3 || !all_finite(direction))
+                    throw std::invalid_argument(
+                        "pull direction must be a finite 3D vector");
+                const double f_norm = norm(f_rider);
+                if (kind == "grip") {
+                    pull_n = f_norm;
+                } else {
+                    const double dlength = norm(direction);
+                    if (dlength < 1e-12)
+                        throw std::invalid_argument(
+                            "pull direction has zero magnitude");
+                    const Vec3 force_on_bike{-f_rider[0], -f_rider[1],
+                                             -f_rider[2]};
+                    if (blas::ddot(3, force_on_bike.data(), 1,
+                                   direction.data(), 1) > 0.)
+                        pull_n = f_norm;
+                }
+            }
+            return AttachmentSample{.kind = kind,
+                                    .normal_n = normal_n,
+                                    .tangent_n = tangent_n,
+                                    .moment_nm = moment_nm,
+                                    .gap_m = gap_m,
+                                    .pull_n = pull_n,
+                                    .half_patch_m = half_patch_m};
+        }
+
         // rows.get(eq_id) — the oracle dict lookup on the ordered map.
         const RowList *find_rows(const EqualityRowMap &rows, int eq_id) {
             for (const auto &[id, list] : rows)
@@ -677,10 +750,29 @@ namespace rider {
         if (shares_support(rider.columns, bike.columns))
             throw std::invalid_argument(
                 "attachment bodies share kinematic support");
-        check_newton_and_planarity(bike.wrench, rider.wrench);
+        const bool spatial_bike = is_spatial_bike_model(m);
+        if (spatial_bike)
+            check_newton_only(bike.wrench, rider.wrench);
+        else
+            check_newton_and_planarity(bike.wrench, rider.wrench);
         EqualityRowMap local_rows;
         const double gap_m = attachment_gap(
             d, attachment_index(d, reactions, rows, eq_id, local_rows));
+        if (spatial_bike) {
+            Vec3 frame_y{0., 1., 0.};
+            const int frame_id = mj_name2id(m, mjOBJ_BODY, "frame");
+            if (frame_id >= 0) {
+                const std::span<const double> xmat =
+                    model_access::readonly_buffer(
+                        d->xmat, 9 * m->nbody, "xmat");
+                const std::size_t base =
+                    9 * static_cast<std::size_t>(frame_id);
+                frame_y = {xmat[base + 1], xmat[base + 4], xmat[base + 7]};
+            }
+            return decompose_wrench_3d(rider.wrench, normal, kind, rotational,
+                                       half_patch_m, gap_m, pull_direction,
+                                       frame_y);
+        }
         return decompose_wrench(rider.wrench, normal, kind, rotational,
                                 half_patch_m, gap_m, pull_direction);
     }

@@ -40,9 +40,14 @@ inline constexpr double kGravityMps2 = 9.81;  // GRAVITY_MPS2
 // the ten fields only it read left the record afterwards; documents
 // written before carry them and are read through
 // configuration/legacy_rider.hpp.
-inline constexpr std::array<std::string_view, 3> kRiderVariants = {
-    "none", "lumped", "articulated_planar"};
+inline constexpr std::array<std::string_view, 4> kRiderVariants = {
+    "none", "lumped", "articulated_planar", "articulated_3d"};
 inline constexpr std::string_view kDefaultRiderVariant = "lumped";
+
+[[nodiscard]] constexpr bool
+is_articulated_variant(std::string_view variant) noexcept {
+    return variant == "articulated_planar" || variant == "articulated_3d";
+}
 
 // de Leva (1996) Table 4 segment length fractions over reference stature.
 inline constexpr double kDeLevaReferenceStatureM = 1.741;
@@ -138,6 +143,15 @@ inline constexpr std::array<std::string_view, 9> kLegacyRiderJoints = {
     "rider_hip_front", "rider_knee_front", "rider_ankle_front",
     "rider_hip_rear", "rider_knee_rear", "rider_ankle_rear"};
 
+// 3D articulated rider active joints (11 internal actuated DOFs; passive
+// rider_saddle_pitch and rider_hip_abduction_{front,rear} are excluded).
+inline constexpr std::array<std::string_view, 11> kRiderJoints3d = {
+    "rider_torso_hinge",
+    "rider_shoulder_abduction_left", "rider_shoulder_left", "rider_elbow_left",
+    "rider_shoulder_abduction_right", "rider_shoulder_right", "rider_elbow_right",
+    "rider_hip_front", "rider_knee_front",
+    "rider_hip_rear", "rider_knee_rear"};
+
 // Ordered joint->envelope table (the Python dict's insertion order is kept).
 using JointEnvelopeMap =
     std::vector<std::pair<std::string, JointEnvelope>>;
@@ -166,6 +180,11 @@ using JointEnvelopeMap =
 // ---------------------------------------------------------------------------
 using TorqueCurve = ::spindle::TorqueCurve;
 using ::spindle::directional_capacity;
+
+[[nodiscard]] JointEnvelope default_shoulder_abduction_envelope();
+[[nodiscard]] JointEnvelope default_hip_abduction_envelope();
+[[nodiscard]] TorqueCurve
+default_shoulder_abduction_torque_curve(double mass_kg = 80.0);
 
 // joint_strength.py _torque_curve: decode one {angles_rad, torques_nm,
 // vmax_rad_s, hill_c, eccentric_ratio, source, verified, label} member.

@@ -117,6 +117,76 @@ namespace {
     lstsq_rows_bound(const mjModel *model) noexcept {
         return model != nullptr ? model->nv : rider::lapack_int{0};
     }
+
+    [[nodiscard]] bool is_spatial_3d(const mjModel *model) noexcept {
+        return model != nullptr && model->nq != model->nv &&
+               mj_name2id(model, mjOBJ_JOINT, "root_free") >= 0;
+    }
+
+    void validate_spatial_support_model(const mjModel *model,
+                                      const mjData *data,
+                                      std::span<const int> geoms) {
+        const auto body_of =
+            model_access::readonly_buffer(model->geom_bodyid, model->ngeom);
+        const auto parents =
+            model_access::readonly_buffer(model->body_parentid, model->nbody);
+        for (const int geom : geoms) {
+            model_access::require_id(geom, model->ngeom,
+                                     "invalid rider support geom");
+            int body = body_of[static_cast<std::size_t>(geom)];
+            model_access::require_id(body, model->nbody, "rider support body");
+            for (mjtSize steps = 0; body != 0; ++steps) {
+                if (steps >= model->nbody)
+                    throw std::invalid_argument(
+                        "invalid or cyclic rider support parent chain");
+                const int parent = parents[static_cast<std::size_t>(body)];
+                if (parent < 0 || parent >= body)
+                    throw std::invalid_argument(
+                        "invalid or cyclic rider support parent chain");
+                body = parent;
+            }
+        }
+        const auto geom_types =
+            model_access::readonly_buffer(model->geom_type, model->ngeom);
+        const auto positions = model_access::readonly_buffer(
+            data->geom_xpos, 3 * model->ngeom, "geom_xpos");
+        const auto rotations = model_access::readonly_buffer(
+            data->geom_xmat, 9 * model->ngeom, "geom_xmat");
+        const auto sizes = model_access::readonly_buffer(
+            model->geom_size, 3 * model->ngeom, "geom_size");
+        for (const int geom : geoms) {
+            const auto id = static_cast<std::size_t>(geom);
+            if (geom_types[id] != mjGEOM_BOX)
+                throw std::invalid_argument(
+                    "rider support geometry must be a box");
+            const Vec3 origin = vec3_at(positions, geom);
+            const Mat3 r = mat3_at(rotations, geom);
+            const Vec3 half = vec3_at(sizes, geom);
+            rider::validate_vector(origin, "box origin");
+            rider::validate_vector(half, "box half size");
+            for (const double x : r)
+                rider::validate_scalar(x, "box orientation");
+            for (const double x : half)
+                if (x <= 0.)
+                    throw std::invalid_argument(
+                        "box dimensions must be positive");
+            for (std::size_t i = 0; i < 3; ++i) {
+                for (std::size_t j = 0; j < 3; ++j) {
+                    const double gram = r[i] * r[j] + r[3 + i] * r[3 + j] +
+                                        r[6 + i] * r[6 + j];
+                    if (std::abs(gram - (i == j ? 1. : 0.)) > 1e-9)
+                        throw std::invalid_argument(
+                            "support box needs a proper rotation");
+                }
+            }
+            const double det = r[0] * (r[4] * r[8] - r[5] * r[7]) -
+                               r[1] * (r[3] * r[8] - r[5] * r[6]) +
+                               r[2] * (r[3] * r[7] - r[4] * r[6]);
+            if (std::abs(det - 1.) > 1e-9)
+                throw std::invalid_argument(
+                    "support box needs a proper rotation");
+        }
+    }
 } // namespace
 
 namespace writers {
@@ -158,8 +228,13 @@ namespace writers {
             model_access::resolve_id(model_, mjOBJ_SITE, "site_rider_grip_left");
         grip_site_[1] = model_access::resolve_id(model_, mjOBJ_SITE,
                                                  "site_rider_grip_right");
+        const int saddle_carrier =
+            (is_spatial_3d(model_) &&
+             cfg_.saddle_attachment != rider::SaddleAttachment::flat)
+                ? mj_name2id(model_, mjOBJ_BODY, "rider_saddle_carrier")
+                : -1;
         supports_[0] = {
-            .body = pelvis_,
+            .body = saddle_carrier >= 0 ? saddle_carrier : pelvis_,
             .site = model_access::resolve_id(model_, mjOBJ_SITE,
                                              "site_rider_saddle"),
             .bike = frame_,
@@ -219,7 +294,9 @@ namespace writers {
         if (linked_saddle_)
             saddle_eq_ = model_access::resolve_id(
                 model_, mjOBJ_EQUALITY,
-                welded_saddle_ ? "weld_saddle" : "connect_saddle");
+                (welded_saddle_ || is_spatial_3d(model_))
+                    ? "weld_saddle"
+                    : "connect_saddle");
         if (welded_grip_) {
             grip_eq_[0] = model_access::resolve_id(model_, mjOBJ_EQUALITY,
                                                    "connect_grip_left");
@@ -242,7 +319,10 @@ namespace writers {
         if (data != nullptr) {
             const std::array<int, kSupportCount> geoms{
                 supports_[0].geom, supports_[1].geom, supports_[2].geom};
-            rider::validate_planar_support_model(model_, data, geoms);
+            if (is_spatial_3d(model_))
+                validate_spatial_support_model(model_, data, geoms);
+            else
+                rider::validate_planar_support_model(model_, data, geoms);
             const std::span<const double> xmat =
                 model_access::readonly_buffer(
                     data->xmat, 9 * model_->nbody, "xmat");
@@ -507,8 +587,9 @@ namespace writers {
             for (std::size_t pad = 0; pad < kPadsPerSupport; ++pad) {
                 PadEval c{};
                 pad_eval(si, pad, data, c);
-                if (std::abs(c.normal[1]) > 1e-9 ||
-                    std::abs(c.tangent[1]) > 1e-9)
+                if (!is_spatial_3d(model_) &&
+                    (std::abs(c.normal[1]) > 1e-9 ||
+                     std::abs(c.tangent[1]) > 1e-9))
                     throw std::invalid_argument(
                         "rider support surface is outside the planar model");
                 const auto &jrel =
@@ -951,6 +1032,8 @@ namespace writers {
         const Mat3 frame = mat3_at(xmat, frame_);
         const Vec3 frame_up{frame[2], frame[5], frame[8]};
         const Vec3 frame_forward{frame[0], frame[3], frame[6]};
+        const bool spatial_3d = is_spatial_3d(model_);
+        std::vector<std::string> spatial_errors;
         RiderSettleOutcome outcome;
         for (std::size_t si = 0; si < kSupportCount; ++si) {
             const bool linked = si == 0 ? linked_saddle_ : linked_pedals_;
@@ -971,6 +1054,9 @@ namespace writers {
                 const Mat3 foot = mat3_at(xmat, supports_[si].body);
                 n = {foot[2], foot[5], foot[8]};
                 tangent = {n[2], 0., -n[0]};
+            } else if (spatial_3d && si == 0) {
+                n = frame_up;
+                tangent = frame_forward;
             } else {
                 PadEval first{};
                 PadEval second{};
@@ -995,13 +1081,60 @@ namespace writers {
             // — np.dot's ddot dispatch.
             const double normal =
                 blas::ddot(3, force.data(), 1, n.data(), 1);
-            const double shear =
+            double shear =
                 blas::ddot(3, force.data(), 1, tangent.data(), 1);
-            const RiderSupportReaction frame_reaction{
+            if (spatial_3d) {
+                const Vec3 f_vec{force[0], force[1], force[2]};
+                const double n_norm2 = blas::ddot(3, n.data(), 1, n.data(), 1);
+                const double n_proj = n_norm2 > 1e-12 ? normal / n_norm2 : 0.;
+                const Vec3 f_tan = rider::subtract(f_vec, rider::multiply(n, n_proj));
+                shear = norm3(f_tan);
+            }
+            RiderSupportReaction frame_reaction{
                 .normal_n =
                     blas::ddot(3, force.data(), 1, frame_up.data(), 1),
                 .shear_n =
                     blas::ddot(3, force.data(), 1, frame_forward.data(), 1)};
+            if (spatial_3d && si == 0) {
+                constexpr double kSitBoneHalfSpacingM = 0.055;
+                constexpr double kUnilateralPullTolN = 6.0;
+                const std::span<const double> site_xpos =
+                    model_access::readonly_buffer(
+                        data->site_xpos, 3 * model_->nsite, "site_xpos");
+                equality_.equality_qfrc_into(data, saddle_eq_, measure_qfrc_);
+                double saddle_fn = 0.;
+                double saddle_mx = 0.;
+                try {
+                    const rider::BodyWrench bw = rider::body_wrench(
+                        model_, data, lstsq_, measure_qfrc_, supports_[0].body,
+                        vec3_at(site_xpos, supports_[0].site));
+                    const Vec3 f_r{bw.wrench[0], bw.wrench[1], bw.wrench[2]};
+                    const Vec3 m_r{bw.wrench[3], bw.wrench[4], bw.wrench[5]};
+                    saddle_fn =
+                        blas::ddot(3, f_r.data(), 1, frame_up.data(), 1);
+                    saddle_mx =
+                        blas::ddot(3, m_r.data(), 1, frame_forward.data(), 1);
+                } catch (const std::invalid_argument &) {
+                    saddle_fn = frame_reaction.normal_n;
+                }
+                const double n_left =
+                    0.5 * saddle_fn + saddle_mx / (2.0 * kSitBoneHalfSpacingM);
+                const double n_right =
+                    0.5 * saddle_fn - saddle_mx / (2.0 * kSitBoneHalfSpacingM);
+                const double min_sit = std::min(n_left, n_right);
+                const double min_saddle = std::min(saddle_fn, min_sit);
+                frame_reaction.normal_n = min_saddle;
+                if (min_sit < -kUnilateralPullTolN ||
+                    saddle_fn < -kUnilateralPullTolN)
+                    spatial_errors.emplace_back(
+                        "saddle:sit_bone_pull_violation");
+            } else if (spatial_3d && si > 0) {
+                constexpr double kUnilateralPullTolN = 6.0;
+                if (normal < -kUnilateralPullTolN)
+                    spatial_errors.emplace_back(
+                        si == 1 ? "foot_front:pull_violation"
+                                : "foot_rear:pull_violation");
+            }
             if (si == 0)
                 outcome.saddle_reaction = frame_reaction;
             else if (si == 1)
@@ -1015,7 +1148,10 @@ namespace writers {
                     .force_on_rider_n = {force[0], force[1], force[2]},
                     .normal_n = normal,
                     .tangent_n = shear,
-                    .would_separate = normal < 0.,
+                    .would_separate =
+                        (spatial_3d && si == 0)
+                            ? (frame_reaction.normal_n < 0.)
+                            : (normal < 0.),
                     .would_slip = std::abs(shear) >
                                   cfg_.support_mu * std::max(normal, 0.)});
         }
@@ -1026,6 +1162,15 @@ namespace writers {
                 if (force.size() != 3)
                     throw std::invalid_argument(
                         "attachment reaction is not a 3-vector");
+                if (spatial_3d) {
+                    constexpr double kMaxPerHandForceN = 300.0;
+                    const double hand_norm =
+                        norm3({force[0], force[1], force[2]});
+                    if (hand_norm > kMaxPerHandForceN)
+                        spatial_errors.emplace_back(
+                            side == 0 ? "grip_left:force_limit_violation"
+                                      : "grip_right:force_limit_violation");
+                }
                 outcome.entries.emplace_back(
                     std::string("grip_") + std::string(kSideNames[side]),
                     RiderSettledEntry{
@@ -1066,6 +1211,12 @@ namespace writers {
             outcome.measurement =
                 attachment_samples(data, interval, raw);
         }
+        if (spatial_3d && !spatial_errors.empty()) {
+            outcome.measurement.errors.insert(
+                outcome.measurement.errors.end(),
+                std::make_move_iterator(spatial_errors.begin()),
+                std::make_move_iterator(spatial_errors.end()));
+        }
         // last_attachment_samples/last_attachment_errors commit — after
         // measurement, so a propagating failure keeps the previous
         // published pair (and the latch stays written — line 326).
@@ -1094,7 +1245,7 @@ namespace writers {
         if (support == 0) {
             if (!linked_saddle_) return std::nullopt;
             target.eq_id = saddle_eq_;
-            target.rotational = welded_saddle_;
+            target.rotational = welded_saddle_ || is_spatial_3d(model_);
             target.half_patch_m = cfg_.saddle_patch_half_length_m;
             target.out = "saddle";
             target.kind = "saddle";
@@ -1156,9 +1307,14 @@ namespace writers {
             const std::span<const double> geom_size =
                 model_access::readonly_buffer(model_->geom_size,
                                               3 * model_->ngeom, "geom_size");
-            target.normal = rider::upper_box_face(
-                vec3_at(geom_xpos, ref.geom), mat3_at(geom_xmat, ref.geom),
-                vec3_at(geom_size, ref.geom)).normal;
+            if (is_spatial_3d(model_)) {
+                const Mat3 r = mat3_at(geom_xmat, ref.geom);
+                target.normal = {r[2], r[5], r[8]};
+            } else {
+                target.normal = rider::upper_box_face(
+                    vec3_at(geom_xpos, ref.geom), mat3_at(geom_xmat, ref.geom),
+                    vec3_at(geom_size, ref.geom)).normal;
+            }
         } else {
             // np.mean([n0, n1], axis=0) — the ordered pair mean,
             // unnormalized (decompose/geometry normalize downstream).

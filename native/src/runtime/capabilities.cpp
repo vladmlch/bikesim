@@ -24,10 +24,10 @@ CapabilityReport implemented_capabilities(
         reject("pitch_assist","physical mode requires resolved false");
     if(std::ranges::find(cfg::kRiderVariants,rider.variant)==cfg::kRiderVariants.end())
         reject("rider.variant","unknown rider variant");
-    if(config.drive_mode==std::optional<std::string>("articulated_effort") && rider.variant!="articulated_planar")
+    if(config.drive_mode==std::optional<std::string>("articulated_effort") && !cfg::is_articulated_variant(rider.variant))
         reject("rider.variant","articulated_effort requires articulated_planar topology");
     const auto& attachments=config.articulated;
-    if(rider.variant!="articulated_planar" && (attachments.pedal_attachment!="flat" ||
+    if(!cfg::is_articulated_variant(rider.variant) && (attachments.pedal_attachment!="flat" ||
        attachments.saddle_attachment!="flat" || attachments.grip_attachment!="spring"))
         reject("articulated","non-flat rider attachments require articulated_planar topology");
     const auto& tires=config.tires;
@@ -48,7 +48,7 @@ CapabilityReport implemented_capabilities(
         if(tires.backend=="compliant_2d")out.paths.emplace_back("writers/tire.cpp");
         if(tires.backend=="distributed_2d_reference")out.paths.emplace_back("writers/distributed_tire.cpp");
         if(tires.backend=="pneumatic")out.paths.emplace_back("writers/pneumatic_tire.cpp");
-        if(rider.variant=="articulated_planar") {
+        if(cfg::is_articulated_variant(rider.variant)) {
             out.paths.emplace_back("rider/spindle_controller.cpp");
             out.paths.emplace_back("writers/rider_contacts.cpp");
             if(config.articulated.pedal_attachment!="spindle") {

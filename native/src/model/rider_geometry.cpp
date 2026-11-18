@@ -14,6 +14,7 @@
 #include "../writers/pyfloat.hpp"
 #include "checks.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -391,6 +392,234 @@ SeatedPose seated_pose(const RiderSpecs &rider) {
     return seated_pose(rider, BikeSpecs{});
 }
 
+SeatedPose3d solve_seated_pose_3d(const BikeSpecs &specs,
+                                  const RiderSpecs &rider) {
+    const geometry::FixedFramePoints fixed =
+            geometry::get_fixed_frame_points(specs);
+    const Vec3 p9{fixed.P9[0] / 1000.0, fixed.P9[1] / 1000.0,
+                  fixed.P9[2] / 1000.0};
+
+    const geometry::SaddleGeometry saddle = geometry::saddle_geometry(
+            p9, geometry::saddle_top_z_for_height(
+                        p9, rider.saddle_height_m()));
+    if (!(geometry::MIN_EXPOSED_SEATPOST_M <= saddle.exposed_post_m &&
+          saddle.exposed_post_m <= geometry::MAX_EXPOSED_SEATPOST_M))
+        throw std::invalid_argument(
+                "a " + gd::py_fixed(rider.height_m, 2) +
+                " m rider with a " + gd::py_fixed(rider.inseam(), 3) +
+                " m inseam needs a " +
+                gd::py_fixed(rider.saddle_height_m(), 3) +
+                " m saddle height, which exposes " +
+                gd::py_fixed(saddle.exposed_post_m * 1000.0, 0) +
+                " mm of seatpost; the frame accepts " +
+                gd::py_fixed(geometry::MIN_EXPOSED_SEATPOST_M * 1000.0,
+                             0) +
+                "-" +
+                gd::py_fixed(geometry::MAX_EXPOSED_SEATPOST_M * 1000.0,
+                             0) +
+                " mm. Adjust --rider-height or --rider-inseam.");
+
+    const Vec3 hip =
+            v_add(saddle.top_center, {0.0, 0.0, HIP_ABOVE_SADDLE_M});
+    const Vec3 grip_center = geometry::handlebar_grip_point(specs);
+    const double crank_m = specs.crank_length / 1000.0;
+    const auto [pedal_front, pedal_rear] =
+            geometry::pedal_points(crank_m);
+    const Vec3 ankle_offset{0.0, 0.0, ANKLE_ABOVE_PEDAL_M};
+    const Vec3 ankle_front = v_add(pedal_front, ankle_offset);
+    Vec3 ankle_rear{};
+
+    const double l_thigh = rider.segment_length("thigh");
+    const double l_shank = rider.segment_length("shank");
+    const double l_trunk = rider.segment_length("trunk");
+    const double l_ua = rider.segment_length("upper_arm");
+    const double l_fa = rider.segment_length("forearm");
+    const double l_hand = rider.segment_length("hand");
+    const double l_fore_grip = l_fa + GRIP_FROM_WRIST_FRACTION * l_hand;
+
+    Vec3 knee_front, knee_rear;
+    double l2_front = 0.0;
+    double s_par = 0.0;
+    double s_perp = 0.0;
+    try {
+        knee_front =
+                two_link_ik(hip, ankle_front, l_thigh, l_shank, "+x");
+        const Vec3 front_leg_vec = v_sub(pedal_front, knee_front);
+        l2_front = gd::np_norm3(front_leg_vec);
+        knee_rear =
+                two_link_ik(hip, pedal_rear, l_thigh, l2_front, "+x");
+        const Vec3 rear_leg_vec = v_sub(pedal_rear, knee_rear);
+        const Vec3 u_front = v_div(front_leg_vec, l2_front);
+        const Vec3 u_rear = v_div(rear_leg_vec, l2_front);
+        const Vec3 shank_front = v_sub(ankle_front, knee_front);
+        s_par =
+                shank_front[0] * u_front[0] + shank_front[2] * u_front[2];
+        s_perp =
+                -shank_front[0] * u_front[2] + shank_front[2] * u_front[0];
+        ankle_rear = Vec3{
+                knee_rear[0] + s_par * u_rear[0] - s_perp * u_rear[2],
+                0.0,
+                knee_rear[2] + s_par * u_rear[2] + s_perp * u_rear[0]};
+    } catch (const std::invalid_argument &exc) {
+        throw std::invalid_argument(
+                std::string("the rider's legs do not reach the pedals "
+                            "from the saddle: ") +
+                exc.what());
+    }
+
+    const Vec3 pedal_bdc{0.0, 0.0, -crank_m};
+    Vec3 knee_bdc;
+    try {
+        knee_bdc =
+                two_link_ik(hip, pedal_bdc, l_thigh, l2_front, "+x");
+    } catch (const std::invalid_argument &exc) {
+        throw std::invalid_argument(
+                std::string("the leg does not reach the pedal at bottom "
+                            "dead centre (") +
+                exc.what() + "); the saddle at " +
+                gd::py_fixed(rider.saddle_height_m(), 3) +
+                " m is too high for a " +
+                gd::py_fixed(rider.height_m, 2) + " m rider");
+    }
+    const Vec3 bdc_leg_vec = v_sub(pedal_bdc, knee_bdc);
+    const Vec3 u_bdc = v_div(bdc_leg_vec, l2_front);
+    const Vec3 ankle_bdc{
+            knee_bdc[0] + s_par * u_bdc[0] - s_perp * u_bdc[2],
+            0.0,
+            knee_bdc[2] + s_par * u_bdc[2] + s_perp * u_bdc[0]};
+    const double knee_flexion_bdc =
+            flexion_deg(hip, knee_bdc, ankle_bdc);
+    if (!(KNEE_FLEXION_BDC_MIN_DEG <= knee_flexion_bdc &&
+          knee_flexion_bdc <= KNEE_FLEXION_BDC_MAX_DEG))
+        throw std::invalid_argument(
+                "knee flexion at bottom dead centre is " +
+                gd::py_fixed(knee_flexion_bdc, 1) +
+                " degrees; the fit accepts " +
+                gd::py_fixed(KNEE_FLEXION_BDC_MIN_DEG, 0) + "-" +
+                gd::py_fixed(KNEE_FLEXION_BDC_MAX_DEG, 0) +
+                ". Saddle " +
+                gd::py_fixed(rider.saddle_height_m(), 3) + " m from a " +
+                gd::py_fixed(rider.inseam(), 3) + " m inseam against " +
+                gd::py_fixed(specs.crank_length, 0) +
+                " mm cranks; adjust --rider-height, --rider-inseam or "
+                "the crank length.");
+
+    const double b_sh =
+            SHOULDER_HALF_WIDTH_REF_M *
+            (rider.height_m / SHOULDER_WIDTH_REF_STATURE_M);
+    const double dy_arm = GRIP_LATERAL_OFFSET_3D_M - b_sh;
+    const double elbow_rad = gd::np_radians(ELBOW_FLEXION_3D_DEG);
+    const double d_3d = std::sqrt(
+            l_ua * l_ua + l_fore_grip * l_fore_grip +
+            2.0 * l_ua * l_fore_grip * numeric::math_cos(elbow_rad));
+    if (!(d_3d > std::abs(dy_arm) + 0.05))
+        throw std::invalid_argument("unreachable 3D cockpit reach");
+    const double d_xz = std::sqrt(d_3d * d_3d - dy_arm * dy_arm);
+
+    Vec3 shoulder_center;
+    try {
+        shoulder_center = two_link_ik(hip, grip_center, l_trunk, d_xz, "+z");
+    } catch (const std::invalid_argument &exc) {
+        throw std::invalid_argument(
+                std::string("the rider cannot reach the handlebar from "
+                            "the saddle: ") +
+                exc.what());
+    }
+
+    const Vec3 torso_axis_raw = v_sub(shoulder_center, hip);
+    const Vec3 torso_axis =
+            v_div(torso_axis_raw, gd::np_norm3(torso_axis_raw));
+    const double lo =
+            torso_axis[2] < 1.0 ? torso_axis[2] : 1.0;
+    const double torso_lean = gd::np_degrees(
+            std::acos(lo > -1.0 ? lo : -1.0));
+    const Vec3 head_center =
+            v_add(shoulder_center,
+                  v_scale(NECK_LENGTH_M + HEAD_RADIUS_M, torso_axis));
+
+    const auto solve_side = [&](double side_sign) {
+        const Vec3 sh{shoulder_center[0], side_sign * b_sh,
+                      shoulder_center[2]};
+        const Vec3 gr{grip_center[0], side_sign * GRIP_LATERAL_OFFSET_3D_M,
+                      grip_center[2]};
+        const Vec3 dp = v_sub(gr, sh);
+        const double psi0 = std::atan2(dp[1], dp[0]);
+        const double rho0 = std::hypot(dp[0], dp[1]);
+        const Vec3 e_rho{numeric::math_cos(psi0), numeric::math_sin(psi0), 0.0};
+        const double gamma0 = std::atan2(-dp[2], rho0);
+        const double cos_alpha0 = std::clamp(
+                (l_ua * l_ua + d_3d * d_3d - l_fore_grip * l_fore_grip) /
+                        (2.0 * l_ua * d_3d),
+                -1.0, 1.0);
+        const double alpha0 = std::acos(cos_alpha0);
+        const double beta_ua0 = gamma0 + alpha0;
+        const Vec3 el = v_add(
+                sh,
+                v_scale(l_ua,
+                        v_sub(v_scale(numeric::math_cos(beta_ua0), e_rho),
+                              v_scale(numeric::math_sin(beta_ua0),
+                                      Vec3{0.0, 0.0, 1.0}))));
+        const Vec3 to_fore_raw = v_sub(gr, el);
+        const Vec3 to_fore = v_div(to_fore_raw, gd::np_norm3(to_fore_raw));
+        const Vec3 wr = v_sub(
+                gr, v_scale(GRIP_FROM_WRIST_FRACTION * l_hand, to_fore));
+        return std::tuple{sh, el, wr, gr, psi0, beta_ua0};
+    };
+
+    const auto [sh_l, el_l, wr_l, gr_l, psi0_l, beta_ua0_l] =
+            solve_side(+1.0);
+    const auto [sh_r, el_r, wr_r, gr_r, psi0_r, beta_ua0_r] =
+            solve_side(-1.0);
+
+    const SeatedPose sagittal{
+            .saddle = saddle,
+            .hip = hip,
+            .shoulder = shoulder_center,
+            .elbow = Vec3{el_l[0], 0.0, el_l[2]},
+            .wrist = Vec3{wr_l[0], 0.0, wr_l[2]},
+            .grip = grip_center,
+            .head_center = head_center,
+            .knee_front = knee_front,
+            .knee_rear = knee_rear,
+            .ankle_front = ankle_front,
+            .ankle_rear = ankle_rear,
+            .pedal_front = pedal_front,
+            .pedal_rear = pedal_rear,
+            .torso_lean_deg = torso_lean,
+            .knee_flexion_front_deg =
+                    flexion_deg(hip, knee_front, ankle_front),
+            .knee_flexion_rear_deg =
+                    flexion_deg(hip, knee_rear, ankle_rear),
+            .knee_flexion_bdc_deg = knee_flexion_bdc,
+    };
+
+    return SeatedPose3d{
+            .sagittal = sagittal,
+            .shoulder_left = sh_l,
+            .shoulder_right = sh_r,
+            .elbow_left = el_l,
+            .elbow_right = el_r,
+            .wrist_left = wr_l,
+            .wrist_right = wr_r,
+            .grip_left = gr_l,
+            .grip_right = gr_r,
+            .b_shoulder_m = b_sh,
+            .psi0_left_rad = psi0_l,
+            .psi0_right_rad = psi0_r,
+            .beta_ua0_rad = beta_ua0_l,
+            .elbow_flexion0_rad = elbow_rad,
+            .upper_arm_m = l_ua,
+            .forearm_grip_m = l_fore_grip,
+    };
+}
+
+SeatedPose3d seated_pose_3d(const RiderSpecs &rider, const BikeSpecs &specs) {
+    return solve_seated_pose_3d(specs, rider);
+}
+SeatedPose3d seated_pose_3d(const RiderSpecs &rider) {
+    return seated_pose_3d(rider, BikeSpecs{});
+}
+
 // ---------------------------------------------------------------------
 // RiderSpecs.compute_rider_centers_of_mass
 // ---------------------------------------------------------------------
@@ -473,9 +702,63 @@ compute_rider_centers_of_mass(const RiderSpecs &rider,
                     }()});
         return out;
     }
+    if (rider.variant == "articulated_3d") {
+        const ArticulatedPose3d pose = geometry_pose_3d(rider, specs);
+        const SegmentMasses masses = split_paired_arm_masses(
+                segment_masses(rider.mass_kg, rider.helmet_mass_kg));
+        std::vector<std::pair<std::string, Vec3>> centers;
+        centers.emplace_back("pelvis", v_add(pose.hip, {0.0, 0.0, 0.06}));
+        centers.emplace_back("torso",
+                             v_div(v_add(pose.hip, pose.shoulder_center), 2.0));
+        centers.emplace_back("head", pose.head_center);
+        centers.emplace_back(
+                "upper_arm_left",
+                v_div(v_add(pose.shoulder_left, pose.elbow_left), 2.0));
+        centers.emplace_back(
+                "forearm_left",
+                v_div(v_add(pose.elbow_left, pose.grip_left), 2.0));
+        centers.emplace_back(
+                "upper_arm_right",
+                v_div(v_add(pose.shoulder_right, pose.elbow_right), 2.0));
+        centers.emplace_back(
+                "forearm_right",
+                v_div(v_add(pose.elbow_right, pose.grip_right), 2.0));
+        const std::array<std::pair<std::string_view, double>, 2> sides{
+            std::pair{"front", -1.0}, std::pair{"rear", 1.0}};
+        for (const auto &[side, sign] : sides) {
+            const Vec3 &knee =
+                    side == "front" ? pose.knee_front : pose.knee_rear;
+            const Vec3 &ankle =
+                    side == "front" ? pose.ankle_front : pose.ankle_rear;
+            const Vec3 &pedal =
+                    side == "front" ? pose.pedal_front : pose.pedal_rear;
+            const std::array<std::pair<std::string_view, Vec3>, 3> parts{
+                std::pair{"thigh", v_div(v_add(pose.hip, knee), 2.0)},
+                std::pair{"shank", v_div(v_add(knee, ankle), 2.0)},
+                std::pair{"foot", v_div(v_add(ankle, pedal), 2.0)}};
+            for (const auto &[part, point] : parts) {
+                Vec3 center = point;
+                center[1] = sign * geometry::PEDAL_LATERAL_OFFSET_M;
+                centers.emplace_back(
+                        std::string(part) + "_" + std::string(side), center);
+            }
+        }
+        std::vector<RiderCenter> out;
+        out.reserve(centers.size());
+        for (const auto &[key, center] : centers)
+            out.push_back(RiderCenter{
+                .name = "rider_" + key,
+                .pos_m = center,
+                .mass_kg = [&] {
+                    for (const auto &[name, value] : masses)
+                        if (name == key) return value;
+                    throw std::out_of_range(py_str_repr(key));
+                }()});
+        return out;
+    }
     throw std::invalid_argument(
             "unknown rider variant " + py_str_repr(rider.variant) +
-            "; available: none, lumped, articulated_planar");
+            "; available: none, lumped, articulated_planar, articulated_3d");
 }
 std::vector<RiderCenter>
 compute_rider_centers_of_mass(const RiderSpecs &rider) {
@@ -665,10 +948,95 @@ ArticulatedPose geometry_pose(const RiderSpecs &rider,
     return out;
 }
 
+void validate_articulated_pose_3d(const ArticulatedPose3d &pose) {
+    const std::array<std::pair<std::string_view, const Vec3 *>, 15> fields{{
+        {"hip", &pose.hip},
+        {"shoulder_center", &pose.shoulder_center},
+        {"head_center", &pose.head_center},
+        {"shoulder_left", &pose.shoulder_left},
+        {"shoulder_right", &pose.shoulder_right},
+        {"elbow_left", &pose.elbow_left},
+        {"elbow_right", &pose.elbow_right},
+        {"grip_left", &pose.grip_left},
+        {"grip_right", &pose.grip_right},
+        {"knee_front", &pose.knee_front},
+        {"knee_rear", &pose.knee_rear},
+        {"ankle_front", &pose.ankle_front},
+        {"ankle_rear", &pose.ankle_rear},
+        {"pedal_front", &pose.pedal_front},
+        {"pedal_rear", &pose.pedal_rear},
+    }};
+    for (const auto &[name, point] : fields)
+        for (const double v : *point)
+            if (!std::isfinite(v))
+                throw std::invalid_argument(
+                        "invalid shape or non-finite " + std::string(name));
+}
+
+ArticulatedPose to_articulated_pose(const ArticulatedPose3d &pose) {
+    return ArticulatedPose{
+        .saddle = pose.saddle,
+        .hip = pose.hip,
+        .shoulder = pose.shoulder_center,
+        .elbow = Vec3{pose.elbow_left[0], 0.0, pose.elbow_left[2]},
+        .grip = Vec3{pose.grip_left[0], 0.0, pose.grip_left[2]},
+        .head_center = pose.head_center,
+        .knee_front = pose.knee_front,
+        .knee_rear = pose.knee_rear,
+        .ankle_front = pose.ankle_front,
+        .ankle_rear = pose.ankle_rear,
+        .pedal_front = pose.pedal_front,
+        .pedal_rear = pose.pedal_rear,
+    };
+}
+
+ArticulatedPose3d geometry_pose_3d(const RiderSpecs &rider,
+                                   const BikeSpecs &specs) {
+    RiderSpecs checked = rider;
+    configuration::detail::post_init(checked);
+    const SeatedPose3d pose = seated_pose_3d(checked, specs);
+    ArticulatedPose3d out{
+        .saddle = pose.sagittal.saddle,
+        .hip = pose.sagittal.hip,
+        .shoulder_center = pose.sagittal.shoulder,
+        .head_center = pose.sagittal.head_center,
+        .shoulder_left = pose.shoulder_left,
+        .shoulder_right = pose.shoulder_right,
+        .elbow_left = pose.elbow_left,
+        .elbow_right = pose.elbow_right,
+        .grip_left = pose.grip_left,
+        .grip_right = pose.grip_right,
+        .knee_front = pose.sagittal.knee_front,
+        .knee_rear = pose.sagittal.knee_rear,
+        .ankle_front = pose.sagittal.ankle_front,
+        .ankle_rear = pose.sagittal.ankle_rear,
+        .pedal_front = pose.sagittal.pedal_front,
+        .pedal_rear = pose.sagittal.pedal_rear,
+        .b_shoulder_m = pose.b_shoulder_m,
+        .psi0_left_rad = pose.psi0_left_rad,
+        .psi0_right_rad = pose.psi0_right_rad,
+        .beta_ua0_rad = pose.beta_ua0_rad,
+        .elbow_flexion0_rad = pose.elbow_flexion0_rad,
+        .upper_arm_m = pose.upper_arm_m,
+        .forearm_grip_m = pose.forearm_grip_m,
+    };
+    validate_articulated_pose_3d(out);
+    return out;
+}
+
 namespace {
 [[nodiscard]] double rot_y_angle(const Vec3 &u, const Vec3 &v) noexcept {
     return std::atan2(u[2] * v[0] - u[0] * v[2],
                       u[0] * v[0] + u[2] * v[2]);
+}
+[[nodiscard]] double rot_m_angle(const Vec3 &u, const Vec3 &v,
+                                 double psi0_rad) noexcept {
+    const double c = numeric::math_cos(psi0_rad);
+    const double s = numeric::math_sin(psi0_rad);
+    const double u_rho = u[0] * c + u[1] * s;
+    const double v_rho = v[0] * c + v[1] * s;
+    return std::atan2(u[2] * v_rho - u_rho * v[2],
+                      u_rho * v_rho + u[2] * v[2]);
 }
 } // namespace
 
@@ -730,6 +1098,69 @@ double pose_neutral_anatomical_rad(const SeatedPose &pose,
 configuration::JointEnvelopeMap
 with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
                          const ArticulatedPose &pose) {
+    for (auto &[name, env] : envelopes) {
+        env.neutral_anatomical_rad = pose_neutral_anatomical_rad(pose, name);
+        configuration::detail::post_init(env);
+        if (!(env.minimum_anatomical_rad <= env.neutral_anatomical_rad &&
+              env.neutral_anatomical_rad <= env.maximum_anatomical_rad))
+            throw std::invalid_argument(
+                name + ": neutral angle outside the declared range");
+    }
+    return envelopes;
+}
+
+double pose_neutral_anatomical_rad(const ArticulatedPose3d &pose,
+                                   std::string_view joint_name) {
+    if (joint_name == "rider_torso_hinge")
+        return +rot_y_angle({0.0, 0.0, 1.0},
+                            v_sub(pose.shoulder_center, pose.hip));
+    if (joint_name == "rider_shoulder_abduction_left" ||
+        joint_name == "rider_shoulder_abduction_right" ||
+        joint_name == "rider_hip_abduction_front" ||
+        joint_name == "rider_hip_abduction_rear" ||
+        joint_name == "rider_saddle_pitch")
+        return 0.0;
+    if (joint_name == "rider_shoulder_left")
+        return -rot_m_angle(v_sub(pose.hip, pose.shoulder_center),
+                            v_sub(pose.elbow_left, pose.shoulder_left),
+                            pose.psi0_left_rad);
+    if (joint_name == "rider_shoulder_right")
+        return -rot_m_angle(v_sub(pose.hip, pose.shoulder_center),
+                            v_sub(pose.elbow_right, pose.shoulder_right),
+                            pose.psi0_right_rad);
+    if (joint_name == "rider_elbow_left")
+        return -rot_m_angle(v_sub(pose.elbow_left, pose.shoulder_left),
+                            v_sub(pose.grip_left, pose.elbow_left),
+                            pose.psi0_left_rad);
+    if (joint_name == "rider_elbow_right")
+        return -rot_m_angle(v_sub(pose.elbow_right, pose.shoulder_right),
+                            v_sub(pose.grip_right, pose.elbow_right),
+                            pose.psi0_right_rad);
+    if (joint_name == "rider_hip_front")
+        return -rot_y_angle({0.0, 0.0, -1.0},
+                            v_sub(pose.knee_front, pose.hip));
+    if (joint_name == "rider_knee_front")
+        return +rot_y_angle(v_sub(pose.knee_front, pose.hip),
+                            v_sub(pose.ankle_front, pose.knee_front));
+    if (joint_name == "rider_ankle_front")
+        return +rot_y_angle(v_sub(pose.knee_front, pose.ankle_front),
+                            v_sub(pose.pedal_front, pose.ankle_front));
+    if (joint_name == "rider_hip_rear")
+        return -rot_y_angle({0.0, 0.0, -1.0},
+                            v_sub(pose.knee_rear, pose.hip));
+    if (joint_name == "rider_knee_rear")
+        return +rot_y_angle(v_sub(pose.knee_rear, pose.hip),
+                            v_sub(pose.ankle_rear, pose.knee_rear));
+    if (joint_name == "rider_ankle_rear")
+        return +rot_y_angle(v_sub(pose.knee_rear, pose.ankle_rear),
+                            v_sub(pose.pedal_rear, pose.ankle_rear));
+    throw std::invalid_argument("unknown rider joint: " +
+                                std::string(joint_name));
+}
+
+configuration::JointEnvelopeMap
+with_pose_neutral_angles(configuration::JointEnvelopeMap envelopes,
+                         const ArticulatedPose3d &pose) {
     for (auto &[name, env] : envelopes) {
         env.neutral_anatomical_rad = pose_neutral_anatomical_rad(pose, name);
         configuration::detail::post_init(env);

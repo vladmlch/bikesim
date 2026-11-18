@@ -72,6 +72,10 @@ struct AccountingState {
     // supplied the last committed energy measurement, for forwarding rows
     // in a partial tail that holds no measured interval at all.
     std::optional<MeasurementSource> last_measurement_source;
+    // Spatial standstill LaunchSupport ledger (0 in planar / moving-start).
+    double launch_support_work_j = 0.;
+    double launch_support_loss_j = 0.;
+    bool has_launch_support = false;
 };
 
 struct EffortObservation {

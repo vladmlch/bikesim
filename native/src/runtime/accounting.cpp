@@ -185,10 +185,23 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
     e.closure_absolute_j += work.closure_absolute_j;
     e.active_work_j += work.muscle_signed_j + work.motor_signed_j;
     e.external_work_j += external_work(raw, config.timestep_s);
+    const auto launch_found = std::ranges::find_if(raw.components, [](const auto &entry) {
+        return entry.first == "launch_support";
+    });
+    if (launch_found != raw.components.end()) {
+        state.has_launch_support = true;
+        const double launch_work_step =
+            dot(launch_found->second, raw.qvel_mid) * config.timestep_s;
+        const double launch_loss_step = std::max(0., -launch_work_step);
+        state.launch_support_work_j += launch_work_step;
+        state.launch_support_loss_j += launch_loss_step;
+    }
     e.mechanical_energy_j = total_j;
     e.elastic_energy_j = elastic;
     e.residual_j = total_j - *e.initial_energy_j - e.active_work_j -
                    e.external_work_j + e.loss_j;
+    if (state.has_launch_support)
+        e.residual_j -= state.launch_support_work_j;
     const double source_positive = e.muscle_positive_j + e.motor_positive_j;
     const bool work_ok = constraint_work_ok(e.constraint_absolute_j, source_positive);
     WireObject result{
@@ -211,6 +224,10 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
                                                   : Wire(nullptr)},
         {"source_time_s", source.has_value() ? Wire(source->time_s)
                                              : Wire(nullptr)}};
+    if (state.has_launch_support) {
+        result.emplace_back("launch_support_work_j", Wire(state.launch_support_work_j));
+        result.emplace_back("launch_support_loss_j", Wire(state.launch_support_loss_j));
+    }
     for (const auto &[key, value] : result)
         if (std::holds_alternative<double>(value.value)) finite(number(value), key);
     return result;

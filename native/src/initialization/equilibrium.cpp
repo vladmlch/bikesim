@@ -143,7 +143,7 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
             context.stepper.note_posvel_stale();
             apply_initial_forces(context, false);
             context.stepper.forward();
-            residual = refine_equilibrium(context, 40, options.tolerance);
+            residual = refine_equilibrium(context, 80, options.tolerance);
             const auto moments = spatial_equilibrium_moments(context);
             const bool moments_ok = std::abs(moments.roll_nm) <= .1 &&
                                     std::abs(moments.pitch_nm) <= .1 &&

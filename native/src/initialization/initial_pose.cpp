@@ -115,8 +115,17 @@ void initialize_pose_spatial(SetupContext& context, const FreeJointAddress& free
     for (int const id : {context.front_geom_id, context.rear_geom_id})
         if (id < 0 || id >= m->ngeom)
             throw std::invalid_argument("initial pose wheel geometry id is invalid");
-    if (context.physical.rider_present())
-        throw std::invalid_argument("spatial 3D initial_pose supports only none and lumped riders");
+    const int rider_free_id = mj_name2id(m, mjOBJ_JOINT, "rider_root_free");
+    if (context.physical.rider_present()) {
+        if (rider_free_id < 0 ||
+            std::views::counted(m->jnt_type, m->njnt)[static_cast<std::size_t>(rider_free_id)] != mjJNT_FREE)
+            throw std::invalid_argument(
+                "spatial 3D initial_pose requires rider_root_free freejoint for articulated_3d");
+        if (!context.rider_pose || context.frame_body_id < 0 ||
+            context.frame_body_id >= m->nbody)
+            throw std::invalid_argument(
+                "initial rider pose and frame identity are required");
+    }
 
     const auto vertices = context.physical.terrain_vertices();
     const bool has_vertices = vertices.size() >= 2;
@@ -232,7 +241,34 @@ void initialize_pose_spatial(SetupContext& context, const FreeJointAddress& free
     q[fq + 2U] += clearance;
     stepper.note_posvel_stale();
     stepper.forward();
+    if (context.physical.rider_present()) {
+        if (!context.rider_pose)
+            throw std::invalid_argument("initial rider pose is required");
+        const auto xp = std::views::counted(d->xpos, 3 * m->nbody);
+        const auto xm = std::views::counted(d->xmat, 9 * m->nbody);
+        const auto& hip = context.rider_pose->hip;
+        const auto frame = static_cast<std::size_t>(context.frame_body_id);
+        std::array<double, 3> wanted{};
+        for (std::size_t axis = 0; axis < 3U; ++axis) {
+            wanted[axis] = xp[3U * frame + axis];
+            for (std::size_t a = 0; a < 3U; ++a)
+                wanted[axis] += xm[9U * frame + 3U * axis + a] * hip[a];
+        }
+        const auto rfq = static_cast<std::size_t>(
+            std::views::counted(m->jnt_qposadr, m->njnt)[static_cast<std::size_t>(rider_free_id)]);
+        for (std::size_t axis = 0; axis < 3U; ++axis) q[rfq + axis] = wanted[axis];
+        for (std::size_t k = 0; k < 4U; ++k) q[rfq + 3U + k] = q_init[k];
+        stepper.note_posvel_stale();
+        stepper.forward();
+    }
     stepper.mutate([&] {
+        if (context.physical.rider_present()) {
+            auto controller = context.physical.rider_control().state();
+            controller.enabled = true;
+            context.physical.rider_control().restore(controller);
+            context.physical.rider_control().initialize(d);
+            if (stepper.has_rider_contacts()) stepper.rider_contacts_reset();
+        }
         stepper.drive().reset();
         if (stepper.has_tire()) stepper.tire_writer().reset();
     });

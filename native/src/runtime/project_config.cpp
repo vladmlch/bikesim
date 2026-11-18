@@ -18,6 +18,7 @@
 #include "setup_values.hpp"
 #include "../cblas_abi.hpp"
 #include "../configuration/load.hpp"
+#include "../configuration/rider_spec.hpp"
 #include "../configuration/suspension_spec.hpp"
 #include "../engine_call.hpp"
 #include "../model/mapping.hpp"
@@ -342,7 +343,9 @@ Value envelopes(const cfg::JointEnvelopeMap& entries) {
 
 bio::Value project_rider_controller_impl(const cfg::SimulationPhysicsConfig& config,
                                          const mjModel& model,
-                                         const mdl::ArticulatedPose* pose) {
+                                         const mdl::ArticulatedPose* pose,
+                                         const mdl::ArticulatedPose3d* pose_3d = nullptr,
+                                         double rider_mass_kg = 80.0) {
     auto const document = cfg::detail::plain_document(cfg::to_value(config));
     auto out = field(document, "articulated");
     // weld_servo_gain/weld_servo_limit_nm cross this wire:
@@ -362,9 +365,20 @@ bio::Value project_rider_controller_impl(const cfg::SimulationPhysicsConfig& con
         if (mj_name2id(&model, mjOBJ_JOINT, owned.c_str()) >= 0) joints.push_back(name);
     }
     if (joints.empty()) return out;
-    if (pose == nullptr)
+    if (pose == nullptr && pose_3d == nullptr)
         throw std::invalid_argument(
             "rider_controller: articulated pose is required when rider joints are present");
+    std::vector<std::string_view> abd_joints;
+    for (auto const name : std::array<std::string_view, 2>{
+             "rider_shoulder_abduction_left", "rider_shoulder_abduction_right"}) {
+        const std::string owned(name);
+        if (mj_name2id(&model, mjOBJ_JOINT, owned.c_str()) >= 0) abd_joints.push_back(name);
+    }
+    const auto with_neutral = [&](cfg::JointEnvelopeMap map) {
+        if (pose_3d != nullptr)
+            return mdl::with_pose_neutral_angles(std::move(map), *pose_3d);
+        return mdl::with_pose_neutral_angles(std::move(map), *pose);
+    };
     const auto& a = config.articulated;
     if (a.joint_strength_path) {
         const auto profile = cfg::load_strength_profile(*a.joint_strength_path,
@@ -372,14 +386,30 @@ bio::Value project_rider_controller_impl(const cfg::SimulationPhysicsConfig& con
         Object strength;
         for (const auto& [name, curves] : profile) strength.emplace_back(name,
             Value{Object{{"positive", curve(curves.at(1))}, {"negative", curve(curves.at(-1))}}});
+        for (const auto abd : abd_joints) {
+            const cfg::TorqueCurve abd_curve =
+                cfg::default_shoulder_abduction_torque_curve(rider_mass_kg);
+            strength.emplace_back(std::string(abd),
+                Value{Object{{"positive", curve(abd_curve)}, {"negative", curve(abd_curve)}}});
+        }
         set(out, "strength", Value{std::move(strength)});
-        set(out, "strength_coordinates", envelopes(mdl::with_pose_neutral_angles(
-            cfg::load_strength_coordinates(*a.joint_strength_path, joints), *pose)));
+        auto strength_coords = with_neutral(
+            cfg::load_strength_coordinates(*a.joint_strength_path, joints));
+        for (const auto abd : abd_joints) {
+            strength_coords.emplace_back(std::string(abd),
+                cfg::default_shoulder_abduction_envelope());
+        }
+        set(out, "strength_coordinates", envelopes(strength_coords));
     }
-    if (a.joint_envelope_path)
-        set(out, "envelopes", envelopes(mdl::with_pose_neutral_angles(
-            cfg::load_joint_envelopes(*a.joint_envelope_path,
-                std::span<const std::string_view>(joints)), *pose)));
+    if (a.joint_envelope_path) {
+        auto env_map = with_neutral(cfg::load_joint_envelopes(
+            *a.joint_envelope_path, std::span<const std::string_view>(joints)));
+        for (const auto abd : abd_joints) {
+            env_map.emplace_back(std::string(abd),
+                cfg::default_shoulder_abduction_envelope());
+        }
+        set(out, "envelopes", envelopes(env_map));
+    }
     return out;
 }
 
@@ -453,8 +483,10 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
     const auto resolved_rider = rider(request);
     if (config.physics_mode == "physical") {
         set(out, "drive", drive(config, document));
-        if (resolved_rider.variant == "articulated_planar") {
-            const auto p = mdl::geometry_pose(resolved_rider, request.bike);
+        if (cfg::is_articulated_variant(resolved_rider.variant)) {
+            const auto p = resolved_rider.variant == "articulated_3d"
+                ? mdl::to_articulated_pose(mdl::geometry_pose_3d(resolved_rider, request.bike))
+                : mdl::geometry_pose(resolved_rider, request.bike);
             std::array<double, 3> upper{}, lower{};
             for (std::size_t i = 0; i < 3; ++i) {
                 upper[i] = p.shoulder[i] - p.elbow[i];
@@ -474,11 +506,13 @@ bio::Value project_writer_config(const mdl::BuildRequest& request, const mjModel
             set(out, "rider_contacts", std::move(contacts));
         }
     }
-    // RideSimulation always constructs the legacy cruise object; physical
-    // stepping does not apply it, but the projection preserves its presence.
-    set(out, "cruise", Value{Object{{"target_speed_kmh", real(options.speed_kph)},
-        {"kp_nm_per_mps", real(180.)}, {"ki_nm_per_mps_s", real(150.)},
-        {"torque_ceiling_nm", real(150.)}}});
+    if (!request.spatial.has_value()) {
+        // RideSimulation always constructs the legacy cruise object; physical
+        // stepping does not apply it, but the projection preserves its presence.
+        set(out, "cruise", Value{Object{{"target_speed_kmh", real(options.speed_kph)},
+            {"kp_nm_per_mps", real(180.)}, {"ki_nm_per_mps_s", real(150.)},
+            {"torque_ceiling_nm", real(150.)}}});
+    }
     return finalize_writer_config(out);
 }
 
@@ -498,7 +532,7 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
         throw std::invalid_argument("control_period_s must be an integer multiple of timestep_s");
     for (auto name : {"frame", "front_wheel", "rear_wheel"})
         (void)mdl::required_id(model, mjOBJ_BODY, name);
-    const bool articulated = resolved_rider.variant == "articulated_planar";
+    const bool articulated = cfg::is_articulated_variant(resolved_rider.variant);
     if (articulated) (void)mdl::required_id(model, mjOBJ_BODY, "rider_pelvis");
     Value wheels{Object{}};
     for (auto side : {"front", "rear"}) {
@@ -508,8 +542,15 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             throw std::invalid_argument("brake wheel joint must be a hinge: " + joint);
         set(wheels, side, Value{Object{{"joint", text(joint)}, {"dof_index", integer(0)}}});
     }
+    const std::optional<mdl::ArticulatedPose3d> pose_3d =
+        resolved_rider.variant == "articulated_3d"
+            ? std::optional<mdl::ArticulatedPose3d>{
+                  mdl::geometry_pose_3d(resolved_rider, request.bike)}
+            : std::nullopt;
     const std::optional<mdl::ArticulatedPose> articulated_pose = articulated
-        ? std::optional<mdl::ArticulatedPose>{mdl::geometry_pose(resolved_rider, request.bike)}
+        ? std::optional<mdl::ArticulatedPose>{
+              pose_3d ? mdl::to_articulated_pose(*pose_3d)
+                      : mdl::geometry_pose(resolved_rider, request.bike)}
         : std::nullopt;
     const Value pose = articulated_pose
         ? project_articulated_pose(*articulated_pose)
@@ -527,7 +568,8 @@ RuntimeConfig project_runtime(const mdl::BuildRequest& request, const mjModel& m
             options.record_retention == RetentionMode::full ? "full" : "legacy")},
         {"writer_config", project_writer_config(request, model, track, options)},
         {"rider_controller", project_rider_controller_impl(
-            config, model, articulated_pose ? &*articulated_pose : nullptr)},
+            config, model, articulated_pose ? &*articulated_pose : nullptr,
+            pose_3d ? &*pose_3d : nullptr, resolved_rider.mass_kg)},
         {"rider_intent", field(physics_document, "seated_climb")},
         {"rider_reaction", rider::encode_reaction_config(config.front_lift_reaction)},
         {"rider_launch", rider::encode_launch_config(config.rider_launch)},

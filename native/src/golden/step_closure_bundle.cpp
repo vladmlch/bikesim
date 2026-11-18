@@ -5,6 +5,7 @@
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../geometry/specs.hpp"
+#include "../initialization/launch_preparation.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
@@ -24,6 +25,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cerrno>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -36,8 +38,12 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
+
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace bike::golden {
 namespace {
@@ -128,6 +134,77 @@ void write_bytes_file(const std::filesystem::path &path,
 
 void write_text_file(const std::filesystem::path &path, std::string_view text) {
     write_bytes_file(path, std::as_bytes(std::span<const char>{text}));
+}
+
+[[nodiscard]] std::string sha256_parts(
+    std::initializer_list<std::span<const std::byte>> parts) {
+    static constexpr std::string_view kDigits = "0123456789abcdef";
+    io::Sha256 hash;
+    for (const auto part : parts) {
+        if (!part.empty()) {
+            hash.update(part);
+        }
+    }
+    std::string hex;
+    hex.reserve(64);
+    for (const std::uint8_t byte : hash.finish()) {
+        hex += kDigits[byte >> 4U];
+        hex += kDigits[byte & 0x0fU];
+    }
+    return hex;
+}
+
+[[nodiscard]] std::vector<std::byte> read_bounded_bytes(
+    const std::filesystem::path &path, std::size_t max_bytes) {
+    const auto handle = platform::open_regular(path);
+    struct stat info {};
+    if (::fstat(handle.get(), &info) != 0) {
+        throw std::system_error(errno, std::generic_category(),
+                                "step_closure_bundle: fstat " + path.string());
+    }
+    if (info.st_size < 0 || std::cmp_greater(info.st_size, max_bytes)) {
+        throw std::invalid_argument(
+            "step_closure_bundle: file exceeds read bound: " + path.string());
+    }
+    std::vector<std::byte> bytes(static_cast<std::size_t>(info.st_size));
+    std::size_t at = 0;
+    while (at < bytes.size()) {
+        const ssize_t got = ::read(
+            handle.get(), std::span{bytes}.subspan(at).data(),
+            bytes.size() - at);
+        if (got < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::system_error(errno, std::generic_category(),
+                                    "step_closure_bundle: read " + path.string());
+        }
+        if (got == 0) {
+            throw std::invalid_argument(
+                "step_closure_bundle: file truncated while reading: " +
+                path.string());
+        }
+        at += static_cast<std::size_t>(got);
+    }
+    std::byte extra{};
+    ssize_t tail = 0;
+    while (true) {
+        tail = ::read(handle.get(), &extra, 1);
+        if (tail < 0 && errno == EINTR) {
+            continue;
+        }
+        break;
+    }
+    if (tail < 0) {
+        throw std::system_error(errno, std::generic_category(),
+                                "step_closure_bundle: read tail " + path.string());
+    }
+    if (tail != 0) {
+        throw std::invalid_argument(
+            "step_closure_bundle: file changed while reading: " +
+            path.string());
+    }
+    return bytes;
 }
 
 [[nodiscard]] std::string read_text_file(const std::filesystem::path &path) {
@@ -238,8 +315,9 @@ void assign_hfield_from_doubles(const mjModel &m,
     return attrs;
 }
 
-void patch_12gears_tendon_range(const mjModel &m12, const StepClosureRow &row,
-                                int cog_index, int clutch_tid_12) {
+void patch_12gears_tendon_range(const mjModel &m12,
+                                const StepClosureBundle &bundle,
+                                const StepClosureRow &row, int clutch_tid_12) {
     const auto tr = model_access::mutable_buffer(
         m12.tendon_range, static_cast<mjtSize>(2) * m12.ntendon, "tendon_range");
     for (int t = 0; t < m12.ntendon; ++t) {
@@ -248,18 +326,54 @@ void patch_12gears_tendon_range(const mjModel &m12, const StepClosureRow &row,
         tr[base] = -1e12;
         tr[base + 1U] = 1e12;
     }
-    if (row.tendon_range.size() >= 2U && cog_index >= 0 &&
-        cog_index < m12.ntendon - (clutch_tid_12 >= 0 ? 1 : 0)) {
+    const int freehub_tid = bundle.freehub_tendon_id;
+    const int clutch_tid = bundle.clutch_tendon_id;
+    if (freehub_tid >= 0 &&
+        2U * static_cast<std::size_t>(freehub_tid) + 1U < row.tendon_range.size() &&
+        row.cog_index >= 0 &&
+        row.cog_index < m12.ntendon - (clutch_tid_12 >= 0 ? 1 : 0)) {
         const auto cbase =
-            static_cast<std::size_t>(2) * static_cast<std::size_t>(cog_index);
-        tr[cbase] = row.tendon_range[0];
-        tr[cbase + 1U] = row.tendon_range[1];
+            2U * static_cast<std::size_t>(row.cog_index);
+        const auto fbase =
+            2U * static_cast<std::size_t>(freehub_tid);
+        tr[cbase] = row.tendon_range[fbase];
+        tr[cbase + 1U] = row.tendon_range[fbase + 1U];
     }
-    if (clutch_tid_12 >= 0 && row.tendon_range.size() >= 4U) {
-        const auto clbase = static_cast<std::size_t>(2) *
-                            static_cast<std::size_t>(clutch_tid_12);
-        tr[clbase] = row.tendon_range[2];
-        tr[clbase + 1U] = row.tendon_range[3];
+    if (clutch_tid_12 >= 0 && clutch_tid >= 0 &&
+        2U * static_cast<std::size_t>(clutch_tid) + 1U < row.tendon_range.size()) {
+        const auto clbase = 2U * static_cast<std::size_t>(clutch_tid_12);
+        const auto sbase = 2U * static_cast<std::size_t>(clutch_tid);
+        tr[clbase] = row.tendon_range[sbase];
+        tr[clbase + 1U] = row.tendon_range[sbase + 1U];
+    }
+}
+
+struct BundleModelDims {
+    mjtSize nv = 0;
+    mjtSize ntendon = 0;
+};
+
+void validate_header_indices(const BundleModelDims &dims,
+                             const StepClosureBundle &bundle) {
+    if (bundle.front_wheel_dof < 0 || bundle.front_wheel_dof >= dims.nv ||
+        bundle.rear_wheel_dof < 0 || bundle.rear_wheel_dof >= dims.nv) {
+        throw std::invalid_argument(
+            "step_closure.bin wheel DOF index out of [0, nv) range");
+    }
+    if (bundle.freehub_wrap_adr < 0) {
+        throw std::invalid_argument(
+            "step_closure.bin freehub_wrap_adr must be nonnegative");
+    }
+    if (bundle.freehub_tendon_id < 0 ||
+        bundle.freehub_tendon_id >= dims.ntendon) {
+        throw std::invalid_argument(
+            "step_closure.bin freehub_tendon_id out of [0, ntendon) range");
+    }
+    if (bundle.clutch_tendon_id != -1 &&
+        (bundle.clutch_tendon_id < 0 ||
+         bundle.clutch_tendon_id >= dims.ntendon)) {
+        throw std::invalid_argument(
+            "step_closure.bin clutch_tendon_id out of [0, ntendon) range");
     }
 }
 
@@ -367,6 +481,23 @@ std::string expand_model_12gears_xml(
     return out;
 }
 
+std::size_t max_step_closure_steps(std::size_t nq, std::size_t nv,
+                                   std::size_t na, std::size_t nu,
+                                   std::size_t ntendon) noexcept {
+    if (kMaxStepClosureBytes <= sizeof(StepClosureFileHeader)) {
+        return 0;
+    }
+    const std::size_t payload_cap =
+        kMaxStepClosureBytes - sizeof(StepClosureFileHeader);
+    const std::size_t row_doubles =
+        compute_row_doubles(nq, nv, na, nu, ntendon);
+    if (row_doubles == 0 ||
+        row_doubles > std::numeric_limits<std::size_t>::max() / sizeof(double)) {
+        return 0;
+    }
+    return payload_cap / (row_doubles * sizeof(double));
+}
+
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
@@ -381,6 +512,7 @@ std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
     req->model.mode = "ride";
     req->model.field = terrain::HeightFieldSpec::for_track(req->track);
     req->model.physics = spec.physics;
+    (void)initialization::prepare_request(*req);
     configuration::post_init(*req->model.physics);
     if (req->model.physics->tires.backend == "pneumatic") {
         req->model.bike.front_wheel_radius =
@@ -471,6 +603,21 @@ std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
             bundle->clutch_tendon_id =
                 mj_name2id(m, mjOBJ_TENDON, "crank_clutch");
         });
+
+    const std::size_t max_steps_allowed = max_step_closure_steps(
+        static_cast<std::size_t>(bundle->nq),
+        static_cast<std::size_t>(bundle->nv),
+        static_cast<std::size_t>(bundle->na),
+        static_cast<std::size_t>(bundle->nu),
+        static_cast<std::size_t>(bundle->ntendon));
+    if (target_steps > max_steps_allowed) {
+        ride->close();
+        throw std::invalid_argument(
+            "requested step count (" + std::to_string(target_steps) +
+            ") exceeds step_closure.bin bundle cap (" +
+            std::to_string(max_steps_allowed) + " steps / " +
+            std::to_string(kMaxStepClosureBytes) + " bytes)");
+    }
 
     bundle->rows.reserve(target_steps);
     for (std::size_t k = 0; k < target_steps; ++k) {
@@ -618,6 +765,13 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
     const auto nu = static_cast<std::size_t>(bundle.nu);
     const auto ntendon = static_cast<std::size_t>(bundle.ntendon);
     const std::size_t row_doubles = compute_row_doubles(nq, nv, na, nu, ntendon);
+    const std::size_t max_steps_allowed =
+        max_step_closure_steps(nq, nv, na, nu, ntendon);
+    if (bundle.rows.size() > max_steps_allowed) {
+        throw std::invalid_argument(
+            "step closure bundle exceeds byte cap (" +
+            std::to_string(kMaxStepClosureBytes) + " bytes)");
+    }
 
     StepClosureFileHeader header{};
     header.n_steps = static_cast<std::uint64_t>(bundle.rows.size());
@@ -663,10 +817,11 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
         append_doubles(flat, row.next_qacc);
     }
 
-    write_binary_parts(trace_path, {
-                                       std::as_bytes(std::span{&header, 1}),
-                                       std::as_bytes(std::span{flat}),
-                                   });
+    const auto header_bytes = std::as_bytes(std::span{&header, 1});
+    const auto payload_bytes = std::as_bytes(std::span{flat});
+    write_binary_parts(trace_path, {header_bytes, payload_bytes});
+    const std::string step_closure_digest =
+        sha256_parts({header_bytes, payload_bytes});
 
     io::Value::Array layout_json;
     for (const char *col : {
@@ -734,7 +889,7 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
              std::span<const char>{bundle.model_12gears_xml}))}},
         {"hfield_sha256",
          io::Value{io::sha256(std::as_bytes(std::span{bundle.hfield_data}))}},
-        {"step_closure_sha256", io::Value{io::sha256(io::read_numpy_bytes(trace_path))}},
+        {"step_closure_sha256", io::Value{step_closure_digest}},
         {"layout", io::Value{std::move(layout_json)}},
     };
 
@@ -777,7 +932,8 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
     const auto hf_bytes = io::read_numpy_bytes(bundle_dir / "hfield_data.bin");
     bundle->hfield_data = decode_doubles(hf_bytes);
 
-    const auto trace_bytes = io::read_numpy_bytes(bundle_dir / "step_closure.bin");
+    const auto trace_bytes = read_bounded_bytes(
+        bundle_dir / "step_closure.bin", kMaxStepClosureBytes);
     if (trace_bytes.size() < sizeof(StepClosureFileHeader)) {
         throw std::invalid_argument("step_closure.bin shorter than header");
     }
@@ -787,6 +943,17 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
     if (hdr.magic != kStepClosureMagic || hdr.version != kStepClosureVersion ||
         hdr.header_bytes != sizeof(StepClosureFileHeader)) {
         throw std::invalid_argument("step_closure.bin header magic/version mismatch");
+    }
+    if (hdr.nq == 0 || hdr.nv == 0 || hdr.ntendon == 0 || hdr.n_steps == 0) {
+        throw std::invalid_argument(
+            "step_closure.bin header requires positive dimensions and >= 1 step");
+    }
+    constexpr auto kMaxInt =
+        static_cast<std::uint32_t>(std::numeric_limits<int>::max());
+    if (hdr.nq > kMaxInt || hdr.nv > kMaxInt || hdr.na > kMaxInt ||
+        hdr.nu > kMaxInt || hdr.ntendon > kMaxInt) {
+        throw std::invalid_argument(
+            "step_closure.bin header dimensions exceed int range");
     }
 
     bundle->nq = static_cast<int>(hdr.nq);
@@ -799,6 +966,8 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
     bundle->freehub_wrap_adr = hdr.freehub_wrap_adr;
     bundle->freehub_tendon_id = hdr.freehub_tendon_id;
     bundle->clutch_tendon_id = hdr.clutch_tendon_id;
+    validate_header_indices({.nv = bundle->nv, .ntendon = bundle->ntendon},
+                            *bundle);
 
     const auto nq = static_cast<std::size_t>(hdr.nq);
     const auto nv = static_cast<std::size_t>(hdr.nv);
@@ -808,6 +977,12 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
     const auto row_doubles = static_cast<std::size_t>(hdr.row_doubles);
     if (row_doubles != compute_row_doubles(nq, nv, na, nu, ntendon)) {
         throw std::invalid_argument("step_closure.bin row_doubles mismatch");
+    }
+    const std::size_t max_steps_allowed =
+        max_step_closure_steps(nq, nv, na, nu, ntendon);
+    if (max_steps_allowed == 0 || hdr.n_steps > max_steps_allowed) {
+        throw std::invalid_argument(
+            "step_closure.bin step count exceeds bundle byte cap");
     }
 
     const std::size_t expected_payload =
@@ -864,15 +1039,34 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
 ClosureVerificationResult verify_bundle_closure(
     const std::filesystem::path &bundle_dir) {
     const auto bundle = load_step_closure_bundle(bundle_dir);
-    auto m = model::compile_mjcf(bundle->model_xml);
+    auto m = model::compile_mjcf(bundle->model_xml, bundle_dir);
+    if (m->nq != bundle->nq || m->nv != bundle->nv || m->na != bundle->na ||
+        m->nu != bundle->nu || m->ntendon != bundle->ntendon) {
+        throw std::invalid_argument(
+            "model.xml dimensions differ from step_closure.bin");
+    }
+    validate_header_indices({.nv = m->nv, .ntendon = m->ntendon}, *bundle);
+    if (bundle->freehub_wrap_adr >= m->nwrap) {
+        throw std::invalid_argument(
+            "step_closure.bin freehub_wrap_adr out of [0, nwrap) range");
+    }
     assign_hfield_from_doubles(*m, bundle->hfield_data);
     DataOwner d(engine::make_data(m.get()));
     const DataOwner d_const(engine::make_data(m.get()));
 
-    auto m12 = model::compile_mjcf(bundle->model_12gears_xml);
+    auto m12 = model::compile_mjcf(bundle->model_12gears_xml, bundle_dir);
+    if (m12->nq != bundle->nq || m12->nv != bundle->nv ||
+        m12->na != bundle->na || m12->nu != bundle->nu) {
+        throw std::invalid_argument(
+            "model_12gears.xml dimensions differ from step_closure.bin");
+    }
     assign_hfield_from_doubles(*m12, bundle->hfield_data);
     DataOwner d12(engine::make_data(m12.get()));
     const int clutch_tid_12 = mj_name2id(m12.get(), mjOBJ_TENDON, "crank_clutch");
+    if (clutch_tid_12 >= 0 && bundle->clutch_tendon_id < 0) {
+        throw std::invalid_argument(
+            "step_closure.bin missing clutch_tendon_id for crank_clutch model");
+    }
 
     ClosureVerificationResult result;
     result.total_steps = bundle->rows.size();
@@ -946,8 +1140,7 @@ ClosureVerificationResult verify_bundle_closure(
                     m12->dof_frictionloss, m12->nv, "m12 dof_frictionloss");
                 dfl12[fw_idx] = row.dof_frictionloss_wheels[0];
                 dfl12[rw_idx] = row.dof_frictionloss_wheels[1];
-                patch_12gears_tendon_range(*m12, row, row.cog_index,
-                                           clutch_tid_12);
+                patch_12gears_tendon_range(*m12, *bundle, row, clutch_tid_12);
                 restore_cold_data(*m12, *d12, row);
                 engine::step(m12.get(), d12.get());
                 const auto q12 = model_access::readonly_buffer(

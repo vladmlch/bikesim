@@ -20,6 +20,13 @@ namespace bike::golden {
 inline constexpr std::array<char, 8> kStepClosureMagic{
     {'B', 'G', 'S', 'C', '0', '0', '0', '1'}};
 inline constexpr std::uint32_t kStepClosureVersion = 1;
+inline constexpr std::size_t kMaxStepClosureBytes =
+    std::size_t{1024} * 1024U * 1024U; // 1 GiB
+
+// Maximum step_closure.bin row count that fits within kMaxStepClosureBytes.
+[[nodiscard]] std::size_t max_step_closure_steps(
+    std::size_t nq, std::size_t nv, std::size_t na,
+    std::size_t nu, std::size_t ntendon) noexcept;
 
 // Fixed 80-byte little-endian binary header at offset 0 of step_closure.bin.
 // Followed immediately by n_steps * row_doubles IEEE-754 binary64 scalars.

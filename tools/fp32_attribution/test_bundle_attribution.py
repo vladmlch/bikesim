@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -21,7 +22,12 @@ from tools.fp32_attribution.build_and_run import (
 @pytest.fixture(scope="module")
 def welded_bundle(tmp_path_factory: pytest.TempPathFactory) -> Path:
     repo = find_repo_root()
-    gpu_export = repo / "build" / "native-release" / "bin" / "bike-gpu-export"
+    env_bin = os.environ.get("BIKE_GPU_EXPORT_BIN")
+    gpu_export = (
+        Path(env_bin)
+        if env_bin
+        else repo / "build" / "native-release" / "bin" / "bike-gpu-export"
+    )
     if not gpu_export.is_file():
         pytest.skip(f"bike-gpu-export not built at {gpu_export}")
     out_dir = tmp_path_factory.mktemp("sp2b-bundle") / "welded"

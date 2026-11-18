@@ -108,6 +108,12 @@ def load_step_closure_trace(bundle_dir: Path) -> StepClosureTrace:
     ) = HEADER_STRUCT.unpack_from(raw_bytes, 0)
     if magic != MAGIC or version != 1 or header_bytes != HEADER_STRUCT.size:
         raise ValueError(f"Unexpected BGSC header: magic={magic!r}, version={version}")
+    if not (0 <= fw_dof < nv and 0 <= rw_dof < nv):
+        raise ValueError("step_closure.bin wheel DOF index out of [0, nv) range")
+    if wrap_adr < 0 or not (0 <= fh_tid < ntendon):
+        raise ValueError("step_closure.bin freehub index out of range")
+    if cl_tid != -1 and not (0 <= cl_tid < ntendon):
+        raise ValueError("step_closure.bin clutch_tendon_id out of [0, ntendon) range")
     arr = np.frombuffer(raw_bytes, dtype="<f8", offset=header_bytes)
     if arr.size != n_steps * row_doubles:
         raise ValueError("step_closure.bin payload size mismatch")
@@ -392,16 +398,20 @@ def _make_mjwarp_inputs(
     trng = np.tile(np.array([[-1e12, 1e12]], np.float32), (nw, nt12, 1))
     for w in range(nw):
         cog = int(cogs[w])
-        if 0 <= cog < nt12 - (1 if clutch_tid >= 0 else 0):
-            trng[w, cog] = tr.tendon_range[rows[w], 0].astype(np.float32)
-        if clutch_tid >= 0 and tr.ntendon >= 2:
-            trng[w, clutch_tid] = tr.tendon_range[rows[w], 1].astype(np.float32)
+        if (
+            0 <= cog < nt12 - (1 if clutch_tid >= 0 else 0)
+            and 0 <= tr.freehub_tendon_id < tr.ntendon
+        ):
+            trng[w, cog] = tr.tendon_range[rows[w], tr.freehub_tendon_id].astype(np.float32)
+        if clutch_tid >= 0 and 0 <= tr.clutch_tendon_id < tr.ntendon:
+            trng[w, clutch_tid] = tr.tendon_range[rows[w], tr.clutch_tendon_id].astype(np.float32)
     dfl = np.zeros((nw, tr.nv), dtype=np.float32)
     dfl[:, tr.front_wheel_dof] = tr.dof_frictionloss_wheels[rows, 0].astype(np.float32)
     dfl[:, tr.rear_wheel_dof] = tr.dof_frictionloss_wheels[rows, 1].astype(np.float32)
     return {
         "qpos": tr.qpos[rows].astype(np.float32),
         "qvel": tr.qvel[rows].astype(np.float32),
+        "act": tr.act[rows].astype(np.float32),
         "ws": tr.warmstart[rows].astype(np.float32),
         "ctrl": tr.ctrl[rows].astype(np.float32),
         "qfa": tr.qfrc_applied[rows].astype(np.float32),
@@ -425,6 +435,8 @@ def run_mjwarp_1step(
         d = mjw.make_data(m_mj, nworld=len(rows))
         d.qpos.assign(wp.array(inp["qpos"], device=device))
         d.qvel.assign(wp.array(inp["qvel"], device=device))
+        if tr.na > 0:
+            d.act.assign(wp.array(inp["act"], device=device))
         d.qacc_warmstart.assign(wp.array(inp["ws"], device=device))
         d.ctrl.assign(wp.array(inp["ctrl"], device=device))
         d.qfrc_applied.assign(wp.array(inp["qfa"], device=device))
@@ -458,6 +470,8 @@ def run_mjwarp_window(
         d = mjw.make_data(m_mj, nworld=len(anchors))
         d.qpos.assign(wp.array(inp0["qpos"], device=device))
         d.qvel.assign(wp.array(inp0["qvel"], device=device))
+        if tr.na > 0:
+            d.act.assign(wp.array(inp0["act"], device=device))
         d.qacc_warmstart.assign(wp.array(inp0["ws"], device=device))
         for s in range(nsteps):
             rows = init_rows + s

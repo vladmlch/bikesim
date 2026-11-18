@@ -68,13 +68,16 @@ struct ParsedArgs {
 }
 
 [[nodiscard]] std::size_t parse_positive_steps(std::string_view text) {
+    const std::size_t max_steps_bound =
+        golden::max_step_closure_steps(1U, 1U, 0U, 0U, 1U);
     std::size_t value = 0;
     const auto *begin = text.data();
     const auto *end = std::to_address(text.end());
     const auto parsed = std::from_chars(begin, end, value);
     if (parsed.ec != std::errc{} || parsed.ptr != end || value == 0 ||
-        value > 10000000U) {
-        throw ParseError("option --steps must be an integer in [1, 10000000]");
+        value > max_steps_bound) {
+        throw ParseError("option --steps must be an integer in [1, " +
+                         std::to_string(max_steps_bound) + "]");
     }
     return value;
 }

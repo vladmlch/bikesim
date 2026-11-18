@@ -104,9 +104,26 @@ int main(int argc, char **argv) {
             hdr.header_bytes != sizeof(StepClosureFileHeader)) {
             throw std::runtime_error("step_closure.bin magic/version mismatch");
         }
+        if (hdr.nq == 0 || hdr.nv == 0 || hdr.ntendon == 0 || hdr.n_steps == 0) {
+            throw std::runtime_error("step_closure.bin header requires positive dimensions and >= 1 step");
+        }
+        const std::size_t expected_row_doubles =
+            8U + 2U + 2U * static_cast<std::size_t>(hdr.ntendon) +
+            2U * static_cast<std::size_t>(hdr.nq) +
+            11U * static_cast<std::size_t>(hdr.nv) +
+            static_cast<std::size_t>(hdr.nu) + static_cast<std::size_t>(hdr.na);
+        if (static_cast<std::size_t>(hdr.row_doubles) != expected_row_doubles) {
+            throw std::runtime_error("step_closure.bin row_doubles mismatch");
+        }
+        constexpr std::size_t kMaxBundleBytes = std::size_t{1024} * 1024U * 1024U;
+        if (trace_raw.size() > kMaxBundleBytes ||
+            hdr.n_steps > (kMaxBundleBytes - hdr.header_bytes) /
+                              (expected_row_doubles * sizeof(double))) {
+            throw std::runtime_error("step_closure.bin exceeds byte bound");
+        }
         const std::size_t expected_bytes =
             hdr.header_bytes +
-            static_cast<std::size_t>(hdr.n_steps) * hdr.row_doubles * sizeof(double);
+            static_cast<std::size_t>(hdr.n_steps) * expected_row_doubles * sizeof(double);
         if (trace_raw.size() != expected_bytes) {
             throw std::runtime_error("step_closure.bin size mismatch");
         }
@@ -140,8 +157,28 @@ int main(int argc, char **argv) {
         if (m->nq != nq || m->nv != nv || m->na != na || m->nu != nu) {
             throw std::runtime_error("model dimensions differ from step_closure.bin");
         }
+        if (use_ratio && m->ntendon != nt) {
+            throw std::runtime_error("model ntendon differs from step_closure.bin under --use-ratio");
+        }
+        if (hdr.front_wheel_dof < 0 || hdr.front_wheel_dof >= nv ||
+            hdr.rear_wheel_dof < 0 || hdr.rear_wheel_dof >= nv) {
+            throw std::runtime_error("step_closure.bin wheel DOF index out of [0, nv) range");
+        }
+        if (hdr.freehub_tendon_id < 0 || hdr.freehub_tendon_id >= nt) {
+            throw std::runtime_error("step_closure.bin freehub_tendon_id out of [0, ntendon) range");
+        }
+        if (hdr.clutch_tendon_id != -1 &&
+            (hdr.clutch_tendon_id < 0 || hdr.clutch_tendon_id >= nt)) {
+            throw std::runtime_error("step_closure.bin clutch_tendon_id out of [0, ntendon) range");
+        }
+        if (use_ratio && (hdr.freehub_wrap_adr < 0 || hdr.freehub_wrap_adr >= m->nwrap)) {
+            throw std::runtime_error("step_closure.bin freehub_wrap_adr out of [0, nwrap) range");
+        }
 
         const int clutch_tid_12 = mj_name2id(m, mjOBJ_TENDON, "crank_clutch");
+        if (!use_ratio && clutch_tid_12 >= 0 && hdr.clutch_tendon_id < 0) {
+            throw std::runtime_error("step_closure.bin missing clutch_tendon_id for crank_clutch model");
+        }
         const std::size_t row_doubles = hdr.row_doubles;
 
         const std::size_t O_TIME = 1;
@@ -235,13 +272,17 @@ int main(int argc, char **argv) {
                     m->tendon_range[2 * t + 1] = static_cast<mjtNum>(1e12);
                 }
                 const int n_cogs = m->ntendon - (clutch_tid_12 >= 0 ? 1 : 0);
-                if (cog >= 0 && cog < n_cogs && nt >= 1) {
-                    m->tendon_range[2 * cog] = to_num(tr[0], quantize_f32);
-                    m->tendon_range[2 * cog + 1] = to_num(tr[1], quantize_f32);
+                if (cog >= 0 && cog < n_cogs &&
+                    hdr.freehub_tendon_id >= 0 && hdr.freehub_tendon_id < nt) {
+                    const int fbase = 2 * hdr.freehub_tendon_id;
+                    m->tendon_range[2 * cog] = to_num(tr[fbase], quantize_f32);
+                    m->tendon_range[2 * cog + 1] = to_num(tr[fbase + 1], quantize_f32);
                 }
-                if (clutch_tid_12 >= 0 && nt >= 2) {
-                    m->tendon_range[2 * clutch_tid_12] = to_num(tr[2], quantize_f32);
-                    m->tendon_range[2 * clutch_tid_12 + 1] = to_num(tr[3], quantize_f32);
+                if (clutch_tid_12 >= 0 &&
+                    hdr.clutch_tendon_id >= 0 && hdr.clutch_tendon_id < nt) {
+                    const int cbase = 2 * hdr.clutch_tendon_id;
+                    m->tendon_range[2 * clutch_tid_12] = to_num(tr[cbase], quantize_f32);
+                    m->tendon_range[2 * clutch_tid_12 + 1] = to_num(tr[cbase + 1], quantize_f32);
                 }
             }
         };

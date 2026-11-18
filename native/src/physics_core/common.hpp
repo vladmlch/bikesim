@@ -96,6 +96,20 @@
 #endif
 #endif
 
+#ifndef BIKE_REF
+#if defined(__METAL_VERSION__)
+// NOLINTNEXTLINE(bugprone-macro-parentheses) type-qualifier macro cannot parenthesize T in T&
+#define BIKE_REF(T) thread T &
+// NOLINTNEXTLINE(bugprone-macro-parentheses) type-qualifier macro cannot parenthesize T in const T&
+#define BIKE_CREF(T) const thread T &
+#else
+// NOLINTNEXTLINE(bugprone-macro-parentheses) type-qualifier macro cannot parenthesize T in T&
+#define BIKE_REF(T) T &
+// NOLINTNEXTLINE(bugprone-macro-parentheses) type-qualifier macro cannot parenthesize T in const T&
+#define BIKE_CREF(T) const T &
+#endif
+#endif
+
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL header: MSL has no std::span/std::array and address-space-qualified raw pointers are the device ABI. Register: docs/TESTING.md GPU kernel row.
 BIKE_GPU_SHARED_CODE_BEGIN
 

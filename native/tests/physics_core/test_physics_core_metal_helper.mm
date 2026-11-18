@@ -226,8 +226,10 @@ MetalParityOutput run_metal_parity_kernel(const MetalParityRequest &req) {
         }
 
         MTLCompileOptions *opts = [[MTLCompileOptions alloc] init];
-        opts.mathMode = MTLMathModeSafe;
-        opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+        if (@available(macOS 15.0, *)) {
+            opts.mathMode = MTLMathModeSafe;
+            opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+        }
 
         NSError *err = nil;
         NSString *ns_src = [NSString stringWithUTF8String:msl_src.c_str()];

@@ -15,10 +15,10 @@ namespace bike::physics_core {
 template <class Real, class TK>
 BIKE_HD Status station_density(
     Real delta,
-    const HingeDensityView<Real> &density,
-    BIKE_THREAD Real &out_force,
-    BIKE_THREAD Real &out_energy,
-    BIKE_THREAD ErrCode &err
+    BIKE_CREF(HingeDensityView<Real>) density,
+    BIKE_REF(Real) out_force,
+    BIKE_REF(Real) out_energy,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     if (!TK::isfinite(delta)) {
         err = ErrCode::outside_domain;
@@ -45,10 +45,10 @@ BIKE_HD Status station_response(
     Real delta,
     Real rate,
     Real weight,
-    const HingeDensityView<Real> &density,
-    BIKE_THREAD Real &out_force,
-    BIKE_THREAD Real &out_energy,
-    BIKE_THREAD ErrCode &err
+    BIKE_CREF(HingeDensityView<Real>) density,
+    BIKE_REF(Real) out_force,
+    BIKE_REF(Real) out_energy,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     if (!(TK::isfinite(delta) && TK::isfinite(rate) && TK::isfinite(weight)) ||
         weight < BIKE_REAL(Real, 0.0)) {
@@ -116,29 +116,29 @@ struct DistributedWheelRecord {
 template <class Real, class Io>
 struct DistributedIoTraits {
     BIKE_HD static bool custom_friction(
-        BIKE_THREAD Io &io,
-        const FrictionQuery<Real> &query,
-        BIKE_THREAD FrictionResult<Real> &out,
-        BIKE_THREAD Status &out_status,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(Io) io,
+        BIKE_CREF(FrictionQuery<Real>) query,
+        BIKE_REF(FrictionResult<Real>) out,
+        BIKE_REF(Status) out_status,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.custom_friction(query, out, out_status, err);
     }
 
     BIKE_HD static Status record_station(
-        BIKE_THREAD Io &io,
+        BIKE_REF(Io) io,
         i32 side,
-        BIKE_THREAD const DistributedStationRecord<Real> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(DistributedStationRecord<Real>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.record_station(side, rec, err);
     }
 
     BIKE_HD static Status record_wheel(
-        BIKE_THREAD Io &io,
+        BIKE_REF(Io) io,
         i32 side,
-        BIKE_THREAD const DistributedWheelRecord<Real> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(DistributedWheelRecord<Real>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.record_wheel(side, rec, err);
     }
@@ -147,27 +147,27 @@ struct DistributedIoTraits {
 template <class Real>
 struct DistributedIoTraits<Real, NoOpIo> {
     BIKE_HD static bool custom_friction(
-        BIKE_THREAD NoOpIo &,
-        const FrictionQuery<Real> &,
-        BIKE_THREAD FrictionResult<Real> &,
-        BIKE_THREAD Status &,
-        BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo),
+        BIKE_CREF(FrictionQuery<Real>),
+        BIKE_REF(FrictionResult<Real>),
+        BIKE_REF(Status),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return false;
     }
 
     BIKE_HD static Status record_station(
-        BIKE_THREAD NoOpIo &, i32,
-        BIKE_THREAD const DistributedStationRecord<Real> &,
-        BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo), i32,
+        BIKE_CREF(DistributedStationRecord<Real>),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return Status::ok;
     }
 
     BIKE_HD static Status record_wheel(
-        BIKE_THREAD NoOpIo &, i32,
-        BIKE_THREAD const DistributedWheelRecord<Real> &,
-        BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo), i32,
+        BIKE_CREF(DistributedWheelRecord<Real>),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return Status::ok;
     }
@@ -202,12 +202,12 @@ BIKE_HD Status step_distributed_wheel(
     StateInPtr prev_states,
     StateOutPtr next_states,
     QfrcPtr out_qfrc,
-    BIKE_THREAD Workspace &ws,
-    BIKE_THREAD ProfileHeightFn &profile_height_fn,
-    BIKE_THREAD SignedQueryFn &signed_query_fn,
-    BIKE_THREAD CenterJacFn &center_jac_fn,
-    BIKE_THREAD Io &io,
-    ErrCode &err
+    BIKE_REF(Workspace) ws,
+    BIKE_REF(ProfileHeightFn) profile_height_fn,
+    BIKE_REF(SignedQueryFn) signed_query_fn,
+    BIKE_REF(CenterJacFn) center_jac_fn,
+    BIKE_REF(Io) io,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     const i32 nv = model->nv;
     const i32 station_count = model->station_count;

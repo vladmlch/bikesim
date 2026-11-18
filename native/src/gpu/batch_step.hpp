@@ -94,18 +94,17 @@ BIKE_HD int gpu_build_sweep_configs(
 }
 
 // Zeroes compliant + distributed tyre states and initializes the drivetrain freehub boundary from initial qpos.
-template <class StateRef>
 BIKE_HD void gpu_init_world_state(
-    StateRef &st,
+    BIKE_REF(GpuWorldState) st,
     const BIKE_THREAD GpuDrivetrainParams &dp,
     float crank_qpos_rad,
     float rear_wheel_qpos_rad
 ) noexcept {
     st.compliant_wheels[0] = bike::physics_core::GpuCompliantWheelState{};
     st.compliant_wheels[1] = bike::physics_core::GpuCompliantWheelState{};
-    for (int side = 0; side < 2; ++side) {
-        for (int s = 0; s < static_cast<int>(bike::physics_core::kMaxGpuTyreStations); ++s) {
-            st.distributed_wheels[side][s] = bike::physics_core::GpuStationState{};
+    for (BIKE_THREAD auto &side_states : st.distributed_wheels) {
+        for (BIKE_THREAD auto &slot : side_states) {
+            slot = bike::physics_core::GpuStationState{};
         }
     }
     GpuDrivetrainState local_dt{};

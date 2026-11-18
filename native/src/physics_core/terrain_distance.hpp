@@ -68,7 +68,7 @@ struct DistanceCandidate {
 
 template <class Real, class TK>
 BIKE_HD DistanceCandidate<Real> eval_distance_candidate(
-    const SignedProfileView<Real> &sp,
+    SignedProfileView<Real> sp,
     int i,
     Real px,
     Real pz
@@ -101,10 +101,10 @@ BIKE_HD DistanceCandidate<Real> eval_distance_candidate(
 
 template <class Real, class TK>
 BIKE_HD Status profile_height(
-    const SignedProfileView<Real> &sp,
+    SignedProfileView<Real> sp,
     Real x,
-    Real &out_h,
-    ErrCode &err
+    BIKE_REF(Real) out_h,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     if (sp.num_vertices < 2 || sp.x == nullptr || sp.z == nullptr) {
         err = ErrCode::outside_domain;
@@ -150,11 +150,11 @@ BIKE_HD Status profile_height(
 
 template <class Real, class TK>
 BIKE_HD Status signed_profile_query(
-    const SignedProfileView<Real> &sp,
+    SignedProfileView<Real> sp,
     Real px,
     Real pz,
-    PointDistanceResult<Real> &out,
-    ErrCode &err
+    BIKE_REF(PointDistanceResult<Real>) out,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     out = PointDistanceResult<Real>{};
     if (!TK::isfinite(px) || !TK::isfinite(pz)) {

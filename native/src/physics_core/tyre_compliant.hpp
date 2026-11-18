@@ -61,31 +61,31 @@ struct CompliantRecord {
 template <class Real, class Io>
 struct CompliantIoTraits {
     BIKE_HD static bool eval_radial(
-        BIKE_THREAD Io &io,
+        BIKE_REF(Io) io,
         i32 side,
-        const RadialEvalInput<Real> &in,
-        BIKE_THREAD RadialEvalOutput<Real> &out,
-        BIKE_THREAD Status &out_status,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(RadialEvalInput<Real>) in,
+        BIKE_REF(RadialEvalOutput<Real>) out,
+        BIKE_REF(Status) out_status,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.eval_radial(side, in, out, out_status, err);
     }
 
     BIKE_HD static bool custom_friction(
-        BIKE_THREAD Io &io,
-        const FrictionQuery<Real> &query,
-        BIKE_THREAD FrictionResult<Real> &out,
-        BIKE_THREAD Status &out_status,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(Io) io,
+        BIKE_CREF(FrictionQuery<Real>) query,
+        BIKE_REF(FrictionResult<Real>) out,
+        BIKE_REF(Status) out_status,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.custom_friction(query, out, out_status, err);
     }
 
     BIKE_HD static Status record(
-        BIKE_THREAD Io &io,
+        BIKE_REF(Io) io,
         i32 side,
-        BIKE_THREAD const CompliantRecord<Real> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(CompliantRecord<Real>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return io.record(side, rec, err);
     }
@@ -94,27 +94,27 @@ struct CompliantIoTraits {
 template <class Real>
 struct CompliantIoTraits<Real, NoOpIo> {
     BIKE_HD static bool eval_radial(
-        BIKE_THREAD NoOpIo &, i32,
-        const RadialEvalInput<Real> &,
-        BIKE_THREAD RadialEvalOutput<Real> &,
-        BIKE_THREAD Status &, BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo), i32,
+        BIKE_CREF(RadialEvalInput<Real>),
+        BIKE_REF(RadialEvalOutput<Real>),
+        BIKE_REF(Status), BIKE_REF(ErrCode)
     ) noexcept {
         return false;
     }
 
     BIKE_HD static bool custom_friction(
-        BIKE_THREAD NoOpIo &,
-        const FrictionQuery<Real> &,
-        BIKE_THREAD FrictionResult<Real> &,
-        BIKE_THREAD Status &, BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo),
+        BIKE_CREF(FrictionQuery<Real>),
+        BIKE_REF(FrictionResult<Real>),
+        BIKE_REF(Status), BIKE_REF(ErrCode)
     ) noexcept {
         return false;
     }
 
     BIKE_HD static Status record(
-        BIKE_THREAD NoOpIo &, i32,
-        BIKE_THREAD const CompliantRecord<Real> &,
-        BIKE_THREAD ErrCode &
+        BIKE_REF(NoOpIo), i32,
+        BIKE_CREF(CompliantRecord<Real>),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return Status::ok;
     }
@@ -142,11 +142,11 @@ BIKE_HD Status step_compliant_wheel(
     StateInPtr prev_state,
     StateOutPtr next_state,
     QfrcPtr out_qfrc,
-    TerrainFn &terrain_fn,
-    JacFn &jac_fn,
-    QfrcAccumFn &qfrc_accum_fn,
-    BIKE_THREAD Io &io,
-    ErrCode &err
+    BIKE_REF(TerrainFn) terrain_fn,
+    BIKE_REF(JacFn) jac_fn,
+    BIKE_REF(QfrcAccumFn) qfrc_accum_fn,
+    BIKE_REF(Io) io,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     const Real radius = model->wheels[side].radius_m;
     const Real tk = model->wheels[side].tangent_k_n_m;

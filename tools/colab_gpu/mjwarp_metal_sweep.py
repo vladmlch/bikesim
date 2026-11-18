@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import math
 from pathlib import Path
 import platform
 import sys
@@ -179,6 +180,16 @@ class WarpMetalWritersRuntime:
         d_states_ptr: int,
         d_qpos_ptr: int,
     ) -> None:
+        if int(nworld) <= 0:
+            raise ValueError(f"nworld must be > 0, got {nworld}")
+        for name, ptr in (
+            ("d_idx_ptr", d_idx_ptr),
+            ("d_configs_ptr", d_configs_ptr),
+            ("d_states_ptr", d_states_ptr),
+            ("d_qpos_ptr", d_qpos_ptr),
+        ):
+            if int(ptr) == 0:
+                raise ValueError(f"{name} must be non-zero")
         bounds = _BikeWpBounds(shape0=int(nworld), _pad0=0, size=int(nworld), coord_mult=1)
         args = _BikeWpInitArgs(
             idx=int(d_idx_ptr),
@@ -228,6 +239,31 @@ class WarpMetalWritersRuntime:
         tendon_range_ptr: int,
         tendon_range_stride: int,
     ) -> None:
+        if int(nworld) <= 0:
+            raise ValueError(f"nworld must be > 0, got {nworld}")
+        if not math.isfinite(float(dt_s)) or float(dt_s) <= 0.0:
+            raise ValueError(f"dt_s must be finite and > 0, got {dt_s}")
+        if int(tendon_range_stride) < 0:
+            raise ValueError(f"tendon_range_stride must be >= 0, got {tendon_range_stride}")
+        for name, ptr in (
+            ("d_idx_ptr", d_idx_ptr),
+            ("d_tyre_model_ptr", d_tyre_model_ptr),
+            ("d_terrain_desc_ptr", d_terrain_desc_ptr),
+            ("d_terrain_f32_ptr", d_terrain_f32_ptr),
+            ("d_terrain_i32_ptr", d_terrain_i32_ptr),
+            ("d_configs_ptr", d_configs_ptr),
+            ("d_states_ptr", d_states_ptr),
+            ("d_qpos_ptr", d_qpos_ptr),
+            ("d_qvel_ptr", d_qvel_ptr),
+            ("d_xpos_ptr", d_xpos_ptr),
+            ("d_xmat_ptr", d_xmat_ptr),
+            ("d_xanchor_ptr", d_xanchor_ptr),
+            ("d_xaxis_ptr", d_xaxis_ptr),
+            ("d_qfrc_ptr", d_qfrc_ptr),
+            ("d_ctrl_ptr", d_ctrl_ptr),
+        ):
+            if int(ptr) == 0:
+                raise ValueError(f"{name} must be non-zero")
         num_threads = int(nworld)
         bounds = _BikeWpBounds(shape0=num_threads, _pad0=0, size=num_threads, coord_mult=1)
         args = _BikeWpWritersArgs(

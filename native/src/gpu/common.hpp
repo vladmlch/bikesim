@@ -9,36 +9,81 @@
 
 #if defined(__METAL_VERSION__)
 #include <metal_stdlib>
+#ifndef noexcept
 #define noexcept
+#endif
+#ifndef BIKE_HD
 #define BIKE_HD inline
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE inline
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD thread
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE device
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT constant
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL kernel
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR constant constexpr
+#endif
 #elif defined(__CUDACC__)
 #include <cmath>
 #include <cstdint>
+#ifndef BIKE_HD
 #define BIKE_HD __host__ __device__ __forceinline__
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE __forceinline__
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL __global__
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR inline constexpr
+#endif
 #else
 #include <cmath>
 #include <cstdint>
+#ifndef BIKE_HD
 #define BIKE_HD inline
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE inline
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR inline constexpr
 #endif
+#endif
 
+#ifndef BIKE_GPU_SHARED_CODE_BEGIN
 #if defined(__clang__) && !defined(__METAL_VERSION__) && !defined(__CUDA_ARCH__)
 #define BIKE_GPU_SHARED_CODE_BEGIN \
     _Pragma("clang diagnostic push") \
@@ -47,6 +92,7 @@
 #else
 #define BIKE_GPU_SHARED_CODE_BEGIN
 #define BIKE_GPU_SHARED_CODE_END
+#endif
 #endif
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel: MSL has no std::span/std::array and address-space-qualified raw pointers are the device ABI; positional float signatures mirror the CUDA/MSL kernels. Register: docs/TESTING.md GPU kernel row.
@@ -58,7 +104,6 @@ BIKE_CONSTEXPR int kMaxNq = 32;
 BIKE_CONSTEXPR int kMaxNv = 32;
 BIKE_CONSTEXPR int kMaxNu = 16;
 BIKE_CONSTEXPR int kMaxNbody = 32;
-BIKE_CONSTEXPR int kMaxTreadStations = 64;
 BIKE_CONSTEXPR int kMaxHingeKnots = 8;
 
 struct GpuVec2 {

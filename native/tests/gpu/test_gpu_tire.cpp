@@ -390,8 +390,24 @@ void run_parity_suite(
 
             const float nom_r = model_wheels[side].radius_m;
             const float eff_r = sum_wheels[side].effective_radius_m;
-            require(std::isfinite(eff_r) && eff_r > 0.05f && eff_r <= nom_r + 1e-4f,
-                    "effective_radius_m lies inside physical wheel bounds");
+            const double ref_eff_r = snap_opt->effective_radius_m;
+            const bool wheel_airborne = snap_opt->patches.empty();
+            require(std::isfinite(eff_r), "effective_radius_m must be finite");
+            if (!pose.expect_contact) {
+                require(wheel_airborne, "airborne tick must have no contact patches");
+            }
+            if (wheel_airborne) {
+                require(ref_eff_r == 0.0 && eff_r == 0.0f,
+                        std::format("airborne effective_radius_m must be exact 0.0f tick='{}' side={} gpu={} ref={}",
+                                    pose.label, side, eff_r, ref_eff_r));
+            } else {
+                require(eff_r > 0.05f && eff_r <= nom_r + 1e-4f,
+                        "effective_radius_m lies inside physical wheel bounds");
+                const double r_tol = 5e-5 * std::max(1.0, std::abs(ref_eff_r));
+                require(std::abs(static_cast<double>(eff_r) - ref_eff_r) <= r_tol,
+                        std::format("effective_radius_m parity mismatch tick='{}' side={} gpu={:.6g} ref={:.6g}",
+                                    pose.label, side, static_cast<double>(eff_r), ref_eff_r));
+            }
 
             if (is_dist) {
                 require(active_cnts[side] == diag_opt->active_station_count,
@@ -417,6 +433,70 @@ void test_distributed_flat_and_rough_parity(const fs::path &xml) {
     run_parity_suite(xml, true, dcfg);
 }
 
+void test_airborne_effective_radius_zero(const fs::path &xml) {
+    WeldedFixture fx = load_welded_fixture(xml, false);
+    const TickPose airborne_pose{
+        .label = "airborne_explicit",
+        .root_x_offset = 2.2,
+        .ground_drop_m = +0.50,
+        .root_vx = 5.0,
+        .root_vz = +0.20,
+        .front_spin_delta = 1.0,
+        .rear_spin_delta = -1.0,
+        .expect_contact = false,
+    };
+    apply_tick_pose(fx, airborne_pose, false);
+    const int nv = static_cast<int>(fx.m->nv);
+    const int nbody = static_cast<int>(fx.m->nbody);
+    const int njnt = static_cast<int>(fx.m->njnt);
+
+    std::vector<float> xpos_f(3U * to_index(nbody), 0.0f);
+    std::vector<float> xmat_f(9U * to_index(nbody), 0.0f);
+    std::vector<float> xanchor_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> xaxis_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> qvel_f(to_index(nv), 0.0f);
+    const std::span<const mjtNum> d_xpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xanchor = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_xaxis = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_qvel = model_access::readonly_buffer(fx.d->qvel, nv);
+    for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(d_xpos[i]);
+    for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(d_xmat[i]);
+    for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+        xanchor_f[i] = static_cast<float>(d_xanchor[i]);
+        xaxis_f[i] = static_cast<float>(d_xaxis[i]);
+    }
+    for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
+
+    for (const nativecfg::TireConfig &cfg : {
+             bike::gpu::make_default_compliant_tire_config(),
+             bike::gpu::make_default_distributed_tire_config(64)}) {
+        const auto bundle_ptr = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+            fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom));
+        const HostTyreUploadBundle &bundle = *bundle_ptr;
+        const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+
+        std::vector<GpuCompliantWheelState> cs(2);
+        std::vector<GpuStationState> ds(2ULL * to_index(kMaxGpuTyreStations));
+        std::vector<float> qfrc(to_index(nv), 0.0f);
+        GpuTyreStepOutput sum{};
+        ErrCode err = ErrCode::none;
+        require(gpu_step_both_wheels_tyre(
+                    &bundle.gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                    1.0f, 0.001f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                    qvel_f.data(), cs.data(), ds.data(), qfrc.data(), sum, err, true) == Status::ok,
+                "airborne gpu_step_both_wheels_tyre succeeds");
+        const std::span sum_wheels(sum.wheels);
+        const std::span active_cnts(sum.active_station_counts);
+        for (std::size_t side = 0; side < 2; ++side) {
+            require(sum_wheels[side].normal_load_n == 0.0f, "airborne normal_load_n == 0");
+            require(sum_wheels[side].effective_radius_m == 0.0f,
+                    "airborne effective_radius_m == 0.0f");
+            require(active_cnts[side] == 0, "airborne active_station_counts == 0");
+        }
+    }
+}
+
 void test_stiffness_scale_and_validation(const fs::path &xml) {
     WeldedFixture fx = load_welded_fixture(xml, false);
     const TickPose deep_pose{
@@ -425,8 +505,8 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
         .ground_drop_m = -0.035,
         .root_vx = 5.0,
         .root_vz = -0.05,
-        .front_spin_delta = 0.0,
-        .rear_spin_delta = 0.0,
+        .front_spin_delta = 0.25,
+        .rear_spin_delta = -0.25,
         .expect_contact = true,
     };
     apply_tick_pose(fx, deep_pose, false);
@@ -489,6 +569,14 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
                             1e-4f * expected_load,
                     "tire_stiff_scale=1.20 scales normal_load_n proportionally");
         }
+        for (const int spin_dof : {fx.front_spin_dof, fx.rear_spin_dof}) {
+            const float tau1 = q1[to_index(spin_dof)];
+            const float tau2 = q2[to_index(spin_dof)];
+            const float expected_tau = 1.20f * tau1;
+            require(std::abs(tau1) > 0.5f &&
+                        std::abs(tau2 - expected_tau) <= 1e-4f * std::abs(expected_tau),
+                    "tire_stiff_scale=1.20 scales tangential wheel spin qfrc proportionally");
+        }
     }
 
     // Bounds rejection checks
@@ -525,10 +613,11 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
     }
 }
 
-constexpr std::array<TestCase, 4> cases{{
+constexpr std::array<TestCase, 5> cases{{
     {.name = "compliant_flat_parity", .run = test_compliant_flat_parity},
     {.name = "compliant_rough_uphill_parity", .run = test_compliant_rough_uphill_parity},
     {.name = "distributed_flat_and_rough_parity", .run = test_distributed_flat_and_rough_parity},
+    {.name = "airborne_effective_radius_zero", .run = test_airborne_effective_radius_zero},
     {.name = "stiffness_scale_and_validation", .run = test_stiffness_scale_and_validation},
 }};
 

@@ -294,8 +294,10 @@ MetalTyreCompileResult run_metal_tyre_smoke(
         }
 
         MTLCompileOptions *opts = [[MTLCompileOptions alloc] init];
-        opts.mathMode = MTLMathModeSafe;
-        opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+        if (@available(macOS 15.0, *)) {
+            opts.mathMode = MTLMathModeSafe;
+            opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+        }
 
         NSError *err = nil;
         NSString *ns_src = [NSString stringWithUTF8String:msl_src.c_str()];

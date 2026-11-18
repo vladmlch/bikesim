@@ -83,13 +83,13 @@ BIKE_HD bool terrain_span_in_bounds(i32 offset, i32 len, i32 total) noexcept {
 }
 
 BIKE_HD Status validate_terrain_table_desc(
-    const BIKE_THREAD GpuTerrainTableDesc &desc,
+    BIKE_CREF(GpuTerrainTableDesc) desc,
     BIKE_DEVICE const float *terrain_f32,
     BIKE_DEVICE const i32 *terrain_i32,
     bool require_polyline,
     bool require_signed,
     bool check_monotonic,
-    BIKE_THREAD ErrCode &err
+    BIKE_REF(ErrCode) err
 ) noexcept {
     err = ErrCode::none;
     if (desc.f32_count < 0 || desc.i32_count < 0) {
@@ -192,7 +192,7 @@ BIKE_HD Status validate_gpu_tyre_model_device(
     i32 expected_nq,
     i32 expected_nv,
     i32 expected_nbody,
-    BIKE_THREAD ErrCode &err
+    BIKE_REF(ErrCode) err
 ) noexcept {
     err = ErrCode::none;
     if (model == nullptr) {
@@ -282,7 +282,7 @@ BIKE_HD Status validate_gpu_tyre_model_device(
 }
 
 BIKE_HD PolylineView<float> make_polyline_view(
-    const BIKE_THREAD GpuTerrainTableDesc &desc,
+    BIKE_CREF(GpuTerrainTableDesc) desc,
     BIKE_DEVICE const float *terrain_f32,
     BIKE_DEVICE const i32 *terrain_i32
 ) noexcept {
@@ -306,7 +306,7 @@ BIKE_HD PolylineView<float> make_polyline_view(
 }
 
 BIKE_HD SignedProfileView<float> make_signed_profile_view(
-    const BIKE_THREAD GpuTerrainTableDesc &desc,
+    BIKE_CREF(GpuTerrainTableDesc) desc,
     BIKE_DEVICE const float *terrain_f32
 ) noexcept {
     SignedProfileView<float> sp{};
@@ -334,7 +334,7 @@ BIKE_HD ScaledTyreModel make_scaled_tyre_model(
     out.surface_map = model->surface_map;
     for (i32 side = 0; side < 2; ++side) {
         out.wheels[side].radius_m = model->wheels[side].radius_m;
-        out.wheels[side].tangent_k_n_m = model->wheels[side].tangent_k_n_m;
+        out.wheels[side].tangent_k_n_m = model->wheels[side].tangent_k_n_m * scale;
         out.wheels[side].tire_mu = model->wheels[side].tire_mu;
         out.wheels[side].relaxation_length_m = model->wheels[side].relaxation_length_m;
         out.wheels[side].compliant = model->wheels[side].compliant;
@@ -351,74 +351,87 @@ BIKE_HD ScaledTyreModel make_scaled_tyre_model(
 
 struct GpuWheelSummaryIo {
     float nominal_radius[2]{};
+    TyreVec3<float> wheel_center[2]{};
     float sum_load[2]{};
-    float sum_weighted_r[2]{};
-    float sum_unweighted_r[2]{};
+    float sum_weighted_drop[2]{};
+    float sum_unweighted_drop[2]{};
     GpuTyreStepOutput summary{};
 
     BIKE_HD bool eval_radial(
         i32,
-        const RadialEvalInput<float> &,
-        BIKE_THREAD RadialEvalOutput<float> &,
-        BIKE_THREAD Status &,
-        BIKE_THREAD ErrCode &
+        BIKE_CREF(RadialEvalInput<float>),
+        BIKE_REF(RadialEvalOutput<float>),
+        BIKE_REF(Status),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return false;
     }
 
     BIKE_HD bool custom_friction(
-        const FrictionQuery<float> &,
-        BIKE_THREAD FrictionResult<float> &,
-        BIKE_THREAD Status &,
-        BIKE_THREAD ErrCode &
+        BIKE_CREF(FrictionQuery<float>),
+        BIKE_REF(FrictionResult<float>),
+        BIKE_REF(Status),
+        BIKE_REF(ErrCode)
     ) noexcept {
         return false;
     }
 
     BIKE_HD Status record(
         i32 side,
-        const BIKE_THREAD CompliantRecord<float> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(CompliantRecord<float>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         err = ErrCode::none;
         summary.wheels[side].normal_load_n = rec.normal_load;
         const float delta = rec.contact.delta;
-        const float rad = nominal_radius[side];
-        summary.wheels[side].effective_radius_m =
-            delta > 0.0f ? GpuToolkit::max(0.05f, rad - delta) : rad;
-        summary.active_station_counts[side] = delta > 0.0f ? 1 : 0;
+        if (delta > 0.0f) {
+            const float dx = rec.point.x - rec.center.x;
+            const float dy = rec.point.y - rec.center.y;
+            const float dz = rec.point.z - rec.center.z;
+            const float drop =
+                -(dx * rec.normal.x + dy * rec.normal.y + dz * rec.normal.z);
+            summary.wheels[side].effective_radius_m = GpuToolkit::max(0.0f, drop);
+            summary.active_station_counts[side] = 1;
+        } else {
+            summary.wheels[side].effective_radius_m = 0.0f;
+            summary.active_station_counts[side] = 0;
+        }
         return Status::ok;
     }
 
     BIKE_HD Status record_station(
         i32 side,
-        const BIKE_THREAD DistributedStationRecord<float> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(DistributedStationRecord<float>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         err = ErrCode::none;
-        const float eff_r = GpuToolkit::max(0.05f, nominal_radius[side] - rec.penetration);
+        const float dx = rec.point.x - wheel_center[side].x;
+        const float dy = rec.point.y - wheel_center[side].y;
+        const float dz = rec.point.z - wheel_center[side].z;
+        const float drop =
+            -(dx * rec.normal.x + dy * rec.normal.y + dz * rec.normal.z);
         sum_load[side] += rec.load;
-        sum_weighted_r[side] += rec.load * eff_r;
-        sum_unweighted_r[side] += eff_r;
+        sum_weighted_drop[side] += rec.load * drop;
+        sum_unweighted_drop[side] += drop;
         return Status::ok;
     }
 
     BIKE_HD Status record_wheel(
         i32 side,
-        const BIKE_THREAD DistributedWheelRecord<float> &rec,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(DistributedWheelRecord<float>) rec,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         err = ErrCode::none;
         summary.active_station_counts[side] = rec.active_count;
         summary.wheels[side].normal_load_n = sum_load[side];
-        if (sum_load[side] > 0.0f) {
+        if (rec.active_count <= 0) {
+            summary.wheels[side].effective_radius_m = 0.0f;
+        } else if (sum_load[side] > 0.0f) {
             summary.wheels[side].effective_radius_m =
-                GpuToolkit::max(0.05f, sum_weighted_r[side] / sum_load[side]);
-        } else if (rec.active_count > 0) {
-            summary.wheels[side].effective_radius_m =
-                GpuToolkit::max(0.05f, sum_unweighted_r[side] / static_cast<float>(rec.active_count));
+                GpuToolkit::max(0.0f, sum_weighted_drop[side] / sum_load[side]);
         } else {
-            summary.wheels[side].effective_radius_m = nominal_radius[side];
+            summary.wheels[side].effective_radius_m = GpuToolkit::max(
+                0.0f, sum_unweighted_drop[side] / static_cast<float>(rec.active_count));
         }
         return Status::ok;
     }
@@ -433,8 +446,8 @@ struct GpuCompliantTerrainFn {
         float radius,
         bool has_prev_seg,
         i32 prev_seg,
-        BIKE_THREAD PolylineContactResult<float> &out,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(PolylineContactResult<float>) out,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return scan_polyline_contact<float, GpuToolkit, NoMultiSupport>(
             pl, cx, cz, radius, has_prev_seg, prev_seg, out, err);
@@ -453,10 +466,10 @@ struct GpuCompliantJacFn {
     template <class QvelPtr>
     BIKE_HD Status operator()(
         i32 side,
-        const BIKE_THREAD CompliantJacInput<float> &in,
+        BIKE_CREF(CompliantJacInput<float>) in,
         QvelPtr qvel,
-        BIKE_THREAD CompliantJacOutput<float> &out,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(CompliantJacOutput<float>) out,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         const GpuWheelChain local_chain = chains[side];
         const float pt[3] = {in.point.x, in.point.y, in.point.z};
@@ -493,10 +506,10 @@ struct GpuCompliantQfrcAccumFn {
     template <class OutQfrcPtr>
     BIKE_HD Status operator()(
         i32,
-        const BIKE_THREAD TyreVec3<float> &,
-        const BIKE_THREAD TyreVec3<float> &force_world,
+        BIKE_CREF(TyreVec3<float>),
+        BIKE_CREF(TyreVec3<float>) force_world,
         OutQfrcPtr out_qfrc,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(ErrCode) err
     ) noexcept {
         const float f[3] = {force_world.x, force_world.y, force_world.z};
         float tmp[kMaxNv]{};
@@ -514,8 +527,8 @@ struct GpuDistProfileHeightFn {
 
     BIKE_HD Status operator()(
         float x,
-        BIKE_THREAD float &out_h,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(float) out_h,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return profile_height<float, GpuToolkit>(sp, x, out_h, err);
     }
@@ -525,9 +538,9 @@ struct GpuDistSignedQueryFn {
     SignedProfileView<float> sp{};
 
     BIKE_HD Status operator()(
-        const BIKE_THREAD TyreXZ<float> &query_xz,
-        BIKE_THREAD PointDistanceResult<float> &out,
-        BIKE_THREAD ErrCode &err
+        BIKE_CREF(TyreXZ<float>) query_xz,
+        BIKE_REF(PointDistanceResult<float>) out,
+        BIKE_REF(ErrCode) err
     ) noexcept {
         return signed_profile_query<float, GpuToolkit>(sp, query_xz.x, query_xz.z, out, err);
     }
@@ -542,10 +555,10 @@ struct GpuDistCenterJacFn {
     XaxisPtr xaxis_w = nullptr;
 
     BIKE_HD Status operator()(
-        const BIKE_THREAD TyreVec3<float> &center_pt,
+        BIKE_CREF(TyreVec3<float>) center_pt,
         BIKE_THREAD float *out_jc,
         BIKE_THREAD float *out_jr,
-        BIKE_THREAD ErrCode &err
+        BIKE_REF(ErrCode) err
     ) noexcept {
         const GpuWheelChain local_chain = chain;
         const float ct[3] = {center_pt.x, center_pt.y, center_pt.z};
@@ -566,7 +579,7 @@ template <
     class DistStatePtr>
 BIKE_HD Status gpu_step_both_wheels_tyre(
     BIKE_DEVICE const GpuTyreModel *model,
-    const BIKE_THREAD GpuTerrainTableDesc &terrain_desc,
+    BIKE_CREF(GpuTerrainTableDesc) terrain_desc,
     BIKE_DEVICE const float *terrain_f32,
     BIKE_DEVICE const i32 *terrain_i32,
     float tire_stiff_scale,
@@ -579,8 +592,8 @@ BIKE_HD Status gpu_step_both_wheels_tyre(
     CompliantStatePtr compliant_states_w,
     DistStatePtr dist_states_w,
     QfrcPtr out_qfrc_w,
-    BIKE_THREAD GpuTyreStepOutput &out_summary,
-    BIKE_THREAD ErrCode &err,
+    BIKE_REF(GpuTyreStepOutput) out_summary,
+    BIKE_REF(ErrCode) err,
     bool check_monotonic = false
 ) noexcept {
     err = ErrCode::none;
@@ -636,6 +649,7 @@ BIKE_HD Status gpu_step_both_wheels_tyre(
                 xpos_w[3 * bid + 1],
                 xpos_w[3 * bid + 2]
             };
+            io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
             CompliantWheelStatePod<float> prev_st = compliant_states_w[side];
             CompliantWheelStatePod<float> next_st{};
             st = step_compliant_wheel<float, GpuToolkit>(
@@ -680,6 +694,7 @@ BIKE_HD Status gpu_step_both_wheels_tyre(
             xpos_w[3 * bid + 1],
             xpos_w[3 * bid + 2]
         };
+        io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
         GpuDistCenterJacFn<XposPtr, XanchorPtr, XaxisPtr> cjac_fn{
             side_chain, scaled.nv, xpos_w, xanchor_w, xaxis_w};
         st = step_distributed_wheel<float, GpuToolkit>(

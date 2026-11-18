@@ -245,6 +245,8 @@ inline int build_runner_tyre_and_terrain_buffers(
     }
 
     try {
+        const auto make_data_fn = &mj_makeData;
+        const auto forward_fn = &mj_forward;
         std::array<char, 1024> err{};
         mjModel *m = mj_loadXML(xml_path, nullptr, err.data(), static_cast<int>(err.size()));
         if (m == nullptr) {
@@ -254,7 +256,7 @@ inline int build_runner_tyre_and_terrain_buffers(
         if (assets::load_hfield_bin(m, xml_path) != assets::AssetStatus::kOk) {
             return -3;
         }
-        mjData *d = mj_makeData(m);
+        mjData *d = make_data_fn(m);
         if (d == nullptr) {
             return -2;
         }
@@ -274,7 +276,7 @@ inline int build_runner_tyre_and_terrain_buffers(
                 d_qvel[i] = static_cast<mjtNum>(qv[i]);
             }
         }
-        mj_forward(m, d);
+        forward_fn(m, d);
 
         const GpuModelIndices idx =
             (d_idx != nullptr) ? *d_idx : assets::resolve_gpu_model_indices(m);

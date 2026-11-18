@@ -14,11 +14,14 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <format>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -211,6 +214,115 @@ void seed_flat_welded_road(const mjModel *m) {
             hf[to_index(adr + r * ncol + c)] = flat_norm;
         }
     }
+}
+
+struct TempWeldedAssetDir {
+    fs::path dir;
+    fs::path xml_copy;
+
+    TempWeldedAssetDir(
+        const fs::path &welded_src,
+        const mjModel *m,
+        std::string_view tag
+    ) {
+        const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+        dir = fs::temp_directory_path() / std::format("bike_sp1_{}_{}", tag, stamp);
+        fs::create_directories(dir);
+        xml_copy = dir / "welded.xml";
+        fs::copy_file(welded_src, xml_copy, fs::copy_options::overwrite_existing);
+
+        if (m->nhfielddata > 0) {
+            const fs::path bin_path = dir / "hfield_data.bin";
+            std::ofstream ofs(bin_path, std::ios::binary);
+            require(ofs.is_open(), "open temp hfield_data.bin for writing");
+            const std::span<const float> hf =
+                model_access::readonly_buffer(m->hfield_data, m->nhfielddata, "hfield_data");
+            for (const float v : hf) {
+                const double d = static_cast<double>(v);
+                const auto bytes = std::bit_cast<std::array<char, sizeof(double)>>(d);
+                ofs.write(bytes.data(), sizeof(double));
+            }
+            require(ofs.good(), "write temp hfield_data.bin");
+        }
+    }
+
+    TempWeldedAssetDir(const TempWeldedAssetDir &) = delete;
+    TempWeldedAssetDir &operator=(const TempWeldedAssetDir &) = delete;
+    TempWeldedAssetDir(TempWeldedAssetDir &&) = delete;
+    TempWeldedAssetDir &operator=(TempWeldedAssetDir &&) = delete;
+
+    ~TempWeldedAssetDir() {
+        if (!dir.empty()) {
+            std::error_code ec;
+            fs::remove_all(dir, ec);
+        }
+    }
+};
+
+void build_welded_initial_state(
+    const mjModel *m,
+    const bike::gpu::GpuModelIndices &idx,
+    std::vector<double> &qpos0,
+    std::vector<double> &qvel0,
+    DataPtr &out_data
+) {
+    DataPtr d(mj_makeData(m), &mj_deleteData);
+    mj_resetData(m, d.get());
+
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int rider_rx_jnt = mj_name2id(m, mjOBJ_JOINT, "rider_root_x");
+    const int rider_rz_jnt = mj_name2id(m, mjOBJ_JOINT, "rider_root_z");
+    require(rider_rx_jnt >= 0 && rider_rz_jnt >= 0, "welded.xml must have rider_root_x/z");
+    const std::span<const int> jnt_qposadr =
+        model_access::readonly_buffer(m->jnt_qposadr, m->njnt, "jnt_qposadr");
+    const std::span<const int> jnt_dofadr =
+        model_access::readonly_buffer(m->jnt_dofadr, m->njnt, "jnt_dofadr");
+    const int rider_rx_qpos = jnt_qposadr[to_index(rider_rx_jnt)];
+    const int rider_rz_qpos = jnt_qposadr[to_index(rider_rz_jnt)];
+    const int rider_rx_dof = jnt_dofadr[to_index(rider_rx_jnt)];
+
+    const std::span<mjtNum> d_qpos = model_access::mutable_buffer(d->qpos, nq, "qpos");
+    const std::span<mjtNum> d_qvel = model_access::mutable_buffer(d->qvel, nv, "qvel");
+    d_qpos[to_index(idx.root_x_qpos)] = 2.0;
+    d_qpos[to_index(rider_rx_qpos)] = 2.0;
+    mj_forward(m, d.get());
+
+    const int f_body = idx.front_wheel_body;
+    const int r_body = idx.rear_wheel_body;
+    const int f_geom = bike::gpu::find_wheel_contact_geom(m, f_body, "front_contact", "geom_front_contact");
+    const int r_geom = bike::gpu::find_wheel_contact_geom(m, r_body, "rear_contact", "geom_rear_contact");
+    require(f_geom >= 0 && r_geom >= 0, "welded.xml wheel contact geoms resolved");
+    const std::span<const mjtNum> geom_size =
+        model_access::readonly_buffer(m->geom_size, 3 * m->ngeom, "geom_size");
+    const std::span<const mjtNum> d_xpos_cur =
+        model_access::readonly_buffer(d->xpos, 3LL * static_cast<mjtSize>(idx.nbody), "xpos");
+    const double f_r = geom_size[3 * to_index(f_geom)];
+    const double r_r = geom_size[3 * to_index(r_geom)];
+    const double min_clear = std::min(d_xpos_cur[3 * to_index(f_body) + 2] - f_r,
+                                      d_xpos_cur[3 * to_index(r_body) + 2] - r_r);
+    const double dz = -0.015 - min_clear;
+    d_qpos[to_index(idx.root_z_qpos)] += dz;
+    d_qpos[to_index(rider_rz_qpos)] += dz;
+    d_qvel[to_index(idx.root_x_dof)] = 5.0;
+    d_qvel[to_index(rider_rx_dof)] = 5.0;
+    d_qvel[to_index(idx.front_wheel_spin_dof)] = 5.0 / f_r;
+    d_qvel[to_index(idx.rear_wheel_spin_dof)] = 5.0 / r_r;
+    d_qvel[to_index(idx.crank_spin_dof)] = 6.0;
+    if (idx.drive_shaft_spin_dof >= 0) {
+        d_qvel[to_index(idx.drive_shaft_spin_dof)] = 6.0;
+    }
+    mj_forward(m, d.get());
+
+    qpos0.resize(to_index(nq));
+    qvel0.resize(to_index(nv));
+    for (int i = 0; i < nq; ++i) {
+        qpos0[to_index(i)] = static_cast<double>(d_qpos[to_index(i)]);
+    }
+    for (int i = 0; i < nv; ++i) {
+        qvel0[to_index(i)] = static_cast<double>(d_qvel[to_index(i)]);
+    }
+    out_data = std::move(d);
 }
 
 #if defined(__APPLE__)
@@ -519,6 +631,14 @@ void test_metal_launch_argument_validation() {
     }
     {
         const auto bad_tm = std::make_unique<GpuTyreModel>(tm);
+        bad_tm->nq = idx.nq - 1;
+        require(bike_metal_launch_writers(
+                    2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                "metal writers rejects idx.nq != tm.nq");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(tm);
         const std::span bad_wheels(bad_tm->wheels);
         const std::span bad_joints(bad_wheels[0].chain.joints);
         bad_joints[0].joint_id = bad_tm->njnt;
@@ -548,6 +668,82 @@ void test_metal_launch_argument_validation() {
     for (const auto &s : states) {
         require(s.drivetrain.freehub_boundary_rad == kSentinel,
                 "rejected writers leaves state buffer untouched");
+    }
+
+    // bike_metal_run_hybrid_sweep negative bounds checks on welded.xml
+    {
+        const fs::path welded_xml = find_repo_file(kRelWeldedPath);
+        require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
+        const ModelPtr m_welded = load_xml(welded_xml);
+        seed_flat_welded_road(m_welded.get());
+        const TempWeldedAssetDir tmp(welded_xml, m_welded.get(), "mtl_bounds");
+        const std::string xml_str = tmp.xml_copy.string();
+        const GpuModelIndices w_idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
+
+        std::vector<double> qp0, qv0;
+        DataPtr d_w{nullptr, &mj_deleteData};
+        build_welded_initial_state(m_welded.get(), w_idx, qp0, qv0, d_w);
+        const int f_geom = find_wheel_contact_geom(m_welded.get(), w_idx.front_wheel_body, "front_contact", "geom_front_contact");
+        const int r_geom = find_wheel_contact_geom(m_welded.get(), w_idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
+        const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+            m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
+            f_geom, r_geom, w_idx.front_wheel_body, w_idx.rear_wheel_body));
+        const HostPackedTerrain w_terrain = pack_upload_bundle_terrain(*bundle);
+
+        std::vector<float> out_fork(2, 0.0f);
+        std::vector<float> out_shock(2, 0.0f);
+        std::vector<float> out_rx(2, 0.0f);
+        int all_fin = 0;
+        double elapsed = 0.0;
+
+        require(bike_metal_run_hybrid_sweep(
+                    xml_str.c_str(), 0, 2, 1, &w_idx, nullptr, nullptr, nullptr, nullptr,
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "metal hybrid sweep rejects nworld <= 0");
+        {
+            GpuModelIndices bad_idx = w_idx;
+            bad_idx.nq = w_idx.nq - 1;
+            require(bike_metal_run_hybrid_sweep(
+                        xml_str.c_str(), 1, 2, 1, &bad_idx, nullptr, nullptr, nullptr, nullptr,
+                        &cfg, 0, qp0.data(), qv0.data(),
+                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                    "metal hybrid sweep rejects idx.nq != m->nq");
+        }
+        {
+            const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+            const std::span bw(bad_tm->wheels);
+            const std::span bj(bw[0].chain.joints);
+            bj[0].joint_id = bad_tm->njnt;
+            require(bike_metal_run_hybrid_sweep(
+                        xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
+                        w_terrain.f32.data(), w_terrain.i32.data(),
+                        &cfg, 0, qp0.data(), qv0.data(),
+                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                    "metal hybrid sweep rejects joint_id >= njnt");
+        }
+        {
+            const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+            bad_tm->backend = TyreBackendKind::distributed_2d_reference;
+            bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
+            require(bike_metal_run_hybrid_sweep(
+                        xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
+                        w_terrain.f32.data(), w_terrain.i32.data(),
+                        &cfg, 0, qp0.data(), qv0.data(),
+                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                    "metal hybrid sweep rejects station_count > 128");
+        }
+        {
+            auto bad_f32 = w_terrain.f32;
+            bad_f32[to_index(w_terrain.desc.px_offset + 5)] =
+                bad_f32[to_index(w_terrain.desc.px_offset + 4)];
+            require(bike_metal_run_hybrid_sweep(
+                        xml_str.c_str(), 1, 2, 1, &w_idx, &bundle->gpu_model, &w_terrain.desc,
+                        bad_f32.data(), w_terrain.i32.data(),
+                        &cfg, 0, qp0.data(), qv0.data(),
+                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                    "metal hybrid sweep rejects non-monotonic px");
+        }
     }
 }
 #endif // defined(__APPLE__)
@@ -717,19 +913,256 @@ void test_cpu_and_metal_hybrid_rollouts() {
             "higher custom terrain table raises peak fork compression");
 }
 
+void test_cpu_and_host_argument_validation() {
+    using namespace bike::gpu;
+    using namespace bike::physics_core;
+
+    const fs::path welded_xml = find_repo_file(kRelWeldedPath);
+    require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
+    const ModelPtr m_welded = load_xml(welded_xml);
+    seed_flat_welded_road(m_welded.get());
+    const TempWeldedAssetDir tmp(welded_xml, m_welded.get(), "cpu_bounds");
+    const std::string xml_str = tmp.xml_copy.string();
+    const GpuModelIndices idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
+    require(idx.nq == 27 && idx.nv == 27, "welded.xml resolves nq=27");
+
+    std::vector<double> qp0, qv0;
+    DataPtr d_w{nullptr, &mj_deleteData};
+    build_welded_initial_state(m_welded.get(), idx, qp0, qv0, d_w);
+    const int f_geom = find_wheel_contact_geom(m_welded.get(), idx.front_wheel_body, "front_contact", "geom_front_contact");
+    const int r_geom = find_wheel_contact_geom(m_welded.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
+    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+    const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
+
+    GpuWorldConfig cfg{};
+    bike_gpu_init_default_config(&cfg);
+    std::vector<GpuWorldState> states(2);
+    constexpr float kSentinel = 321.0f;
+    for (auto &s : states) {
+        s.drivetrain.freehub_boundary_rad = kSentinel;
+    }
+    std::vector<float> buf(4096, 0.0f);
+    const float *qpos = buf.data();
+    const float *tf32 = terrain.f32.data();
+    const i32 *ti32 = terrain.i32.data();
+
+    // 1. Host writers launcher (bike_gpu_launch_writers) negative bounds
+    require(bike_gpu_launch_writers(
+                nullptr, 0, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
+                &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                buf.data(), buf.data(), buf.data(), 2) != 0,
+            "host writers rejects nworld <= 0");
+    {
+        GpuModelIndices bad_idx = idx;
+        bad_idx.nq = idx.nq - 1;
+        require(bike_gpu_launch_writers(
+                    nullptr, 2, 0.001f, &bad_idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
+                    &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                "host writers rejects idx.nq != tm.nq");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        const std::span bw(bad_tm->wheels);
+        const std::span bj(bw[0].chain.joints);
+        bj[0].joint_id = bad_tm->njnt;
+        require(bike_gpu_launch_writers(
+                    nullptr, 2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32,
+                    &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                "host writers rejects joint_id >= njnt");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        bad_tm->backend = TyreBackendKind::distributed_2d_reference;
+        bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
+        require(bike_gpu_launch_writers(
+                    nullptr, 2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32,
+                    &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                "host writers rejects station_count > 128");
+    }
+    {
+        auto bad_f32 = terrain.f32;
+        bad_f32[to_index(terrain.desc.px_offset + 5)] =
+            bad_f32[to_index(terrain.desc.px_offset + 4)];
+        require(bike_gpu_launch_writers(
+                    nullptr, 2, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, bad_f32.data(), ti32,
+                    &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                "host writers rejects non-monotonic px");
+    }
+    for (const auto &s : states) {
+        require(s.drivetrain.freehub_boundary_rad == kSentinel,
+                "rejected host writers leaves state buffer untouched");
+    }
+
+    // 2. CPU batch sweep (bike_cpu_run_batch_sweep) negative bounds
+    std::vector<float> out_fork(2, 0.0f);
+    std::vector<float> out_shock(2, 0.0f);
+    std::vector<float> out_rx(2, 0.0f);
+    int all_fin = 0;
+    double elapsed = 0.0;
+
+    require(bike_cpu_run_batch_sweep(
+                xml_str.c_str(), 0, 2, 1, &idx, nullptr, nullptr, nullptr, nullptr,
+                &cfg, 0, qp0.data(), qv0.data(),
+                out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+            "cpu batch sweep rejects nworld <= 0");
+    {
+        GpuModelIndices bad_idx = idx;
+        bad_idx.nq = idx.nq - 1;
+        require(bike_cpu_run_batch_sweep(
+                    xml_str.c_str(), 1, 2, 1, &bad_idx, nullptr, nullptr, nullptr, nullptr,
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "cpu batch sweep rejects idx.nq != m->nq");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        const std::span bw(bad_tm->wheels);
+        const std::span bj(bw[0].chain.joints);
+        bj[0].joint_id = bad_tm->njnt;
+        require(bike_cpu_run_batch_sweep(
+                    xml_str.c_str(), 1, 2, 1, &idx, bad_tm.get(), &terrain.desc,
+                    tf32, ti32, &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "cpu batch sweep rejects joint_id >= njnt");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        bad_tm->backend = TyreBackendKind::distributed_2d_reference;
+        bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
+        require(bike_cpu_run_batch_sweep(
+                    xml_str.c_str(), 1, 2, 1, &idx, bad_tm.get(), &terrain.desc,
+                    tf32, ti32, &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "cpu batch sweep rejects station_count > 128");
+    }
+    {
+        auto bad_f32 = terrain.f32;
+        bad_f32[to_index(terrain.desc.px_offset + 5)] =
+            bad_f32[to_index(terrain.desc.px_offset + 4)];
+        require(bike_cpu_run_batch_sweep(
+                    xml_str.c_str(), 1, 2, 1, &idx, &bundle->gpu_model, &terrain.desc,
+                    bad_f32.data(), ti32, &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "cpu batch sweep rejects non-monotonic px");
+    }
+}
+
+void test_welded_80step_rollout_parity() {
+    using namespace bike::gpu;
+    using namespace bike::physics_core;
+
+    const fs::path welded_xml = find_repo_file(kRelWeldedPath);
+    require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
+    const ModelPtr m_welded = load_xml(welded_xml);
+    require(m_welded->nq == 27 && m_welded->nv == 27 && m_welded->nu == 12 &&
+                m_welded->ntendon == 2,
+            "welded.xml has nq=27, nv=27, nu=12, ntendon=2");
+    seed_flat_welded_road(m_welded.get());
+    const TempWeldedAssetDir tmp(welded_xml, m_welded.get(), "welded_80");
+    const std::string xml_str = tmp.xml_copy.string();
+    const GpuModelIndices idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
+
+    std::vector<double> qp0, qv0;
+    DataPtr d_w{nullptr, &mj_deleteData};
+    build_welded_initial_state(m_welded.get(), idx, qp0, qv0, d_w);
+    const int f_geom = find_wheel_contact_geom(m_welded.get(), idx.front_wheel_body, "front_contact", "geom_front_contact");
+    const int r_geom = find_wheel_contact_geom(m_welded.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
+
+    constexpr int kNWorld = 4;
+    constexpr int kSteps = 80;
+    std::vector<GpuWorldConfig> configs(to_index(kNWorld));
+    for (int w = 0; w < kNWorld; ++w) {
+        bike_gpu_init_default_config(&configs[to_index(w)]);
+    }
+
+    const auto run_welded_backend = [&](const nativecfg::TireConfig &tcfg, std::string_view label) {
+        const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+            m_welded.get(), d_w.get(), tcfg,
+            f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+        const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
+
+        std::vector<float> cpu_fork(to_index(kNWorld), 0.0f);
+        std::vector<float> cpu_shock(to_index(kNWorld), 0.0f);
+        std::vector<float> cpu_rx(to_index(kNWorld), 0.0f);
+        int cpu_finite = 0;
+        double cpu_ms = 0.0;
+        const int rc_cpu = bike_cpu_run_batch_sweep(
+            xml_str.c_str(), kNWorld, kSteps, 2, &idx,
+            &bundle->gpu_model, &terrain.desc,
+            terrain.f32.empty() ? nullptr : terrain.f32.data(),
+            terrain.i32.empty() ? nullptr : terrain.i32.data(),
+            configs.data(), 1, qp0.data(), qv0.data(),
+            cpu_fork.data(), cpu_shock.data(), cpu_rx.data(),
+            &cpu_finite, &cpu_ms);
+        require(rc_cpu == 0, std::format("welded CPU 80-step sweep succeeds ({}, rc={})", label, rc_cpu));
+        require(cpu_finite == 1, std::format("welded CPU 80-step stays finite ({})", label));
+        for (int w = 0; w < kNWorld; ++w) {
+            require_above(static_cast<double>(cpu_rx[to_index(w)]), 2.0 + 0.1,
+                          std::format("welded CPU root_x advances ({})", label));
+        }
+
 #if defined(__APPLE__)
-constexpr std::array<TestCase, 3> cases{{
+        std::vector<float> mtl_fork(to_index(kNWorld), 0.0f);
+        std::vector<float> mtl_shock(to_index(kNWorld), 0.0f);
+        std::vector<float> mtl_rx(to_index(kNWorld), 0.0f);
+        int mtl_finite = 0;
+        double mtl_ms = 0.0;
+        const int rc_mtl = bike_metal_run_hybrid_sweep(
+            xml_str.c_str(), kNWorld, kSteps, 2, &idx,
+            &bundle->gpu_model, &terrain.desc,
+            terrain.f32.empty() ? nullptr : terrain.f32.data(),
+            terrain.i32.empty() ? nullptr : terrain.i32.data(),
+            configs.data(), 1, qp0.data(), qv0.data(),
+            mtl_fork.data(), mtl_shock.data(), mtl_rx.data(),
+            &mtl_finite, &mtl_ms);
+        require(rc_mtl == 0, std::format("welded Metal hybrid 80-step sweep succeeds ({})", label));
+        require(mtl_finite == 1, std::format("welded Metal hybrid 80-step stays finite ({})", label));
+        for (int w = 0; w < kNWorld; ++w) {
+            const std::size_t wi = to_index(w);
+            require_near(mtl_rx[wi], cpu_rx[wi],
+                         3e-3f * std::max(1.0f, std::abs(cpu_rx[wi])),
+                         std::format("welded metal vs cpu root_x ({})", label));
+            require_near(mtl_fork[wi], cpu_fork[wi],
+                         3e-3f * std::max(1.0f, std::abs(cpu_fork[wi])),
+                         std::format("welded metal vs cpu fork_mm ({})", label));
+            require_near(mtl_shock[wi], cpu_shock[wi],
+                         3e-3f * std::max(1.0f, std::abs(cpu_shock[wi])),
+                         std::format("welded metal vs cpu shock_mm ({})", label));
+        }
+#endif
+    };
+
+    run_welded_backend(make_default_compliant_tire_config(), "compliant_2d");
+    run_welded_backend(make_default_distributed_tire_config(64), "distributed_2d_reference");
+}
+
+#if defined(__APPLE__)
+constexpr std::array<TestCase, 5> cases{{
     {.name = "metal_shader_and_buffer_reuse",
      .run = test_metal_shader_and_buffer_reuse},
     {.name = "metal_launch_argument_validation",
      .run = test_metal_launch_argument_validation},
+    {.name = "cpu_and_host_argument_validation",
+     .run = test_cpu_and_host_argument_validation},
     {.name = "cpu_and_metal_hybrid_rollouts",
      .run = test_cpu_and_metal_hybrid_rollouts},
+    {.name = "welded_80step_rollout_parity",
+     .run = test_welded_80step_rollout_parity},
 }};
 #else
-constexpr std::array<TestCase, 1> cases{{
+constexpr std::array<TestCase, 3> cases{{
+    {.name = "cpu_and_host_argument_validation",
+     .run = test_cpu_and_host_argument_validation},
     {.name = "cpu_and_metal_hybrid_rollouts",
      .run = test_cpu_and_metal_hybrid_rollouts},
+    {.name = "welded_80step_rollout_parity",
+     .run = test_welded_80step_rollout_parity},
 }};
 #endif
 

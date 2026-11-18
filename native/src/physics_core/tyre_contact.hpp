@@ -49,9 +49,9 @@ BIKE_HD Status effective_friction(
     MapPtr map,
     Real contact_x,
     Real slip,
-    Real &out_mu,
-    i32 &out_section_idx,
-    ErrCode &err
+    BIKE_REF(Real) out_mu,
+    BIKE_REF(i32) out_section_idx,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     if (map == nullptr || map->has_surface_map == 0) {
         out_mu = tire_mu;
@@ -89,9 +89,9 @@ BIKE_HD Status normal_contact_hysteresis(
     Real k,
     Real eta,
     Real eps,
-    Real &out_force,
-    Real &out_energy,
-    ErrCode &err
+    BIKE_REF(Real) out_force,
+    BIKE_REF(Real) out_energy,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     if (delta <= BIKE_REAL(Real, 0.0)) {
         out_force = BIKE_REAL(Real, 0.0);
@@ -120,7 +120,7 @@ BIKE_HD void transport_bristle(
     PtrOld old_tangent,
     PtrNew new_tangent,
     Real xi,
-    Real &out_xi_transp
+    BIKE_REF(Real) out_xi_transp
 ) noexcept {
     out_xi_transp = xi * TK::dot3(old_tangent, new_tangent);
 }
@@ -135,10 +135,10 @@ BIKE_HD Status brush_step(
     Real mu,
     Real length,
     Real dt,
-    Real &out_xi,
-    Real &out_force,
-    Real &out_loss,
-    ErrCode &err
+    BIKE_REF(Real) out_xi,
+    BIKE_REF(Real) out_force,
+    BIKE_REF(Real) out_loss,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     const Real old_energy = BIKE_REAL(Real, 0.5) * k * xi * xi;
     if (!TK::isfinite(old_energy)) {

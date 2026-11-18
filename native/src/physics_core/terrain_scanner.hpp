@@ -94,7 +94,7 @@ struct CandidateEval {
 
 template <class Real, class TK>
 BIKE_HD CandidateEval<Real> eval_segment(
-    const PolylineView<Real> &pl,
+    PolylineView<Real> pl,
     int seg,
     Real cx,
     Real cz
@@ -123,7 +123,7 @@ BIKE_HD CandidateEval<Real> eval_segment(
 
 template <class Real>
 BIKE_HD bool eval_endpoint_keep(
-    const PolylineView<Real> &pl,
+    PolylineView<Real> pl,
     int seg,
     Real t,
     Real cx,
@@ -168,7 +168,7 @@ struct WindowScanSummary {
 
 template <class Real, class TK>
 BIKE_HD WindowScanSummary<Real> scan_window_o1(
-    const PolylineView<Real> &pl,
+    PolylineView<Real> pl,
     int lo,
     int hi,
     Real cx,
@@ -216,7 +216,7 @@ BIKE_HD WindowScanSummary<Real> scan_window_o1(
 struct NoMultiSupport {
     template <class Real, class TK>
     BIKE_HD static bool evaluate(
-        const PolylineView<Real> & /*pl*/,
+        PolylineView<Real> /*pl*/,
         int /*win_lo*/,
         int /*win_hi*/,
         Real /*cx*/,
@@ -234,7 +234,7 @@ struct NoMultiSupport {
 struct O1CpuMultiSupport {
     template <class Real, class TK>
     BIKE_HD static bool evaluate(
-        const PolylineView<Real> &pl,
+        PolylineView<Real> pl,
         int win_lo,
         int win_hi,
         Real cx,
@@ -273,14 +273,14 @@ struct O1CpuMultiSupport {
 
 template <class Real, class TK, class MultiSupportPolicy = NoMultiSupport>
 BIKE_HD Status scan_polyline_contact(
-    const PolylineView<Real> &pl,
+    PolylineView<Real> pl,
     Real cx,
     Real cz,
     Real radius,
     bool has_prev_seg,
     int prev_seg,
-    PolylineContactResult<Real> &out,
-    ErrCode &err
+    BIKE_REF(PolylineContactResult<Real>) out,
+    BIKE_REF(ErrCode) err
 ) noexcept {
     out = PolylineContactResult<Real>{};
     if (!TK::isfinite(cx) || !TK::isfinite(cz)) {

@@ -162,8 +162,8 @@ def _upload_tyre_and_terrain_device(
         d_terrain_desc,
         d_terrain_f32,
         d_terrain_i32,
-        int(d_terrain_f32.ptr) if f32_np.size > 0 else 0,
-        int(d_terrain_i32.ptr) if i32_np.size > 0 else 0,
+        int(d_terrain_f32.ptr),
+        int(d_terrain_i32.ptr),
     )
 
 
@@ -448,7 +448,7 @@ def run_parameter_sweep(
         if rc != 0:
             raise RuntimeError(f"bike_gpu_launch_init_states failed with code {rc}")
 
-    def _capture_step(data_b: Any) -> Any:
+    def _make_writer_fn(data_b: Any) -> Callable[[], None]:
         def _launch_writers() -> None:
             rc = int(
                 lib.bike_gpu_launch_writers(
@@ -478,10 +478,22 @@ def run_parameter_sweep(
             if rc != 0:
                 raise RuntimeError(f"bike_gpu_launch_writers failed with code {rc}")
 
+        return _launch_writers
+
+    def _capture_step(data_b: Any) -> Any:
         with wp.ScopedCapture() as capture:
-            _mjwarp_clean_split_step(ops, m_wp, data_b, _launch_writers)
+            _mjwarp_clean_split_step(ops, m_wp, data_b, _make_writer_fn(data_b))
         return capture.graph
 
+    # Run 1 uncaptured step prior to CUDA Graph capture so eager device struct +
+    # monotonic terrain validation executes outside stream capture.
+    _init_states(d_b)
+    wp.synchronize()
+    _mjwarp_clean_split_step(ops, m_wp, d_b, _make_writer_fn(d_b))
+    wp.synchronize()
+
+    d_b = mjwarp.put_data(m, d0, nworld=nworld)
+    mjwarp.forward(m_wp, d_b)
     _init_states(d_b)
     wp.synchronize()
     graph = _capture_step(d_b)
@@ -636,37 +648,61 @@ def run_tyre_backend_scaling_benchmark(
             raise RuntimeError(f"bike_gpu_launch_init_states failed with code {rc_init}")
         wp.synchronize()
 
-        def _launch_writers() -> None:
-            rc = int(
-                lib.bike_gpu_launch_writers(
-                    ctypes.c_void_p(cuda_stream),
-                    int(nworld),
-                    ctypes.c_float(dt_s),
-                    ctypes.c_void_p(d_idx.ptr),
-                    ctypes.c_void_p(d_tyre_model.ptr),
-                    ctypes.c_void_p(d_terrain_desc.ptr),
-                    ctypes.c_void_p(terrain_f32_ptr),
-                    ctypes.c_void_p(terrain_i32_ptr),
-                    ctypes.c_void_p(d_configs.ptr),
-                    0,
-                    ctypes.c_void_p(d_states.ptr),
-                    ctypes.c_void_p(d_b.qpos.ptr),
-                    ctypes.c_void_p(d_b.qvel.ptr),
-                    ctypes.c_void_p(d_b.xpos.ptr),
-                    ctypes.c_void_p(d_b.xmat.ptr),
-                    ctypes.c_void_p(d_b.xanchor.ptr),
-                    ctypes.c_void_p(d_b.xaxis.ptr),
-                    ctypes.c_void_p(d_b.qfrc_applied.ptr),
-                    ctypes.c_void_p(d_b.ctrl.ptr),
-                    ctypes.c_void_p(tendon_range_ptr),
-                    int(tendon_range_stride),
+        def _make_tier_writer_fn(data_b: Any) -> Callable[[], None]:
+            def _launch_writers() -> None:
+                rc = int(
+                    lib.bike_gpu_launch_writers(
+                        ctypes.c_void_p(cuda_stream),
+                        int(nworld),
+                        ctypes.c_float(dt_s),
+                        ctypes.c_void_p(d_idx.ptr),
+                        ctypes.c_void_p(d_tyre_model.ptr),
+                        ctypes.c_void_p(d_terrain_desc.ptr),
+                        ctypes.c_void_p(terrain_f32_ptr),
+                        ctypes.c_void_p(terrain_i32_ptr),
+                        ctypes.c_void_p(d_configs.ptr),
+                        0,
+                        ctypes.c_void_p(d_states.ptr),
+                        ctypes.c_void_p(data_b.qpos.ptr),
+                        ctypes.c_void_p(data_b.qvel.ptr),
+                        ctypes.c_void_p(data_b.xpos.ptr),
+                        ctypes.c_void_p(data_b.xmat.ptr),
+                        ctypes.c_void_p(data_b.xanchor.ptr),
+                        ctypes.c_void_p(data_b.xaxis.ptr),
+                        ctypes.c_void_p(data_b.qfrc_applied.ptr),
+                        ctypes.c_void_p(data_b.ctrl.ptr),
+                        ctypes.c_void_p(tendon_range_ptr),
+                        int(tendon_range_stride),
+                    )
                 )
+                if rc != 0:
+                    raise RuntimeError(f"bike_gpu_launch_writers failed with code {rc}")
+
+            return _launch_writers
+
+        # Run 1 uncaptured step prior to CUDA Graph capture for eager struct + terrain validation.
+        _mjwarp_clean_split_step(ops, m_wp, d_b, _make_tier_writer_fn(d_b))
+        wp.synchronize()
+
+        d_b = mjwarp.put_data(m, d0, nworld=nworld)
+        mjwarp.forward(m_wp, d_b)
+        rc_init = int(
+            lib.bike_gpu_launch_init_states(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_configs.ptr),
+                0,
+                ctypes.c_void_p(d_states.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
             )
-            if rc != 0:
-                raise RuntimeError(f"bike_gpu_launch_writers failed with code {rc}")
+        )
+        if rc_init != 0:
+            raise RuntimeError(f"bike_gpu_launch_init_states failed with code {rc_init}")
+        wp.synchronize()
 
         with wp.ScopedCapture() as capture:
-            _mjwarp_clean_split_step(ops, m_wp, d_b, _launch_writers)
+            _mjwarp_clean_split_step(ops, m_wp, d_b, _make_tier_writer_fn(d_b))
         graph = capture.graph
 
         for _ in range(warmup_steps):

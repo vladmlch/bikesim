@@ -21,7 +21,7 @@ template <
     class PtrJp,
     class PtrJr>
 BIKE_HD Status chain_point_jacobian(
-    const BIKE_THREAD GpuWheelChain &chain,
+    BIKE_CREF(GpuWheelChain) chain,
     PtrPos body_xpos,
     PtrAnchor jnt_xanchor,
     PtrAxis jnt_xaxis,
@@ -31,7 +31,7 @@ BIKE_HD Status chain_point_jacobian(
     PtrPt pt,
     PtrJp out_jp,
     PtrJr out_jr,
-    BIKE_THREAD ErrCode &err
+    BIKE_REF(ErrCode) err
 ) noexcept {
     (void)body_xpos;
     err = ErrCode::none;
@@ -126,7 +126,7 @@ template <
     class PtrJp,
     class PtrJr>
 BIKE_HD Status chain_point_jacobian(
-    const BIKE_THREAD GpuWheelChain &chain,
+    BIKE_CREF(GpuWheelChain) chain,
     PtrPos body_xpos,
     PtrAnchor jnt_xanchor,
     PtrAxis jnt_xaxis,
@@ -135,7 +135,7 @@ BIKE_HD Status chain_point_jacobian(
     PtrPt pt,
     PtrJp out_jp,
     PtrJr out_jr,
-    BIKE_THREAD ErrCode &err
+    BIKE_REF(ErrCode) err
 ) noexcept {
     const int njnt = (chain.njnt > 0) ? chain.njnt : kMaxNjnt;
     return chain_point_jacobian<Real, TK, ComputeJr>(

@@ -151,7 +151,9 @@ inline void bike_metal_init_states_impl(
         (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
             ? qpos_w[idx.rear_wheel_spin_qpos]
             : 0.0f;
-    bike::gpu::gpu_init_world_state(states[w], dp, crank_qpos, rear_wheel_qpos);
+    bike::gpu::GpuWorldState local_st{};
+    bike::gpu::gpu_init_world_state(local_st, dp, crank_qpos, rear_wheel_qpos);
+    states[w] = local_st;
 }
 
 inline void bike_metal_step_writers_world(
@@ -492,8 +494,10 @@ MTLCompileOptions *make_compile_options() {
     if (@available(macOS 26.0, *)) {
         opts.languageVersion = MTLLanguageVersion4_0;
     }
-    opts.mathMode = MTLMathModeSafe;
-    opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+    if (@available(macOS 15.0, *)) {
+        opts.mathMode = MTLMathModeSafe;
+        opts.mathFloatingPointFunctions = MTLMathFloatingPointFunctionsPrecise;
+    }
     return opts;
 }
 
@@ -784,6 +788,7 @@ int bike_metal_launch_writers(
     int tendon_range_world_stride
 ) {
     if (nworld <= 0 || !std::isfinite(dt_s) || dt_s <= 0.0f ||
+        tendon_range_world_stride < 0 ||
         d_idx == nullptr || d_tyre_model == nullptr || d_terrain_desc == nullptr ||
         d_configs == nullptr || d_states == nullptr ||
         d_qpos == nullptr || d_qvel == nullptr ||

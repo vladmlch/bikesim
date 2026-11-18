@@ -550,6 +550,22 @@ bike_add_realtime_measurement("${_bike_native_dir}")
 include("${_bike_native_dir}/cmake/NativeValidation.cmake")
 bike_add_native_validation("${_bike_native_dir}")
 
+add_library(bike_gpu_export_cli STATIC
+  "${_bike_native_dir}/src/golden/step_closure_bundle.cpp"
+  "${_bike_native_dir}/src/cli/gpu_export.cpp")
+bike_startup_target_policy(bike_gpu_export_cli "${_bike_native_dir}")
+target_link_libraries(bike_gpu_export_cli PUBLIC bike_validation)
+
+add_executable(bike-gpu-export
+  "${_bike_native_dir}/src/cli/gpu_export_main.cpp")
+bike_startup_target_policy(bike-gpu-export "${_bike_native_dir}")
+target_link_libraries(bike-gpu-export PRIVATE bike_gpu_export_cli)
+bike_rewrite_mujoco_load_name(bike-gpu-export "${BIKE_DEP_mujoco_LIBRARY}")
+set_target_properties(bike-gpu-export PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+install(TARGETS bike-gpu-export RUNTIME DESTINATION bin OPTIONAL)
+bike_install_relocate_mujoco(bike-gpu-export)
+
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
   # the produced-command contract's focused executable pair.
@@ -620,6 +636,7 @@ endif()
 
 if(BUILD_TESTING)
   add_subdirectory(native/tests/physics_core)
+  add_subdirectory(native/tests/golden)
 endif()
 
 # GPU unit tests (native/tests/gpu/): the same executables and CTest names the

@@ -520,6 +520,99 @@ def available_mjwarp_devices() -> list[str]:
         return []
 
 
+def export_lane_ghost_trajectory(
+    bundle_dir: Path,
+    out_dir: Path,
+    *,
+    device: str = "metal:0",
+    start_step: int = 0,
+    n_steps: int | None = None,
+    model_mjb_path: Path | None = None,
+) -> Path:
+    """Run a clean_split ``mujoco_warp`` rollout and emit a ``BGTRAJ01`` ghost trajectory."""
+    bundle_dir = Path(bundle_dir)
+    out_dir = Path(out_dir)
+    tr = load_step_closure_trace(bundle_dir)
+    if start_step < 0 or start_step >= tr.n_steps:
+        raise ValueError(f"start_step {start_step} out of [0, {tr.n_steps})")
+    avail = tr.n_steps - start_step
+    roll_steps = avail if n_steps is None else min(int(n_steps), avail)
+    if roll_steps < 1:
+        raise ValueError("ghost trajectory export requires roll_steps >= 1")
+
+    repo_root = str(find_repo_root())
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from tools.colab_gpu.golden.trajectory import WHEEL_COLS, write_trajectory_arrays
+
+    mujoco, mjw, wp, *_ = mods = _mjwarp_modules()
+    m12 = mujoco.MjModel.from_xml_path(str(bundle_dir / "model_12gears.xml"))
+    m12.hfield_data[:] = np.fromfile(bundle_dir / "hfield_data.bin", dtype="<f8")
+    clutch_tid = mujoco.mj_name2id(m12, mujoco.mjtObj.mjOBJ_TENDON, "crank_clutch")
+
+    frames = roll_steps + 1
+    qpos_traj = np.zeros((frames, tr.nq), dtype=np.float64)
+    qvel_traj = np.zeros((frames, tr.nv), dtype=np.float64)
+    qpos_traj[0] = tr.qpos[start_step]
+    qvel_traj[0] = tr.qvel[start_step]
+
+    row0 = np.array([start_step], dtype=np.int64)
+    inp0 = _make_mjwarp_inputs(tr, row0, tr.cog_index[row0], m12.ntendon, clutch_tid)
+
+    with wp.ScopedDevice(device):
+        m_wp = mjw.put_model(m12)
+        d = mjw.make_data(m12, nworld=1)
+        d.qpos.assign(wp.array(inp0["qpos"], device=device))
+        d.qvel.assign(wp.array(inp0["qvel"], device=device))
+        if tr.na > 0:
+            d.act.assign(wp.array(inp0["act"], device=device))
+        d.qacc_warmstart.assign(wp.array(inp0["ws"], device=device))
+        for s in range(roll_steps):
+            rows = np.array([start_step + s], dtype=np.int64)
+            inp = _make_mjwarp_inputs(
+                tr, rows, tr.cog_index[rows], m12.ntendon, clutch_tid
+            )
+            d.ctrl.assign(wp.array(inp["ctrl"], device=device))
+            d.qfrc_applied.assign(wp.array(inp["qfa"], device=device))
+            m_wp.tendon_range = wp.array(inp["trng"], dtype=wp.vec2f, device=device)
+            m_wp.dof_frictionloss = wp.array(inp["dfl"], device=device)
+            _mjwarp_clean_split_step(m_wp, d, mods)
+            wp.synchronize()
+            qpos_traj[s + 1] = d.qpos.numpy()[0].astype(np.float64)
+            qvel_traj[s + 1] = d.qvel.numpy()[0].astype(np.float64)
+
+    times_s = float(tr.time_s[start_step]) + np.arange(frames, dtype=np.float64) * float(tr.dt_s)
+    ends_s = times_s + float(tr.dt_s)
+    wheels = np.zeros((frames, WHEEL_COLS), dtype=np.float64)
+
+    with tempfile.TemporaryDirectory(prefix="bike-traj-mjb-") as tmp_str:
+        if model_mjb_path is not None:
+            resolved_mjb = Path(model_mjb_path)
+        elif (bundle_dir / "model.mjb").is_file():
+            resolved_mjb = bundle_dir / "model.mjb"
+        else:
+            resolved_mjb = Path(tmp_str) / "model.mjb"
+            mujoco.mj_saveModel(m12, str(resolved_mjb))
+
+        write_trajectory_arrays(
+            out_dir=out_dir,
+            model_mjb_path=resolved_mjb,
+            times_s=times_s,
+            ends_s=ends_s,
+            qpos=qpos_traj,
+            qvel=qvel_traj,
+            wheels=wheels,
+            metadata={
+                "source": "fp32_attribution_clean_split",
+                "device": device,
+                "start_step": int(start_step),
+                "roll_steps": int(roll_steps),
+                "bundle": str(bundle_dir),
+            },
+        )
+    return out_dir
+
+
 def run_attribution(
     bundle_dir: Path,
     *,
@@ -769,7 +862,22 @@ def main() -> int:
     ap.add_argument("--no-mjwarp", action="store_true")
     ap.add_argument("--out-json", type=Path)
     ap.add_argument("--out-md", type=Path)
+    ap.add_argument("--emit-trajectory-dir", type=Path)
+    ap.add_argument("--emit-device", type=str, default="metal:0")
+    ap.add_argument("--emit-start-step", type=int, default=0)
+    ap.add_argument("--emit-steps", type=int)
+    ap.add_argument("--model-mjb", type=Path)
     args = ap.parse_args()
+
+    if args.emit_trajectory_dir is not None:
+        export_lane_ghost_trajectory(
+            args.bundle,
+            args.emit_trajectory_dir,
+            device=args.emit_device,
+            start_step=args.emit_start_step,
+            n_steps=args.emit_steps,
+            model_mjb_path=args.model_mjb,
+        )
 
     report = run_attribution(
         args.bundle,

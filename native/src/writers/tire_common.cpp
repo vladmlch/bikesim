@@ -17,7 +17,6 @@
 #include <stdexcept>
 
 namespace tirecommon {
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     BrushResult brush_step(double xi, double u, double v_roll, double fn,
                            double k, double mu, double length, double dt) {
@@ -81,7 +80,6 @@ namespace tirecommon {
         return map.surface;
     }
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the call site's Python order
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     std::pair<double, std::string_view>
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,

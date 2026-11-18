@@ -9,8 +9,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from tools.colab_gpu.golden.trajectory import read_trajectory
 from tools.fp32_attribution.build_and_run import (
     available_mjwarp_devices,
+    export_lane_ghost_trajectory,
     find_mujoco_f32_root,
     find_repo_root,
     format_markdown,
@@ -98,3 +100,39 @@ def test_attribution_cpp_lanes_and_optional_mjwarp(welded_bundle: Path) -> None:
         p12 = report["one_step_steady_12gears"]["pairs"]
         assert p12["cpp_f64_vs_mjwarp_metal"]["nefc_match"] == 1.0
         assert p12["cpp_f64_vs_mjwarp_metal"]["dqvel_max"] < 1e-1
+
+
+def test_ghost_trajectory_export_and_replay(welded_bundle: Path, tmp_path: Path) -> None:
+    devices = available_mjwarp_devices()
+    target_device = next(
+        (dev for dev in ("metal:0", "cuda:0", "cpu") if dev in devices),
+        None,
+    )
+    if target_device is None:
+        pytest.skip("mujoco_warp device unavailable")
+
+    tr = load_step_closure_trace(welded_bundle)
+    traj_dir = tmp_path / "ghost_traj"
+    export_lane_ghost_trajectory(
+        welded_bundle,
+        traj_dir,
+        device=target_device,
+        start_step=0,
+        n_steps=40,
+    )
+
+    loaded = read_trajectory(traj_dir)
+    assert loaded.frames == 41
+    assert loaded.nq == tr.nq == 27
+    assert loaded.nv == tr.nv == 27
+    assert loaded.times_s[0] == pytest.approx(float(tr.time_s[0]), abs=1e-12)
+    assert np.all(np.isfinite(loaded.qpos))
+    assert np.all(np.isfinite(loaded.qvel))
+    assert np.max(np.abs(loaded.qpos[1] - tr.next_qpos[0])) < 1e-4
+
+    meta = json.loads((traj_dir / "trajectory.json").read_text(encoding="utf-8"))
+    assert meta["format"] == "BGTRAJ01"
+    assert meta["device"] == target_device
+    assert meta["roll_steps"] == 40
+    assert (traj_dir / "model.mjb").is_file()
+    assert (traj_dir / "trajectory.bin").is_file()

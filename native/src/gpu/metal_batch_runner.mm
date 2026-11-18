@@ -104,10 +104,12 @@ std::string build_msl_shader_source(const std::string &gpu_src_dir) {
         "../physics_core/tyre_compliant.hpp",
         "../physics_core/tyre_distributed.hpp",
         "../physics_core/tyre_gpu_step.hpp",
+        "../physics_core/suspension.hpp",
+        "../physics_core/resistance.hpp",
+        "../physics_core/brake_hold.hpp",
+        "../physics_core/joint_envelope.hpp",
+        "../physics_core/ratchet.hpp",
         "common.hpp",
-        "suspension_kernel.hpp",
-        "drivetrain_resistance_kernel.hpp",
-        "rider_kernel.hpp",
         "batch_step.hpp",
     };
 
@@ -141,18 +143,23 @@ inline void bike_metal_init_states_impl(
     device const bike::gpu::GpuWorldConfig &cfg = configs[per_world_config ? w : 0];
     const bike::gpu::GpuDrivetrainParams dp = cfg.drivetrain;
     device const float *qpos_w = (qpos_batch != nullptr) ? (qpos_batch + static_cast<long>(w) * idx.nq) : nullptr;
-    const int fh_qpos_idx =
-        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
+    const bool has_drive_shaft =
+        (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < idx.nq);
     const float crank_qpos =
-        (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq)
-            ? qpos_w[fh_qpos_idx]
+        (qpos_w != nullptr && idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < idx.nq)
+            ? qpos_w[idx.crank_spin_qpos]
+            : 0.0f;
+    const float drive_shaft_qpos =
+        (qpos_w != nullptr && has_drive_shaft)
+            ? qpos_w[idx.drive_shaft_spin_qpos]
             : 0.0f;
     const float rear_wheel_qpos =
         (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
             ? qpos_w[idx.rear_wheel_spin_qpos]
             : 0.0f;
     bike::gpu::GpuWorldState local_st{};
-    bike::gpu::gpu_init_world_state(local_st, dp, crank_qpos, rear_wheel_qpos);
+    bike::gpu::gpu_init_world_state(
+        local_st, dp, crank_qpos, rear_wheel_qpos, drive_shaft_qpos, has_drive_shaft);
     states[w] = local_st;
 }
 
@@ -188,7 +195,7 @@ inline void bike_metal_step_writers_world(
     float qvel_w[bike::gpu::kMaxNv];
     float qfrc_w[bike::gpu::kMaxNv];
     float ctrl_w[bike::gpu::kMaxNu];
-    float tendon_w[2] = {0.0f, 0.0f};
+    float tendon_w[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
     const int nq = idx.nq;
     const int nv = idx.nv;
@@ -208,6 +215,11 @@ inline void bike_metal_step_writers_world(
     bike::gpu::GpuModelIndices local_idx = idx;
     if (local_idx.freehub_tendon >= 0) {
         local_idx.freehub_tendon = 0;
+    }
+    if (local_idx.crank_clutch_tendon >= 0 && local_idx.drive_shaft_spin_qpos >= 0) {
+        local_idx.crank_clutch_tendon = 1;
+    } else {
+        local_idx.crank_clutch_tendon = -1;
     }
 
     const bike::physics_core::Status st = bike::gpu::gpu_step_world_writers_single(
@@ -231,7 +243,7 @@ inline void bike_metal_step_writers_world(
         qfrc_w,
         ctrl_w,
         (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) ? tendon_w : nullptr,
-        2,
+        4,
         false
     );
     if (st != bike::physics_core::Status::ok) {
@@ -244,16 +256,12 @@ inline void bike_metal_step_writers_world(
     for (int i = 0; i < nv; ++i) qfrc_dst[i] = qfrc_w[i];
     for (int i = 0; i < nu; ++i) ctrl_dst[i] = ctrl_w[i];
 
-    if (tendon_range_batch != nullptr && idx.freehub_tendon >= 0) {
-        const long slot =
-            static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + static_cast<long>(1);
-        if (tendon_range_world_stride > 0) {
-            if (slot < static_cast<long>(tendon_range_world_stride)) {
-                tendon_range_batch[w64 * static_cast<long>(tendon_range_world_stride) + slot] =
-                    tendon_w[1];
-            }
-        } else if (w == 0) {
-            tendon_range_batch[slot] = tendon_w[1];
+    if (tendon_range_batch != nullptr) {
+        bike::gpu::gpu_write_tendon_upper_bound(
+            w, idx.freehub_tendon, tendon_w[1], tendon_range_batch, tendon_range_world_stride);
+        if (idx.drive_shaft_spin_qpos >= 0 && idx.crank_clutch_tendon >= 0) {
+            bike::gpu::gpu_write_tendon_upper_bound(
+                w, idx.crank_clutch_tendon, tendon_w[3], tendon_range_batch, tendon_range_world_stride);
         }
     }
 }
@@ -1043,7 +1051,8 @@ int bike_metal_benchmark_writers_only(
                                                    options:MTLResourceStorageModeShared];
     id<MTLBuffer> b_ctrl = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * nu) * sizeof(float)
                                                    options:MTLResourceStorageModeShared];
-    id<MTLBuffer> b_tendon = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * 2) * sizeof(float)
+    const int tendon_slots_per_world = 4;
+    id<MTLBuffer> b_tendon = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * tendon_slots_per_world) * sizeof(float)
                                                      options:MTLResourceStorageModeShared];
     if (!b_tyre || !b_tf32 || !b_ti32 || !b_cfg || !b_st ||
         !b_qpos || !b_qvel || !b_xpos || !b_xmat || !b_xanchor || !b_xaxis ||
@@ -1068,7 +1077,7 @@ int bike_metal_benchmark_writers_only(
     const std::span<float> xaxis_v =
         boundary_span(static_cast<float *>([b_xaxis contents]), nworld_u * to_index(njnt3));
     const std::span<float> tendon_v =
-        boundary_span(static_cast<float *>([b_tendon contents]), 2 * nworld_u);
+        boundary_span(static_cast<float *>([b_tendon contents]), to_index(tendon_slots_per_world) * nworld_u);
 
     std::ranges::fill(qpos_v, 0.0f);
     std::ranges::fill(qvel_v, 0.0f);
@@ -1125,7 +1134,7 @@ int bike_metal_benchmark_writers_only(
         encode_metal_writers_slice(
             enc, ctx, 0, nworld, dt_s, idx_val, b_tyre, *d_terrain_desc, b_tf32, b_ti32,
             b_cfg, per_world_config, b_st, b_qpos, b_qvel, b_xpos, b_xmat, b_xanchor, b_xaxis,
-            b_qfrc, b_ctrl, b_tendon, 2
+            b_qfrc, b_ctrl, b_tendon, tendon_slots_per_world
         );
         [enc endEncoding];
         [cb commit];
@@ -1142,7 +1151,7 @@ int bike_metal_benchmark_writers_only(
             encode_metal_writers_slice(
                 enc, ctx, 0, nworld, dt_s, idx_val, b_tyre, *d_terrain_desc, b_tf32, b_ti32,
                 b_cfg, per_world_config, b_st, b_qpos, b_qvel, b_xpos, b_xmat, b_xanchor, b_xaxis,
-                b_qfrc, b_ctrl, b_tendon, 2
+                b_qfrc, b_ctrl, b_tendon, tendon_slots_per_world
             );
         }
         [enc endEncoding];
@@ -1160,7 +1169,7 @@ int bike_metal_benchmark_writers_only(
         encode_metal_writers_slice(
             enc, ctx, 0, nworld, dt_s, idx_val, b_tyre, *d_terrain_desc, b_tf32, b_ti32,
             b_cfg, per_world_config, b_st, b_qpos, b_qvel, b_xpos, b_xmat, b_xanchor, b_xaxis,
-            b_qfrc, b_ctrl, b_tendon, 2
+            b_qfrc, b_ctrl, b_tendon, tendon_slots_per_world
         );
         [enc endEncoding];
         [cb commit];
@@ -1366,7 +1375,8 @@ int bike_metal_run_hybrid_sweep(
                                                    options:MTLResourceStorageModeShared];
     id<MTLBuffer> b_ctrl = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * nu) * sizeof(float)
                                                    options:MTLResourceStorageModeShared];
-    id<MTLBuffer> b_tendon = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * 2) * sizeof(float)
+    const int tendon_slots_per_world = std::max(2, 2 * ntendon);
+    id<MTLBuffer> b_tendon = [ctx.device newBufferWithLength:static_cast<NSUInteger>(nworld * tendon_slots_per_world) * sizeof(float)
                                                      options:MTLResourceStorageModeShared];
     if (!b_tyre || !b_tf32 || !b_ti32 || !b_cfg || !b_st ||
         !b_qpos || !b_qvel || !b_xpos || !b_xmat || !b_xanchor || !b_xaxis ||
@@ -1396,7 +1406,7 @@ int bike_metal_run_hybrid_sweep(
     const std::span<float> ctrl_v =
         boundary_span(static_cast<float *>([b_ctrl contents]), nworld_u * to_index(nu));
     const std::span<float> tendon_v =
-        boundary_span(static_cast<float *>([b_tendon contents]), 2 * nworld_u);
+        boundary_span(static_cast<float *>([b_tendon contents]), to_index(tendon_slots_per_world) * nworld_u);
 
     std::vector<mjModel *> worker_models(static_cast<std::size_t>(n_workers), nullptr);
     for (int t = 0; t < n_workers; ++t) {
@@ -1449,23 +1459,26 @@ int bike_metal_run_hybrid_sweep(
                     xax[i] = static_cast<float>(d_xaxis[i]);
                 }
 
-                if (m_base->ntendon > 0 && idx.freehub_tendon >= 0 && idx.freehub_tendon < m_base->ntendon) {
+                if (m_base->ntendon > 0) {
                     const std::span<const mjtNum> base_tendon_range =
                         boundary_span(m_base->tendon_range, 2 * to_index(ntendon));
-                    const std::size_t ft = 2 * to_index(idx.freehub_tendon);
-                    const std::size_t tw = 2 * wu;
-                    tendon_v[tw + 0] = static_cast<float>(base_tendon_range[ft + 0]);
-                    tendon_v[tw + 1] = static_cast<float>(base_tendon_range[ft + 1]);
+                    const std::size_t tw = to_index(tendon_slots_per_world) * wu;
+                    for (int ti = 0; ti < ntendon; ++ti) {
+                        const std::size_t ft = 2 * to_index(ti);
+                        tendon_v[tw + ft + 0] = static_cast<float>(base_tendon_range[ft + 0]);
+                        tendon_v[tw + ft + 1] = static_cast<float>(base_tendon_range[ft + 1]);
+                    }
                 }
 
                 const bike::gpu::GpuWorldConfig &cfg_w = configs_v[to_index(per_world_config ? w : 0)];
-                const int fh_qpos_idx =
-                    (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
+                const bool has_ds =
+                    (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < nq);
                 const float crank0 =
-                    (fh_qpos_idx >= 0 && fh_qpos_idx < nq) ? qp[to_index(fh_qpos_idx)] : 0.0f;
+                    (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq) ? qp[to_index(idx.crank_spin_qpos)] : 0.0f;
+                const float ds0 = has_ds ? qp[to_index(idx.drive_shaft_spin_qpos)] : 0.0f;
                 const float rwheel0 =
                     (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq) ? qp[to_index(idx.rear_wheel_spin_qpos)] : 0.0f;
-                bike::gpu::gpu_init_world_state(st_v[wu], cfg_w.drivetrain, crank0, rwheel0);
+                bike::gpu::gpu_init_world_state(st_v[wu], cfg_w.drivetrain, crank0, rwheel0, ds0, has_ds);
             }
         };
         std::vector<std::thread> init_threads;
@@ -1486,7 +1499,7 @@ int bike_metal_run_hybrid_sweep(
             idx, b_tyre, resolved_tyre.terrain.desc, b_tf32, b_ti32,
             b_cfg, per_world_config, b_st,
             b_qpos, b_qvel, b_xpos, b_xmat, b_xanchor, b_xaxis,
-            b_qfrc, b_ctrl, b_tendon, 2
+            b_qfrc, b_ctrl, b_tendon, tendon_slots_per_world
         );
         [enc endEncoding];
         [cb commit];
@@ -1503,13 +1516,14 @@ int bike_metal_run_hybrid_sweep(
             const bike::gpu::GpuWorldConfig &cfg_w = configs_v[to_index(per_world_config ? w : 0)];
             const std::span<const float> qp =
                 qpos_v.subspan(to_index(w) * to_index(nq), to_index(nq));
-            const int fh_qpos_idx =
-                (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
+            const bool has_ds =
+                (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < nq);
             const float crank0 =
-                (fh_qpos_idx >= 0 && fh_qpos_idx < nq) ? qp[to_index(fh_qpos_idx)] : 0.0f;
+                (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq) ? qp[to_index(idx.crank_spin_qpos)] : 0.0f;
+            const float ds0 = has_ds ? qp[to_index(idx.drive_shaft_spin_qpos)] : 0.0f;
             const float rwheel0 =
                 (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq) ? qp[to_index(idx.rear_wheel_spin_qpos)] : 0.0f;
-            bike::gpu::gpu_init_world_state(st_v[to_index(w)], cfg_w.drivetrain, crank0, rwheel0);
+            bike::gpu::gpu_init_world_state(st_v[to_index(w)], cfg_w.drivetrain, crank0, rwheel0, ds0, has_ds);
         }
     }
 
@@ -1536,13 +1550,15 @@ int bike_metal_run_hybrid_sweep(
         for (std::size_t i = 0; i < to_index(nu); ++i) {
             d_ctrl[i] = static_cast<mjtNum>(ct[i]);
         }
-        if (m_t->ntendon > 0 && idx.freehub_tendon >= 0 && idx.freehub_tendon < m_t->ntendon) {
+        if (m_t->ntendon > 0) {
             const std::span<mjtNum> t_tendon_range =
                 boundary_span(m_t->tendon_range, 2 * to_index(ntendon));
-            const std::size_t ft = 2 * to_index(idx.freehub_tendon);
-            const std::size_t tw = 2 * wu;
-            t_tendon_range[ft + 0] = static_cast<mjtNum>(tendon_v[tw + 0]);
-            t_tendon_range[ft + 1] = static_cast<mjtNum>(tendon_v[tw + 1]);
+            const std::size_t tw = to_index(tendon_slots_per_world) * wu;
+            for (int ti = 0; ti < ntendon; ++ti) {
+                const std::size_t ft = 2 * to_index(ti);
+                t_tendon_range[ft + 0] = static_cast<mjtNum>(tendon_v[tw + ft + 0]);
+                t_tendon_range[ft + 1] = static_cast<mjtNum>(tendon_v[tw + ft + 1]);
+            }
         }
         mj_step(m_t, d_t);
         mj_kinematics(m_t, d_t);

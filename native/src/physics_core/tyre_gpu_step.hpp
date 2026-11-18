@@ -278,6 +278,29 @@ BIKE_HD Status validate_gpu_tyre_model_device(
             }
         }
     }
+    {
+        const i32 f_body_id = model->frame_chain.wheel_body_id;
+        const i32 f_njnt = model->frame_chain.njnt;
+        const i32 f_jcnt = model->frame_chain.joint_count;
+        if (f_body_id <= 0 || f_body_id >= model->nbody ||
+            f_njnt != model->njnt ||
+            f_jcnt < 0 || f_jcnt > static_cast<i32>(kMaxChainJoints)) {
+            err = ErrCode::out_of_bounds_chain;
+            return Status::out_of_bounds;
+        }
+        for (i32 k = 0; k < f_jcnt; ++k) {
+            const GpuChainJoint j = model->frame_chain.joints[k];
+            if (j.joint_id < 0 || j.joint_id >= model->njnt ||
+                j.dof_adr < 0 || j.dof_adr >= model->nv) {
+                err = ErrCode::out_of_bounds_chain;
+                return Status::out_of_bounds;
+            }
+            if (j.joint_type != kJntHinge && j.joint_type != kJntSlide) {
+                err = ErrCode::out_of_bounds_chain;
+                return Status::invalid_argument;
+            }
+        }
+    }
     return Status::ok;
 }
 

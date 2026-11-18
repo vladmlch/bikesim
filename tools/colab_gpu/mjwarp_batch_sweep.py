@@ -20,6 +20,7 @@ import ctypes
 import json
 from pathlib import Path
 import sys
+import tempfile
 import time
 from typing import Any, Callable
 
@@ -38,6 +39,7 @@ try:
     from tools.colab_gpu.model_assets import (
         load_captured_initial_state,
         load_model_with_assets,
+        materialize_welded_assets_dir,
     )
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -53,6 +55,7 @@ except ImportError:
     from model_assets import (  # type: ignore[no-redef]
         load_captured_initial_state,
         load_model_with_assets,
+        materialize_welded_assets_dir,
     )
 
 try:
@@ -824,26 +827,37 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional path to write JSON benchmark report.",
     )
+    parser.add_argument(
+        "--synthesize-welded-assets",
+        action="store_true",
+        help="Synthesize flat-road hfield_data.bin and settled welded initial state when missing.",
+    )
     args = parser.parse_args(argv)
 
     lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
     results: dict[str, Any] = {}
 
-    if args.experiment in ("all", "sweep"):
-        results["parameter_sweep"] = run_parameter_sweep(
-            model_xml_path=args.model_xml,
-            nworld=args.nworld,
-            n_steps=args.n_steps,
-            lib=lib,
+    with tempfile.TemporaryDirectory(prefix="bike-cuda-assets-") as tmp_dir:
+        model_xml_path = (
+            materialize_welded_assets_dir(args.model_xml, tmp_dir)
+            if args.synthesize_welded_assets
+            else args.model_xml
         )
+        if args.experiment in ("all", "sweep"):
+            results["parameter_sweep"] = run_parameter_sweep(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
+                n_steps=args.n_steps,
+                lib=lib,
+            )
 
-    if args.experiment in ("all", "tire_scaling"):
-        results["tyre_backend_scaling"] = run_tyre_backend_scaling_benchmark(
-            model_xml_path=args.model_xml,
-            nworld=args.nworld,
-            n_steps=args.tier_steps,
-            lib=lib,
-        )
+        if args.experiment in ("all", "tire_scaling"):
+            results["tyre_backend_scaling"] = run_tyre_backend_scaling_benchmark(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
+                n_steps=args.tier_steps,
+                lib=lib,
+            )
 
     _print_report(results)
 

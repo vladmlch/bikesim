@@ -210,7 +210,7 @@ inline int resolve_runner_tyre_and_terrain(
         const bike::physics_core::HostTyreUploadBundle bundle =
             bike::physics_core::build_gpu_tyre_model(
                 m, d, make_default_compliant_tire_config(),
-                front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body);
+                front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body);
         out.model = bundle.gpu_model;
         out.terrain = pack_upload_bundle_terrain(bundle);
         return 0;
@@ -293,7 +293,7 @@ inline int build_runner_tyre_and_terrain_buffers(
                                               : make_default_distributed_tire_config(station_count);
         const auto bundle = std::make_unique<bike::physics_core::HostTyreUploadBundle>(
             bike::physics_core::build_gpu_tyre_model(
-                m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body));
+                m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body));
         const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
 
         const int req_f32 = static_cast<int>(terrain.f32.size());

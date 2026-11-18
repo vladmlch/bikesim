@@ -390,7 +390,7 @@ int bike_cpu_run_batch_ex(
             for (std::size_t i = 0; i < to_index(nv); ++i) {
                 d_qvel[i] = static_cast<mjtNum>(qvel0[i]);
             }
-            alignas(16) std::array<float, 2> tendon_f32{0.0f, 0.0f};
+            alignas(16) std::array<float, 4> tendon_f32{0.0f, 0.0f, 0.0f, 0.0f};
             if (ntendon > 0 && idx.freehub_tendon >= 0 && idx.freehub_tendon < ntendon) {
                 const std::size_t ft = 2 * to_index(idx.freehub_tendon);
                 t_tendon_range[ft + 0] = base_tendon_range[ft + 0];
@@ -398,20 +398,32 @@ int bike_cpu_run_batch_ex(
                 tendon_f32[0] = static_cast<float>(base_tendon_range[ft + 0]);
                 tendon_f32[1] = static_cast<float>(base_tendon_range[ft + 1]);
             }
+            const bool has_ds =
+                (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < nq);
+            const bool has_cc =
+                has_ds && ntendon > 0 && idx.crank_clutch_tendon >= 0 && idx.crank_clutch_tendon < ntendon;
+            if (has_cc) {
+                const std::size_t ct_idx = 2 * to_index(idx.crank_clutch_tendon);
+                t_tendon_range[ct_idx + 0] = base_tendon_range[ct_idx + 0];
+                t_tendon_range[ct_idx + 1] = base_tendon_range[ct_idx + 1];
+                tendon_f32[2] = static_cast<float>(base_tendon_range[ct_idx + 0]);
+                tendon_f32[3] = static_cast<float>(base_tendon_range[ct_idx + 1]);
+            }
             forward_fn(m_t, d_t);
 
             const auto st_w = std::make_unique<bike::gpu::GpuWorldState>();
-            const int fh_qpos_idx =
-                (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
             const float crank0 =
-                (fh_qpos_idx >= 0 && fh_qpos_idx < nq)
-                    ? static_cast<float>(d_qpos[to_index(fh_qpos_idx)])
+                (idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < nq)
+                    ? static_cast<float>(d_qpos[to_index(idx.crank_spin_qpos)])
                     : 0.0f;
+            const float ds0 =
+                has_ds ? static_cast<float>(d_qpos[to_index(idx.drive_shaft_spin_qpos)]) : 0.0f;
             const float rwheel0 =
                 (idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < nq)
                     ? static_cast<float>(d_qpos[to_index(idx.rear_wheel_spin_qpos)])
                     : 0.0f;
-            bike::gpu::gpu_init_world_state(*st_w, cfg_w.drivetrain, crank0, rwheel0);
+            bike::gpu::gpu_init_world_state(
+                *st_w, cfg_w.drivetrain, crank0, rwheel0, ds0, has_ds);
 
             bike::gpu::GpuModelIndices local_idx = idx;
             if (ntendon > 0 && local_idx.freehub_tendon >= 0 && local_idx.freehub_tendon < ntendon) {
@@ -419,6 +431,7 @@ int bike_cpu_run_batch_ex(
             } else {
                 local_idx.freehub_tendon = -1;
             }
+            local_idx.crank_clutch_tendon = has_cc ? 1 : -1;
 
             float max_fork_m = 0.0f;
             float max_shock_m = 0.0f;
@@ -469,8 +482,8 @@ int bike_cpu_run_batch_ex(
                     xaxis_f32.data(),
                     qfrc_f32.data(),
                     ctrl_f32.data(),
-                    (local_idx.freehub_tendon >= 0) ? tendon_f32.data() : nullptr,
-                    2,
+                    (local_idx.freehub_tendon >= 0 || local_idx.crank_clutch_tendon >= 0) ? tendon_f32.data() : nullptr,
+                    4,
                     false
                 );
                 if (st != bike::physics_core::Status::ok) {
@@ -488,6 +501,11 @@ int bike_cpu_run_batch_ex(
                     const std::size_t ft = 2 * to_index(idx.freehub_tendon);
                     t_tendon_range[ft + 0] = static_cast<mjtNum>(tendon_f32[0]);
                     t_tendon_range[ft + 1] = static_cast<mjtNum>(tendon_f32[1]);
+                }
+                if (has_cc) {
+                    const std::size_t ct_idx = 2 * to_index(idx.crank_clutch_tendon);
+                    t_tendon_range[ct_idx + 0] = static_cast<mjtNum>(tendon_f32[2]);
+                    t_tendon_range[ct_idx + 1] = static_cast<mjtNum>(tendon_f32[3]);
                 }
 
                 step_fn(m_t, d_t);

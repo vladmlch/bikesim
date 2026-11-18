@@ -37,15 +37,19 @@ BIKE_GLOBAL void bike_gpu_init_states_kernel(
     }
     const GpuWorldConfig &cfg = d_configs[per_world_config ? w : 0];
     const float *qpos_w = (d_qpos != nullptr) ? (d_qpos + static_cast<long>(w) * idx.nq) : nullptr;
-    const int fh_qpos_idx =
-        (idx.drive_shaft_spin_qpos >= 0) ? idx.drive_shaft_spin_qpos : idx.crank_spin_qpos;
+    const bool has_ds =
+        (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < idx.nq);
     const float crank_qpos =
-        (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < idx.nq) ? qpos_w[fh_qpos_idx] : 0.0f;
+        (qpos_w != nullptr && idx.crank_spin_qpos >= 0 && idx.crank_spin_qpos < idx.nq)
+            ? qpos_w[idx.crank_spin_qpos]
+            : 0.0f;
+    const float ds_qpos =
+        (qpos_w != nullptr && has_ds) ? qpos_w[idx.drive_shaft_spin_qpos] : 0.0f;
     const float rear_wheel_qpos =
         (qpos_w != nullptr && idx.rear_wheel_spin_qpos >= 0 && idx.rear_wheel_spin_qpos < idx.nq)
             ? qpos_w[idx.rear_wheel_spin_qpos]
             : 0.0f;
-    gpu_init_world_state(d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos);
+    gpu_init_world_state(d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos, ds_qpos, has_ds);
 }
 
 BIKE_GLOBAL void bike_gpu_writers_kernel(
@@ -415,19 +419,22 @@ int bike_gpu_launch_init_states(
         const bike::gpu::GpuWorldConfig &cfg = d_configs[per_world_config ? w : 0];
         const float *qpos_w =
             (d_qpos != nullptr) ? (d_qpos + static_cast<long>(w) * host_idx.nq) : nullptr;
-        const int fh_qpos_idx = (host_idx.drive_shaft_spin_qpos >= 0)
-            ? host_idx.drive_shaft_spin_qpos
-            : host_idx.crank_spin_qpos;
+        const bool has_ds =
+            (host_idx.drive_shaft_spin_qpos >= 0 && host_idx.drive_shaft_spin_qpos < host_idx.nq);
         const float crank_qpos =
-            (qpos_w != nullptr && fh_qpos_idx >= 0 && fh_qpos_idx < host_idx.nq)
-                ? qpos_w[fh_qpos_idx]
+            (qpos_w != nullptr && host_idx.crank_spin_qpos >= 0 &&
+             host_idx.crank_spin_qpos < host_idx.nq)
+                ? qpos_w[host_idx.crank_spin_qpos]
                 : 0.0f;
+        const float ds_qpos =
+            (qpos_w != nullptr && has_ds) ? qpos_w[host_idx.drive_shaft_spin_qpos] : 0.0f;
         const float rear_wheel_qpos =
             (qpos_w != nullptr && host_idx.rear_wheel_spin_qpos >= 0 &&
              host_idx.rear_wheel_spin_qpos < host_idx.nq)
                 ? qpos_w[host_idx.rear_wheel_spin_qpos]
                 : 0.0f;
-        bike::gpu::gpu_init_world_state(d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos);
+        bike::gpu::gpu_init_world_state(
+            d_states[w], cfg.drivetrain, crank_qpos, rear_wheel_qpos, ds_qpos, has_ds);
     }
     return 0;
 #endif

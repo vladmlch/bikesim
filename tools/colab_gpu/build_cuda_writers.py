@@ -227,6 +227,7 @@ class GpuTyreModelStruct(ctypes.Structure):
         ("station_count", ctypes.c_int32),
         ("distinct_normal_cosine", ctypes.c_float),
         ("wheels", TyreWheelSpecStruct * 2),
+        ("frame_chain", GpuWheelChainStruct),
         ("surface_map", SurfaceMapViewStruct),
     ]
 

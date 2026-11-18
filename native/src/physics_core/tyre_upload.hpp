@@ -67,7 +67,8 @@ struct HostTyreUploadBundle {
     int front_geom,
     int rear_geom,
     int front_body,
-    int rear_body
+    int rear_body,
+    int frame_body = -1
 );
 
 } // namespace bike::physics_core

@@ -648,7 +648,8 @@ HostTyreUploadBundle build_gpu_tyre_model(
     int front_geom,
     int rear_geom,
     int front_body,
-    int rear_body
+    int rear_body,
+    int frame_body
 ) {
 // NOLINTEND(bugprone-easily-swappable-parameters)
     if (m == nullptr || d == nullptr) {
@@ -705,6 +706,27 @@ HostTyreUploadBundle build_gpu_tyre_model(
             m, WheelGeomRef{.geom_id = geom_ids[side], .expected_body_id = body_ids[side]},
             wheels[side]);
     }
+
+    int resolved_frame_body = frame_body;
+    if (resolved_frame_body < 0) {
+        for (const char *name : {"frame", "main_frame", "chassis"}) {
+            const int candidate = mj_name2id(m, mjOBJ_BODY, name);
+            if (candidate > 0) {
+                resolved_frame_body = candidate;
+                break;
+            }
+        }
+        if (resolved_frame_body < 0) {
+            const std::span<const int> body_parentid =
+                model_access::readonly_buffer(m->body_parentid, m->nbody, "body_parentid");
+            const int parent = body_parentid[to_idx(front_body)];
+            resolved_frame_body = (parent > 0) ? parent : front_body;
+        }
+    }
+    if (resolved_frame_body <= 0 || resolved_frame_body >= m->nbody) {
+        throw std::invalid_argument("frame_body out of bounds in build_gpu_tyre_model");
+    }
+    bundle.gpu_model.frame_chain = build_wheel_chain(m, resolved_frame_body);
 
     if (backend_kind == TyreBackendKind::compliant_2d) {
         bundle.gpu_model.station_count = 0;

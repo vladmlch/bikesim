@@ -112,7 +112,7 @@ kernel void sp2_math_kernel(
     }
 }
 
-kernel void sp2_suspension_kernel(
+kernel void sp2_susp_law_kernel(
     device const bike::physics_core::SuspensionParams<float> *params [[buffer(0)]],
     device const float *fork_q [[buffer(1)]],
     device const float *fork_v [[buffer(2)]],
@@ -574,7 +574,7 @@ MetalSp2Output run_metal_sp2_parity(const MetalSp2Request &req) {
         };
 
         id<MTLComputePipelineState> pso_math = make_pso(@"sp2_math_kernel");
-        id<MTLComputePipelineState> pso_susp = make_pso(@"sp2_suspension_kernel");
+        id<MTLComputePipelineState> pso_susp = make_pso(@"sp2_susp_law_kernel");
         id<MTLComputePipelineState> pso_res = make_pso(@"sp2_resistance_kernel");
         id<MTLComputePipelineState> pso_brake = make_pso(@"sp2_brake_kernel");
         id<MTLComputePipelineState> pso_env = make_pso(@"sp2_envelope_kernel");

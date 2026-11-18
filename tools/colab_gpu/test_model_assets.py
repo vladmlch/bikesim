@@ -323,6 +323,21 @@ def test_report_old_settled_constants_vs_captured() -> None:
             print(f"      [{i:2d}] old={old_arr[i]!r} captured={captured[i]!r} |d|={diff[i]:.3e}")
 
 
+def test_synthesize_welded_assets_for_unaccompanied_xml() -> None:
+    with _scratch_dir() as tmp:
+        out_xml = ma.materialize_welded_assets_dir(REPOS_WELDED_XML, tmp / "welded_synth")
+        assert out_xml.is_file()
+        assert (out_xml.parent / ma.HFIELD_BIN_NAME).is_file()
+        assert (out_xml.parent / ma.CAPTURED_BOOTSTRAP_NAME).is_file()
+        m = ma.load_model_with_assets(out_xml)
+        assert int(m.nq) == 27 and int(m.nv) == 27
+        qpos0, qvel0 = ma.load_captured_initial_state(out_xml, int(m.nq), int(m.nv))
+        assert qpos0.shape == (27,)
+        assert qvel0.shape == (27,)
+        assert np.all(np.isfinite(qpos0))
+        assert np.all(np.isfinite(qvel0))
+
+
 # --------------------------------------------------------------------------- runner
 
 _TESTS: tuple[Callable[[], None], ...] = tuple(

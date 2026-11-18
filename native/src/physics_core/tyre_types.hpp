@@ -166,6 +166,7 @@ struct TyreModel {
     i32 station_count = 0;
     Real distinct_normal_cosine = static_cast<Real>(0);
     TyreWheelSpec<Real> wheels[2]{};
+    GpuWheelChain frame_chain{};
     SurfaceMapView<Real> surface_map{};
 };
 

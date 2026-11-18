@@ -28,6 +28,7 @@ import math
 from pathlib import Path
 import platform
 import sys
+import tempfile
 import time
 from typing import Any
 
@@ -57,7 +58,10 @@ try:
         resolve_gpu_model_indices,
     )
     from tools.colab_gpu.metal_hybrid_sweep import compile_metal_batch_runner
-    from tools.colab_gpu.model_assets import load_model_with_assets
+    from tools.colab_gpu.model_assets import (
+        load_model_with_assets,
+        materialize_welded_assets_dir,
+    )
     from tools.colab_gpu.mjwarp_batch_sweep import (
         DEFAULT_MODEL_XML,
         TYRE_BACKEND_TIERS,
@@ -80,7 +84,10 @@ except ImportError:
         resolve_gpu_model_indices,
     )
     from metal_hybrid_sweep import compile_metal_batch_runner  # type: ignore[no-redef]
-    from model_assets import load_model_with_assets  # type: ignore[no-redef]
+    from model_assets import (  # type: ignore[no-redef]
+        load_model_with_assets,
+        materialize_welded_assets_dir,
+    )
     from mjwarp_batch_sweep import (  # type: ignore[no-redef]
         DEFAULT_MODEL_XML,
         TYRE_BACKEND_TIERS,
@@ -753,6 +760,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional path to write JSON benchmark report.",
     )
+    parser.add_argument(
+        "--synthesize-welded-assets",
+        action="store_true",
+        help="Synthesize flat-road hfield_data.bin and settled welded initial state when missing.",
+    )
     args = parser.parse_args(argv)
 
     _init_metal_device()
@@ -770,31 +782,37 @@ def main(argv: list[str] | None = None) -> int:
         }
     }
 
-    if args.experiment in ("all", "sweep"):
-        results["parameter_sweep"] = run_mjwarp_metal_parameter_sweep(
-            model_xml_path=args.model_xml,
-            nworld=args.nworld,
-            n_steps=args.n_steps,
-            lib=lib,
-            wm_rt=wm_rt,
+    with tempfile.TemporaryDirectory(prefix="bike-metal-assets-") as tmp_dir:
+        model_xml_path = (
+            materialize_welded_assets_dir(args.model_xml, tmp_dir)
+            if args.synthesize_welded_assets
+            else args.model_xml
         )
+        if args.experiment in ("all", "sweep"):
+            results["parameter_sweep"] = run_mjwarp_metal_parameter_sweep(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
+                n_steps=args.n_steps,
+                lib=lib,
+                wm_rt=wm_rt,
+            )
 
-    if args.experiment in ("all", "tire_scaling"):
-        results["tyre_backend_scaling_batch"] = run_mjwarp_metal_tyre_backend_scaling_benchmark(
-            model_xml_path=args.model_xml,
-            nworld=args.nworld,
-            n_steps=args.tier_steps,
-            lib=lib,
-            wm_rt=wm_rt,
-        )
-        if not args.skip_single_world:
-            results["tyre_backend_scaling_single"] = run_mjwarp_metal_tyre_backend_scaling_benchmark(
-                model_xml_path=args.model_xml,
-                nworld=1,
+        if args.experiment in ("all", "tire_scaling"):
+            results["tyre_backend_scaling_batch"] = run_mjwarp_metal_tyre_backend_scaling_benchmark(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
                 n_steps=args.tier_steps,
                 lib=lib,
                 wm_rt=wm_rt,
             )
+            if not args.skip_single_world:
+                results["tyre_backend_scaling_single"] = run_mjwarp_metal_tyre_backend_scaling_benchmark(
+                    model_xml_path=model_xml_path,
+                    nworld=1,
+                    n_steps=args.tier_steps,
+                    lib=lib,
+                    wm_rt=wm_rt,
+                )
 
     _print_report(results)
 

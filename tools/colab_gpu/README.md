@@ -24,12 +24,10 @@ All shared headers use `BIKE_HD` (`__host__ __device__ __forceinline__` on CUDA,
 | File | Description |
 |---|---|
 | `../physics_core/tyre_gpu_step.hpp` | Single-source tri-target (Host, CUDA, Metal MSL) step for both `compliant_2d` and `distributed_2d_reference` wheel backends (`gpu_step_both_wheels_tyre`) plus `GpuTerrainTableDesc` validation. |
+| `../physics_core/{suspension,resistance,brake_hold,joint_envelope,ratchet}.hpp` | Single-source tri-target (Host, CUDA, Metal MSL) force-law headers for suspension (`eval_suspension`), rolling/aero resistance (`eval_resistance`), brake hold (`eval_brake_hold_wheel` / `apply_static_brake`), rider joint ROM envelope (`eval_rider_joint_envelope`), and dual ratchets (`ratchet_prepare_bound` / `fill_cassette_tendon_ranges`). |
 | `common.hpp` | Defines `BIKE_HD`, vector types (`GpuVec2`, `GpuVec3`), `GpuModelIndices` (`240` bytes for `nq = 27`), and root force projection (`project_planar_force_to_root`). |
-| `suspension_kernel.hpp` | Computes the polytropic dual-chamber fork air spring, Charger3 hydraulic bottom-out (`HBO`) damper, rear coil spring, elastomer bumper, and top-out stops. |
 | `terrain_tables.hpp` / `runner_tyre_setup.hpp` | Host-side terrain table packer (`GpuTerrainTableDesc` + flat `f32`/`i32` spans) and default `compliant_2d` / `distributed_2d_reference` `GpuTyreModel` resolution. |
-| `drivetrain_resistance_kernel.hpp` | Computes aerodynamic drag, rolling resistance, dynamic braking, rider crank torque, and unilateral freehub ratcheting. |
-| `rider_kernel.hpp` | Computes 9-DOF anatomical range-of-motion (`ROM`) soft-edge torques and posture PD plus pedaling actuator commands. |
-| `batch_step.hpp` | Defines `GpuWorldConfig`, `GpuWorldState`, `gpu_build_sweep_configs`, and the unified per-world step function `gpu_step_world_writers`. |
+| `batch_step.hpp` | Defines `GpuWorldConfig`, `GpuWorldState`, `gpu_build_sweep_configs`, and the unified per-world step function `gpu_step_world_writers` wiring all `physics_core` force laws + upper-body posture PD + dual ratchet bounds. |
 | `cuda_kernels.cu` | Defines the `__global__` CUDA kernels (`bike_gpu_init_states_kernel` and `bike_gpu_writers_kernel`) and the `extern "C"` host functions returning status codes. |
 | `cpu_batch_runner.cpp` | Implements the multi-threaded C++ CPU batch runner (`bike_cpu_run_batch`, `bike_cpu_run_batch_sweep`, `bike_cpu_build_tyre_and_terrain`) linking directly against `libmujoco`. |
 | `metal_batch_runner.mm` | Stitches `physics_core/*.hpp` + `gpu/*.hpp` into Apple Metal Shading Language (`MSL`) compute kernels (`1` thread/world, `MTLMathModeSafe`, `#pragma METAL fp contract(off)`) for **Scenario 3** (Hybrid Metal GPU Writers + CPU `mj_step` over Unified Memory) and **Scenario 2** (`warp-metal` + `clean_split` `mujoco_warp` + MSL Writers fused inside one Metal Graph). |

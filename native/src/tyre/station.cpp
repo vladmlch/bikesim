@@ -111,7 +111,6 @@ namespace biketyre {
         return {force, 0.5 * energy};
     }
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the Python API
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     std::pair<double, double>
     station_response(double delta, double rate, double weight,

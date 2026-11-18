@@ -25,7 +25,6 @@ namespace contactlaw {
     }
 
     // tire.py:113-122 — _normal_contact (inputs pre-validated upstream).
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py _normal_contact
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     [[nodiscard]] inline std::pair<double, double>
     normal_contact(double delta, double delta_dot, double k, double c) {
@@ -46,7 +45,6 @@ namespace contactlaw {
     // with the sign of the deflection rate, smoothed by tanh over eps only
     // as much as the solver needs; η is the material's loss_factor and ε
     // its hysteresis_rate_eps_mps (both required profile fields).
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror normal_contact
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     [[nodiscard]] inline std::pair<double, double>
     normal_contact_hysteresis(double delta, double delta_dot, double k,
@@ -64,7 +62,6 @@ namespace contactlaw {
     }
 
     // tire.py:157-190 — _brush_step (inputs pre-validated upstream).
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror tire.py brush step
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     [[nodiscard]] inline std::tuple<double, double, double>
     brush_step(double xi, double u, double v_roll, double Fn, double k,

@@ -146,6 +146,13 @@ bike::physics_core::GpuTyreModel make_synthetic_tyre_model(
 
     init_wheel(WheelSpecArgs{.side = 0, .body_id = idx.front_wheel_body, .radius = kFrontRadiusM, .extra_j1 = idx.fork_travel_dof, .extra_j2 = -1});
     init_wheel(WheelSpecArgs{.side = 1, .body_id = idx.rear_wheel_body, .radius = kRearRadiusM, .extra_j1 = idx.main_pivot_dof, .extra_j2 = idx.horst_pivot_dof});
+    tm.frame_chain.wheel_body_id = idx.frame_body;
+    tm.frame_chain.njnt = kNjnt;
+    const std::span frame_joints(tm.frame_chain.joints);
+    frame_joints[0] = GpuChainJoint{.joint_id = idx.root_x_dof, .joint_type = kJntSlide, .dof_adr = idx.root_x_dof};
+    frame_joints[1] = GpuChainJoint{.joint_id = idx.root_z_dof, .joint_type = kJntSlide, .dof_adr = idx.root_z_dof};
+    frame_joints[2] = GpuChainJoint{.joint_id = idx.root_pitch_dof, .joint_type = kJntHinge, .dof_adr = idx.root_pitch_dof};
+    tm.frame_chain.joint_count = 3;
     return tm;
 }
 
@@ -338,7 +345,7 @@ BatchScenario make_batch_scenario(
         );
     }
 
-    sc.initial_bound_w0 = sc.states[0].drivetrain.freehub_boundary_rad;
+    sc.initial_bound_w0 = sc.states[0].drivetrain.freehub.boundary;
 
     // 5. Step gpu_step_world_writers across all 64 worlds for 10 steps
     for (int step = 0; step < kNumSteps; ++step) {
@@ -597,7 +604,7 @@ void test_stepped_world_outputs() {
                 "freehub upper bound ratcheted downward while coasting");
         require_near(
             upper_bound,
-            sc.states[wi].drivetrain.freehub_boundary_rad,
+            sc.states[wi].drivetrain.freehub.boundary,
             1e-6f,
             "tendon upper bound equals the world freehub boundary");
     }
@@ -652,14 +659,16 @@ void test_drivetrain_torque_path() {
     const float rear_torque_diff =
         qfrc_explicit[to_index(idx.rear_wheel_spin_dof)] -
         qfrc_tendon[to_index(idx.rear_wheel_spin_dof)];
-    const float crank_torque_diff =
-        qfrc_tendon[to_index(idx.crank_spin_dof)] -
-        qfrc_explicit[to_index(idx.crank_spin_dof)];
+    const int fh_driver_dof =
+        (idx.drive_shaft_spin_dof >= 0) ? idx.drive_shaft_spin_dof : idx.crank_spin_dof;
+    const float driver_torque_diff =
+        qfrc_tendon[to_index(fh_driver_dof)] -
+        qfrc_explicit[to_index(fh_driver_dof)];
     require(rear_torque_diff > 1.0f,
             "explicit mode adds rear drive torque the tendon mode omits");
-    require(crank_torque_diff > 0.4f,
-            "explicit mode subtracts the pawl reaction from crank torque");
-    require_near(tendon_tmp[1], st_tendon[0].drivetrain.freehub_boundary_rad,
+    require(driver_torque_diff > 0.4f,
+            "explicit mode subtracts the pawl reaction from freehub driver torque");
+    require_near(tendon_tmp[1], st_tendon[0].drivetrain.freehub.boundary,
                  1e-6f,
                  "tendon upper bound equals the stepped freehub boundary");
 }
@@ -812,7 +821,7 @@ void test_launch_wrappers_and_bounds() {
                     tendon_stride4[3 * 4 + 2] == -99.0f,
                 "tendon_range_batch only writes 2 * freehub_tendon + 1");
         require_near(tendon_stride4[3 * 4 + 3],
-                     st_t1[3].drivetrain.freehub_boundary_rad,
+                     st_t1[3].drivetrain.freehub.boundary,
                      1e-6f,
                      "tendon_range_batch writes freehub upper bound at 2 * freehub_tendon + 1");
 

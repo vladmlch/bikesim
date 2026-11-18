@@ -438,8 +438,8 @@ void verify_metal_vs_cpu_writers_parity(
     std::vector<float> qfrc_cpu(to_index(kNWorld * nv), 0.0f);
     std::vector<float> ctrl_mtl(to_index(kNWorld * nu), 0.0f);
     std::vector<float> ctrl_cpu(to_index(kNWorld * nu), 0.0f);
-    std::vector<float> tendon_mtl(to_index(kNWorld) * 2U, 0.0f);
-    std::vector<float> tendon_cpu(to_index(kNWorld) * 2U, 0.0f);
+    std::vector<float> tendon_mtl(to_index(kNWorld) * 4U, 0.0f);
+    std::vector<float> tendon_cpu(to_index(kNWorld) * 4U, 0.0f);
 
     for (int tick = 0; tick < 3; ++tick) {
         const float dt_s = 0.001f;
@@ -450,14 +450,14 @@ void verify_metal_vs_cpu_writers_parity(
                     configs.data(), 1, st_mtl.data(),
                     qpos_batch.data(), qvel_batch.data(),
                     xpos_batch.data(), xmat_batch.data(), xanchor_batch.data(), xaxis_batch.data(),
-                    qfrc_mtl.data(), ctrl_mtl.data(), tendon_mtl.data(), 2) == 0,
+                    qfrc_mtl.data(), ctrl_mtl.data(), tendon_mtl.data(), 4) == 0,
                 std::format("metal launch_writers succeeds ({} tick {})", label, tick));
         require(bike_gpu_launch_writers(
                     nullptr, kNWorld, dt_s, &idx, &bundle.gpu_model, &terrain.desc, tf32, ti32,
                     configs.data(), 1, st_cpu.data(),
                     qpos_batch.data(), qvel_batch.data(),
                     xpos_batch.data(), xmat_batch.data(), xanchor_batch.data(), xaxis_batch.data(),
-                    qfrc_cpu.data(), ctrl_cpu.data(), tendon_cpu.data(), 2) == 0,
+                    qfrc_cpu.data(), ctrl_cpu.data(), tendon_cpu.data(), 4) == 0,
                 std::format("cpu launch_writers succeeds ({} tick {})", label, tick));
 
         float max_qfrc = 0.0f;
@@ -478,11 +478,16 @@ void verify_metal_vs_cpu_writers_parity(
         }
         for (int w = 0; w < kNWorld; ++w) {
             const std::size_t wu = to_index(w);
-            require_near(tendon_mtl[2U * wu + 1U], tendon_cpu[2U * wu + 1U], 2e-5f,
-                         std::format("Metal vs CPU tendon bound ({} tick {})", label, tick));
-            require_near(st_mtl[wu].drivetrain.freehub_boundary_rad,
-                         st_cpu[wu].drivetrain.freehub_boundary_rad, 2e-5f,
+            require_near(tendon_mtl[4U * wu + 1U], tendon_cpu[4U * wu + 1U], 2e-5f,
+                         std::format("Metal vs CPU freehub tendon bound ({} tick {})", label, tick));
+            require_near(tendon_mtl[4U * wu + 3U], tendon_cpu[4U * wu + 3U], 2e-5f,
+                         std::format("Metal vs CPU crank clutch tendon bound ({} tick {})", label, tick));
+            require_near(st_mtl[wu].drivetrain.freehub.boundary,
+                         st_cpu[wu].drivetrain.freehub.boundary, 2e-5f,
                          std::format("Metal vs CPU freehub state ({} tick {})", label, tick));
+            require_near(st_mtl[wu].drivetrain.crank_clutch.boundary,
+                         st_cpu[wu].drivetrain.crank_clutch.boundary, 2e-5f,
+                         std::format("Metal vs CPU crank clutch state ({} tick {})", label, tick));
         }
     }
 }
@@ -517,8 +522,10 @@ void test_metal_shader_and_buffer_reuse() {
             "bike_metal_launch_init_states succeeds on first upload");
     const float ratio = 22.0f / 51.0f;
     for (int w = 0; w < kNWorld; ++w) {
-        require_near(states[to_index(w)].drivetrain.freehub_boundary_rad,
+        require_near(states[to_index(w)].drivetrain.freehub.boundary,
                      1.0f * ratio, 1e-5f, "freehub boundary from drive_shaft_spin");
+        require_near(states[to_index(w)].drivetrain.crank_clutch.boundary,
+                     3.0f, 1e-5f, "crank clutch boundary from crank - drive_shaft");
     }
     for (int w = 0; w < kNWorld; ++w) {
         qpos_rows.subspan(to_index(w * idx.nq), to_index(idx.nq))[to_index(idx.drive_shaft_spin_qpos)] = 10.0f;
@@ -527,8 +534,10 @@ void test_metal_shader_and_buffer_reuse() {
                 kNWorld, &idx, configs.data(), 1, states.data(), qpos.data()) == 0,
             "bike_metal_launch_init_states succeeds on reused address");
     for (int w = 0; w < kNWorld; ++w) {
-        require_near(states[to_index(w)].drivetrain.freehub_boundary_rad,
+        require_near(states[to_index(w)].drivetrain.freehub.boundary,
                      10.0f * ratio, 1e-5f, "re-initialized freehub boundary matches mutated qpos");
+        require_near(states[to_index(w)].drivetrain.crank_clutch.boundary,
+                     -6.0f, 1e-5f, "re-initialized crank clutch boundary matches mutated qpos");
     }
 
     const fs::path welded_xml = find_repo_file(kRelWeldedPath);
@@ -554,7 +563,7 @@ void test_metal_launch_argument_validation() {
     std::vector<GpuWorldState> states(2);
     constexpr float kSentinel = 123.0f;
     for (auto &s : states) {
-        s.drivetrain.freehub_boundary_rad = kSentinel;
+        s.drivetrain.freehub.boundary = kSentinel;
     }
 
     std::vector<float> flat_hf(64, 0.0f);
@@ -581,6 +590,11 @@ void test_metal_launch_argument_validation() {
         const std::span joints_view(w.chain.joints);
         joints_view[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
     }
+    tm.frame_chain.wheel_body_id = idx.frame_body;
+    tm.frame_chain.njnt = tm.njnt;
+    tm.frame_chain.joint_count = 1;
+    std::span(tm.frame_chain.joints)[0] =
+        GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
 
     std::vector<float> buf(4096, 0.0f);
     const float *qpos = buf.data();
@@ -666,7 +680,7 @@ void test_metal_launch_argument_validation() {
                 "writers rejects non-monotonic px");
     }
     for (const auto &s : states) {
-        require(s.drivetrain.freehub_boundary_rad == kSentinel,
+        require(s.drivetrain.freehub.boundary == kSentinel,
                 "rejected writers leaves state buffer untouched");
     }
 
@@ -941,7 +955,7 @@ void test_cpu_and_host_argument_validation() {
     std::vector<GpuWorldState> states(2);
     constexpr float kSentinel = 321.0f;
     for (auto &s : states) {
-        s.drivetrain.freehub_boundary_rad = kSentinel;
+        s.drivetrain.freehub.boundary = kSentinel;
     }
     std::vector<float> buf(4096, 0.0f);
     const float *qpos = buf.data();
@@ -995,7 +1009,7 @@ void test_cpu_and_host_argument_validation() {
                 "host writers rejects non-monotonic px");
     }
     for (const auto &s : states) {
-        require(s.drivetrain.freehub_boundary_rad == kSentinel,
+        require(s.drivetrain.freehub.boundary == kSentinel,
                 "rejected host writers leaves state buffer untouched");
     }
 

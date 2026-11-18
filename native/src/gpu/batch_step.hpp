@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../physics_core/brake_hold.hpp"
+#include "../physics_core/gpu_math.hpp"
 #include "../physics_core/joint_envelope.hpp"
 #include "../physics_core/ratchet.hpp"
 #include "../physics_core/resistance.hpp"
@@ -545,9 +546,9 @@ BIKE_HD bike::physics_core::Status gpu_eval_wheel_brake_torque(
                omega_rad_s != 0.0f &&
                dp.brake_taper_rad_s > 0.0f &&
                max_brake_torque_nm > 0.0f) {
-        const float scale = gpu_min(gpu_abs(omega_rad_s) / dp.brake_taper_rad_s, 1.0f);
-        const float sign = (omega_rad_s > 0.0f) ? 1.0f : -1.0f;
-        out_torque_nm = -(u * max_brake_torque_nm) * scale * sign;
+        out_torque_nm =
+            -(u * max_brake_torque_nm) *
+            bike::physics_core::tanhf_portable(omega_rad_s / dp.brake_taper_rad_s);
     }
     return bike::physics_core::Status::ok;
 }
@@ -571,7 +572,11 @@ BIKE_HD bike::physics_core::Status gpu_write_drivetrain_qfrc(
     out = GpuDrivetrainOutput{};
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
 
-    // 1. Crank pedaling torque with cadence linear taper above target_cadence_rad_s.
+    // 1. Crank pedaling torque with braking cutout gate (simulation-decisions.md §16)
+    //    and cadence linear taper above target_cadence_rad_s.
+    const bool braking =
+        (front_brake_demand > 1e-6f) || (rear_brake_demand > 1e-6f);
+    const float effective_pedal_demand = braking ? 0.0f : gpu_clamp(pedal_demand, 0.0f, 1.0f);
     const float cadence_omega = (idx.crank_spin_dof >= 0) ? qvel[idx.crank_spin_dof] : 0.0f;
     float taper = 1.0f;
     if (dp.max_rider_cadence_rad_s > dp.target_cadence_rad_s &&
@@ -581,7 +586,7 @@ BIKE_HD bike::physics_core::Status gpu_write_drivetrain_qfrc(
             (dp.max_rider_cadence_rad_s - dp.target_cadence_rad_s);
         taper = gpu_clamp(1.0f - frac, 0.0f, 1.0f);
     }
-    out.crank_torque_nm = gpu_clamp(pedal_demand, 0.0f, 1.0f) * dp.nominal_crank_torque_nm * taper;
+    out.crank_torque_nm = effective_pedal_demand * dp.nominal_crank_torque_nm * taper;
     if (idx.crank_spin_dof >= 0) {
         qfrc[idx.crank_spin_dof] += out.crank_torque_nm;
     }

@@ -634,7 +634,7 @@ void test_metal_launch_argument_validation() {
         bad_idx.nq = bike::gpu::kMaxNq + 1;
         require(bike_metal_launch_writers(
                     2, 0.001f, &bad_idx, &tm, &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
-                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 4) == -1,
                 "writers rejects nq > kMaxNq");
         GpuModelIndices stride_idx = idx;
         stride_idx.freehub_tendon = 1;
@@ -642,13 +642,17 @@ void test_metal_launch_argument_validation() {
                     2, 0.001f, &stride_idx, &tm, &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
                     qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
                 "writers rejects small tendon_range_world_stride");
+        require(bike_metal_launch_writers(
+                    2, 0.001f, &idx, &tm, &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                "writers rejects stride=2 when crank_clutch_tendon=1 is active");
     }
     {
         const auto bad_tm = std::make_unique<GpuTyreModel>(tm);
         bad_tm->nq = idx.nq - 1;
         require(bike_metal_launch_writers(
                     2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
-                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 4) == -1,
                 "metal writers rejects idx.nq != tm.nq");
     }
     {
@@ -658,7 +662,7 @@ void test_metal_launch_argument_validation() {
         bad_joints[0].joint_id = bad_tm->njnt;
         require(bike_metal_launch_writers(
                     2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
-                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 4) == -1,
                 "writers rejects joint_id >= njnt");
     }
     {
@@ -667,7 +671,7 @@ void test_metal_launch_argument_validation() {
         bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
         require(bike_metal_launch_writers(
                     2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32, &cfg, 1, states.data(),
-                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 4) == -1,
                 "writers rejects station_count > 128");
     }
     {
@@ -676,7 +680,7 @@ void test_metal_launch_argument_validation() {
             bad_f32[to_index(terrain.desc.px_offset + 4)];
         require(bike_metal_launch_writers(
                     2, 0.001f, &idx, &tm, &terrain.desc, bad_f32.data(), ti32, &cfg, 1, states.data(),
-                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 2) == -1,
+                    qpos, qpos, qpos, qpos, qpos, qpos, buf.data(), buf.data(), buf.data(), 4) == -1,
                 "writers rejects non-monotonic px");
     }
     for (const auto &s : states) {
@@ -758,6 +762,108 @@ void test_metal_launch_argument_validation() {
                         out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
                     "metal hybrid sweep rejects non-monotonic px");
         }
+    }
+}
+void test_metal_single_world_stride0_dual_tendon() {
+    using namespace bike::gpu;
+    using namespace bike::physics_core;
+
+    require(bike_metal_init(nullptr) == 0, "bike_metal_init succeeds");
+    const fs::path welded_xml = find_repo_file(kRelWeldedPath);
+    require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
+    const ModelPtr m_welded = load_xml(welded_xml);
+    seed_flat_welded_road(m_welded.get());
+    const GpuModelIndices idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
+    require(idx.nq == 27 && idx.freehub_tendon == 0 && idx.crank_clutch_tendon == 1 &&
+                idx.drive_shaft_spin_qpos >= 0,
+            "welded.xml has dual tendons freehub=0 and crank_clutch=1");
+
+    DataPtr d(mj_makeData(m_welded.get()), &mj_deleteData);
+    mj_resetData(m_welded.get(), d.get());
+    const std::span<mjtNum> d_qpos = model_access::mutable_buffer(d->qpos, idx.nq, "qpos");
+    const std::span<mjtNum> d_qvel = model_access::mutable_buffer(d->qvel, idx.nv, "qvel");
+    d_qpos[to_index(idx.root_x_qpos)] = 2.0;
+    d_qpos[to_index(idx.root_z_qpos)] = 0.50;
+    d_qpos[to_index(idx.crank_spin_qpos)] = 3.5;
+    d_qpos[to_index(idx.drive_shaft_spin_qpos)] = 1.2;
+    d_qpos[to_index(idx.rear_wheel_spin_qpos)] = 0.4;
+    d_qvel[to_index(idx.root_x_dof)] = 5.0;
+    d_qvel[to_index(idx.crank_spin_dof)] = 8.0;
+    mj_forward(m_welded.get(), d.get());
+
+    const int f_geom = find_wheel_contact_geom(m_welded.get(), idx.front_wheel_body, "front_contact", "geom_front_contact");
+    const int r_geom = find_wheel_contact_geom(m_welded.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
+    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        m_welded.get(), d.get(), make_default_compliant_tire_config(),
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+    const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
+
+    GpuWorldConfig cfg{};
+    bike_gpu_init_default_config(&cfg);
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int nu = idx.nu;
+    const int nbody = idx.nbody;
+    const int njnt = static_cast<int>(m_welded->njnt);
+
+    std::vector<float> qpos_w(to_index(nq), 0.0f);
+    std::vector<float> qvel_w(to_index(nv), 0.0f);
+    for (int i = 0; i < nq; ++i) qpos_w[to_index(i)] = static_cast<float>(d_qpos[to_index(i)]);
+    for (int i = 0; i < nv; ++i) qvel_w[to_index(i)] = static_cast<float>(d_qvel[to_index(i)]);
+
+    const std::span<const mjtNum> src_xpos = model_access::readonly_buffer(d->xpos, 3LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> src_xmat = model_access::readonly_buffer(d->xmat, 9LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> src_xanc = model_access::readonly_buffer(d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> src_xax = model_access::readonly_buffer(d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+    std::vector<float> xpos_w(src_xpos.size());
+    std::vector<float> xmat_w(src_xmat.size());
+    std::vector<float> xanchor_w(src_xanc.size());
+    std::vector<float> xaxis_w(src_xax.size());
+    for (std::size_t i = 0; i < src_xpos.size(); ++i) xpos_w[i] = static_cast<float>(src_xpos[i]);
+    for (std::size_t i = 0; i < src_xmat.size(); ++i) xmat_w[i] = static_cast<float>(src_xmat[i]);
+    for (std::size_t i = 0; i < src_xanc.size(); ++i) xanchor_w[i] = static_cast<float>(src_xanc[i]);
+    for (std::size_t i = 0; i < src_xax.size(); ++i) xaxis_w[i] = static_cast<float>(src_xax[i]);
+
+    const auto st_mtl = std::make_unique<GpuWorldState>();
+    const auto st_cpu = std::make_unique<GpuWorldState>();
+    require(bike_metal_launch_init_states(1, &idx, &cfg, 1, st_mtl.get(), qpos_w.data()) == 0,
+            "stride0 metal init_states ok");
+    require(bike_gpu_launch_init_states(nullptr, 1, &idx, &cfg, 1, st_cpu.get(), qpos_w.data()) == 0,
+            "stride0 cpu init_states ok");
+
+    std::vector<float> qfrc_mtl(to_index(nv), 0.0f);
+    std::vector<float> qfrc_cpu(to_index(nv), 0.0f);
+    std::vector<float> ctrl_mtl(to_index(nu), 0.0f);
+    std::vector<float> ctrl_cpu(to_index(nu), 0.0f);
+    // 4 active floats + 2 trailing canary floats to catch any OOB write on stride == 0
+    std::array<float, 6> tendon_mtl{-100.0f, 99.0f, -200.0f, 99.0f, 777.0f, 888.0f};
+    std::array<float, 6> tendon_cpu{-100.0f, 99.0f, -200.0f, 99.0f, 777.0f, 888.0f};
+
+    const float *tf32 = terrain.f32.empty() ? nullptr : terrain.f32.data();
+    const i32 *ti32 = terrain.i32.empty() ? nullptr : terrain.i32.data();
+    for (int tick = 0; tick < 3; ++tick) {
+        require(bike_metal_launch_writers(
+                    1, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
+                    &cfg, 1, st_mtl.get(),
+                    qpos_w.data(), qvel_w.data(),
+                    xpos_w.data(), xmat_w.data(), xanchor_w.data(), xaxis_w.data(),
+                    qfrc_mtl.data(), ctrl_mtl.data(), tendon_mtl.data(), 0) == 0,
+                "stride0 metal launch_writers ok");
+        require(bike_gpu_launch_writers(
+                    nullptr, 1, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
+                    &cfg, 1, st_cpu.get(),
+                    qpos_w.data(), qvel_w.data(),
+                    xpos_w.data(), xmat_w.data(), xanchor_w.data(), xaxis_w.data(),
+                    qfrc_cpu.data(), ctrl_cpu.data(), tendon_cpu.data(), 0) == 0,
+                "stride0 cpu launch_writers ok");
+        for (std::size_t i = 0; i < 4; ++i) {
+            require_near(tendon_mtl[i], tendon_cpu[i], 2e-5f,
+                         std::format("stride0 Metal vs CPU tendon_range[{}] (tick {})", i, tick));
+        }
+        require(tendon_mtl[1] != 99.0f && tendon_mtl[3] != 99.0f,
+                "stride0 updates both freehub and crank_clutch upper bounds");
+        require(tendon_mtl[4] == 777.0f && tendon_mtl[5] == 888.0f,
+                "stride0 does not overwrite past 4 tendon_range floats");
     }
 }
 #endif // defined(__APPLE__)
@@ -966,15 +1072,20 @@ void test_cpu_and_host_argument_validation() {
     require(bike_gpu_launch_writers(
                 nullptr, 0, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
                 &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
-                buf.data(), buf.data(), buf.data(), 2) != 0,
+                buf.data(), buf.data(), buf.data(), 4) != 0,
             "host writers rejects nworld <= 0");
+    require(bike_gpu_launch_writers(
+                nullptr, 2, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
+                &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
+                buf.data(), buf.data(), buf.data(), 2) != 0,
+            "host writers rejects stride=2 when crank_clutch_tendon=1 is active");
     {
         GpuModelIndices bad_idx = idx;
         bad_idx.nq = idx.nq - 1;
         require(bike_gpu_launch_writers(
                     nullptr, 2, 0.001f, &bad_idx, &bundle->gpu_model, &terrain.desc, tf32, ti32,
                     &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
-                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                    buf.data(), buf.data(), buf.data(), 4) != 0,
                 "host writers rejects idx.nq != tm.nq");
     }
     {
@@ -985,7 +1096,7 @@ void test_cpu_and_host_argument_validation() {
         require(bike_gpu_launch_writers(
                     nullptr, 2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32,
                     &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
-                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                    buf.data(), buf.data(), buf.data(), 4) != 0,
                 "host writers rejects joint_id >= njnt");
     }
     {
@@ -995,7 +1106,7 @@ void test_cpu_and_host_argument_validation() {
         require(bike_gpu_launch_writers(
                     nullptr, 2, 0.001f, &idx, bad_tm.get(), &terrain.desc, tf32, ti32,
                     &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
-                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                    buf.data(), buf.data(), buf.data(), 4) != 0,
                 "host writers rejects station_count > 128");
     }
     {
@@ -1005,7 +1116,7 @@ void test_cpu_and_host_argument_validation() {
         require(bike_gpu_launch_writers(
                     nullptr, 2, 0.001f, &idx, &bundle->gpu_model, &terrain.desc, bad_f32.data(), ti32,
                     &cfg, 1, states.data(), qpos, qpos, qpos, qpos, qpos, qpos,
-                    buf.data(), buf.data(), buf.data(), 2) != 0,
+                    buf.data(), buf.data(), buf.data(), 4) != 0,
                 "host writers rejects non-monotonic px");
     }
     for (const auto &s : states) {
@@ -1157,11 +1268,13 @@ void test_welded_80step_rollout_parity() {
 }
 
 #if defined(__APPLE__)
-constexpr std::array<TestCase, 5> cases{{
+constexpr std::array<TestCase, 6> cases{{
     {.name = "metal_shader_and_buffer_reuse",
      .run = test_metal_shader_and_buffer_reuse},
     {.name = "metal_launch_argument_validation",
      .run = test_metal_launch_argument_validation},
+    {.name = "metal_single_world_stride0_dual_tendon",
+     .run = test_metal_single_world_stride0_dual_tendon},
     {.name = "cpu_and_host_argument_validation",
      .run = test_cpu_and_host_argument_validation},
     {.name = "cpu_and_metal_hybrid_rollouts",

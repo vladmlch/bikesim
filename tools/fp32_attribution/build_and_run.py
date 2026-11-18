@@ -540,7 +540,8 @@ def export_lane_ghost_trajectory(
     if roll_steps < 1:
         raise ValueError("ghost trajectory export requires roll_steps >= 1")
 
-    repo_root = str(find_repo_root())
+    repo_root_path = find_repo_root()
+    repo_root = str(repo_root_path)
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
     from tools.colab_gpu.golden.trajectory import WHEEL_COLS, write_trajectory_arrays
@@ -591,8 +592,28 @@ def export_lane_ghost_trajectory(
         elif (bundle_dir / "model.mjb").is_file():
             resolved_mjb = bundle_dir / "model.mjb"
         else:
+            # Compile the 2-tendon model.xml with the C++ .deps/mujoco-3.12.0
+            # helper (never Python mujoco.mj_saveModel(m12, ...), which writes
+            # a 13-tendon model under the wheel's newer MuJoCo version).
             resolved_mjb = Path(tmp_str) / "model.mjb"
-            mujoco.mj_saveModel(m12, str(resolved_mjb))
+            runner_f64 = compile_runner(
+                Path(__file__).resolve().parent / "bundle_runner.cpp",
+                repo_root_path / ".deps" / "mujoco-3.12.0",
+                Path(tmp_str) / "bundle_runner_f64",
+                f32=False,
+            )
+            subprocess.run(
+                [
+                    str(runner_f64),
+                    "--model",
+                    str(bundle_dir / "model.xml"),
+                    "--hfield",
+                    str(bundle_dir / "hfield_data.bin"),
+                    "--save-mjb",
+                    str(resolved_mjb),
+                ],
+                check=True,
+            )
 
         write_trajectory_arrays(
             out_dir=out_dir,

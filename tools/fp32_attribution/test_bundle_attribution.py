@@ -1,8 +1,10 @@
 """Tests for SP2-B Golden Bundle + 5-lane FP32 attribution runner."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -56,7 +58,10 @@ def test_bundle_layout_and_component_sum(welded_bundle: Path) -> None:
     assert tr.n_steps == 260
     assert tr.nq == 27 and tr.nv == 27 and tr.nu == 12 and tr.ntendon == 2
     assert (welded_bundle / "model_12gears.xml").is_file()
+    assert (welded_bundle / "model.mjb").is_file()
     assert (welded_bundle / "physics_config.json").is_file()
+    mjb_sha = hashlib.sha256((welded_bundle / "model.mjb").read_bytes()).hexdigest()
+    assert tr.manifest["model_mjb_sha256"] == mjb_sha
 
     comp_sum = (
         tr.qfrc_tires
@@ -136,3 +141,75 @@ def test_ghost_trajectory_export_and_replay(welded_bundle: Path, tmp_path: Path)
     assert meta["roll_steps"] == 40
     assert (traj_dir / "model.mjb").is_file()
     assert (traj_dir / "trajectory.bin").is_file()
+    assert (traj_dir / "model.mjb").read_bytes() == (welded_bundle / "model.mjb").read_bytes()
+
+    # Fallback path when model.mjb is absent must still emit a MuJoCo 3.12.0 2-tendon
+    # model.mjb via C++ bundle_runner_f64 (never Python mujoco.mj_saveModel(m12, ...)).
+    stripped_bundle = tmp_path / "stripped_bundle"
+    shutil.copytree(welded_bundle, stripped_bundle)
+    (stripped_bundle / "model.mjb").unlink()
+    fallback_traj_dir = tmp_path / "ghost_traj_fallback"
+    export_lane_ghost_trajectory(
+        stripped_bundle,
+        fallback_traj_dir,
+        device=target_device,
+        start_step=0,
+        n_steps=40,
+    )
+    fallback_loaded = read_trajectory(fallback_traj_dir)
+    assert fallback_loaded.frames == 41
+    assert (fallback_traj_dir / "model.mjb").is_file()
+
+    # End-to-end C++ bike-replay --view --trajectory --dry-run verification against
+    # a matching sealed bike-ride --record run on the same physics-config and track.
+    repo = find_repo_root()
+    bin_dir = (
+        Path(os.environ["BIKE_GPU_EXPORT_BIN"]).parent
+        if os.environ.get("BIKE_GPU_EXPORT_BIN")
+        else repo / "build" / "native-release" / "bin"
+    )
+    bike_ride = Path(os.environ.get("BIKE_RIDE_BIN", bin_dir / "bike-ride"))
+    bike_replay = Path(os.environ.get("BIKE_REPLAY_BIN", bin_dir / "bike-replay"))
+    if not (bike_ride.is_file() and bike_replay.is_file()):
+        pytest.skip(f"bike-ride / bike-replay not built under {bin_dir}")
+
+    rec_root = tmp_path / "ride_rec_out"
+    ride_res = subprocess.run(
+        [
+            str(bike_ride),
+            "--physics-config",
+            str(repo / "examples" / "research" / "viewer_physics_welded.toml"),
+            "--track",
+            str(repo / "examples" / "research" / "rough_uphill_extreme.toml"),
+            "--duration",
+            "0.1",
+            "--headless",
+            "--record",
+            "--no-plots",
+            "--out",
+            str(rec_root),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    rec_dirs = [p for p in rec_root.iterdir() if p.is_dir() and (p / "manifest.json").is_file()]
+    assert len(rec_dirs) == 1
+    rec_dir = rec_dirs[0]
+
+    replay_res = subprocess.run(
+        [
+            str(bike_replay),
+            "--view",
+            "--trajectory",
+            str(traj_dir),
+            "--dry-run",
+            str(rec_dir),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert replay_res.returncode == 0, (
+        f"bike-replay failed for {traj_dir}:\nstdout={replay_res.stdout}\nstderr={replay_res.stderr}"
+    )
+    assert "ok" in replay_res.stdout

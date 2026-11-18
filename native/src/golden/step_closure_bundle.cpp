@@ -5,6 +5,7 @@
 #include "../diag.hpp"
 #include "../engine_call.hpp"
 #include "../geometry/specs.hpp"
+#include "../initialization/capture.hpp"
 #include "../initialization/launch_preparation.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
@@ -584,6 +585,9 @@ std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
             bundle->nu = static_cast<int>(m->nu);
             bundle->ntendon = static_cast<int>(m->ntendon);
             bundle->hfield_data = copy_hfield_as_doubles(*m);
+            const auto image = initialization::capture_model_image(*m);
+            bundle->model_mjb = image.mjb;
+            bundle->model_mjb_sha256 = image.sha256;
 
             const int fw_jnt =
                 model_access::resolve_id(m, mjOBJ_JOINT, "front_wheel_spin");
@@ -739,14 +743,15 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
         throw std::invalid_argument("bundle output directory cannot be empty");
     }
     if (bundle.nq <= 0 || bundle.nv <= 0 || bundle.ntendon <= 0 ||
-        bundle.rows.empty()) {
+        bundle.rows.empty() || bundle.model_mjb.empty()) {
         throw std::invalid_argument(
-            "step closure bundle must have positive dimensions and >= 1 row");
+            "step closure bundle must have positive dimensions, >= 1 row, and non-empty model_mjb");
     }
     std::filesystem::create_directories(out_dir);
 
     const auto model_path = out_dir / "model.xml";
     const auto model12_path = out_dir / "model_12gears.xml";
+    const auto model_mjb_path = out_dir / "model.mjb";
     const auto hfield_path = out_dir / "hfield_data.bin";
     const auto physics_path = out_dir / "physics_config.json";
     const auto trace_path = out_dir / "step_closure.bin";
@@ -754,6 +759,8 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
 
     write_text_file(model_path, bundle.model_xml);
     write_text_file(model12_path, bundle.model_12gears_xml);
+    write_bytes_file(model_mjb_path, bundle.model_mjb);
+    const std::string model_mjb_digest = io::sha256(bundle.model_mjb);
     write_bytes_file(hfield_path, std::as_bytes(std::span{bundle.hfield_data}));
     const std::string physics_text =
         io::canonical_json(bundle.physics_config_json) + "\n";
@@ -887,6 +894,7 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
         {"model_12gears_sha256",
          io::Value{io::sha256(std::as_bytes(
              std::span<const char>{bundle.model_12gears_xml}))}},
+        {"model_mjb_sha256", io::Value{model_mjb_digest}},
         {"hfield_sha256",
          io::Value{io::sha256(std::as_bytes(std::span{bundle.hfield_data}))}},
         {"step_closure_sha256", io::Value{step_closure_digest}},
@@ -927,6 +935,22 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
             bundle->cassette.push_back(
                 static_cast<int>(io::as_int64(item, "cassette[]")));
         }
+    }
+    const auto model_mjb_path = bundle_dir / "model.mjb";
+    const auto *mjb_sha_val = io::find_member(mobj, "model_mjb_sha256");
+    if (std::filesystem::exists(model_mjb_path)) {
+        bundle->model_mjb =
+            read_bounded_bytes(model_mjb_path, kMaxStepClosureBytes);
+        bundle->model_mjb_sha256 = io::sha256(bundle->model_mjb);
+        if (mjb_sha_val != nullptr &&
+            io::as_string(*mjb_sha_val, "model_mjb_sha256") !=
+                bundle->model_mjb_sha256) {
+            throw std::invalid_argument(
+                "step_closure_bundle: model.mjb sha256 mismatch");
+        }
+    } else if (mjb_sha_val != nullptr) {
+        throw std::invalid_argument(
+            "step_closure_bundle: manifest declares model_mjb_sha256 but model.mjb is missing");
     }
 
     const auto hf_bytes = io::read_numpy_bytes(bundle_dir / "hfield_data.bin");

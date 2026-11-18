@@ -256,6 +256,13 @@ BIKE_HD bool gpu_validate_model_indices(
     return true;
 }
 
+BIKE_HD int gpu_max_active_tendon_idx(
+    const BIKE_THREAD GpuModelIndices &idx
+) noexcept {
+    const int cc_tid = (idx.drive_shaft_spin_qpos >= 0) ? idx.crank_clutch_tendon : -1;
+    return (idx.freehub_tendon >= cc_tid) ? idx.freehub_tendon : cc_tid;
+}
+
 #if defined(__METAL_VERSION__)
 BIKE_HD float gpu_min(float a, float b) noexcept {
     return metal::min(a, b);

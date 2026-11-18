@@ -304,7 +304,7 @@ void test_brake_hold_and_dynamic_braking() {
     std::array<float, kMaxNv> qf{};
     GpuDrivetrainOutput out{};
 
-    // 1. High rolling speed -> does not latch, applies dynamic braking torque
+    // 1. High and intermediate rolling speed -> does not latch, applies smooth tanhf_portable dynamic braking torque
     qv[to_index(idx.front_wheel_spin_dof)] = 10.0f;
     qv[to_index(idx.rear_wheel_spin_dof)] = 10.0f;
     require(gpu_write_drivetrain_qfrc(dp, idx, st, qp.data(), qv.data(),
@@ -314,6 +314,46 @@ void test_brake_hold_and_dynamic_braking() {
             "high speed wheels do not latch");
     require_near(out.front_brake_torque_nm, -210.0f, 1e-4f, "front rolling dynamic brake");
     require_near(out.rear_brake_torque_nm, -380.0f, 1e-4f, "rear rolling dynamic brake");
+
+    // Intermediate rolling speed above engage_radps (0.5) exercises smooth tanhf_portable(omega / v_eps)
+    qv[to_index(idx.front_wheel_spin_dof)] = 0.75f;
+    qv[to_index(idx.rear_wheel_spin_dof)] = -0.75f;
+    std::ranges::fill(qf, 0.0f);
+    require(gpu_write_drivetrain_qfrc(dp, idx, st, qp.data(), qv.data(),
+                                      0.0f, 0.5f, 1.0f, qf.data(), out, false) == Status::ok,
+            "intermediate rolling brake ok");
+    require(out.front_brake_latched == 0 && out.rear_brake_latched == 0,
+            "intermediate speed wheels above engage_radps do not latch");
+    require_near(out.front_brake_torque_nm,
+                 -0.5f * dp.front_max_brake_torque_nm * bike::physics_core::tanhf_portable(1.5f),
+                 1e-4f, "front intermediate smooth tanhf_portable rolling brake");
+    require_near(out.rear_brake_torque_nm,
+                 -1.0f * dp.rear_max_brake_torque_nm * bike::physics_core::tanhf_portable(-1.5f),
+                 1e-4f, "rear intermediate smooth tanhf_portable rolling brake");
+
+    // 1b. Braking cutout gate: pedaling demand is cut to zero whenever front or rear brake is active
+    qv[to_index(idx.crank_spin_dof)] = 5.0f;
+    qv[to_index(idx.front_wheel_spin_dof)] = 10.0f;
+    qv[to_index(idx.rear_wheel_spin_dof)] = 10.0f;
+    std::ranges::fill(qf, 0.0f);
+    require(gpu_write_drivetrain_qfrc(dp, idx, st, qp.data(), qv.data(),
+                                      0.8f, 0.25f, 0.0f, qf.data(), out, false) == Status::ok,
+            "front brake cutout ok");
+    require_near(out.crank_torque_nm, 0.0f, 1e-6f, "front brake cuts crank pedaling torque to zero");
+    require_near(qf[to_index(idx.crank_spin_dof)], 0.0f, 1e-6f, "front brake writes zero crank qfrc");
+
+    std::ranges::fill(qf, 0.0f);
+    require(gpu_write_drivetrain_qfrc(dp, idx, st, qp.data(), qv.data(),
+                                      0.8f, 0.0f, 0.25f, qf.data(), out, false) == Status::ok,
+            "rear brake cutout ok");
+    require_near(out.crank_torque_nm, 0.0f, 1e-6f, "rear brake cuts crank pedaling torque to zero");
+    require_near(qf[to_index(idx.crank_spin_dof)], 0.0f, 1e-6f, "rear brake writes zero crank qfrc");
+
+    std::ranges::fill(qf, 0.0f);
+    require(gpu_write_drivetrain_qfrc(dp, idx, st, qp.data(), qv.data(),
+                                      0.8f, 0.0f, 0.0f, qf.data(), out, false) == Status::ok,
+            "unbraked pedaling ok");
+    require(out.crank_torque_nm > 1.0f, "crank pedaling torque is nonzero when brakes are released");
 
     // 2. Standstill engage -> latches at current angle and applies spring bite on displacement
     qp[to_index(idx.front_wheel_spin_qpos)] = 1.25f;

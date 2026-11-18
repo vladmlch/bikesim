@@ -89,7 +89,7 @@ void verify_profile(const std::string &name, const fs::path &physics_toml,
 
     bike::golden::write_step_closure_bundle(*bundle, out_dir);
     for (const char *fname :
-         {"manifest.json", "model.xml", "model_12gears.xml",
+         {"manifest.json", "model.xml", "model_12gears.xml", "model.mjb",
           "hfield_data.bin", "physics_config.json", "step_closure.bin"}) {
         bt::require(fs::is_regular_file(out_dir / fname),
                     name + ": bundle contains " + std::string(fname));
@@ -98,6 +98,11 @@ void verify_profile(const std::string &name, const fs::path &physics_toml,
     const auto m12 = bike::model::compile_mjcf(bundle->model_12gears_xml, out_dir);
     bt::require(m12->ntendon == 13,
                 name + ": model_12gears.xml has ntendon == 13");
+    const bike::model::ModelOwner m_mjb(
+        mj_loadModel((out_dir / "model.mjb").string().c_str(), nullptr));
+    bt::require(m_mjb != nullptr && m_mjb->ntendon == bundle->ntendon &&
+                    m_mjb->nq == bundle->nq,
+                name + ": model.mjb loads in MuJoCo 3.12 with matching ntendon and nq");
 
     const auto manifest =
         bike::io::parse_json(bt::text(out_dir / "manifest.json"));
@@ -107,6 +112,11 @@ void verify_profile(const std::string &name, const fs::path &physics_toml,
                     bike::io::as_string(*sha_val, "step_closure_sha256") ==
                         bike::platform::file_sha256(out_dir / "step_closure.bin"),
                 name + ": streaming step_closure_sha256 matches file_sha256");
+    const auto *mjb_sha_val = bike::io::find_member(mobj, "model_mjb_sha256");
+    bt::require(mjb_sha_val != nullptr &&
+                    bike::io::as_string(*mjb_sha_val, "model_mjb_sha256") ==
+                        bike::platform::file_sha256(out_dir / "model.mjb"),
+                name + ": model_mjb_sha256 matches file_sha256");
 
     const auto verification = bike::golden::verify_bundle_closure(out_dir);
     bt::require(verification.ok(),
@@ -336,6 +346,17 @@ void verify_negative_bundle_validation() {
             d / "step_closure.bin",
             std::as_bytes(std::span<const char>{mutated}));
         bt::invalid([&] { (void)bike::golden::verify_bundle_closure(d); });
+    }
+    {
+        const fs::path d = copy_case("bad_mjb_sha");
+        const std::array<std::byte, 4> junk{std::byte{1}, std::byte{2}, std::byte{3}, std::byte{4}};
+        write_bytes_overwrite(d / "model.mjb", junk);
+        bt::invalid([&] { (void)bike::golden::load_step_closure_bundle(d); });
+    }
+    {
+        const fs::path d = copy_case("missing_mjb");
+        fs::remove(d / "model.mjb");
+        bt::invalid([&] { (void)bike::golden::load_step_closure_bundle(d); });
     }
 }
 

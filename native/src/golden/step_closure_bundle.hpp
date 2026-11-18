@@ -92,6 +92,8 @@ struct StepClosureRow {
 struct StepClosureBundle {
     std::string model_xml;
     std::string model_12gears_xml;
+    std::vector<std::byte> model_mjb;
+    std::string model_mjb_sha256;
     std::vector<double> hfield_data;
     io::Value physics_config_json;
     std::string physics_config_label;
@@ -156,8 +158,8 @@ struct ClosureVerificationResult {
 [[nodiscard]] std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
     const StepClosureCaptureSpec &spec);
 
-// Write manifest.json, model.xml, model_12gears.xml, hfield_data.bin,
-// physics_config.json, and step_closure.bin into out_dir.
+// Write manifest.json, model.xml, model_12gears.xml, model.mjb,
+// hfield_data.bin, physics_config.json, and step_closure.bin into out_dir.
 void write_step_closure_bundle(const StepClosureBundle &bundle,
                                const std::filesystem::path &out_dir);
 

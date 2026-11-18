@@ -242,7 +242,9 @@ BatchScenario make_batch_scenario(
     sc.xaxis_batch.assign(static_cast<std::size_t>(kNWorld) * njnt3, 0.0f);
     sc.qfrc_batch.assign(static_cast<std::size_t>(kNWorld) * nv, 0.0f);
     sc.ctrl_batch.assign(static_cast<std::size_t>(kNWorld) * to_index(idx.nu), 0.0f);
-    sc.tendon_range_batch.assign(static_cast<std::size_t>(kNWorld) * 2, 0.0f);
+    const int max_tid = gpu_max_active_tendon_idx(idx);
+    const int tendon_stride = (max_tid >= 0) ? 2 * (max_tid + 1) : 2;
+    sc.tendon_range_batch.assign(static_cast<std::size_t>(kNWorld) * to_index(tendon_stride), 0.0f);
 
     const std::span<float> qpos_rows{sc.qpos_batch};
     const std::span<float> qvel_rows{sc.qvel_batch};
@@ -330,18 +332,24 @@ BatchScenario make_batch_scenario(
         xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 0] = rear_x;
         xanc_w[3 * to_index(idx.rear_wheel_spin_dof) + 2] = rear_ground_z + kRearRadiusM - 0.016f;
 
-        sc.tendon_range_batch[wi * 2 + 0] = -1.0e6f;
-        sc.tendon_range_batch[wi * 2 + 1] = 0.0f;
+        for (int t = 0; t <= max_tid; ++t) {
+            sc.tendon_range_batch[wi * to_index(tendon_stride) + to_index(2 * t)] = -1.0e6f;
+            sc.tendon_range_batch[wi * to_index(tendon_stride) + to_index(2 * t + 1)] = 0.0f;
+        }
     }
 
+    const bool has_ds = (idx.drive_shaft_spin_qpos >= 0);
     for (int w = 0; w < kNWorld; ++w) {
         const std::size_t wi = to_index(w);
         const std::span<const float> qpos_w = qpos_rows.subspan(wi * nq, nq);
+        const float ds_qpos = has_ds ? qpos_w[to_index(idx.drive_shaft_spin_qpos)] : 0.0f;
         gpu_init_world_state(
             sc.states[wi],
             sc.configs[wi].drivetrain,
-            qpos_w[to_index(idx.drive_shaft_spin_qpos)],
-            qpos_w[to_index(idx.rear_wheel_spin_qpos)]
+            qpos_w[to_index(idx.crank_spin_qpos)],
+            qpos_w[to_index(idx.rear_wheel_spin_qpos)],
+            ds_qpos,
+            has_ds
         );
     }
 
@@ -369,7 +377,8 @@ BatchScenario make_batch_scenario(
                 sc.xaxis_batch.data(),
                 sc.qfrc_batch.data(),
                 sc.ctrl_batch.data(),
-                sc.tendon_range_batch.data()
+                sc.tendon_range_batch.data(),
+                tendon_stride
             );
             require(st == bike::physics_core::Status::ok,
                     "gpu_step_world_writers succeeds in scenario loop");
@@ -538,9 +547,12 @@ void test_stepped_world_outputs() {
             require(std::isfinite(ctrl_w[to_index(i)]),
                     "ctrl is finite for every actuator");
         }
-        const float upper_bound = sc.tendon_range_batch[wi * 2 + 1];
+        const float upper_bound = sc.tendon_range_batch[wi * 4U + 1U];
         require(std::isfinite(upper_bound),
                 "tendon upper bound is finite");
+        const float clutch_upper_bound = sc.tendon_range_batch[wi * 4U + 3U];
+        require(std::isfinite(clutch_upper_bound),
+                "crank_clutch tendon upper bound is finite");
 
         // 6a. qfrc[fork_travel_dof] receives BOTH suspension force AND
         //     J^T-projected front tire ground force
@@ -739,7 +751,7 @@ void test_launch_wrappers_and_bounds() {
                 sc.qfrc_batch.data(),
                 sc.ctrl_batch.data(),
                 sc.tendon_range_batch.data(),
-                2) == 0,
+                4) == 0,
             "launch_writers succeeds");
     require(std::isfinite(sc.qfrc_batch[to_index(idx.root_z_dof)]),
             "launch_writers leaves finite qfrc on the CPU fallback");
@@ -755,7 +767,7 @@ void test_launch_wrappers_and_bounds() {
                 sc.configs.data(), 1, sc.states.data(),
                 sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
                 sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
-                sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 4) != 0,
             "launch_step_writers rejects nq > kMaxNq");
     require(sc.qfrc_batch[to_index(idx.root_z_dof)] == -12345.0f,
             "rejected launch leaves qfrc_batch unmodified");
@@ -771,7 +783,7 @@ void test_launch_wrappers_and_bounds() {
                     sc.configs.data(), 1, sc.states.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
                     sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
-                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 4) != 0,
                 "launch_writers rejects joint_id >= njnt");
     }
     {
@@ -784,7 +796,7 @@ void test_launch_wrappers_and_bounds() {
                     sc.configs.data(), 1, sc.states.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
                     sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
-                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 4) != 0,
                 "launch_writers rejects station_count > 128");
     }
     {
@@ -797,7 +809,7 @@ void test_launch_wrappers_and_bounds() {
                     sc.configs.data(), 1, sc.states.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
                     sc.xmat_batch.data(), sc.xanchor_batch.data(), sc.xaxis_batch.data(),
-                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 2) != 0,
+                    sc.qfrc_batch.data(), sc.ctrl_batch.data(), sc.tendon_range_batch.data(), 4) != 0,
                 "launch_writers rejects non-monotonic px");
     }
     sc.qfrc_batch[to_index(idx.root_z_dof)] = saved_root_z;

@@ -85,8 +85,10 @@ BIKE_GLOBAL void bike_gpu_writers_kernel(
     if (d_terrain_desc == nullptr || d_tyre_model == nullptr) {
         return;
     }
-    if (d_tendon_range != nullptr && idx.freehub_tendon >= 0 && tendon_range_world_stride > 0 &&
-        static_cast<long>(2) * static_cast<long>(idx.freehub_tendon) + 1L >=
+    const int max_active_tendon_idx = gpu_max_active_tendon_idx(idx);
+    if (d_tendon_range != nullptr && max_active_tendon_idx >= 0 &&
+        tendon_range_world_stride > 0 &&
+        static_cast<long>(2) * static_cast<long>(max_active_tendon_idx) + 1L >=
             static_cast<long>(tendon_range_world_stride)) {
         return;
     }
@@ -243,11 +245,12 @@ inline int validate_writers_inputs(
         std::cerr << "bike_gpu_launch_writers: invalid model indices or kMax bounds exceeded\n";
         return -3;
     }
-    if (d_tendon_range != nullptr && host_idx.freehub_tendon >= 0 &&
+    const int max_active_tendon_idx = gpu_max_active_tendon_idx(host_idx);
+    if (d_tendon_range != nullptr && max_active_tendon_idx >= 0 &&
         tendon_range_world_stride > 0 &&
-        static_cast<long>(2) * static_cast<long>(host_idx.freehub_tendon) + 1L >=
+        static_cast<long>(2) * static_cast<long>(max_active_tendon_idx) + 1L >=
             static_cast<long>(tendon_range_world_stride)) {
-        std::cerr << "bike_gpu_launch_writers: tendon_range_world_stride too small for freehub_tendon\n";
+        std::cerr << "bike_gpu_launch_writers: tendon_range_world_stride too small for active tendons\n";
         return -4;
     }
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;

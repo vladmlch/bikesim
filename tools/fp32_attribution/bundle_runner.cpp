@@ -60,7 +60,7 @@ inline mjtNum to_num(double v, bool quantize_f32) {
 
 int main(int argc, char **argv) {
     try {
-        fs::path model_p, hfield_p, trace_p, jobs_p, out_p;
+        fs::path model_p, hfield_p, trace_p, jobs_p, out_p, save_mjb_p;
         std::string mode = "parity";
         bool quantize_f32 = false;
         bool use_ratio = false;
@@ -78,12 +78,50 @@ int main(int argc, char **argv) {
             else if (k == "--trace") trace_p = next();
             else if (k == "--jobs") jobs_p = next();
             else if (k == "--out") out_p = next();
+            else if (k == "--save-mjb") save_mjb_p = next();
             else if (k == "--mode") mode = next();
             else if (k == "--cog-override") cog_override = std::stoi(next());
             else if (k == "--quantize-f32") quantize_f32 = true;
             else if (k == "--use-ratio") use_ratio = true;
             else if (k == "--reconstruct-forces") reconstruct_forces = true;
             else throw std::invalid_argument("unknown arg: " + k);
+        }
+
+        if (!save_mjb_p.empty()) {
+            if (model_p.empty() || hfield_p.empty()) {
+                throw std::invalid_argument(
+                    "usage: bundle_runner --model XML --hfield BIN --save-mjb MJB");
+            }
+            char err[1024] = "";
+            mjModel *m = mj_loadXML(model_p.c_str(), nullptr, err, sizeof(err));
+            if (!m) throw std::runtime_error(std::string("mj_loadXML: ") + err);
+            const auto hf = read_bin(hfield_p);
+            if (hf.size() != static_cast<std::size_t>(m->nhfielddata) * sizeof(double)) {
+                mj_deleteModel(m);
+                throw std::runtime_error("hfield size mismatch");
+            }
+            std::vector<double> hf_doubles(static_cast<std::size_t>(m->nhfielddata));
+            std::memcpy(hf_doubles.data(), hf.data(), hf.size());
+            for (int i = 0; i < m->nhfielddata; ++i) {
+                m->hfield_data[i] = static_cast<float>(hf_doubles[static_cast<std::size_t>(i)]);
+            }
+            const mjtSize mjb_bytes = mj_sizeModel(m);
+            if (mjb_bytes <= 0) {
+                mj_deleteModel(m);
+                throw std::runtime_error("mj_sizeModel returned non-positive size");
+            }
+            std::vector<char> mjb_buf(static_cast<std::size_t>(mjb_bytes));
+            mj_saveModel(m, nullptr, mjb_buf.data(), static_cast<int>(mjb_bytes));
+            mj_deleteModel(m);
+            std::ofstream mjb_out(save_mjb_p, std::ios::binary | std::ios::trunc);
+            if (!mjb_out) {
+                throw std::runtime_error("cannot write " + save_mjb_p.string());
+            }
+            mjb_out.write(mjb_buf.data(), static_cast<std::streamsize>(mjb_buf.size()));
+            if (!mjb_out) {
+                throw std::runtime_error("failed writing " + save_mjb_p.string());
+            }
+            return 0;
         }
 
         if (model_p.empty() || hfield_p.empty() || trace_p.empty() ||

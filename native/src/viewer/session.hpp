@@ -1,4 +1,5 @@
 #pragma once
+#include "decorations.hpp"
 #include "input.hpp"
 #include "../runtime/runtime.hpp"
 #include <functional>
@@ -42,6 +43,7 @@ struct SessionHooks {
     std::function<void(std::string_view)> console;
     std::function<std::string(const runtime::RenderFrame&,const InputState&,std::optional<double>)> hud;
     std::function<void(const runtime::RenderFrame&,std::optional<double>)> presented;
+    std::function<Decorations(const runtime::RenderFrame&)> decorations;
 };
 struct RunResult { bool terminal = false, closed_by_user = false; std::uint64_t resets = 0; };
 [[nodiscard]] bool gui_available() noexcept;

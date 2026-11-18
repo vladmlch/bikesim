@@ -1620,6 +1620,18 @@ static constexpr std::string_view kArgumentContracts = R"CLICONTRACT({
       },
       {
         "names": [
+          "--trajectory"
+        ],
+        "dest": "trajectory",
+        "default": null,
+        "type": "Path",
+        "choices": null,
+        "flag": false,
+        "required": false,
+        "positional": false
+      },
+      {
+        "names": [
           "--viewer"
         ],
         "dest": "viewer",

@@ -18,6 +18,7 @@ struct PlaybackData {
     bool intervals_hash_verified = true;
 };
 void validate_playback(const PlaybackData&, std::size_t nq, std::size_t nv);
+void fill_quaternion_starts(PlaybackData&, const mjModel&);
 [[nodiscard]] PlaybackData load_playback(const std::filesystem::path&, std::optional<std::int64_t> episode = {});
 [[nodiscard]] std::vector<double> pose_at(const PlaybackData&, double time_s);
 [[nodiscard]] model::ModelOwner make_playback_model(const PlaybackData&);

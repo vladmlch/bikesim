@@ -138,4 +138,41 @@ namespace tirecommon {
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,
                        double contact_x, double slip);
     // NOLINTEND(bugprone-easily-swappable-parameters)
+
+    inline constexpr double kSurfaceReferenceLoadN = 500.0;
+    inline constexpr double kSurfaceLoadSmoothDelta = 0.1;
+    inline constexpr double kReferenceSlipStiffnessPerLoad = 15.0;
+    inline constexpr double kWheelRollingTaperRadps = 0.2;
+
+    // Stage A evaluated track-surface sample (Spec §2.4). `name` borrows
+    // storage from the queried SurfaceSpec / SurfaceMap, which must outlive
+    // the sample.
+    struct SurfaceSample {
+        std::string_view name{};
+        double mu_peak = 0.0;
+        double mu_slide = 0.0;
+        double slip_stiffness_per_load = 0.0;
+        double stribeck_speed_mps = 4.5;
+        double crr_delta = 0.0;
+        double load_sensitivity = 0.0;
+    };
+
+    [[nodiscard]] SurfaceSample
+    sample_from_spec(const nativecfg::SurfaceSpec &s) noexcept;
+
+    [[nodiscard]] SurfaceSample
+    eval_surface(const nativecfg::SurfaceMap &map, double x_m);
+
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters)
+    [[nodiscard]] const nativecfg::SurfaceSpec *
+    uniform_surface_for_span(const nativecfg::SurfaceMap &map, double x_min_m,
+                             double x_max_m);
+
+    [[nodiscard]] double load_sensitivity_factor(double wheel_normal_load_n,
+                                                 double k_z) noexcept;
+
+    [[nodiscard]] double sample_mu(const SurfaceSample &s,
+                                   double sliding_speed_mps,
+                                   double wheel_normal_load_n);
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 } // namespace tirecommon

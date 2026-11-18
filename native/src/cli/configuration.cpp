@@ -3,7 +3,9 @@
 #include "../configuration/load.hpp"
 #include "../model/rider_geometry.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../spatial/config.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../writers/compliant_3d_tire.hpp"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -62,6 +64,22 @@ namespace {
 // load_physics and resolve_physics return the multi-KB physics config by
 // value; isolating their temporaries keeps ride_physics' own frame small.
 [[gnu::noinline]] std::unique_ptr<configuration::SimulationPhysicsConfig> load_ride_physics(const Arguments& args) {
+    // A [spatial] table opts into the 3D ride; it is not a physics field,
+    // so strip it before the strict config construct (same contract as
+    // native_ride_main::load_physics_from_file).
+    if (args.has("physics_config")) {
+        const auto physics_file = std::filesystem::path(args.text("physics_config"));
+        auto doc = configuration::detail::parse_toml_file(physics_file);
+        if (auto* obj = std::get_if<io::Value::Object>(&doc.data);
+            obj != nullptr && io::find_member(*obj, "spatial") != nullptr) {
+            std::erase_if(*obj, [](const auto& p) { return p.first == "spatial"; });
+            configuration::detail::resolve_config_paths(doc, physics_file.parent_path());
+            configuration::detail::reject_computed_members(doc);
+            return std::make_unique<configuration::SimulationPhysicsConfig>(
+                configuration::detail::construct_config(
+                    configuration::detail::with_flat_start(std::move(doc))));
+        }
+    }
     auto physics = std::make_unique<configuration::SimulationPhysicsConfig>(
         args.has("physics_config") ? configuration::load_physics(args.text("physics_config")) : configuration::default_physics());
     if (!args.has("physics_config")) {
@@ -117,7 +135,28 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
         request.model.bike.front_wheel_radius = physics.tires.pneumatic.front.outer_radius_mm;
         request.model.bike.rear_wheel_radius = physics.tires.pneumatic.rear.outer_radius_mm;
     }
-    auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", "lumped"), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
+    // Mirror native_ride_main::apply_spatial_config: a [spatial] table in
+    // the physics file engages the 3D ride for the interactive viewer too.
+    if (args.has("physics_config")) {
+        auto doc = configuration::detail::parse_toml_file(args.text("physics_config"));
+        if (auto* obj = std::get_if<io::Value::Object>(&doc.data); obj != nullptr) {
+            if (const auto* spatial_value = io::find_member(*obj, "spatial")) {
+                const io::Value::Object spatial_root{{"spatial", *spatial_value}};
+                auto parsed = spatial::parse_spatial_config(spatial_root, physics.timestep_s);
+                if (!parsed.has_value())
+                    throw ArgumentError("spatial: expected spatial configuration table");
+                const auto tire_cfg = make_compliant_3d_tire_config(parsed->tire_preset);
+                request.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+                request.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+                request.spatial = parsed;
+                request.model.spatial = parsed;
+            }
+        }
+    }
+    const std::string_view default_rider =
+        request.spatial.has_value() && physics.drive_mode == "articulated_effort"
+            ? "articulated_3d" : "lumped";
+    auto rider = model::rider_from_args(args.flag("no_rider") ? "none" : args.text("rider", std::string(default_rider)), args.real("rider_mass", 80.), args.real("rider_height", 1.8), args.optional_real("rider_inseam"));
     request.model.rider = std::move(rider);
     request.model.include_rider = request.model.rider->present();
     request.model.crank_joint = true;
@@ -128,6 +167,12 @@ std::unique_ptr<initialization::SetupRequest> ride_setup_request(Arguments const
     request.runtime.record_retention = args.flag("record") ? runtime::RetentionMode::full : runtime::RetentionMode::off;
     request.runtime.async_telemetry = args.flag("async_telemetry");
     return owner;
+}
+[[nodiscard]] bool physics_file_has_spatial(const Arguments& args) {
+    if (!args.has("physics_config")) return false;
+    auto doc = configuration::detail::parse_toml_file(args.text("physics_config"));
+    const auto* obj = std::get_if<io::Value::Object>(&doc.data);
+    return obj != nullptr && io::find_member(*obj, "spatial") != nullptr;
 }
 } // namespace
 
@@ -156,8 +201,13 @@ std::unique_ptr<ResolvedRide> resolve_ride(Arguments args, bool settling) {
     if (args.has("duration")) positive(args.real("duration"), "--duration");
     if (args.has("speed") && args.text("drive") != "ideal_speed_control") throw ArgumentError("--speed is an ideal controller target; use --initial-speed for coast/effort");
     if (args.text("drive") == "ideal_speed_control" && !args.has("speed")) args.set("speed", "25");
-    if (!args.has("rider") && !args.flag("no_rider")) args.set("rider", args.text("drive") == "articulated_effort" ? "articulated_planar" : "lumped");
-    if (args.text("drive") == "articulated_effort" && (args.flag("no_rider") || args.text("rider") != "articulated_planar")) throw ArgumentError("articulated_effort requires --rider articulated_planar");
+    const bool spatial_ride = physics_file_has_spatial(args);
+    if (!args.has("rider") && !args.flag("no_rider")) args.set("rider", args.text("drive") == "articulated_effort" ? (spatial_ride ? "articulated_3d" : "articulated_planar") : "lumped");
+    if (args.text("drive") == "articulated_effort" &&
+        (args.flag("no_rider") ||
+         (args.text("rider") != "articulated_planar" &&
+          !(spatial_ride && args.text("rider") == "articulated_3d"))))
+        throw ArgumentError("articulated_effort requires --rider articulated_planar");
     if (!settling && args.flag("headless") && args.text("drive") == "coast" && physics->initial_speed_mps == 0. && !args.has("duration")) throw ArgumentError("a stationary physical coast run needs --duration or nonzero --initial-speed");
     args.set("resolved_check_policy", args.text("check_policy", args.flag("headless") ? "strict" : "diagnostic"));
     if (!args.has("crank_phase")) args.set("crank_phase", "0");

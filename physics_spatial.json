@@ -1,0 +1,18 @@
+{
+    "physics":
+    {
+        "timestep_s": 0.00125,
+        "spatial":
+        {
+            "tire_backend": "compliant_3d",
+            "tire_preset": "2p8_1p2bar",
+            "start_mode": "moving",
+            "corridor_half_width_m": 5.0,
+            "capsize_roll_rad": 1.2,
+            "steer":
+            {
+                "max_torque_nm": 30.0
+            }
+        }
+    }
+}

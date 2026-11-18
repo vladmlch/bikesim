@@ -179,8 +179,13 @@ void PhysicalStep::capture_presentation(PresentationState &out) const {
         for (const auto &[name, active] : rider_control_->presentation_ik())
             if (active) append_name(out.ik_saturated, name);
         capture_accounted_presentation(out);
-        out.root_pitch_deg = degrees(q[static_cast<std::size_t>(joint_qpos(model, "rider_root_pitch"))]);
         out.pelvis_pitch_deg = body_pitch(model, data, "rider_pelvis");
+        // The articulated_3d rider carries root pitch on the free pelvis
+        // body, not on a rider_root_pitch hinge.
+        out.root_pitch_deg =
+            mj_name2id(model, mjOBJ_JOINT, "rider_root_pitch") >= 0
+                ? degrees(q[static_cast<std::size_t>(joint_qpos(model, "rider_root_pitch"))])
+                : out.pelvis_pitch_deg;
         out.torso_pitch_deg = body_pitch(model, data, "rider_torso");
         for (std::size_t i = 0; i < out.joints.size(); ++i)
             out.joints[i].second = q[static_cast<std::size_t>(out.joint_qpos_addresses[i])];

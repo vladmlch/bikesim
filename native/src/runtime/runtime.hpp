@@ -32,6 +32,7 @@
 #include "step.hpp"
 
 class Stepper;
+namespace bike::terrain { class Terrain3dSource; }
 namespace bike::golden { class RuntimeAccess; }
 namespace bike::validation { class RuntimeRigAccess; }
 
@@ -198,6 +199,9 @@ private:
     RuntimeConfig config_;
     BootstrapState bootstrap_;
     ModelImage model_image_;
+    // Spatial terrain owner: the tire-writer terrain callbacks point into
+    // it, so it must outlive `stepper_` (members destroy in reverse order).
+    std::unique_ptr<bike::terrain::Terrain3dSource> terrain3d_;
     std::unique_ptr<Stepper> stepper_;
     std::unique_ptr<PhysicalStep> physical_;
     // The decoded state.runtime (+ signals/controller/intent) inventory —

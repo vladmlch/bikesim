@@ -47,8 +47,12 @@
 #include "../rider/senses_codec.hpp"
 #include "../rider/state_codec.hpp"
 #include "../stepper.hpp"
+#include "../terrain/grid3d.hpp"
+#include "../terrain/source3d.hpp"
 #include "../tyre/profile.hpp"
 #include "../writer_config.hpp"
+#include "../writers/compliant_3d_tire.hpp"
+#include "../writers/distributed_3d_tire.hpp"
 #include "../writers/drivetrain.hpp"
 #include "brake_latch_codec.hpp"
 #include "value_readers.hpp"
@@ -492,6 +496,62 @@ build_physical_step(Stepper &stepper, const RuntimeConfig &config) {
         static_brake(config, *stepper.model(), stepper), pose, rider_cfg);
 }
 
+// Rebuilds the spatial terrain source from the compiled model's "terrain"
+// hfield — the same convention step.cpp::extract_spatial_road_hfield uses to
+// read it back for the physical step. The tire-writer terrain callbacks
+// point at the returned object; NativeRideRuntime owns it for the stepper's
+// lifetime.
+[[nodiscard]] std::unique_ptr<bike::terrain::Terrain3dSource>
+spatial_terrain_source(std::span<const std::byte> mjb) {
+    std::unique_ptr<mjModel, decltype(&mj_deleteModel)> model(
+        engine::load_model_image(mjb), &mj_deleteModel);
+    if (!model)
+        throw std::runtime_error("spatial terrain: mj_loadModel on model image failed");
+    const mjModel *m = model.get();
+    const auto gtypes = std::views::counted(m->geom_type, m->ngeom);
+    const auto gdata = std::views::counted(m->geom_dataid, m->ngeom);
+    const int t_idx = mj_name2id(m, mjOBJ_GEOM, "terrain");
+    const auto tu = static_cast<std::size_t>(t_idx);
+    if (t_idx < 0 || gtypes[tu] != mjGEOM_HFIELD)
+        throw std::invalid_argument("spatial terrain: model has no 'terrain' hfield geom");
+    const int h_idx = gdata[tu];
+    if (h_idx < 0 || h_idx >= m->nhfield)
+        throw std::invalid_argument("spatial terrain: malformed 'terrain' hfield");
+    const auto hu = static_cast<std::size_t>(h_idx);
+    const int nr = std::views::counted(m->hfield_nrow, m->nhfield)[hu];
+    const int nc = std::views::counted(m->hfield_ncol, m->nhfield)[hu];
+    const int adr = std::views::counted(m->hfield_adr, m->nhfield)[hu];
+    const auto hsize = std::views::counted(m->hfield_size, 4 * m->nhfield);
+    const auto gpos = std::views::counted(m->geom_pos, 3 * m->ngeom);
+    const double rx = hsize[4 * hu + 0];
+    const double ry = hsize[4 * hu + 1];
+    const double elev = hsize[4 * hu + 2];
+    if (nr < 2 || nc < 2 || !(rx > 0.0) || !(ry > 0.0) || !(elev > 0.0))
+        throw std::invalid_argument("spatial terrain: malformed 'terrain' hfield");
+    const double x0 = gpos[3 * tu + 0] - rx;
+    const double y0 = gpos[3 * tu + 1] - ry;
+    const double z_pos = gpos[3 * tu + 2];
+    bike::terrain::Grid3dSpec spec{
+        .nx = static_cast<std::size_t>(nc), .ny = static_cast<std::size_t>(nr),
+        .x0_m = x0, .y0_m = y0,
+        .dx_m = (2.0 * rx) / static_cast<double>(nc - 1),
+        .dy_m = (2.0 * ry) / static_cast<double>(nr - 1)};
+    // Grid3d indexes ix * ny + iy (transverse slices); the hfield stores
+    // iy * ncol + ix normalized into [0, 1] with z = value * elev + z_pos.
+    const auto hfield = std::views::counted(m->hfield_data, m->nhfielddata);
+    std::vector<double> elevations(spec.nx * spec.ny);
+    for (std::size_t ix = 0; ix < spec.nx; ++ix)
+        for (std::size_t iy = 0; iy < spec.ny; ++iy)
+            elevations[ix * spec.ny + iy] =
+                static_cast<double>(
+                    hfield[static_cast<std::size_t>(adr) + iy * spec.nx + ix]) *
+                    elev + z_pos;
+    const std::vector<rider::SurfaceLabel> surfaces(
+        (spec.nx - 1) * (spec.ny - 1), rider::SurfaceLabel::asphalt);
+    return std::make_unique<bike::terrain::Terrain3dSource>(
+        bike::terrain::Grid3d(spec, std::move(elevations), surfaces));
+}
+
 } // namespace
 
 std::unique_ptr<PhysicalStep>
@@ -529,6 +589,23 @@ void NativeRideRuntime::init() {
             writer_config.resistance->allow_spatial = true;
         }
         writer_config.cruise.reset();
+        // Mirror setup_owner.cpp: the spatial step needs the 3D tire
+        // writer, otherwise apply_bootstrap feeds front.ux columns to a
+        // planar writer. The terrain callbacks bind to terrain3d_, owned
+        // by this runtime for the stepper's lifetime.
+        writer_config.tire.reset();
+        terrain3d_ = spatial_terrain_source(model_image_.mjb);
+        const auto terrain_cb = make_terrain3d_callbacks(*terrain3d_);
+        if (config_.spatial->tire_backend ==
+            bike::spatial::SpatialTireBackend::compliant_3d) {
+            writer_config.compliant_3d_tire =
+                make_compliant_3d_tire_config(
+                    config_.spatial->tire_preset, terrain_cb);
+        } else {
+            writer_config.distributed_3d_tire =
+                make_distributed_3d_tire_config(
+                    config_.spatial->tire_preset, terrain_cb);
+        }
     }
     stepper_ = std::make_unique<Stepper>(model_image_.mjb, writer_config);
     // Same guarantee the decode gave at compose time — repeated against

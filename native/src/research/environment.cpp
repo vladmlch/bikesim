@@ -1,11 +1,31 @@
 #include "environment.hpp"
 #include "evidence.hpp"
+#include "../geometry/specs.hpp"
 #include "../initialization/launch_preparation.hpp"
+#include "../terrain/extrusion3d.hpp"
+#include "../terrain/generator3d.hpp"
+#include "../terrain/source3d.hpp"
 #include <memory>
 #include <stdexcept>
 
 namespace bike::research {
 namespace {
+// Callback signature is fixed by Compliant3dTerrainCallbacks::sample_fn.
+terrain::TerrainSample3d sample_terrain3d_cb(
+    const void* c, double x, double y) noexcept { // NOLINT(bugprone-easily-swappable-parameters)
+    return static_cast<const terrain::Terrain3dSource*>(c)->sample(x, y);
+}
+terrain::TorusClosestPoint3d closest_terrain3d_cb(
+    const void* c, const terrain::Vec3d& center, double search_radius_m) noexcept {
+    return static_cast<const terrain::Terrain3dSource*>(c)->closest_point(center, search_radius_m);
+}
+Compliant3dTerrainCallbacks terrain3d_callbacks(const terrain::Terrain3dSource& src) noexcept {
+    return Compliant3dTerrainCallbacks{
+        .ctx = &src,
+        .sample_fn = &sample_terrain3d_cb,
+        .closest_point_fn = &closest_terrain3d_cb,
+    };
+}
 std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const initialization::SetupRequest& setup) {
     auto copy = std::make_unique<initialization::SetupRequest>(setup);
     const auto options = copy->equilibrium;
@@ -23,14 +43,17 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     configuration::post_init(physics);
     if (physics.physics_mode != "physical" || (physics.drive_mode != "crank_effort" && physics.drive_mode != "articulated_effort"))
         throw std::invalid_argument("research requires a physical effort drive, not a speed controller");
+    const bool is_spatial = request.setup.spatial.has_value();
     if (physics.pitch_assist.value_or(false) || physics.tires.surface_mode != "track" ||
-        (physics.tires.backend != "compliant_2d" && physics.tires.backend != "distributed_2d_reference" && physics.tires.backend != "pneumatic") ||
-        (physics.tires.backend == "pneumatic" && physics.tires.pneumatic.surface))
+        (!is_spatial &&
+         ((physics.tires.backend != "compliant_2d" && physics.tires.backend != "distributed_2d_reference" && physics.tires.backend != "pneumatic") ||
+          (physics.tires.backend == "pneumatic" && physics.tires.pneumatic.surface))))
         throw std::invalid_argument("research requires no pitch assist and track-material compliant_2d, distributed_2d_reference or pneumatic tires");
     sample_rider(request);
     request.setup.seed_decimal = validate_seed(request.experiment.seed_decimal);
     request.setup.research_startup = true;
-    request.setup.model.field = research_field(request.setup.track, request.road_resolution_m);
+    if (!is_spatial)
+        request.setup.model.field = research_field(request.setup.track, request.road_resolution_m);
     request.setup.runtime.strict = request.experiment.stop_on_model_violation;
     request.setup.runtime.async_telemetry = request.experiment.async_telemetry;
     request.setup.runtime.measurement_decimation = request.experiment.record_decimation;
@@ -58,10 +81,27 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     config.noise_std = {request.sensors.noise.acceleration_std_mps2, request.sensors.noise.gyro_std_rad_s,
         request.sensors.noise.encoder_std_rad_s, request.sensors.noise.torque_std_nm};
     // All declarative checks and large tape allocation precede engine setup.
-    out.bootstrap.tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps);
+    out.bootstrap.tape = make_sensor_tape(request.sensors, config.seed_decimal, 1 + config.max_steps / config.sensor_steps, is_spatial);
     auto owner = make_settled_research_owner(request.setup);
     const auto startup = std::make_unique<initialization::ResearchStartup>(owner->research_initial_state());
     config.geometry = startup->geometry;
+    if (is_spatial && config.geometry.spatial != nullptr) {
+        const double ground_z_m = geometry::compute_ground_z(request.setup.model.bike) / 1000.;
+        std::shared_ptr<const terrain::Terrain3dSource> terrain_src;
+        if (request.setup.terrain_overlay.has_value()) {
+            terrain::Terrain3dOverlaySpec overlay = *request.setup.terrain_overlay;
+            if (overlay.datum_z_offset_m == 0.) overlay.datum_z_offset_m = ground_z_m;
+            terrain_src = std::make_shared<terrain::Terrain3dSource>(
+                terrain::build_overlay_grid3d(request.setup.track, overlay));
+        } else {
+            terrain_src = std::make_shared<terrain::Terrain3dSource>(
+                terrain::ExtrudedTrack3d(request.setup.track, request.setup.spatial->corridor_half_width_m, ground_z_m));
+        }
+        auto sp_copy = *config.geometry.spatial;
+        sp_copy.terrain = terrain3d_callbacks(*terrain_src);
+        sp_copy.terrain_keepalive = std::move(terrain_src);
+        config.geometry.spatial = std::make_shared<const runtime::SpatialTruthGeometry>(std::move(sp_copy));
+    }
     config.start_position_m = startup->position_m;
     config.raw_initial = startup->observation;
     out.bootstrap.startup = startup_sensor_state(request.sensors, out.bootstrap.tape, startup->observation);

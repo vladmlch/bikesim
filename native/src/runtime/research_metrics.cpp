@@ -7,6 +7,7 @@
 #include <utility>
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "../spatial/frames.hpp"
 #include "../tyre/profile.hpp"
 
 namespace runtime {
@@ -31,6 +32,121 @@ double load(const WireObject &wheel) {
     }
     return result.total();
 }
+WheelieTruth research_truth_spatial(const PhysicalSampleData &s, const TruthGeometry &g,
+                                    const SpatialTruthGeometry &sp,
+                                    const WireObject &tires, const WireArray &com) {
+    const auto &front = o(tires, "front"), &rear = o(tires, "rear");
+    const auto &f = array(required(front, "wheel_axis_m"));
+    const auto &r = array(required(rear, "wheel_axis_m"));
+    const bike::spatial::Quat q_raw{
+        s.qpos.at(sp.root_free_qpos + 3U), s.qpos.at(sp.root_free_qpos + 4U),
+        s.qpos.at(sp.root_free_qpos + 5U), s.qpos.at(sp.root_free_qpos + 6U)};
+    const bike::spatial::Quat q_F = bike::spatial::quat_normalized(q_raw);
+    if (!std::isfinite(q_F[0]))
+        throw std::invalid_argument("spatial research truth requires finite root_free quaternion");
+    const std::array<double, 3> v_F{
+        s.qvel.at(sp.root_free_dof + 0U), s.qvel.at(sp.root_free_dof + 1U), s.qvel.at(sp.root_free_dof + 2U)};
+    const std::array<double, 3> omega_body{
+        s.qvel.at(sp.root_free_dof + 3U), s.qvel.at(sp.root_free_dof + 4U), s.qvel.at(sp.root_free_dof + 5U)};
+    const double fx = number(f[0]), fy = number(f[1]), fz = number(f[2]);
+    const double rx = number(r[0]), ry = number(r[1]), rz = number(r[2]);
+    const auto y_F = bike::spatial::rotate_body_to_world(q_F, {0., 1., 0.});
+    // y_F x Z = (y_F[1], -y_F[0], 0): remains nonsingular across +-90 deg pitch loop-outs.
+    const double sx = y_F[1], sy = -y_F[0];
+    const double s_norm = std::hypot(sx, sy);
+    const double ux = s_norm > 1e-8 ? sx / s_norm : 1.0;
+    const double uy = s_norm > 1e-8 ? sy / s_norm : 0.0;
+    const double lat_x = -uy, lat_y = ux;
+    const double dx = fx - rx, dy = fy - ry, dz = fz - rz;
+    const double d_s = dx * ux + dy * uy;
+    const double d_lat = dx * lat_x + dy * lat_y;
+    const auto sf = sp.terrain.sample_fn(sp.terrain.ctx, fx, fy);
+    const auto sr = sp.terrain.sample_fn(sp.terrain.ctx, rx, ry);
+    if (sf.status != bike::terrain::QueryStatus3d::ok || sr.status != bike::terrain::QueryStatus3d::ok ||
+        !std::isfinite(sf.height_m) || !std::isfinite(sr.height_m))
+        throw std::runtime_error("spatial truth terrain sample out of bounds");
+    const double z_f = sf.height_m, z_r = sr.height_m;
+    constexpr double kBaselineHalf = 0.25;
+    const double mx = 0.5 * (fx + rx), my = 0.5 * (fy + ry);
+    const auto s_plus = sp.terrain.sample_fn(sp.terrain.ctx, mx + kBaselineHalf * lat_x, my + kBaselineHalf * lat_y);
+    const auto s_minus = sp.terrain.sample_fn(sp.terrain.ctx, mx - kBaselineHalf * lat_x, my - kBaselineHalf * lat_y);
+    double s_lat = 0.0;
+    if (s_plus.status == bike::terrain::QueryStatus3d::ok &&
+        s_minus.status == bike::terrain::QueryStatus3d::ok) {
+        s_lat = (s_plus.height_m - s_minus.height_m) / (2.0 * kBaselineHalf);
+    } else {
+        const auto s_mid = sp.terrain.sample_fn(sp.terrain.ctx, mx, my);
+        if (s_mid.status == bike::terrain::QueryStatus3d::ok) {
+            if (s_plus.status == bike::terrain::QueryStatus3d::ok)
+                s_lat = (s_plus.height_m - s_mid.height_m) / kBaselineHalf;
+            else if (s_minus.status == bike::terrain::QueryStatus3d::ok)
+                s_lat = (s_mid.height_m - s_minus.height_m) / kBaselineHalf;
+        }
+    }
+    double s_long = 0.0;
+    if (std::abs(d_s) >= 1e-3) {
+        s_long = ((z_f - z_r) - s_lat * d_lat) / d_s;
+    } else {
+        const auto s_fwd_p = sp.terrain.sample_fn(
+            sp.terrain.ctx, mx + 0.5 * ux, my + 0.5 * uy);
+        const auto s_fwd_m = sp.terrain.sample_fn(
+            sp.terrain.ctx, mx - 0.5 * ux, my - 0.5 * uy);
+        if (s_fwd_p.status == bike::terrain::QueryStatus3d::ok &&
+            s_fwd_m.status == bike::terrain::QueryStatus3d::ok) {
+            s_long = s_fwd_p.height_m - s_fwd_m.height_m;
+        }
+    }
+    const double n_norm = std::sqrt(1.0 + s_long * s_long + s_lat * s_lat);
+    const double nx = (-s_long * ux - s_lat * lat_x) / n_norm;
+    const double ny = (-s_long * uy - s_lat * lat_y) / n_norm;
+    const double nz = 1.0 / n_norm;
+    const double n_z_sec = std::max(nz, 1e-6);
+    const double sin_gamma = y_F[0] * nx + y_F[1] * ny + y_F[2] * nz;
+    const double c_gamma = std::sqrt(std::max(0.0, 1.0 - sin_gamma * sin_gamma));
+    const double h_perp_f = sp.front_crown_radius_m + (g.front_radius - sp.front_crown_radius_m) * c_gamma;
+    const double h_perp_r = sp.rear_crown_radius_m + (g.rear_radius - sp.rear_crown_radius_m) * c_gamma;
+    WheelieTruth t;
+    t.time_s = s.time_s;
+    t.axle_pitch_rad = std::atan2(dz, d_s);
+    double theta_supported = 0.0;
+    if (d_s > 1e-6) {
+        t.road_pitch_rad = std::atan2((z_f - z_r) - s_lat * d_lat, d_s);
+        theta_supported = std::atan2((z_f - z_r) + (h_perp_f - h_perp_r) / n_z_sec, d_s);
+    } else {
+        const double span = std::max(std::hypot(d_s, dz), 1e-6);
+        t.road_pitch_rad = std::atan2(s_long, 1.0);
+        theta_supported = std::atan2(s_long * span + (h_perp_f - h_perp_r) / n_z_sec, span);
+    }
+    const double diff = t.axle_pitch_rad - theta_supported;
+    t.relative_pitch_rad = std::atan2(std::sin(diff), std::cos(diff));
+    const auto clearance = [&](const WireObject &wheel, double hx, double hy, double hz, double radius) {
+        const auto *penetration = find(wheel, "penetration_m");
+        if (penetration && !is_none(*penetration))
+            return std::max(0., -number(*penetration));
+        const auto hit = sp.terrain.closest_point_fn(
+            sp.terrain.ctx, bike::terrain::Vec3d{hx, hy, hz}, radius + 0.15);
+        if (hit.status != bike::terrain::QueryStatus3d::ok || !std::isfinite(hit.signed_distance_m))
+            throw std::runtime_error("spatial truth closest_point query failed");
+        return std::max(0., hit.signed_distance_m - radius);
+    };
+    t.front_clearance_m = clearance(front, fx, fy, fz, g.front_radius);
+    t.rear_clearance_m = clearance(rear, rx, ry, rz, g.rear_radius);
+    t.front_load_n = load(front);
+    t.rear_load_n = load(rear);
+    t.position_m = s.qpos.at(sp.root_free_qpos);
+    const auto x_F = bike::spatial::rotate_body_to_world(q_F, {1., 0., 0.});
+    t.speed_mps = v_F[0] * x_F[0] + v_F[1] * x_F[1] + v_F[2] * x_F[2];
+    t.pitch_up_rad = std::asin(std::clamp(x_F[2], -1.0, 1.0));
+    const double phi = std::atan2(2.0 * (q_F[0] * q_F[1] + q_F[2] * q_F[3]),
+                                  1.0 - 2.0 * (q_F[1] * q_F[1] + q_F[2] * q_F[2]));
+    t.pitch_rate_up_rad_s = -(std::cos(phi) * omega_body[1] - std::sin(phi) * omega_body[2]);
+    t.front_slip_mps = n(front, "slip_mps");
+    t.rear_slip_mps = n(rear, "slip_mps");
+    t.com_x_m = number(com[0]);
+    t.com_z_m = number(com[2]);
+    t.validate();
+    return t;
+}
 }
 std::string_view classify_contact(double front_load,double rear_load,double front_clearance,
         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
@@ -54,6 +170,25 @@ double quasistatic_front_load(double mass,double wheelbase,double forward,double
     return mass*(gravity*numeric::math_cos(road_pitch)*forward-height*(acceleration+gravity*numeric::math_sin(road_pitch)))/wheelbase;
 }
 void TruthGeometry::validate(std::size_t nq, std::size_t nv) const {
+    if (spatial != nullptr) {
+        if (x.size() != z.size())
+            throw std::invalid_argument("research terrain requires equal x/z arrays");
+        for (std::size_t i = 0; i < x.size(); ++i)
+            if (!std::isfinite(x[i]) || !std::isfinite(z[i]) || (i > 0 && x[i] <= x[i - 1]))
+                throw std::invalid_argument("research terrain must be finite with increasing x");
+        if (!std::isfinite(front_radius) || !std::isfinite(rear_radius) || front_radius <= 0. || rear_radius <= 0.)
+            throw std::invalid_argument("research wheel radii must be positive");
+        const auto &sp = *spatial;
+        if (!std::isfinite(sp.front_crown_radius_m) || !std::isfinite(sp.rear_crown_radius_m) ||
+            sp.front_crown_radius_m < 0. || sp.rear_crown_radius_m < 0. ||
+            sp.front_crown_radius_m >= front_radius || sp.rear_crown_radius_m >= rear_radius)
+            throw std::invalid_argument("spatial wheel crown radii must lie in [0, outer_radius)");
+        if (!sp.terrain.valid())
+            throw std::invalid_argument("spatial research truth requires valid 3D terrain callbacks");
+        if (sp.root_free_qpos + 7U > nq || sp.root_free_dof + 6U > nv)
+            throw std::invalid_argument("spatial research truth addresses exceed the model dimensions");
+        return;
+    }
     if (x.size() < 2 || x.size() != z.size()) throw std::invalid_argument("research terrain requires equal x/z arrays");
     for (std::size_t i = 0; i < x.size(); ++i)
         if (!std::isfinite(x[i]) || !std::isfinite(z[i]) || (i > 0 && x[i] <= x[i-1]))
@@ -89,6 +224,8 @@ WheelieTruth research_truth(const PhysicalSampleData &s, const TruthGeometry &g)
     const auto &com = array(required(o(s.channels, "mass"), "com_m"));
     if (f.size() != 3 || r.size() != 3 || com.size() != 3)
         throw std::invalid_argument("research truth vector width mismatch");
+    if (g.spatial != nullptr)
+        return research_truth_spatial(s, g, *g.spatial, tires, com);
     const double zf = biketyre::np_interp(number(f[0]), g.x, g.z);
     const double zr = biketyre::np_interp(number(r[0]), g.x, g.z);
     const double dx = number(f[0]) - number(r[0]);

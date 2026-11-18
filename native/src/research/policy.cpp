@@ -39,7 +39,9 @@ void validate_policy_abi(const BikePolicyV1* api) {
     if (api->abi_version != BIKE_POLICY_ABI_VERSION) throw PolicyFailure("unsupported policy ABI version");
     if (api->struct_size < sizeof(BikePolicyV1)) throw PolicyFailure("policy ABI descriptor is too small");
     if (api->required_capabilities != 0) throw PolicyFailure("policy requires unsupported capabilities");
-    if (api->sensor_schema_version != BIKE_SENSOR_SCHEMA_VERSION) throw PolicyFailure("unsupported policy sensor schema");
+    if (api->sensor_schema_version != BIKE_SENSOR_SCHEMA_VERSION &&
+        api->sensor_schema_version != BIKE_SENSOR_SCHEMA_SPATIAL_6AXIS)
+        throw PolicyFailure("unsupported policy sensor schema");
     if (!api->create || !api->reset || !api->act || !api->destroy)
         throw PolicyFailure("policy ABI has a null required callback");
 }
@@ -81,6 +83,21 @@ BikeObservationV1 policy_observation_to_abi(const runtime::SensorObservation& va
     out.valid_mask = value.valid ? BIKE_SENSOR_ALL_FIELDS : 0U;
     out.time_s = value.time_s; out.source_time_s = value.source_time_s;
     std::ranges::copy(value.values, std::begin(out.values));
+    return out;
+}
+BikeObservationSpatialV1 policy_observation_to_spatial_abi(const runtime::SensorObservation& value) {
+    value.validate();
+    BikeObservationSpatialV1 out{};
+    out.v1.struct_size = static_cast<std::uint32_t>(sizeof(out));
+    out.v1.sensor_schema_version = BIKE_SENSOR_SCHEMA_SPATIAL_6AXIS;
+    out.v1.valid = value.valid ? 1 : 0;
+    out.v1.valid_mask = value.valid ? BIKE_SENSOR_SPATIAL_ALL_FIELDS : 0U;
+    out.v1.time_s = value.time_s;
+    out.v1.source_time_s = value.source_time_s;
+    std::ranges::copy(value.values, std::begin(out.v1.values));
+    const auto gyro = value.angular_rate_body_rad_s.value_or(
+        std::array<double, 3>{0., -value.values[3], 0.});
+    std::ranges::copy(gyro, std::begin(out.angular_rate_body_rad_s));
     return out;
 }
 NATIVE_DIAG_POP

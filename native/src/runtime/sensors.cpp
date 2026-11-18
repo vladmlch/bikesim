@@ -14,6 +14,7 @@ void nonnegative(double value, std::string_view path) {
 SensorObservation invalid_sample(SensorObservation raw) {
     raw.valid = false;
     raw.values.fill(0.);
+    if (raw.angular_rate_body_rad_s.has_value()) raw.angular_rate_body_rad_s->fill(0.);
     return raw;
 }
 constexpr std::array<std::string_view, 6> scalar_names{
@@ -29,6 +30,8 @@ void SensorConfig::validate() const {
     for (const double bias : acceleration_bias)
         if (!std::isfinite(bias)) throw std::invalid_argument("sensors.acceleration_bias must be finite");
     if (!std::isfinite(gyro_bias)) throw std::invalid_argument("sensors.gyro_bias must be finite");
+    for (const double bias : gyro_bias_3d_rad_s)
+        if (!std::isfinite(bias)) throw std::invalid_argument("sensors.gyro_bias_3d_rad_s must be finite");
 }
 void SensorObservation::validate() const {
     nonnegative(time_s, "observation.time_s");
@@ -37,20 +40,32 @@ void SensorObservation::validate() const {
         throw std::invalid_argument("sensor observation cannot come from the future");
     for (const double value : values)
         if (!std::isfinite(value)) throw std::invalid_argument("sensor observation must be finite");
+    if (angular_rate_body_rad_s.has_value())
+        for (const double rate : *angular_rate_body_rad_s)
+            if (!std::isfinite(rate)) throw std::invalid_argument("sensor angular_rate_body_rad_s must be finite");
 }
 WireObject SensorObservation::as_wire() const {
     WireObject result{{"time_s", time_s}, {"source_time_s", source_time_s}, {"valid", valid},
         {"specific_force_body_mps2", wire_array(std::span<const double>(values).first<3>())}};
     for (std::size_t i = 0; i < scalar_names.size(); ++i)
         result.emplace_back(std::string(scalar_names[i]), values[i + 3]);
+    if (angular_rate_body_rad_s.has_value())
+        result.emplace_back("angular_rate_body_rad_s",
+            wire_array(std::span<const double>(*angular_rate_body_rad_s)));
     return result;
 }
 SensorObservation SensorObservation::from_wire(const WireObject &value) {
     using namespace sample_wire;
-    constexpr std::array<std::string_view, 10> keys{"time_s", "source_time_s", "valid",
+    constexpr std::array<std::string_view, 10> keys_v1{"time_s", "source_time_s", "valid",
         "specific_force_body_mps2", "pitch_rate_up_rad_s", "front_wheel_rad_s",
         "rear_wheel_rad_s", "crank_rad_s", "motor_torque_nm", "human_torque_nm"};
-    exact(value, keys, "sensor observation");
+    constexpr std::array<std::string_view, 11> keys_spatial{"time_s", "source_time_s", "valid",
+        "specific_force_body_mps2", "pitch_rate_up_rad_s", "front_wheel_rad_s",
+        "rear_wheel_rad_s", "crank_rad_s", "motor_torque_nm", "human_torque_nm",
+        "angular_rate_body_rad_s"};
+    const auto *gyro3 = find(value, "angular_rate_body_rad_s");
+    if (gyro3 != nullptr) exact(value, keys_spatial, "sensor observation");
+    else exact(value, keys_v1, "sensor observation");
     SensorObservation result;
     result.time_s = number(required(value, "time_s"));
     result.source_time_s = number(required(value, "source_time_s"));
@@ -60,15 +75,26 @@ SensorObservation SensorObservation::from_wire(const WireObject &value) {
     for (std::size_t i = 0; i < 3; ++i) result.values[i] = number(acceleration[i]);
     for (std::size_t i = 0; i < scalar_names.size(); ++i)
         result.values[i + 3] = number(required(value, scalar_names[i]));
+    if (gyro3 != nullptr) {
+        const auto &rates = array(*gyro3);
+        if (rates.size() != 3) throw std::invalid_argument("sensor angular_rate_body_rad_s must have width 3");
+        result.angular_rate_body_rad_s = std::array<double, 3>{
+            number(rates[0]), number(rates[1]), number(rates[2])};
+    }
     result.validate();
     return result;
 }
 void NoiseTape::validate() const {
     if (noise.size() != dropout_uniform.size())
         throw std::invalid_argument("noise tape shapes must be (count, 9) and (count,)");
+    if (!spatial_gyro_noise.empty() && spatial_gyro_noise.size() != noise.size())
+        throw std::invalid_argument("spatial gyro noise tape shape must match (count, 3)");
     for (const auto &row : noise)
         for (const double value : row)
             if (!std::isfinite(value)) throw std::invalid_argument("noise tape must be finite");
+    for (const auto &row : spatial_gyro_noise)
+        for (const double value : row)
+            if (!std::isfinite(value)) throw std::invalid_argument("spatial gyro noise tape must be finite");
     for (const double value : dropout_uniform)
         if (!std::isfinite(value) || value < 0. || value >= 1.)
             throw std::invalid_argument("dropout uniforms must lie in [0, 1)");
@@ -103,7 +129,9 @@ void SensorPipeline::import_state(SensorState next) {
     if (next.startup) {
         next.startup->validate();
         if (next.startup->valid || next.startup->source_time_s > *next.last_time ||
-            std::ranges::any_of(next.startup->values, [](double x) { return x != 0.; }))
+            std::ranges::any_of(next.startup->values, [](double x) { return x != 0.; }) ||
+            (next.startup->angular_rate_body_rad_s.has_value() &&
+             std::ranges::any_of(*next.startup->angular_rate_body_rad_s, [](double x) { return x != 0.; })))
             throw std::invalid_argument("sensor startup must be a zero invalid sample");
         if (next.delivery_time && next.startup->source_time_s > *next.delivery_time + 1e-12)
             throw std::invalid_argument("sensor startup lies after the delivery clock");
@@ -130,10 +158,26 @@ void SensorPipeline::push(const SensorObservation &raw) {
     // Preserve NumPy ufunc association: (raw + bias) + scaled noise.
     for (std::size_t i = 0; i < 3; ++i)
         measured.values[i] = (raw.values[i] + config_.acceleration_bias[i]) + noise[i];
-    measured.values[3] = (raw.values[3] + config_.gyro_bias) + noise[3];
+    const double pitch_bias = raw.angular_rate_body_rad_s.has_value() && config_.gyro_bias == 0.
+        ? -config_.gyro_bias_3d_rad_s[1] : config_.gyro_bias;
+    measured.values[3] = (raw.values[3] + pitch_bias) + noise[3];
     for (std::size_t i = 4; i < noise.size(); ++i) measured.values[i] += noise[i];
+    if (raw.angular_rate_body_rad_s.has_value()) {
+        const std::array<double, 3> gyro_noise =
+            state_.cursor < tape_.spatial_gyro_noise.size()
+                ? tape_.spatial_gyro_noise[state_.cursor]
+                : std::array<double, 3>{0., 0., 0.};
+        measured.angular_rate_body_rad_s = std::array<double, 3>{
+            ((*raw.angular_rate_body_rad_s)[0] + config_.gyro_bias_3d_rad_s[0]) + gyro_noise[0],
+            -measured.values[3],
+            ((*raw.angular_rate_body_rad_s)[2] + config_.gyro_bias_3d_rad_s[2]) + gyro_noise[2]};
+    }
     measured.validate();
-    if (!config_.imu_enabled) std::fill_n(measured.values.begin(), 4, 0.);
+    if (!config_.imu_enabled) {
+        std::fill_n(measured.values.begin(), 4, 0.);
+        if (measured.angular_rate_body_rad_s.has_value())
+            measured.angular_rate_body_rad_s->fill(0.);
+    }
     const bool drop = tape_.dropout_uniform[state_.cursor] < config_.dropout_probability;
     // Only append may allocate; commit scalar clocks/counters afterwards.
     if (!drop) state_.queue.push_back(measured);
@@ -177,7 +221,7 @@ WireObject SensorPipeline::state_wire() const {
         {"samples_attempted", static_cast<std::int64_t>(state_.samples_attempted)},
         {"samples_dropped", static_cast<std::int64_t>(state_.samples_dropped)}};
 }
-SensorObservation raw_sensor_observation(const PhysicalSampleData &sample) {
+SensorObservation raw_sensor_observation(const PhysicalSampleData &sample, bool spatial_imu) {
     using namespace sample_wire;
     const auto &channels = object(required(sample.channels, "sensors"));
     const auto &force = array(required(channels, "frame_specific_force_body_mps2"));
@@ -187,7 +231,12 @@ SensorObservation raw_sensor_observation(const PhysicalSampleData &sample) {
     SensorObservation result;
     result.time_s = result.source_time_s = sample.time_s;
     for (std::size_t i = 0; i < 3; ++i) result.values[i] = number(force[i]);
-    result.values[3] = -number(gyro[1]);
+    const double gyro_y = number(gyro[1]);
+    result.values[3] = -gyro_y;
+    if (spatial_imu) {
+        result.angular_rate_body_rad_s = std::array<double, 3>{
+            number(gyro[0]), gyro_y, number(gyro[2])};
+    }
     result.values[4] = number(required(enc, "front_wheel"));
     result.values[5] = number(required(enc, "rear_wheel"));
     result.values[6] = number(required(enc, "crank"));

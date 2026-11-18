@@ -33,6 +33,7 @@
 #include "../terrain/source3d.hpp"
 #include "../terrain/trackfile.hpp"
 #include "writers/compliant_3d_tire.hpp"
+#include "writers/distributed_3d_tire.hpp"
 #include "../io/json.hpp"
 
 namespace bike::initialization {
@@ -353,11 +354,20 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     configuration::post_init(*request.model.physics);
     if (request.spatial.has_value()) {
         spatial::validate_spatial_config(*request.spatial, request.model.physics->timestep_s);
-        if (request.spatial->tire_backend != spatial::SpatialTireBackend::compliant_3d)
-            throw std::invalid_argument("native spatial setup currently supports only compliant_3d tire backend");
-        const auto tire_cfg = make_compliant_3d_tire_config(request.spatial->tire_preset);
-        request.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
-        request.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+        switch (request.spatial->tire_backend) {
+        case spatial::SpatialTireBackend::compliant_3d: {
+            const auto tire_cfg = make_compliant_3d_tire_config(request.spatial->tire_preset);
+            request.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+            request.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+            break;
+        }
+        case spatial::SpatialTireBackend::distributed_3d: {
+            const auto tire_cfg = make_distributed_3d_tire_config(request.spatial->tire_preset);
+            request.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+            request.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+            break;
+        }
+        }
     } else if (request.model.physics->tires.backend == "pneumatic") {
         request.model.bike.front_wheel_radius =
             request.model.physics->tires.pneumatic.front.outer_radius_mm;
@@ -401,10 +411,21 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
             nativecfg::decode(impl->config.writer_config));
         writer_cfg->tire.reset();
         writer_cfg->cruise.reset();
-        writer_cfg->compliant_3d_tire = make_compliant_3d_tire_config(
-            request.spatial->tire_preset, terrain3d_callbacks(*impl->terrain3d));
-        if (writer_cfg->resistance.has_value())
+        switch (request.spatial->tire_backend) {
+        case spatial::SpatialTireBackend::compliant_3d:
+            writer_cfg->compliant_3d_tire = make_compliant_3d_tire_config(
+                request.spatial->tire_preset, terrain3d_callbacks(*impl->terrain3d));
+            break;
+        case spatial::SpatialTireBackend::distributed_3d:
+            writer_cfg->distributed_3d_tire = make_distributed_3d_tire_config(
+                request.spatial->tire_preset, terrain3d_callbacks(*impl->terrain3d));
+            break;
+        }
+        if (writer_cfg->resistance.has_value()) {
             writer_cfg->resistance->allow_spatial = true;
+            if (request.spatial->tire_backend == spatial::SpatialTireBackend::distributed_3d)
+                writer_cfg->resistance->crr = 0.0;
+        }
         impl->stepper = std::make_unique<Stepper>(image.mjb, *writer_cfg);
         impl->physical = make_spatial_physical_step(
             *impl->stepper, impl->config, *impl->terrain3d, request.model.field);

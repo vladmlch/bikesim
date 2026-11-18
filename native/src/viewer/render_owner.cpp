@@ -2,6 +2,7 @@
 #include "render_fields.hpp"
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
+#include "../spatial/frames.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -31,7 +32,8 @@ struct RenderOwner::Impl {
     mjvScene scene{};
     mjrContext context{};
     std::vector<std::pair<int, std::array<double, 3>>> marker_sizes;
-    bool graphics = false, poisoned = false, is_closed = false;
+    int root_free_qposadr = -1;
+    bool spatial = false, graphics = false, poisoned = false, is_closed = false;
     void require_live() const {
         if (thread != std::this_thread::get_id()) throw std::runtime_error("render owner must stay on its event thread");
         if (is_closed) throw std::runtime_error("render owner is closed");
@@ -63,6 +65,15 @@ RenderOwner::RenderOwner(const runtime::ModelImage& image) : impl_(std::make_uni
         }
     }
     set_markers(false);
+    const int root_free_id = mj_name2id(p.model.get(), mjOBJ_JOINT, "root_free");
+    if (root_free_id >= 0) {
+        const auto jtypes = model_access::readonly_buffer(p.model->jnt_type, p.model->njnt);
+        if (jtypes[static_cast<std::size_t>(root_free_id)] == mjJNT_FREE) {
+            const auto qposadr = model_access::readonly_buffer(p.model->jnt_qposadr, p.model->njnt);
+            p.root_free_qposadr = qposadr[static_cast<std::size_t>(root_free_id)];
+            p.spatial = p.root_free_qposadr >= 0 && p.root_free_qposadr + 6 < p.model->nq;
+        }
+    }
 }
 RenderOwner::~RenderOwner() { close(); }
 void RenderOwner::apply(const runtime::RenderFrame& frame) {
@@ -105,7 +116,16 @@ void RenderOwner::apply(const runtime::RenderFrame& frame) {
     }, &refresh, error);
     if (!ok) { p.poisoned = true; engine::throw_failure(error); }
     if (generation_changed) p.tracking.reset_preset();
-    p.tracking.update(p.camera, staged.presentation.position_m, staged.presentation.z_m);
+    if (p.spatial) {
+        const auto qpos = model_access::readonly_buffer(p.data->qpos, p.model->nq);
+        const auto qa = static_cast<std::size_t>(p.root_free_qposadr);
+        const bike::spatial::Quat quat{qpos[qa + 3U], qpos[qa + 4U], qpos[qa + 5U], qpos[qa + 6U]};
+        const auto heading = bike::spatial::horizontal_heading_unit(quat);
+        const double yaw_rad = heading.valid ? heading.heading_rad : p.tracking.unwrapped_yaw_rad();
+        p.tracking.update_spatial(p.camera, qpos[qa], qpos[qa + 1U], qpos[qa + 2U], yaw_rad);
+    } else {
+        p.tracking.update(p.camera, staged.presentation.position_m, staged.presentation.z_m);
+    }
     p.frame = std::move(staged);
 }
 void RenderOwner::draw(int width, int height) {
@@ -183,5 +203,14 @@ std::array<std::vector<double>, 6> RenderOwner::model_fields() const {
     const auto fields = impl_->fields();
     for (std::size_t i = 0; i < fields.size(); ++i) out[i].assign(fields[i].begin(), fields[i].end());
     return out;
+}
+const mjvCamera& RenderOwner::camera() const {
+    impl_->require_live();
+    return impl_->camera;
+}
+std::optional<double> RenderOwner::spatial_unwrapped_yaw_rad() const {
+    impl_->require_live();
+    if (!impl_->spatial) return std::nullopt;
+    return impl_->tracking.unwrapped_yaw_rad();
 }
 } // namespace bike::viewer

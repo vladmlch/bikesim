@@ -13,3 +13,14 @@ foreach(_viewer_test IN ITEMS viewer_render viewer_hud)
       WORKING_DIRECTORY "$<TARGET_FILE_DIR:${_viewer_test}>")
   endif()
 endforeach()
+
+add_executable(viewer_spatial_viewer test_spatial_viewer.cpp)
+bike_startup_target_policy(viewer_spatial_viewer "${_test_repo_root}/native")
+target_link_libraries(viewer_spatial_viewer PRIVATE bike_test_fixtures bike_viewer)
+  bike_rewrite_mujoco_load_name(viewer_spatial_viewer
+    "${BIKE_DEP_mujoco_LIBRARY}")
+if(BUILD_TESTING)
+  add_test(NAME viewer_spatial_viewer COMMAND viewer_spatial_viewer)
+  set_tests_properties(viewer_spatial_viewer PROPERTIES
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:viewer_spatial_viewer>")
+endif()

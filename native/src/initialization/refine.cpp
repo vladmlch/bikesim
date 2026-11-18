@@ -103,6 +103,7 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
     }
 
     const bool has_compliant_3d = stepper.has_tire() && stepper.tire_writer().is_compliant_3d();
+    const bool has_distributed_3d = stepper.has_tire() && stepper.tire_writer().is_distributed_3d();
     std::array<double, 4> u_seed{};
     const std::size_t boff = scales.size();
     const double dt = m->opt.timestep;
@@ -218,6 +219,11 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
                 }
             }
             stepper.tire_writer().set_state(Compliant3dTireWriter::state_names(), candidate_tire_row);
+        } else if (has_distributed_3d) {
+            stepper.tire_writer().reset();
+            stepper.tire_writer().compute_into(d, dt, tire_scratch);
+            candidate_tire_row = stepper.tire_writer().state();
+            stepper.tire_writer().set_state(stepper.tire_state_names(), candidate_tire_row);
         }
 
         // First non-advancing solve with StaticBrake unlatched to read net wheel torques.
@@ -269,6 +275,8 @@ double refine_equilibrium_spatial(SetupContext& context, const SpatialRefineArgs
             stepper.mutate([&] { stepper.drive().restore(*incoming_drive); });
             if (has_compliant_3d)
                 stepper.tire_writer().set_state(Compliant3dTireWriter::state_names(), candidate_tire_row);
+            else if (has_distributed_3d)
+                stepper.tire_writer().set_state(stepper.tire_state_names(), candidate_tire_row);
             if (next_rider) {
                 auto probe = rider_probe;
                 stepper.rider_contacts().assign_state(std::move(*next_rider), std::move(probe));

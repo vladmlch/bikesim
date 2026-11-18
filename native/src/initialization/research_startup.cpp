@@ -82,7 +82,8 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     runtime::PhysicalSampleData initial;
     initial.channels.emplace_back("sensors", runtime::Wire{std::move(channels)});
     ResearchStartup result;
-    result.observation = runtime::raw_sensor_observation(initial);
+    const bool is_spatial = physical.is_spatial();
+    result.observation = runtime::raw_sensor_observation(initial, is_spatial);
     for (const auto& vertex : physical.terrain_vertices()) {
         result.geometry.x.push_back(vertex[0]);
         result.geometry.z.push_back(vertex[1]);
@@ -90,11 +91,44 @@ ResearchStartup prepare_research_startup(SetupContext& context) {
     const auto radii = std::views::counted(model->geom_size, model->ngeom * 3);
     result.geometry.front_radius = radii[static_cast<std::size_t>(context.front_geom_id) * 3];
     result.geometry.rear_radius = radii[static_cast<std::size_t>(context.rear_geom_id) * 3];
-    const auto x = joint_address(context, "root_x"), pitch = joint_address(context, "root_pitch");
-    result.geometry.root_x_qpos = static_cast<std::size_t>(x.qpos);
-    result.geometry.root_x_dof = static_cast<std::size_t>(x.dof);
-    result.geometry.root_pitch_qpos = static_cast<std::size_t>(pitch.qpos);
-    result.geometry.root_pitch_dof = static_cast<std::size_t>(pitch.dof);
+    if (is_spatial) {
+        const int root_free = mj_name2id(model, mjOBJ_JOINT, "root_free");
+        if (root_free < 0)
+            throw std::invalid_argument("spatial research startup requires root_free joint");
+        const auto jtypes = std::views::counted(model->jnt_type, model->njnt);
+        if (jtypes[static_cast<std::size_t>(root_free)] != mjJNT_FREE)
+            throw std::invalid_argument("root_free must be a freejoint");
+        const auto qposadr = std::views::counted(model->jnt_qposadr, model->njnt);
+        const auto dofadr = std::views::counted(model->jnt_dofadr, model->njnt);
+        const auto free_qpos = static_cast<std::size_t>(qposadr[static_cast<std::size_t>(root_free)]);
+        const auto free_dof = static_cast<std::size_t>(dofadr[static_cast<std::size_t>(root_free)]);
+        result.geometry.root_x_qpos = free_qpos;
+        result.geometry.root_x_dof = free_dof;
+        result.geometry.root_pitch_qpos = free_qpos + 4U;
+        result.geometry.root_pitch_dof = free_dof + 4U;
+        double front_crown = 0.0355;
+        double rear_crown = 0.0355;
+        if (physical.config_.spatial.has_value()) {
+            const auto tire_cfg = make_compliant_3d_tire_config(physical.config_.spatial->tire_preset);
+            front_crown = tire_cfg.front.crown_radius_m;
+            rear_crown = tire_cfg.rear.crown_radius_m;
+        }
+        result.geometry.spatial = std::make_shared<const runtime::SpatialTruthGeometry>(
+            runtime::SpatialTruthGeometry{
+                .root_free_qpos = free_qpos,
+                .root_free_dof = free_dof,
+                .front_crown_radius_m = front_crown,
+                .rear_crown_radius_m = rear_crown,
+                .terrain = {},
+                .terrain_keepalive = {},
+            });
+    } else {
+        const auto x = joint_address(context, "root_x"), pitch = joint_address(context, "root_pitch");
+        result.geometry.root_x_qpos = static_cast<std::size_t>(x.qpos);
+        result.geometry.root_x_dof = static_cast<std::size_t>(x.dof);
+        result.geometry.root_pitch_qpos = static_cast<std::size_t>(pitch.qpos);
+        result.geometry.root_pitch_dof = static_cast<std::size_t>(pitch.dof);
+    }
     result.position_m = std::views::counted(data->qpos, model->nq)[result.geometry.root_x_qpos];
     result.compiled_metadata = compiled_physical_metadata(*model);
     return result;

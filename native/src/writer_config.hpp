@@ -39,6 +39,7 @@
 #include "validation.hpp"
 #include "io/value.hpp"
 #include "writers/compliant_3d_tire.hpp"
+#include "writers/distributed_3d_tire.hpp"
 
 namespace nativecfg {
 
@@ -57,6 +58,7 @@ namespace nativecfg {
         std::optional<ResistanceConfig> resistance;
         std::optional<TireConfig> tire;
         std::optional<Compliant3dTireConfig> compliant_3d_tire;
+        std::optional<Distributed3dTireConfig> distributed_3d_tire;
         std::optional<rider::RiderContactsConfig> rider_contacts;
     };
 

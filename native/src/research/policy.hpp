@@ -72,5 +72,6 @@ void validate_motor_policy_control(const runtime::RideControl&);
 void validate_policy_abi(const BikePolicyV1*);
 [[nodiscard]] runtime::RideControl policy_control_from_abi(const BikeControlV1&);
 [[nodiscard]] BikeObservationV1 policy_observation_to_abi(const runtime::SensorObservation&);
+[[nodiscard]] BikeObservationSpatialV1 policy_observation_to_spatial_abi(const runtime::SensorObservation&);
 
 } // namespace bike::research

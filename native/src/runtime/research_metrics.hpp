@@ -1,13 +1,25 @@
 // Physics-rate research truth and evaluation, never policy inputs or forces.
 #pragma once
 #include <map>
+#include <memory>
+#include <optional>
 #include <string_view>
 #include "samples.hpp"
+#include "../writers/compliant_3d_tire.hpp"
 namespace runtime {
+struct SpatialTruthGeometry {
+    std::size_t root_free_qpos = 0;
+    std::size_t root_free_dof = 0;
+    double front_crown_radius_m = 0.0355;
+    double rear_crown_radius_m = 0.0355;
+    Compliant3dTerrainCallbacks terrain{};
+    std::shared_ptr<const void> terrain_keepalive{};
+};
 struct TruthGeometry {
     std::vector<double> x, z;
     double front_radius = 0., rear_radius = 0.;
     std::size_t root_x_qpos = 0, root_x_dof = 0, root_pitch_qpos = 0, root_pitch_dof = 0;
+    std::shared_ptr<const SpatialTruthGeometry> spatial{};
     void validate(std::size_t nq, std::size_t nv) const;
 };
 struct WheelieTruth {

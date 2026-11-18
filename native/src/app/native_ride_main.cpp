@@ -14,13 +14,16 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <variant>
 #include "../configuration/load.hpp"
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
 #include "../model/rider_geometry.hpp"
 #include "../platform/files.hpp"
 #include "../runtime/setup_values.hpp"
+#include "../spatial/config.hpp"
 #include "../terrain/trackfile.hpp"
+#include "../writers/compliant_3d_tire.hpp"
 
 namespace {
 struct Options {
@@ -91,28 +94,71 @@ Options parse(std::span<char*> arguments) {
     return result;
 }
 
-[[gnu::noinline]] void request_from_args(bike::app::SetupRequest& result, const Options& options) {
+[[gnu::noinline]] std::optional<bike::io::Value> load_physics_from_file(
+    const std::filesystem::path& physics_file,
+    std::optional<bike::configuration::SimulationPhysicsConfig>& out_physics) {
+    auto physics_doc = bike::configuration::detail::parse_toml_file(physics_file);
+    const auto& physics_root = bike::io::as_object(physics_doc, "physics");
+    const auto* doc_spatial = bike::io::find_member(physics_root, "spatial");
+    if (doc_spatial == nullptr) {
+        out_physics = bike::configuration::load_physics(physics_file);
+        return std::nullopt;
+    }
+    bike::io::Value spatial_value = *doc_spatial;
+    if (auto* obj = std::get_if<bike::io::Value::Object>(&physics_doc.data)) {
+        std::erase_if(*obj, [](const auto& p) { return p.first == "spatial"; });
+    }
+    bike::configuration::detail::resolve_config_paths(physics_doc, physics_file.parent_path());
+    bike::configuration::detail::reject_computed_members(physics_doc);
+    out_physics = bike::configuration::detail::construct_config(
+        bike::configuration::detail::with_flat_start(std::move(physics_doc)));
+    return spatial_value;
+}
+
+[[gnu::noinline]] void apply_spatial_config(bike::app::SetupRequest& result, bike::io::Value spatial_value) {
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access) caller ensures model.physics is engaged
+    const double timestep_s = result.model.physics->timestep_s;
+    const bike::io::Value::Object spatial_root{{"spatial", std::move(spatial_value)}};
+    auto parsed_spatial = bike::spatial::parse_spatial_config(spatial_root, timestep_s);
+    if (!parsed_spatial.has_value())
+        throw std::invalid_argument("spatial: expected spatial configuration table");
+    const auto tire_cfg = make_compliant_3d_tire_config(parsed_spatial->tire_preset);
+    result.model.bike.front_wheel_radius = tire_cfg.front.outer_radius_m * 1000.;
+    result.model.bike.rear_wheel_radius = tire_cfg.rear.outer_radius_m * 1000.;
+    result.spatial = parsed_spatial;
+    result.model.spatial = parsed_spatial;
+}
+
+[[gnu::noinline]] std::optional<bike::io::Value> request_from_args(bike::app::SetupRequest& result, const Options& options) {
     // parse() already rejects a launch without --physics-config when --request is absent.
     if (!options.physics) throw std::invalid_argument("provide --physics-config FILE or --request FILE");
-    result.origin = std::filesystem::absolute(options.physics.value()).string();
-    result.asset_root = std::filesystem::absolute(options.physics.value()).parent_path();
-    result.model.physics = bike::configuration::load_physics(options.physics.value());
+    const auto abs_physics = std::filesystem::absolute(options.physics.value());
+    result.origin = abs_physics.string();
+    result.asset_root = abs_physics.parent_path();
+    auto spatial_value = load_physics_from_file(options.physics.value(), result.model.physics);
+    const std::string default_rider = spatial_value.has_value()
+        ? (result.model.physics && result.model.physics->drive_mode == "articulated_effort"
+               ? "articulated_3d"
+               : "lumped")
+        : "articulated_planar";
     result.model.mode = "ride";
-    result.model.rider = bike::model::rider_from_args(options.rider.value_or("articulated_planar"));
+    result.model.rider = bike::model::rider_from_args(options.rider.value_or(default_rider));
     result.model.crank_joint = true;
     result.seed_decimal = options.seed.value_or("0");
     result.track = options.track_file
         ? bike::initialization::load_track_for_setup(options.track_file.value(), result.seed_decimal)
         : bike::terrain::get_preset(options.track.value_or("flat"));
     result.model.field = bike::terrain::HeightFieldSpec::for_track(result.track);
+    return spatial_value;
 }
 
 [[gnu::noinline]] std::unique_ptr<bike::app::SetupRequest> request_ptr(const Options& options) {
     auto result = std::make_unique<bike::app::SetupRequest>();
+    std::optional<bike::io::Value> spatial_value;
     if (options.request)
         *result = bike::initialization::read_setup_request(*options.request, options.fresh);
     else
-        request_from_args(*result, options);
+        spatial_value = request_from_args(*result, options);
     result->runtime.strict = options.strict;
     result->legacy_source_root = options.legacy_source;
     result->cache_directory = options.cache_directory;
@@ -125,6 +171,7 @@ Options parse(std::span<char*> arguments) {
         result->initial_state.reset();
     }
     bike::configuration::post_init(*result->model.physics);
+    if (spatial_value.has_value()) apply_spatial_config(*result, std::move(*spatial_value));
     return result;
 }
 

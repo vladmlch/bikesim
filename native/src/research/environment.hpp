@@ -91,7 +91,7 @@ public:
 [[nodiscard]] runtime::ResearchPrograms constant_demand(double torque_nm);
 void sample_rider(ResearchRequest&);
 [[nodiscard]] runtime::NoiseTape make_sensor_tape(const SensorConfig&, std::string_view seed_decimal,
-                                                std::int64_t count);
+                                                std::int64_t count, bool spatial = false);
 [[nodiscard]] runtime::SensorState startup_sensor_state(const SensorConfig&,
     const runtime::NoiseTape&, const runtime::SensorObservation& raw_initial);
 [[nodiscard]] io::Value experiment_value(const ExperimentConfig&);

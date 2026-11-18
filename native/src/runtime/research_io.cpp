@@ -88,7 +88,8 @@ SensorConfig decode_sensors(const bio::Value &document) {
     vread::exact(d, vread::keys("latency_s", "acceleration_std_mps2",
         "gyro_std_rad_s", "encoder_std_rad_s", "torque_std_nm",
         "imu_enabled", "sample_period_s", "acceleration_bias_mps2",
-        "gyro_bias_rad_s", "dropout_probability", "maximum_age_s"));
+        "gyro_bias_rad_s", "dropout_probability", "maximum_age_s"),
+        vread::keys("gyro_bias_3d_rad_s"));
     SensorConfig c;
     c.latency_s =
         vread::finite_real(d["latency_s"], d.child("latency_s"));
@@ -96,6 +97,9 @@ SensorConfig decode_sensors(const bio::Value &document) {
                                           d.child("acceleration_bias_mps2"));
     c.gyro_bias =
         vread::finite_real(d["gyro_bias_rad_s"], d.child("gyro_bias_rad_s"));
+    if (d.contains("gyro_bias_3d_rad_s"))
+        c.gyro_bias_3d_rad_s = vread::fixed<3>(d["gyro_bias_3d_rad_s"],
+                                               d.child("gyro_bias_3d_rad_s"));
     c.dropout_probability = vread::finite_real(
         d["dropout_probability"], d.child("dropout_probability"));
     c.maximum_age_s =

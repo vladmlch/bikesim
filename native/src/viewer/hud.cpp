@@ -1,4 +1,6 @@
 #include "hud.hpp"
+#include "../spatial/frames.hpp"
+#include <algorithm>
 #include <cmath>
 #include <iomanip>
 #include <numbers>
@@ -51,13 +53,61 @@ std::size_t display_columns(std::string_view text) {
     return result;
 }
 std::string pad(std::string value, std::size_t width) { const auto columns=display_columns(value);if(columns<width)value.append(width-columns,' ');return value; }
+
+struct SpatialHudInfo {
+    bool active = false;
+    std::optional<double> roll_deg;
+    std::optional<double> yaw_deg;
+    std::optional<double> steer_deg;
+    std::string launch_support = "off";
+};
+
+SpatialHudInfo extract_spatial_hud(const runtime::RenderFrame& frame,
+                                   std::optional<double> unwrapped_yaw_rad) {
+    SpatialHudInfo out;
+    const auto& sample = frame.state.latest_sample;
+    if (!sample || sample->qpos.size() <= sample->qvel.size() || sample->qpos.size() < 7U)
+        return out;
+    out.active = true;
+    constexpr double kRadToDeg = 180. / std::numbers::pi;
+    const bike::spatial::Quat quat{sample->qpos[3], sample->qpos[4], sample->qpos[5], sample->qpos[6]};
+    const auto att = bike::spatial::euler_zyx(quat);
+    if (att.valid && std::isfinite(att.roll_rad)) out.roll_deg = att.roll_rad * kRadToDeg;
+    if (unwrapped_yaw_rad && std::isfinite(*unwrapped_yaw_rad)) {
+        out.yaw_deg = *unwrapped_yaw_rad * kRadToDeg;
+    } else {
+        const auto heading = bike::spatial::horizontal_heading_unit(quat);
+        if (heading.valid && std::isfinite(heading.heading_rad))
+            out.yaw_deg = heading.heading_rad * kRadToDeg;
+        else if (att.valid && std::isfinite(att.yaw_rad))
+            out.yaw_deg = att.yaw_rad * kRadToDeg;
+    }
+    if (sample->qpos.size() >= 11U && std::isfinite(sample->qpos[10]))
+        out.steer_deg = sample->qpos[10] * kRadToDeg;
+    const bool active_force = std::ranges::any_of(sample->forces, [](const auto& entry) {
+        return entry.first == "launch_support";
+    });
+    if (active_force) {
+        out.launch_support = "active";
+    } else {
+        const runtime::Wire channels(sample->channels);
+        if (path(&channels, {"energy", "launch_support_work_j"}) != nullptr)
+            out.launch_support = "released";
+    }
+    return out;
+}
 }
 std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::optional<double> rtf) {
+    return physical_columns(frame, rtf, SpatialHudView{});
+}
+std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::optional<double> rtf,
+                                        SpatialHudView spatial_view) {
     const auto& state = frame.state;
     const auto& p = frame.presentation;
     const std::string mode = text(child(state.view, "drive_mode"), "physical");
     const auto rate = rtf ? f(*rtf, 0, 2) + "x" : "----x";
     if (!state.latest_sample) return {{.legend="PHYS", .text="[PHYS|" + mode + "]"}, {.legend="", .text=" initial condition RTF=" + rate}};
+    const auto spatial = extract_spatial_hud(frame, spatial_view.unwrapped_yaw_rad);
     // Samples own their channel payload. Formatting never reads model/data.
     const runtime::Wire channels(state.latest_sample->channels);
     const auto* drive = child(&channels, "drive");
@@ -72,7 +122,7 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
     add("time", "t=" + f(state.latest_sample->time_s, 7, 2) + "s");
     add("rtf", "RTF=" + rate);
     double speed = p.speed_mps;
-    if (p.root_x_dofadr >= 0 && static_cast<std::size_t>(p.root_x_dofadr) < state.latest_sample->qvel.size())
+    if (!spatial.active && p.root_x_dofadr >= 0 && static_cast<std::size_t>(p.root_x_dofadr) < state.latest_sample->qvel.size())
         speed = state.latest_sample->qvel[static_cast<std::size_t>(p.root_x_dofadr)];
     add("speed", "v=" + f(speed * 3.6, 6, 2, true) + "km/h");
     add("Fn f/r", "Fn=" + f(number(path(tires,{"front","normal_load_n"})).value_or(0.),4,0) + "/" +
@@ -95,11 +145,11 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
         const auto* force = path(rider,{std::string("grip_") + side,"force_on_bike_n"});
         const auto* components = force ? std::get_if<runtime::WireArray>(&force->value) : nullptr;
         if (!components || components->size() != 3) { bar += "-----N"; continue; }
-        const double x = number(&(*components)[0]).value_or(0.), z = number(&(*components)[2]).value_or(0.);
-        if (!std::isfinite(x) || !std::isfinite(z)) { bar += "-----N"; continue; }
+        const double x = number(&(*components)[0]).value_or(0.), y = number(&(*components)[1]).value_or(0.), z = number(&(*components)[2]).value_or(0.);
+        if (!std::isfinite(x) || !std::isfinite(z) || (spatial.active && !std::isfinite(y))) { bar += "-----N"; continue; }
         const auto sector = static_cast<long>(std::nearbyint(std::atan2(-z,x) * (180. / std::numbers::pi) / 45.));
         bar += arrows[static_cast<std::size_t>((sector % 8 + 8) % 8)];
-        bar += f(std::hypot(x,z),3,0) + "N";
+        bar += f(spatial.active ? std::hypot(x, y, z) : std::hypot(x, z), 3, 0) + "N";
     }
     add("bar l/r",bar);
     add("arm", "arm=sh " + optional_number(number(path(&channels,{"rider_joint_torques","rider_shoulder_left"})),4,0,true) + "/el " +
@@ -119,6 +169,13 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
         optional_number(number(path(tires,{"rear","slip_ratio"})),5,2,true));
     auto coast=text(child(drive,"coasting_reason")); if(coast.empty()&&!truth(child(drive,"freehub_engaged"),true))coast="freehub";
     add("coast","coast="+pad(coast.empty()?"-":coast,12));sep();add("shaft W","motor="+f(n("motor_shaft_power_w"),5,0,true)+"W");
+    if (spatial.active) {
+        sep();
+        add("roll", "roll=" + optional_number(spatial.roll_deg, 5, 1, true) + "deg");
+        add("yaw", "yaw=" + optional_number(spatial.yaw_deg, 6, 1, true) + "deg");
+        add("steer", "str=" + optional_number(spatial.steer_deg, 5, 1, true) + "deg");
+        add("lsup", "lsup=" + pad(spatial.launch_support, 8));
+    }
     return out;
 }
 std::string hud_legend(const std::vector<HudColumn>& columns) {
@@ -131,12 +188,26 @@ std::string hud_legend(const std::vector<HudColumn>& columns) {
     return out;
 }
 std::string hud_line(const runtime::RenderFrame& frame,const InputState& input,std::optional<double> achieved,Mode mode) {
+    return hud_line(frame, input, achieved, mode, SpatialHudView{});
+}
+std::string hud_line(const runtime::RenderFrame& frame,const InputState& input,std::optional<double> achieved,Mode mode,
+                     SpatialHudView spatial_view) {
     std::string out;
     if(mode==Mode::physical||mode==Mode::research||mode==Mode::checked_replay)
-        for(const auto& column:physical_columns(frame,achieved))out+=column.text;
-    else {const auto& p=frame.presentation;out=std::string(mode==Mode::inspection?"[PLAYBACK] t=":"[RIDE] t=")+f(frame.state.time_s,0,2)+"s x="+f(p.position_m,0,2)+"m v="+f(p.speed_mps*3.6,0,2)+
-        "km/h | Fork:"+f(p.fork_travel_mm)+"mm Shock:"+f(p.shock_stroke_mm)+"mm | Pitch:"+f(p.pitch_rad*(180./std::numbers::pi),0,2,true)+
-        "deg "+(p.pitch_rad>0.?"nose-dn":p.pitch_rad<0.?"nose-up":"level");}
+        for(const auto& column:physical_columns(frame,achieved,spatial_view))out+=column.text;
+    else {
+        const auto& p=frame.presentation;
+        out=std::string(mode==Mode::inspection?"[PLAYBACK] t=":"[RIDE] t=")+f(frame.state.time_s,0,2)+"s x="+f(p.position_m,0,2)+"m v="+f(p.speed_mps*3.6,0,2)+
+            "km/h | Fork:"+f(p.fork_travel_mm)+"mm Shock:"+f(p.shock_stroke_mm)+"mm | Pitch:"+f(p.pitch_rad*(180./std::numbers::pi),0,2,true)+
+            "deg "+(p.pitch_rad>0.?"nose-dn":p.pitch_rad<0.?"nose-up":"level");
+        const auto spatial = extract_spatial_hud(frame, spatial_view.unwrapped_yaw_rad);
+        if (spatial.active) {
+            out += " | Roll:" + optional_number(spatial.roll_deg, 0, 1, true) +
+                "deg Yaw:" + optional_number(spatial.yaw_deg, 0, 1, true) +
+                "deg Steer:" + optional_number(spatial.steer_deg, 0, 1, true) +
+                "deg LSup:" + spatial.launch_support;
+        }
+    }
     out+=" | Brake:"+std::string(input.braking?"ON ":"off ")+f(input.brake_strength*100.,0,0)+"%";
     if(input.paused)out+=" | PAUSED";
     if(frame.state.outcome)out+=" | "+*frame.state.outcome;
@@ -144,9 +215,22 @@ std::string hud_line(const runtime::RenderFrame& frame,const InputState& input,s
     return out;
 }
 std::string overlay_text(const runtime::RenderFrame& frame,const InputState& input,std::optional<double> achieved,Mode mode) {
+    return overlay_text(frame, input, achieved, mode, SpatialHudView{});
+}
+std::string overlay_text(const runtime::RenderFrame& frame,const InputState& input,std::optional<double> achieved,Mode mode,
+                         SpatialHudView spatial_view) {
     const auto& p=frame.presentation;
+    const auto spatial = extract_spatial_hud(frame, spatial_view.unwrapped_yaw_rad);
+    std::string spatial_line;
+    if (spatial.active) {
+        spatial_line = "Roll " + optional_number(spatial.roll_deg, 0, 1, true) + " deg  Yaw " +
+            optional_number(spatial.yaw_deg, 0, 1, true) + " deg  Steer " +
+            optional_number(spatial.steer_deg, 0, 1, true) + " deg  LaunchSupport " +
+            spatial.launch_support + "\n";
+    }
     return "t="+f(frame.state.time_s,0,2)+" s  x="+f(p.position_m,0,1)+" m  speed="+f(p.speed_mps*3.6,0,1)+" km/h\n"+
         "Fork "+f(p.fork_travel_mm)+" mm  Shock "+f(p.shock_stroke_mm)+" mm  Load F/R "+f(p.front_load_n,0,0)+"/"+f(p.rear_load_n,0,0)+" N\n"+
+        spatial_line+
         "playback="+std::to_string(input.scale)+"x  achieved="+(achieved?f(*achieved,0,2):"--")+"x"+
         (input.paused?"  PAUSED":"")+(input.braking?"  BRAKING":"")+"\n"+
         (frame.state.first_failure?"INVALID: model evidence failed\n":"")+

@@ -174,6 +174,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/writers/tire.cpp"
   "${_bike_native_dir}/src/writers/compliant_3d_tire.cpp"
   "${_bike_native_dir}/src/writers/distributed_tire.cpp"
+  "${_bike_native_dir}/src/writers/distributed_3d_tire.cpp"
   "${_bike_native_dir}/src/writers/pneumatic_tire.cpp"
   "${_bike_native_dir}/src/writers/rider_contacts.cpp")
 set_target_properties(bike_core PROPERTIES POSITION_INDEPENDENT_CODE ON)

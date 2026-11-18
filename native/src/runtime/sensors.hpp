@@ -18,6 +18,7 @@ struct SensorConfig {
     double dropout_probability = 0.;
     double maximum_age_s = -1.;
     bool imu_enabled = true;
+    std::array<double, 3> gyro_bias_3d_rad_s{0., 0., 0.};
     void validate() const;
 };
 struct SensorObservation {
@@ -25,6 +26,9 @@ struct SensorObservation {
     bool valid = true;
     // Acceleration x/y/z, gyro, front/rear/crank encoders, motor/human torque.
     std::array<double, 9> values{};
+    // Engaged iff spatial 6-axis IMU mode is active:
+    // [omega_x (roll rate), omega_y (pitch-down rate), omega_z (yaw rate)] in IMU frame (rad/s).
+    std::optional<std::array<double, 3>> angular_rate_body_rad_s{};
     void validate() const;
     [[nodiscard]] WireObject as_wire() const;
     [[nodiscard]] static SensorObservation from_wire(const WireObject &value);
@@ -32,6 +36,7 @@ struct SensorObservation {
 struct NoiseTape {
     std::vector<std::array<double, 9>> noise;
     std::vector<double> dropout_uniform;
+    std::vector<std::array<double, 3>> spatial_gyro_noise{};
     void validate() const;
 };
 struct SensorState {
@@ -54,5 +59,5 @@ private:
     NoiseTape tape_;
     SensorState state_;
 };
-[[nodiscard]] SensorObservation raw_sensor_observation(const PhysicalSampleData &sample);
+[[nodiscard]] SensorObservation raw_sensor_observation(const PhysicalSampleData &sample, bool spatial_imu = false);
 } // namespace runtime

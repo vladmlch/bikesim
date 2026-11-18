@@ -10,8 +10,10 @@ extern "C" {
 
 #define BIKE_POLICY_ABI_VERSION 1U
 #define BIKE_SENSOR_SCHEMA_VERSION 1U
+#define BIKE_SENSOR_SCHEMA_SPATIAL_6AXIS 2U
 #define BIKE_SENSOR_VALUE_COUNT 9U
 #define BIKE_SENSOR_ALL_FIELDS 0x1ffU
+#define BIKE_SENSOR_SPATIAL_ALL_FIELDS 0xfffU
 #define BIKE_CONTROL_MOTOR_TORQUE (1U << 0U)
 #define BIKE_CONTROL_MOTOR_LIMIT (1U << 1U)
 #define BIKE_CONTROL_HUMAN_TORQUE (1U << 2U)
@@ -36,6 +38,18 @@ typedef struct BikeObservationV1 {
     uint32_t sensor_schema_version;
     uint32_t valid_mask;
 } BikeObservationV1;
+
+/* Standard-layout prefix extension for sensor_schema_version == 2U.
+   Because `v1` is the first member (offset 0), C11 6.7.2.1p15 and C++23
+   [basic.compound] guarantee pointer-interconvertibility between
+   `const BikeObservationSpatialV1*` and `const BikeObservationV1*` with
+   `v1.struct_size == sizeof(BikeObservationSpatialV1)` and
+   `v1.sensor_schema_version == BIKE_SENSOR_SCHEMA_SPATIAL_6AXIS`. */
+typedef struct BikeObservationSpatialV1 {
+    BikeObservationV1 v1;
+    /* Mounted/misaligned IMU 3-axis angular velocity [omega_x, omega_y, omega_z] (rad/s). */
+    double angular_rate_body_rad_s[3];
+} BikeObservationSpatialV1;
 
 typedef struct BikeDemandV1 {
     uint8_t present;

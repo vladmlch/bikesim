@@ -15,12 +15,18 @@ public:
     void cycle_mode();
     void reset_preset() noexcept;
     void update(mjvCamera&, double bike_x, double bike_z);
+    void update_spatial(mjvCamera&, double bike_x, double bike_y, double bike_z, double heading_rad);
+    void update_spatial(mjvCamera&, double bike_x, double bike_y, double bike_z,
+                        const std::array<double, 2>& heading_xy);
+    [[nodiscard]] double unwrapped_yaw_rad() const noexcept;
     [[nodiscard]] std::string_view mode_name() const noexcept;
 private:
     CameraMode mode_ = CameraMode::side;
     double smoothing_;
     std::optional<std::array<double, 3>> lookat_;
     bool reset_ = true;
+    std::optional<double> last_wrapped_yaw_rad_;
+    double unwrapped_yaw_rad_ = 0.;
 };
 // The object is main-thread confined. Construction and apply need no GL
 // context; draw initializes GPU resources lazily. Destroy it BEFORE its GLFW
@@ -46,6 +52,8 @@ public:
     [[nodiscard]] bool has_markers() const noexcept;
     [[nodiscard]] std::vector<double> integration_state() const;
     [[nodiscard]] std::array<std::vector<double>, 6> model_fields() const;
+    [[nodiscard]] const mjvCamera& camera() const;
+    [[nodiscard]] std::optional<double> spatial_unwrapped_yaw_rad() const;
     [[nodiscard]] std::string_view model_sha256() const noexcept;
 private:
     struct Impl;

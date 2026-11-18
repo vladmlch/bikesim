@@ -141,7 +141,7 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         const auto achieved = options.mode==Mode::inspection?std::optional<double>{}:rate.update(Clock::now(),frame.state.time_s);
         if (request_frame || decision.request_frame) {
             renderer->apply(frame);
-            renderer->set_overlay(overlay_text(frame,input,achieved,options.mode));
+            renderer->set_overlay(overlay_text(frame,input,achieved,options.mode,SpatialHudView{renderer->spatial_unwrapped_yaw_rad()}));
             const auto [width,height]=window.framebuffer_size();renderer->draw(width,height);
             if(width>0&&height>0)window.swap();
             if(hooks.presented)hooks.presented(frame,achieved);
@@ -149,12 +149,12 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
         }
         if (input.telemetry && (frame.state.generation != legend_generation || std::chrono::duration<double>(now-last_hud).count() >= .5)) {
             if (frame.state.generation != legend_generation && (options.mode==Mode::physical||options.mode==Mode::research||options.mode==Mode::checked_replay))
-                print(hud_legend(physical_columns(frame,achieved)));
+                print(hud_legend(physical_columns(frame,achieved,SpatialHudView{renderer->spatial_unwrapped_yaw_rad()})));
             if(frame.state.first_failure) {
                 const auto failure=frame.state.first_failure->message();
                 if(reported_failure!=failure){print("[FIRST FAILURE] "+failure);reported_failure=failure;}
             }
-            legend_generation=frame.state.generation;last_hud=now;print(hooks.hud?hooks.hud(frame,input,achieved):hud_line(frame,input,achieved,options.mode));
+            legend_generation=frame.state.generation;last_hud=now;print(hooks.hud?hooks.hud(frame,input,achieved):hud_line(frame,input,achieved,options.mode,SpatialHudView{renderer->spatial_unwrapped_yaw_rad()}));
         }
         if (result.terminal && options.close_on_terminal) break;
         if (result.terminal || input.paused || decision.physics_steps==0) window.wait(.005);

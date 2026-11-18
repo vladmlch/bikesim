@@ -1184,6 +1184,8 @@ struct SpatialStepExtension {
     std::optional<LaunchSupport> launch_support;
     std::vector<double> launch_qfrc;
     SpatialRoadHfield road_hfield{};
+    bike::spatial::Vec3 imu_mount_pos_m{0.0, 0.0, 0.0};
+    bike::spatial::Quat q_frame_from_imu{1.0, 0.0, 0.0, 0.0};
 };
 
 namespace {
@@ -1329,6 +1331,21 @@ PhysicalStep::PhysicalStep(
             std::vector<double> launch_qfrc;
             if (launch_support.has_value())
                 launch_qfrc.assign(static_cast<std::size_t>(m->nv), 0.0);
+            bike::spatial::Vec3 imu_mount_pos{0.0, 0.0, 0.0};
+            bike::spatial::Quat q_frame_from_imu{1.0, 0.0, 0.0, 0.0};
+            if (config_.spatial.has_value()) {
+                imu_mount_pos = config_.spatial->imu_mount_pos_m;
+                const auto q_mount = bike::spatial::quat_from_euler_zyx(
+                    config_.spatial->imu_mount_rpy_rad[0],
+                    config_.spatial->imu_mount_rpy_rad[1],
+                    config_.spatial->imu_mount_rpy_rad[2]);
+                const auto q_mis = bike::spatial::quat_from_euler_zyx(
+                    config_.spatial->imu_misalignment_rad[0],
+                    config_.spatial->imu_misalignment_rad[1],
+                    config_.spatial->imu_misalignment_rad[2]);
+                q_frame_from_imu = bike::spatial::quat_normalized(
+                    bike::spatial::quat_multiply(q_mount, q_mis));
+            }
             spatial_ = std::make_unique<SpatialStepExtension>(
                 SpatialStepExtension{
                     .root_free_qposadr = free_qpos,
@@ -1343,7 +1360,9 @@ PhysicalStep::PhysicalStep(
                         static_cast<std::size_t>(m->nv), 0.0),
                     .launch_support = launch_support,
                     .launch_qfrc = std::move(launch_qfrc),
-                    .road_hfield = extract_spatial_road_hfield(m)});
+                    .road_hfield = extract_spatial_road_hfield(m),
+                    .imu_mount_pos_m = imu_mount_pos,
+                    .q_frame_from_imu = q_frame_from_imu});
         } else {
             root_x_qposadr_ = joint_qposadr(m, "root_x");
             root_x_dofadr_ = joint_dofadr(m, "root_x");
@@ -2899,6 +2918,57 @@ PhysicalStep::resolve_brakes(const BrakeRequest &request) const noexcept {
 // Called after the constraint solve and before endpoint forward
 // kinematics; encoder rows read the INCOMING velocity span.
 
+namespace {
+
+[[gnu::noinline]] void
+append_spatial_imu_channels(WireObject &out, const mjModel *m,
+                            const mjData *d, int frame_body,
+                            const SpatialStepExtension &spatial,
+                            std::span<const double> qvel) {
+    const auto d0 = static_cast<std::size_t>(spatial.root_free_dofadr);
+    const auto qacc = buf(d->qacc, m->nv);
+    const auto xmat = buf(d->xmat, 9 * m->nbody);
+    const std::size_t off = 9U * static_cast<std::size_t>(frame_body);
+    const auto grav = buf(std::data(m->opt.gravity), 3);
+    const std::array<double, 3> net_world{
+        qacc[d0] - grav[0], qacc[d0 + 1U] - grav[1],
+        qacc[d0 + 2U] - grav[2]};
+    const std::array<double, 3> f_origin_frame{
+        xmat[off + 0U] * net_world[0] + xmat[off + 3U] * net_world[1] +
+            xmat[off + 6U] * net_world[2],
+        xmat[off + 1U] * net_world[0] + xmat[off + 4U] * net_world[1] +
+            xmat[off + 7U] * net_world[2],
+        xmat[off + 2U] * net_world[0] + xmat[off + 5U] * net_world[1] +
+            xmat[off + 8U] * net_world[2]};
+    const std::array<double, 3> omega_body{
+        qvel[d0 + 3U], qvel[d0 + 4U], qvel[d0 + 5U]};
+    const std::array<double, 3> alpha_body{
+        qacc[d0 + 3U], qacc[d0 + 4U], qacc[d0 + 5U]};
+    const auto &r_m = spatial.imu_mount_pos_m;
+    const auto cross3 = [](const std::array<double, 3> &a,
+                           const std::array<double, 3> &b) noexcept
+        -> std::array<double, 3> {
+        return {a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0]};
+    };
+    const auto euler_acc = cross3(alpha_body, r_m);
+    const auto centripetal_acc =
+        cross3(omega_body, cross3(omega_body, r_m));
+    const std::array<double, 3> f_site_frame{
+        f_origin_frame[0] + euler_acc[0] + centripetal_acc[0],
+        f_origin_frame[1] + euler_acc[1] + centripetal_acc[1],
+        f_origin_frame[2] + euler_acc[2] + centripetal_acc[2]};
+    const auto f_imu = bike::spatial::rotate_world_to_body(
+        spatial.q_frame_from_imu, f_site_frame);
+    const auto w_imu = bike::spatial::rotate_world_to_body(
+        spatial.q_frame_from_imu, omega_body);
+    out.emplace_back("frame_specific_force_body_mps2", wire_vec3(f_imu));
+    out.emplace_back("frame_gyro_body_rad_s", wire_vec3(w_imu));
+}
+
+} // namespace
+
 WireObject
 PhysicalStep::sensor_channels(std::span<const double> qvel,
                               const drivetrain::Diagnostics &last) const {
@@ -2915,13 +2985,18 @@ PhysicalStep::sensor_channels(std::span<const double> qvel,
                           Wire(qvel[static_cast<std::size_t>(
                               crank_spin_dof_)]));
     WireObject out;
-    const auto sensordata = buf(d->sensordata, m->nsensordata);
-    out.emplace_back("frame_specific_force_body_mps2",
-                     wire_array(sensordata.subspan(
-                         static_cast<std::size_t>(accel_sensor_adr_), 3)));
-    out.emplace_back("frame_gyro_body_rad_s",
-                     wire_array(sensordata.subspan(
-                         static_cast<std::size_t>(gyro_sensor_adr_), 3)));
+    if (spatial_ != nullptr && frame_body_ >= 0 &&
+        spatial_->root_free_dofadr >= 0) {
+        append_spatial_imu_channels(out, m, d, frame_body_, *spatial_, qvel);
+    } else {
+        const auto sensordata = buf(d->sensordata, m->nsensordata);
+        out.emplace_back("frame_specific_force_body_mps2",
+                         wire_array(sensordata.subspan(
+                             static_cast<std::size_t>(accel_sensor_adr_), 3)));
+        out.emplace_back("frame_gyro_body_rad_s",
+                         wire_array(sensordata.subspan(
+                             static_cast<std::size_t>(gyro_sensor_adr_), 3)));
+    }
     out.emplace_back("encoders_rad_s", Wire(std::move(encoders)));
     out.emplace_back("motor_torque_nm",
                      Wire(diag_number(last, "motor_torque_nm")));

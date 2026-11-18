@@ -16,12 +16,12 @@ void sample_rider(ResearchRequest& request) {
     request.programs.validate();
 }
 
-runtime::NoiseTape make_sensor_tape(const SensorConfig& config, std::string_view seed_decimal, std::int64_t count) {
+runtime::NoiseTape make_sensor_tape(const SensorConfig& config, std::string_view seed_decimal, std::int64_t count, bool spatial) {
     config.validate();
     if (count < 0 || std::cmp_greater(count, std::numeric_limits<std::size_t>::max()))
         throw std::invalid_argument("noise tape count must be a representable nonnegative integer");
     random::SeedSequence seed(validate_seed(seed_decimal));
-    const auto children = seed.spawn(2);
+    const auto children = seed.spawn(spatial ? 3U : 2U);
     random::NumpyRng normal(children[0]), dropout(children[1]);
     runtime::NoiseTape tape;
     const auto size = static_cast<std::size_t>(count);
@@ -33,6 +33,13 @@ runtime::NoiseTape make_sensor_tape(const SensorConfig& config, std::string_view
         normal.normal(0., config.noise.encoder_std_rad_s, row.subspan<4, 3>());
         normal.normal(0., config.noise.torque_std_nm, row.subspan<7, 2>());
         tape.dropout_uniform[i] = dropout.uniform01();
+    }
+    if (spatial) {
+        random::NumpyRng gyro3d(children[2]);
+        tape.spatial_gyro_noise.resize(size);
+        for (std::size_t i = 0; i < size; ++i) {
+            gyro3d.normal(0., config.noise.gyro_std_rad_s, std::span<double>{tape.spatial_gyro_noise[i]});
+        }
     }
     tape.validate();
     return tape;

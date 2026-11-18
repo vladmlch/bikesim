@@ -105,18 +105,23 @@ public:
     }
     runtime::RideControl act(const runtime::SensorObservation& observation, std::optional<double> demand) override {
         require_open(); validate_policy_input(observation, demand);
-        const auto input = policy_observation_to_abi(observation);
         const BikeDemandV1 requested{.present=static_cast<std::uint8_t>(demand.has_value() ? 1 : 0), .torque_nm=demand.value_or(0.)};
         BikeControlV1 output{};
         output.struct_size = static_cast<std::uint32_t>(sizeof(output));
         output.rider_enabled = 1; output.use_saddle = 1;
-        invoke("act", [&](BikeErrorV1* error) { return instance_.api->act(instance_.value, &input, &requested, &output, error); });
+        if (instance_.api->sensor_schema_version == BIKE_SENSOR_SCHEMA_SPATIAL_6AXIS) {
+            const auto spatial_input = policy_observation_to_spatial_abi(observation);
+            invoke("act", [&](BikeErrorV1* error) { return instance_.api->act(instance_.value, &spatial_input.v1, &requested, &output, error); });
+        } else {
+            const auto input = policy_observation_to_abi(observation);
+            invoke("act", [&](BikeErrorV1* error) { return instance_.api->act(instance_.value, &input, &requested, &output, error); });
+        }
         return policy_control_from_abi(output);
     }
     Value metadata() const override {
         return Value{Object{{"reference", text("plugin:" + path_.string())}, {"class", text("native::PluginPolicy")},
             {"kind", text("native_plugin")}, {"abi_version", integer(BIKE_POLICY_ABI_VERSION)},
-            {"sensor_schema_version", integer(BIKE_SENSOR_SCHEMA_VERSION)},
+            {"sensor_schema_version", integer(instance_.api->sensor_schema_version)},
             {"source_file", text(path_.string())}, {"source_sha256", text(digest_)},
             {"binary_sha256", text(digest_)}, {"current_binary_sha256", text(platform::file_sha256(path_))},
             {"configuration_json", text(config_)}, {"configuration_sha256", text(config_digest_)},

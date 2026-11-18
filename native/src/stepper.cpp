@@ -11,6 +11,7 @@
 #include "writers/brake.hpp"
 #include "writers/compliant_3d_tire.hpp"
 #include "writers/cruise.hpp"
+#include "writers/distributed_3d_tire.hpp"
 #include "writers/resistance.hpp"
 #include "writers/rider_contacts.hpp"
 #include "writers/suspension.hpp"
@@ -135,10 +136,17 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
         if (cfg.resistance)
             resistance_ =
                     std::make_unique<ResistanceWriter>(m_, *cfg.resistance);
-        if (cfg.tire && cfg.compliant_3d_tire)
+        const int tire_modes = (cfg.tire ? 1 : 0) +
+                               (cfg.compliant_3d_tire ? 1 : 0) +
+                               (cfg.distributed_3d_tire ? 1 : 0);
+        if (tire_modes > 1)
             throw std::invalid_argument(
-                "cannot configure both tire and compliant_3d_tire");
-        if (cfg.compliant_3d_tire) {
+                "cannot configure more than one tire writer");
+        if (cfg.distributed_3d_tire) {
+            distributed_3d_tire_ = std::make_unique<Distributed3dTireWriter>(
+                m_, d_, *cfg.distributed_3d_tire);
+            tire_out_.resize(static_cast<std::size_t>(m_->nv));
+        } else if (cfg.compliant_3d_tire) {
             compliant_3d_tire_ = std::make_unique<Compliant3dTireWriter>(
                 m_, d_, *cfg.compliant_3d_tire);
             tire_out_.resize(static_cast<std::size_t>(m_->nv));
@@ -146,6 +154,9 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
             if (cfg.tire->backend == "compliant_3d")
                 throw std::invalid_argument(
                     "compliant_3d tire backend requires compliant_3d_tire config");
+            if (cfg.tire->backend == "distributed_3d")
+                throw std::invalid_argument(
+                    "distributed_3d tire backend requires distributed_3d_tire config");
             // The backend string selects the writer; each writer's own
             // ctor re-validates the section it consumes (TireWriter
             // rejects a distributed-only config and vice versa).
@@ -176,6 +187,7 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
     } catch (...) {
         rider_contacts_.reset();
         drive_.reset();
+        distributed_3d_tire_.reset();
         compliant_3d_tire_.reset();
         mj_deleteData(d_);
         mj_deleteModel(m_);
@@ -188,6 +200,7 @@ void Stepper::install_writers(const nativecfg::WriterConfig &config) {
 Stepper::~Stepper() {
     rider_contacts_.reset();
     drive_.reset();
+    distributed_3d_tire_.reset();
     compliant_3d_tire_.reset();
     if (d_) mj_deleteData(d_);
     if (m_) mj_deleteModel(m_);
@@ -309,6 +322,7 @@ void Stepper::reset() {
         if (distributed_tire_) distributed_tire_->reset();
         if (pneumatic_tire_) pneumatic_tire_->reset();
         if (compliant_3d_tire_) compliant_3d_tire_->reset();
+        if (distributed_3d_tire_) distributed_3d_tire_->reset();
         if (cruise_) cruise_->reset();
         // reset(model, data) on the post-forward pose — re-anchors grips and
         // revalidates the planar support topology like the oracle applier.
@@ -364,6 +378,7 @@ TireWriterView Stepper::tire_writer() const {
     if (distributed_tire_) return TireWriterView(distributed_tire_.get());
     if (pneumatic_tire_) return TireWriterView(pneumatic_tire_.get());
     if (compliant_3d_tire_) return TireWriterView(compliant_3d_tire_.get());
+    if (distributed_3d_tire_) return TireWriterView(distributed_3d_tire_.get());
     throw std::logic_error(kNoTire);
 }
 
@@ -479,7 +494,9 @@ double TireWriterView::step_loss_j(std::span<const double> qvel_mid,
     return std::visit(
         [&](auto *w) -> double {
             if constexpr (std::is_same_v<std::decay_t<decltype(w)>,
-                                         Compliant3dTireWriter *>) {
+                                         Compliant3dTireWriter *> ||
+                          std::is_same_v<std::decay_t<decltype(w)>,
+                                         Distributed3dTireWriter *>) {
                 return w->step_loss_j(qvel_mid, dt);
             } else {
                 (void)qvel_mid;
@@ -528,7 +545,8 @@ void TireWriterView::clear_settled_loss() const {
 }
 
 bool TireWriterView::is_distributed() const noexcept {
-    return std::holds_alternative<DistributedTireWriter *>(writer_);
+    return std::holds_alternative<DistributedTireWriter *>(writer_) ||
+           std::holds_alternative<Distributed3dTireWriter *>(writer_);
 }
 
 bool TireWriterView::is_pneumatic() const noexcept {
@@ -537,6 +555,10 @@ bool TireWriterView::is_pneumatic() const noexcept {
 
 bool TireWriterView::is_compliant_3d() const noexcept {
     return std::holds_alternative<Compliant3dTireWriter *>(writer_);
+}
+
+bool TireWriterView::is_distributed_3d() const noexcept {
+    return std::holds_alternative<Distributed3dTireWriter *>(writer_);
 }
 
 void Stepper::set_inputs(std::span<const double> ctrl,
@@ -635,6 +657,7 @@ void Stepper::set_state(std::span<const double> qpos,
             if (distributed_tire_) distributed_tire_->reset();
             if (pneumatic_tire_) pneumatic_tire_->reset();
             if (compliant_3d_tire_) compliant_3d_tire_->reset();
+            if (distributed_3d_tire_) distributed_3d_tire_->reset();
             if (cruise_) cruise_->reset();
             if (rider_contacts_) rider_contacts_->reset(d_);
         } catch (...) {
@@ -766,6 +789,7 @@ const std::vector<std::string> &Stepper::tire_state_names() const {
     if (distributed_tire_) return distributed_tire_->state_names();
     if (pneumatic_tire_) return pneumatic_tire_->state_names();
     if (compliant_3d_tire_) return compliant_3d_tire_->state_names();
+    if (distributed_3d_tire_) return distributed_3d_tire_->state_names();
     return TireWriter::state_names();
 }
 

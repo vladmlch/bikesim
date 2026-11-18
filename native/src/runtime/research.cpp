@@ -125,24 +125,47 @@ NativeResearchRuntime::NativeResearchRuntime(std::unique_ptr<NativeRideRuntime> 
         c.geometry.root_pitch_qpos != runtime_->accounting_config_.columns.root_pitch_qpos ||
         c.start_position_m != runtime_->committed_position_m_)
         throw std::invalid_argument("research truth projection disagrees with physical bootstrap");
-    const auto vertices = runtime_->physical_->terrain_vertices();
-    if (vertices.size() != c.geometry.x.size())
-        throw std::invalid_argument("research terrain width differs from physical bootstrap");
-    for (std::size_t i = 0; i < vertices.size(); ++i)
-        if (std::get<0>(vertices[i]) != c.geometry.x[i] || std::get<1>(vertices[i]) != c.geometry.z[i])
-            throw std::invalid_argument("research terrain differs from physical bootstrap");
-    const auto *model = runtime_->stepper_->model();
-    const int pitch_joint = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
-    const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt,
-                                                    "research pitch joint dof addresses");
-    // Backend-agnostic presence + radii check: the writer view forwards
-    // radii() for whichever tyre backend the config selected.
-    const bool tire_mismatch = !runtime_->stepper_->has_tire() ||
-        runtime_->stepper_->tire_writer().radii()[0] != c.geometry.front_radius ||
-        runtime_->stepper_->tire_writer().radii()[1] != c.geometry.rear_radius;
-    if (tire_mismatch || pitch_joint < 0 ||
-        std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
-        throw std::invalid_argument("research radii/pitch address differ from physical bootstrap");
+    if (c.geometry.spatial != nullptr) {
+        const auto &sp = *c.geometry.spatial;
+        if (sp.root_free_qpos != runtime_->accounting_config_.columns.root_x_qpos ||
+            sp.root_free_dof != runtime_->accounting_config_.columns.root_x_dof)
+            throw std::invalid_argument("research spatial truth projection disagrees with physical bootstrap");
+        const auto *model = runtime_->stepper_->model();
+        const int root_free = mj_name2id(model, mjOBJ_JOINT, "root_free");
+        const auto jtypes = model_access::readonly_buffer(model->jnt_type, model->njnt,
+                                                          "research root_free joint type");
+        const auto qposadr = model_access::readonly_buffer(model->jnt_qposadr, model->njnt,
+                                                           "research root_free qpos addresses");
+        const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt,
+                                                        "research root_free dof addresses");
+        const bool tire_mismatch = runtime_->stepper_->has_tire() &&
+            (runtime_->stepper_->tire_writer().radii()[0] != c.geometry.front_radius ||
+             runtime_->stepper_->tire_writer().radii()[1] != c.geometry.rear_radius);
+        if (tire_mismatch || !runtime_->physical_->is_spatial() || root_free < 0 ||
+            jtypes[static_cast<std::size_t>(root_free)] != mjJNT_FREE ||
+            std::cmp_not_equal(qposadr[static_cast<std::size_t>(root_free)], sp.root_free_qpos) ||
+            std::cmp_not_equal(dofs[static_cast<std::size_t>(root_free)], sp.root_free_dof))
+            throw std::invalid_argument("research spatial geometry differs from physical bootstrap");
+    } else {
+        const auto vertices = runtime_->physical_->terrain_vertices();
+        if (vertices.size() != c.geometry.x.size())
+            throw std::invalid_argument("research terrain width differs from physical bootstrap");
+        for (std::size_t i = 0; i < vertices.size(); ++i)
+            if (std::get<0>(vertices[i]) != c.geometry.x[i] || std::get<1>(vertices[i]) != c.geometry.z[i])
+                throw std::invalid_argument("research terrain differs from physical bootstrap");
+        const auto *model = runtime_->stepper_->model();
+        const int pitch_joint = mj_name2id(model, mjOBJ_JOINT, "root_pitch");
+        const auto dofs = model_access::readonly_buffer(model->jnt_dofadr, model->njnt,
+                                                        "research pitch joint dof addresses");
+        // Backend-agnostic presence + radii check: the writer view forwards
+        // radii() for whichever tyre backend the config selected.
+        const bool tire_mismatch = !runtime_->stepper_->has_tire() ||
+            runtime_->stepper_->tire_writer().radii()[0] != c.geometry.front_radius ||
+            runtime_->stepper_->tire_writer().radii()[1] != c.geometry.rear_radius;
+        if (tire_mismatch || pitch_joint < 0 ||
+            std::cmp_not_equal(dofs[static_cast<std::size_t>(pitch_joint)], c.geometry.root_pitch_dof))
+            throw std::invalid_argument("research radii/pitch address differ from physical bootstrap");
+    }
     c.programs.validate();
     control_validate_for(c.startup_control, runtime_->physical_->rider_present(), runtime_->physical_->drive_mode());
     if (c.seed_decimal.empty() || !std::ranges::all_of(c.seed_decimal,
@@ -205,7 +228,7 @@ void NativeResearchRuntime::consume_sample(const SamplePtr &sample, bool stop_at
     if (source_step >= e.next_sensor_step) {
         if (source_step != e.next_sensor_step)
             throw std::runtime_error("sensor acquisition skipped a physical sample");
-        e.sensors.push(raw_sensor_observation(s));
+        e.sensors.push(raw_sensor_observation(s, config_.geometry.spatial != nullptr));
         e.next_sensor_step += config_.sensor_steps;
     }
     e.truth = research_truth(s, config_.geometry);

@@ -21,6 +21,7 @@ std::unique_ptr<initialization::SetupOwner> make_settled_research_owner(const in
     (void)initialization::prepare_request(request.setup);
     auto& physics = *request.setup.model.physics;
     configuration::post_init(physics);
+    geometry::sync_backend_default_suspension(request.setup.model.bike, physics.tires.backend);
     if (physics.physics_mode != "physical" || (physics.drive_mode != "crank_effort" && physics.drive_mode != "articulated_effort"))
         throw std::invalid_argument("research requires a physical effort drive, not a speed controller");
     if (physics.pitch_assist.value_or(false) || physics.tires.surface_mode != "track" ||

@@ -41,6 +41,8 @@ geometry::BikeSpecs bike_specs(const Value& value) {
         BIKE_REAL(crank_length), BIKE_REAL(fork_travel), BIKE_REAL(fork_offset), BIKE_REAL(rear_wheel_travel), BIKE_REAL(shock_eye_to_eye),
         BIKE_REAL(shock_stroke), BIKE_REAL(fork_stiffness), BIKE_REAL(fork_damping), BIKE_REAL(shock_stiffness), BIKE_REAL(shock_damping), BIKE_REAL(fork_initial_psi)});
 #undef BIKE_REAL
+    if (find(value, "fork_initial_psi") || find(value, "shock_stiffness"))
+        out.backend_default_suspension = false;
 #define BIKE_INT(name) {#name, &geometry::BikeSpecs::name}
     integers(out, value, {BIKE_INT(fork_hsc), BIKE_INT(fork_lsc), BIKE_INT(fork_rebound), BIKE_INT(fork_air_tokens),
         BIKE_INT(shock_hsc), BIKE_INT(shock_lsc), BIKE_INT(shock_rebound), BIKE_INT(shock_hbo)});

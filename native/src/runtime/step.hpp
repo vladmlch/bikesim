@@ -298,6 +298,10 @@ public:
                  std::optional<bool> braking = std::nullopt,
                  const BrakeResolution *resolved = nullptr);
 
+    // Rest-pose certification must match a fresh, unlatched StateFile restore.
+    // Initialization only: the next advancing force assembly re-latches.
+    void reset_static_brake() noexcept { brake_.reset(); }
+
     // _advance_physics — one committed interval. Validates every public
     // input before any mutation; engine failures poison the Stepper
     // through Stepper::mutate.

@@ -1332,11 +1332,18 @@ void test_resolved_profiles() {
                              "pitch_assist"),
                 "welded oracle carries the profile timestep/effort mode");
 
-    expect_resolved(welded_profile(), "config/resolved/welded.json",
+    const auto calibrated_launch_caps = [](cfg::SimulationPhysicsConfig& c) {
+        c.rider_launch.effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2, .22, .25};
+        c.rider_launch.effort_cap_grade_nm = {36., 15., 14.5, 13.2, 14., 15.5, 19.5, 18.5, 21., 20.};
+    };
+    auto welded = std::make_unique<cfg::SimulationPhysicsConfig>(welded_profile());
+    calibrated_launch_caps(*welded);
+    expect_resolved(*welded, "config/resolved/welded.json",
                     "config/resolved/welded.json");
     resolved_case("config/resolved/distributed.json",
                   "config/resolved/distributed.json",
-                  [](cfg::SimulationPhysicsConfig& c) {
+                  [&](cfg::SimulationPhysicsConfig& c) {
+                      calibrated_launch_caps(c);
                       c.tires.backend = "distributed_2d_reference";
                       c.tires.distributed.station_count = 128;
                       // The distributed TOML's [resistance] crr = 0.0:
@@ -1359,7 +1366,8 @@ void test_resolved_profiles() {
                   });
     resolved_case("config/resolved/pneumatic.json",
                   "config/resolved/pneumatic.json",
-                  [](cfg::SimulationPhysicsConfig& c) {
+                  [&](cfg::SimulationPhysicsConfig& c) {
+                      calibrated_launch_caps(c);
                       c.tires.backend = "pneumatic";
                       c.tires.pneumatic.tier = "fast";
                       // Pneumatic carcass + tread_loss_crr + crr_delta own
@@ -2001,8 +2009,8 @@ void test_suspension() {
                     "Base Tune (Factory Neutral)" &&
                     resolved.air.total_travel_mm == 180.0 &&
                     resolved.num_tokens == 2 &&
-                    resolved.gauge_pressure_psi == 85.2 &&
-                    resolved.coil.rate_n_m == 114600.0 &&
+                    resolved.gauge_pressure_psi == 97.0 &&
+                    resolved.coil.rate_n_m == 81550.0 &&
                     resolved.coil.stroke_mm == 65.0 &&
                     resolved.fork_damper.total_travel_mm == 180.0 &&
                     resolved.shock_damper.total_stroke_mm == 65.0,

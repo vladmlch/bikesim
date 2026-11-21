@@ -98,9 +98,31 @@ Using `bike-settle` on a level flat track (`research_flat.toml`) with solver con
 
 ## 5. Implementation Strategy & Golden Lifecycle
 
+**2026-11-21 implementation:** calibrated defaults are active for all three
+backends, and the user approved normal-rider
+launch cap changes at 0% **38.5 → 36.0 Nm** and 25% **22.5 → 20.0 Nm**
+(22% remains 21.0 Nm). After the rest-certification correction the normal
+launch suite passes: `g00` reaches 20 km/h in 3.02750 s with zero launch
+lifts; `loose25` hands over at 6.402 s and passes with no model violation.
+Before that correction, a separate `loose25` probe reached 3.176 m/s at 20 s
+without post-handover lifts. Additional non-suite probes at that earlier state
+found wheelspin on flat scree and a 0.080 s front lift on asphalt at 4% grade.
+Thresholds were not changed.
+
+Fresh flat-track settles measured fork/shock in mm: welded 53.9971/19.5003,
+distributed 53.7067/19.5372, pneumatic 54.0048/19.4981. The historical
+`research_flat.toml` source was unavailable; these measurements used
+`tests/fixtures/tracks/flat.toml`. Previously a latched static brake made
+the pneumatic Savage certified residual 0.0499722 differ from the restored
+0.051083. Certification now resets that non-serialized latch; the freshly
+settled and independently restored residuals are exactly equal (0.0499993
+as printed), below the unchanged 0.05 limit. The pinned Savage NPZ was
+re-recorded and verified; no tree-wide golden regeneration or full/native
+completion gate has been performed.
+
 1. **Verification Tooling Integration:**
    - The runtime evaluation tooling (`sag_evaluator.cpp`), the command line `--sag 30` option in `bike-ride`, and `requested_sag` acceptance criteria are already operating under shock-stroke semantics (19.5 mm).
 2. **Profile & Default Constant Updates:**
-   - Updating the base default constants in `native/src/configuration/physical_config.hpp` and `examples/research/*.toml` directly affects the initial settled pose for every simulation, which alters downstream trajectory outputs and invalidates existing committed golden test fixtures (`tests/fixtures/golden/`).
+   - Changing default constants affects the initial settled pose and can invalidate downstream trajectory fixtures (`tests/fixtures/golden/`).
    - Per ADR-0003 and [AGENTS.md](../../AGENTS.md), reference golden updates are strictly governed and executed in synchronized platform-wide generation passes.
-   - Therefore, the mathematical values are now formally calibrated, documented, and locked in this report and in `simulation-decisions.md`. In-code defaults will be updated simultaneously during the designated tree-wide golden regeneration wave.
+   - In-code backend defaults are now active. The pinned pneumatic Savage pose was regenerated; other golden updates and the full physics proof remain for the designated integration wave.

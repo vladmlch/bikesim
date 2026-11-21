@@ -133,7 +133,8 @@ Value damper_core(const nativecfg::DamperCore& d) {
 Value suspension(const mdl::BuildRequest& request,
                  const cfg::SimulationPhysicsConfig& physics_config,
                  const mjModel& model) {
-    const auto& b = request.bike;
+    auto b = request.bike;
+    bike::geometry::sync_backend_default_suspension(b, physics_config.tires.backend);
     cfg::SuspensionInputs const inputs{.fork_hsc=b.fork_hsc, .fork_lsc=b.fork_lsc, .fork_rebound=b.fork_rebound,
         .shock_hsc=b.shock_hsc, .shock_lsc=b.shock_lsc, .shock_rebound=b.shock_rebound, .shock_hbo=b.shock_hbo, .shock_lockout=b.shock_lockout,
         .fork_travel=b.fork_travel, .shock_stroke=b.shock_stroke, .fork_initial_psi=b.fork_initial_psi, .fork_air_tokens=b.fork_air_tokens,

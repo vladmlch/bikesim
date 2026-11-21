@@ -65,7 +65,7 @@ struct SuspensionHardwareSpecs {
     double shock_stroke = 65.0;
     double fork_stiffness = 6000.0;
     double fork_damping = 450.0;
-    double shock_stiffness = 114600.0;
+    double shock_stiffness = 81550.0;
     double shock_damping = 1200.0;
 };
 
@@ -93,14 +93,14 @@ struct BikeSpecs {
     double shock_stroke = 65.0;
     double fork_stiffness = 6000.0;
     double fork_damping = 450.0;
-    double shock_stiffness = 114600.0;
+    double shock_stiffness = 81550.0;
     double shock_damping = 1200.0;
 
     // Fork damper + air spring settings.
     int fork_hsc = 2;
     int fork_lsc = 7;
     int fork_rebound = 9;
-    double fork_initial_psi = 85.2;
+    double fork_initial_psi = 97.0;
     int fork_air_tokens = 2;
 
     // Rear shock damper settings.
@@ -110,10 +110,32 @@ struct BikeSpecs {
     int shock_hbo = 2;
     bool shock_lockout = false;
 
+    // Set false whenever either spring value is supplied explicitly, including
+    // an explicit pair equal to the compliant backend's defaults.
+    bool backend_default_suspension = true;
+
     // BikeSpecs.geometry / .suspension properties.
     [[nodiscard]] FrameGeometrySpecs geometry() const;
     [[nodiscard]] SuspensionHardwareSpecs suspension() const;
 };
+
+// Preserve explicit spring inputs; backend-owned defaults may be reselected
+// when a caller changes tire backend before setup.
+inline void sync_backend_default_suspension(BikeSpecs &bike,
+                                            std::string_view tire_backend) noexcept {
+    if (!bike.backend_default_suspension)
+        return;
+    if (tire_backend == "compliant_2d") {
+        bike.fork_initial_psi = 97.0;
+        bike.shock_stiffness = 81550.0;
+    } else if (tire_backend == "distributed_2d_reference") {
+        bike.fork_initial_psi = 90.8;
+        bike.shock_stiffness = 84372.0;
+    } else if (tire_backend == "pneumatic") {
+        bike.fork_initial_psi = 113.8;
+        bike.shock_stiffness = 73557.0;
+    }
+}
 
 // ---------------------------------------------------------------------------
 // hardpoints.py — all coordinates mm.

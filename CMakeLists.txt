@@ -720,6 +720,13 @@ if(BUILD_TESTING)
   target_include_directories(bike_tyre_upload SYSTEM PRIVATE
     "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
   target_link_libraries(bike_tyre_upload PUBLIC bike::mujoco)
+  add_library(bike_spindle_upload STATIC
+    "${_bike_native_dir}/src/physics_core/spindle_m2k2_upload.cpp")
+  set_target_properties(bike_spindle_upload PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  bike_apply_native_policy(bike_spindle_upload)
+  target_include_directories(bike_spindle_upload SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(bike_spindle_upload PUBLIC bike::mujoco)
   target_link_libraries(bike_test_gpu_model_geometry PRIVATE bike_tyre_upload)
   foreach(_gpu_mujoco_test IN ITEMS bike_test_gpu_model_geometry bike_test_gpu_model_assets)
     target_link_libraries(${_gpu_mujoco_test} PRIVATE bike::mujoco)

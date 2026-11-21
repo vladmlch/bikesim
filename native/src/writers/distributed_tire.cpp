@@ -249,6 +249,8 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     energies_.resize(n);
     depths_.resize(n);
     normals_.resize(n * model_access::kXYZ);
+    contact_x_.resize(n);
+    slips_.resize(n);
     tmp_.resize(nv);
     qfrc_out_.resize(nv);
     states_[0].resize(n);
@@ -279,6 +281,15 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     const std::size_t calibration_capacity = std::max(
             dist.front.calibration_status.size(),
             dist.rear.calibration_status.size());
+    // Reserve the longest surface label so the commit assign never allocates.
+    std::size_t surface_capacity = std::string_view("configured").size();
+    if (surface_map_.has_value()) {
+        surface_capacity =
+                std::max(surface_capacity, surface_map_->surface.name.size());
+        for (const auto &sec : surface_map_->sections)
+            surface_capacity =
+                    std::max(surface_capacity, sec.surface.name.size());
+    }
     for (std::size_t s = 0; s < 2; ++s) {
         snapshot_stage_[s].patches.reserve(n);
         snapshots_[s].patches.reserve(n);
@@ -291,6 +302,8 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
         diagnostics_[s].calibration_status.reserve(calibration_capacity);
         diagnostics_stage_[s].capability_status.reserve(kCapability.size());
         diagnostics_[s].capability_status.reserve(kCapability.size());
+        diagnostics_stage_[s].surface.reserve(surface_capacity);
+        diagnostics_[s].surface.reserve(surface_capacity);
     }
     // reset() (:58-62) — the member initializers already hold these values.
 }
@@ -611,6 +624,8 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         d->geom_xpos, model_access::kXYZ * m_->ngeom);
     const std::span<const mjtNum> qvel =
             model_access::readonly_buffer(d->qvel, m_->nv);
+    const std::span<const mjtNum> xmat =
+            model_access::readonly_buffer(d->xmat, 9 * m_->nbody);
     // :147 — self.bodies.items() — front then rear, insertion order.
     for (std::size_t s = 0; s < 2; ++s) {
         // :148-149 — the per-side TireParams plus its resolved
@@ -646,7 +661,7 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         // new_states[side] starts empty: detach unless a station is
         // written below — the (side, sid) keyed dict's absence.
         std::ranges::fill(states_stage_[s], StationState{});
-        // :156 — for j, sid in enumerate(ids).
+        // Pass 1 — radial response; normal_total precedes load-sensitive friction.
         for (std::size_t j = 0; j < count; ++j) {
             const std::size_t sid =
                     static_cast<std::size_t>(active_ids_[j]);
@@ -704,8 +719,62 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
             radial_power += std::max(
                     0.0, (load - stations_.weights[sid] * elastic_density) *
                          rate);
-            // :172-177 — the stored brush transports through the
-            // tangent change; released stretch is dissipated.
+            loads_[j] = load;
+            energies_[j] = elastic_energy;
+            depths_[j] = penetration;
+            nonsmooth += geometry.nonsmooth ? 1 : 0;
+            normals_[kDim * j] = normal[0];
+            normals_[kDim * j + 1] = normal[1];
+            normals_[kDim * j + 2] = normal[2];
+            contact_x_[j] = geometry.point[0];
+            slips_[j] = dot3(velocity, tangent);
+        }
+        // :193-196 — np.sum reduce identity over the active prefix.
+        const double normal_total = numeric::numpy_sum(
+                std::span{loads_}.first(count));
+        const double radial_energy = numeric::numpy_sum(
+                std::span{energies_}.first(count));
+        // Pass 2 — surface friction, energy-invariant shear scaling, staging.
+        double crr_weighted_sum = 0.0;
+        double max_station_load = -1.0;
+        double max_load_mu = pcfg.mu;
+        std::string_view dominant_surface = surface_map_
+                ? tirecommon::eval_surface(*surface_map_, center[0]).name
+                : std::string_view("configured");
+        for (std::size_t j = 0; j < count; ++j) {
+            const std::size_t sid =
+                    static_cast<std::size_t>(active_ids_[j]);
+            const Vec3 point = {points_[kDim * sid],
+                                points_[kDim * sid + 1],
+                                points_[kDim * sid + 2]};
+            const Vec3 normal = {normals_[kDim * j],
+                                 normals_[kDim * j + 1],
+                                 normals_[kDim * j + 2]};
+            const Vec3 tangent = {normal[2], 0.0, -normal[0]};
+            const double load = loads_[j];
+            const double slip = slips_[j];
+            // :178-179 — Stribeck mu at contact x, load-aware on normal_total.
+            double mu = pcfg.mu;
+            double r_k = 1.0;
+            if (surface_map_.has_value()) {
+                const tirecommon::SurfaceSample sample =
+                        tirecommon::eval_surface(*surface_map_, contact_x_[j]);
+                mu = std::min(pcfg.mu,
+                              tirecommon::sample_mu(sample, slip,
+                                                    normal_total));
+                r_k = sample.slip_stiffness_per_load /
+                      tirecommon::kReferenceSlipStiffnessPerLoad;
+                crr_weighted_sum += load * sample.crr_delta;
+                if (load > max_station_load) {
+                    max_station_load = load;
+                    dominant_surface = sample.name;
+                    max_load_mu = mu;
+                }
+            } else if (load > max_station_load) {
+                max_station_load = load;
+                max_load_mu = mu;
+            }
+            // :172-177 — tangent transport; xi energy-scaled as xi_phys*sqrt(r_k).
             const StationState &old = states_[s][sid];
             double xi = old.xi;
             const double k_station = tk * stations_.weights[sid];
@@ -717,29 +786,34 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                              (xi * xi - transported * transported));
                 xi = transported;
             }
-            // :178-179 — slip = velocity @ tangent, then the
-            // Stribeck-capped effective mu at the contact's x.
-            const double slip = dot3(velocity, tangent);
-            const auto [mu, material_name] =
-                    tirecommon::effective_friction(
-                            pcfg.mu,
-                            surface_map_ ? &*surface_map_ : nullptr,
-                            geometry.point[0], slip);
-            // `mu, _ = ...` (:179) — the material name is discarded.
-            static_cast<void>(material_name);
-            // :180-182 — _brush_step plus its dissipation and stored
-            // shear-energy terms (xi_new ** 2 → the libm call).
-            const auto [xi_new, tangent_force, brush_loss] =
+            // sqrt(r_k) scaling keeps 0.5*k_station*xi^2; r_k==1.0 stays bitwise.
+            const double sqrt_rk = (r_k == 1.0) ? 1.0 : std::sqrt(r_k);
+            const double xi_in = (r_k == 1.0) ? xi : (xi / sqrt_rk);
+            const auto [xi_out, tangent_force, brush_loss] =
                     tirecommon::brush_step(
-                            xi, slip, dot3(center_velocity, tangent),
-                            load, k_station, mu,
+                            xi_in, slip, dot3(center_velocity, tangent),
+                            load, k_station * r_k, mu,
                             pcfg.relaxation_length_m, dt);
+            const double xi_stored =
+                    (r_k == 1.0) ? xi_out : (xi_out * sqrt_rk);
             losses += brush_loss;
-            shear_energy += .5 * k_station * pyfloat::pow(xi_new, 2.0);
+            shear_energy += .5 * k_station * pyfloat::pow(xi_stored, 2.0);
             // :183-184 — force = load*normal + tangent_force*tangent
             // (mul, mul, add per component), then result += jac.T @
             // force — dgemv(Trans) into tmp_ first, elementwise +=
             // second, matching numpy's materialized product.
+            const Vec3 arm = {point[0] - center[0],
+                              point[1] - center[1],
+                              point[2] - center[2]};
+            for (std::size_t k = 0; k < kDim; ++k) {
+                const std::size_t a = (k + 1) % kDim,
+                                  b = (k + 2) % kDim;
+                for (std::size_t i = 0; i < nv; ++i)
+                    jac_station_[k * nv + i] =
+                            jac_center_[k * nv + i] +
+                            (jr_[a * nv + i] * arm[b] -
+                             jr_[b * nv + i] * arm[a]);
+            }
             const Vec3 force = {
                     load * normal[0] + tangent_force * tangent[0],
                     load * normal[1] + tangent_force * tangent[1],
@@ -750,15 +824,6 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                         tmp_.data(), 1);
             for (std::size_t i = 0; i < nv; ++i)
                 out[i] += tmp_[i];
-            // :185-189 — staged per-station artifacts in enumeration
-            // order (the oracle's append order).
-            loads_[j] = load;
-            energies_[j] = elastic_energy;
-            depths_[j] = penetration;
-            nonsmooth += geometry.nonsmooth ? 1 : 0;
-            normals_[kDim * j] = normal[0];
-            normals_[kDim * j + 1] = normal[1];
-            normals_[kDim * j + 2] = normal[2];
             // One patch per station: construction-reserved capacity —
             // the guard can never trip, like TireWriter's.
             if (snap.patches.size() >= n)
@@ -768,7 +833,7 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                     make_patch(point, normal, load, tangent_force,
                                slip));
             states_stage_[s][sid] = StationState{
-                    .active = true, .xi = xi_new, .tangent = tangent};
+                    .active = true, .xi = xi_stored, .tangent = tangent};
         }
         // :190-192 — stations that detached this interval release their
         // stored shear as loss, in (side, station) ascending order —
@@ -779,13 +844,8 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                 losses += .5 * tk * stations_.weights[i] *
                           pyfloat::pow(old.xi, 2.0);
         }
-        // :193-196 — the wheel's numpy reductions and the signed
-        // overlap convention (deepest penetration, else the negative
-        // of the nonnegative center clearance).
-        const double normal_total = numeric::numpy_sum(
-                std::span{loads_}.first(count));
-        const double radial_energy = numeric::numpy_sum(
-                std::span{energies_}.first(count));
+        // :193-196 — signed overlap: deepest penetration, else the negative
+        // of the nonnegative center clearance.
         const double max_depth =
                 count > 0 ? *std::ranges::max_element(
                         depths_.begin(),
@@ -852,10 +912,43 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                 throw std::invalid_argument(
                         "wheel axis must be a finite 3D vector");
         snap.effective_radius_m = effective_radius(snap.patches, center);
+        // Couple reacts to ground only (no caliper moment); planar spin axis is Y.
+        if (normal_total > 0.0 && snap.effective_radius_m > 0.0 &&
+            crr_weighted_sum > 0.0) {
+            const double crr_bar = crr_weighted_sum / normal_total;
+            const std::size_t b9 = 9 * static_cast<std::size_t>(body);
+            const Vec3 axis = {xmat[b9 + 1], xmat[b9 + 4], xmat[b9 + 7]};
+            blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
+                        model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
+                        axis.data(), 1, 0.0, tmp_.data(), 1);
+            const double omega_world =
+                    blas::ddot(nv_, tmp_.data(), 1, qvel.data(), 1);
+            const double m_roll =
+                    -crr_bar * normal_total * snap.effective_radius_m *
+                    std::tanh(omega_world /
+                              tirecommon::kWheelRollingTaperRadps);
+            const double rolling_loss = std::max(0.0, -m_roll * omega_world) * dt;
+            contactlaw::finite_result(
+                    {crr_weighted_sum, crr_bar, omega_world, m_roll, rolling_loss});
+            for (std::size_t i = 0; i < nv; ++i)
+                out[i] += m_roll * tmp_[i];
+            for (std::size_t j = 0; j < count; ++j) {
+                const double w = loads_[j] / normal_total;
+                const Vec3 couple = {axis[0] * m_roll * w,
+                                     axis[1] * m_roll * w,
+                                     axis[2] * m_roll * w};
+                contactlaw::finite_result({couple[0], couple[1], couple[2]});
+                snap.patches[j].couple_world_nm = couple;
+            }
+            losses += rolling_loss;
+        }
         // :204-213 — diagnostics[side]. Compliant-only fields keep
         // their staged zero/empty defaults: the distributed dict never
         // emits them.
         TireDiagnostics &diag = diagnostics_stage_[s];
+        // Out of the 15-key wire; assign reuses the reserved surface buffer.
+        diag.surface.assign(dominant_surface.data(), dominant_surface.size());
+        diag.friction_coefficient = count > 0 ? max_load_mu : 0.0;
         diag.multi_support = distinct || separate;
         diag.penetration_m = signed_overlap;
         diag.normal_load_n = normal_total;
@@ -881,6 +974,10 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         total_loss += losses;
         radial_loss_power += radial_power;
     }
+    // Cross-wheel accumulation can overflow after every per-wheel guard passed.
+    for (const double v : out)
+        contactlaw::finite_result({v});
+    contactlaw::finite_result({energy, total_loss, radial_loss_power});
     // :215-217 — the atomic commit after both wheels evaluate. The
     // committed slots copy-assign from the stages — capacity-reserved
     // at construction, so the marked path never allocates — and

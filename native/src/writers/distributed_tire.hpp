@@ -38,9 +38,13 @@
 // Per-station state — the C++ equivalent of the Python `_StationState`
 // dataclass. `active` mirrors presence/absence in the Python `states` dict:
 // an inactive station carries no `xi`/`tangent` at all and writes four NaNs
-// on the wire. `tangent` is the unit scale direction from the previous tick;
-// it is *not* a state variable in the Python applier — the tick computes the
-// tangent — but the state wire carries it so a restore can reproduce it.
+// on the wire. `xi` stores the energy-scaled brush deflection
+// `xi_phys * sqrt(r_k)` (`== xi_phys` when `r_k == 1.0`), preserving
+// `0.5 * k_station * xi^2` across track-surface transitions without changing
+// the 4-column wire schema. `tangent` is the unit scale direction from the
+// previous tick; it is *not* a state variable in the Python applier — the
+// tick computes the tangent — but the state wire carries it so a restore can
+// reproduce it.
 struct StationState {
     bool active = false;
     double xi = 0.0;
@@ -251,6 +255,8 @@ private:
     std::vector<double> energies_{};          // N
     std::vector<double> depths_{};            // N
     std::vector<double> normals_{};           // N*3
+    std::vector<double> contact_x_{};         // N
+    std::vector<double> slips_{};             // N
     std::vector<double> tmp_{};               // nv
     std::vector<double> qfrc_out_{};          // nv
     std::array<TireSnapshot, 2> snapshot_stage_{};

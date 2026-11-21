@@ -925,18 +925,62 @@ transmission_model = "elastic_chain"
                 "the declared default is the ideal drive");
 }
 
+[[gnu::noinline]] void test_seated_climb_table_is_required() {
+    const std::string complete =
+        cfg::write_physics_toml(cfg::default_physics());
+    constexpr std::string_view header = "[seated_climb]";
+    const std::size_t table = complete.find(header);
+    bt::require(table != std::string::npos,
+                "the generated profile declares seated_climb");
+    const std::size_t next_table =
+        complete.find("\n[", table + header.size());
+    const std::size_t table_end =
+        next_table == std::string::npos ? complete.size() : next_table;
+    std::string without_table = complete;
+    without_table.erase(table, table_end - table);
+
+    const bt::TemporaryDirectory temp("t13-seated-climb-table-required");
+    const auto path = temp.path() / "missing-table.toml";
+    std::ofstream output(path);
+    bt::require(output.good(),
+                "temporary TOML file for missing table opens");
+    output << without_table;
+    output.close();
+    bt::require(output.good(),
+                "temporary TOML file without seated_climb is written");
+
+    bool rejected = false;
+    try {
+        (void)cfg::load_physics(path);
+    } catch (const std::invalid_argument &) {
+        rejected = true;
+    }
+    bt::require(rejected, "omitting the seated_climb table is rejected");
+}
+
 [[gnu::noinline]] void test_seated_climb_required_profile_fields() {
-    static constexpr std::array<std::string_view, 10> kRequiredKeys{
+    static constexpr std::array<std::string_view, 21> kRequiredKeys{
         "enabled",
+        "period_s",
+        "reaction_delay_s",
         "target_crank_power_w",
+        "max_crank_torque_nm",
         "lean_gain",
+        "max_forward_lean_rad",
         "max_backward_lean_rad",
+        "lean_rate_rad_s",
+        "orientation_tau_s",
         "surge_power_w",
         "surge_grade",
+        "surge_budget_s",
         "surge_recovery_rate",
         "front_load_share_target",
         "lean_trim_gain_rad_s",
         "lean_trim_limit_rad",
+        "trim_dead_time_s",
+        "min_elbow_flexion_deg",
+        "climb_effort_rise_speed_mps",
+        "climb_effort_full_speed_mps",
     };
     const std::string complete =
         cfg::write_physics_toml(cfg::default_physics());
@@ -2007,6 +2051,7 @@ int main(int argc, char* argv[]) {
         physics_mode_is_physical_only();
         test_defaults();
         test_schema();
+        test_seated_climb_table_is_required();
         test_seated_climb_required_profile_fields();
         test_elastic_chain_is_rejected();
         test_validation();

@@ -2,6 +2,7 @@
 // Constants and tolerances below are the source's analytic assertions.
 #include "drive_reference_support.hpp"
 #include "support/temporary_directory.hpp"
+#include "support/seated_climb_test_profile.hpp"
 #include "cli/application.hpp"
 #include "io/json.hpp"
 
@@ -232,7 +233,8 @@ namespace cfg = bike::configuration;
     const auto path = directory.path() / "physics.toml";
     {
         std::ofstream file(path);
-        file << "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
+        file << bt::complete_seated_climb_test_profile(
+                "physics_mode = \"physical\"\ndrive_mode = \"crank_effort\"\n"
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[drive]\nmotor_clutch = true\n"
                 "[drive.assist]\nprofile = \"bosch_cx_gen4\"\nmode = \"turbo\"\nrelease_hold_s = 0.3\n"
@@ -249,7 +251,7 @@ namespace cfg = bike::configuration;
                 "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.005\n"
                 "[research]\ncontrol_period_s = 0.01\nactuator_delay_s = 0.005\n"
                 "sensor_latency_s = 0.01\nsensor_maximum_age_s = 0.1\n"
-                "sample_period_s = 0.005\nrecord_decimation = 80\n";
+                "sample_period_s = 0.005\nrecord_decimation = 80\n");
         bt::require(static_cast<bool>(file), "write temporary physics config");
     }
     const auto spelling = path.string();

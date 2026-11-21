@@ -69,6 +69,13 @@ bool approx(double actual, double expected, double rtol = 1e-9,
     return std::abs(actual - expected) <= atol + rtol * std::abs(expected);
 }
 
+rider::IntentConfig default_intent_config() {
+    auto config = cfg::default_physics().seated_climb;
+    // Preserve this rider-layer suite's pre-profile default ceiling.
+    config.max_forward_lean_rad = .35;
+    return config;
+}
+
 // Runs `action`, which must throw std::invalid_argument naming `needle`.
 template <typename Action>
 void rejects(Action &&action, std::string_view needle, std::string_view what) {
@@ -84,7 +91,7 @@ void rejects(Action &&action, std::string_view needle, std::string_view what) {
 }
 
 rider::IntentConfig enabled(double lean_rate = 0.) {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;
@@ -285,7 +292,7 @@ void test_body_pulse_is_continuous_around_its_edges() {
 
 // test_posture_program_rate_limits_and_bounds_the_pulse
 void test_posture_program_rate_limits_and_bounds_the_pulse() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;
@@ -579,7 +586,7 @@ void test_pulse_redistributes_load_through_inertia_only() {
 
 // test_trim_is_delayed_and_increases_forward_lean_for_light_front
 void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;
@@ -607,7 +614,7 @@ void test_trim_is_delayed_and_increases_forward_lean_for_light_front() {
 
 // test_geometric_limit_caps_lean
 void test_geometric_limit_caps_lean() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;
@@ -646,7 +653,7 @@ void test_preview_is_last_sample_and_preserves_exact_endpoint() {
 
 // test_geometric_limit_replaces_the_legacy_config_ceiling_when_available
 void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;
@@ -667,7 +674,7 @@ void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
 
 // test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach
 void test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;

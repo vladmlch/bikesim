@@ -18,6 +18,7 @@
 //   * ...round_trips_through_the_npz_cache_file ->
 //     reference.equilibrium_state_file's state_tire_wire npz coverage.
 #include "support/fixture_test.hpp"
+#include "support/seated_climb_test_profile.hpp"
 #include "recording_test_support.hpp"
 #include "app/prepare.hpp"
 #include "cli/application.hpp"
@@ -61,7 +62,8 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
     const auto physics = dir.path() / "physics.toml";
     {
         std::ofstream out(physics);
-        out << "physics_mode = \"physical\"\n"
+        out << bt::complete_seated_climb_test_profile(
+               "physics_mode = \"physical\"\n"
                "drive_mode = \"coast\"\n"
                "timestep_s = 0.0005\n"
                "control_period_s = 0.005\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
@@ -88,7 +90,7 @@ void test_pneumatic_backend_runs_a_physical_ride_end_to_end() {
                "backend = \"pneumatic\"\n"
                "surface_mode = \"track\"\n"
                "[tires.pneumatic]\n"
-               "tier = \"fast\"\n";
+               "tier = \"fast\"\n");
     }
     const auto physics_arg = physics.string();
     const std::vector<std::string_view> args{

@@ -27,10 +27,20 @@ cfg::SimulationPhysicsConfig resolve(std::string_view document) {
     if (auto *obj = std::get_if<io::Value::Object>(&value.data)) {
         if (!io::find_member(*obj, "seated_climb")) {
             obj->emplace_back("seated_climb", io::Value{io::Value::Object{
+                {"enabled", io::Value{false}},
                 {"period_s", io::Value{io::Number{"0.00125"}}},
                 {"reaction_delay_s", io::Value{io::Number{"0.15"}}},
+                {"target_crank_power_w", io::Value{io::Number{"225.0"}}},
+                {"lean_gain", io::Value{io::Number{"1.0"}}},
+                {"max_backward_lean_rad", io::Value{io::Number{"0.1"}}},
+                {"surge_power_w", io::Value{io::Number{"400.0"}}},
+                {"surge_grade", io::Value{io::Number{"0.2"}}},
                 {"lean_rate_rad_s", io::Value{io::Number{"0.5"}}},
                 {"orientation_tau_s", io::Value{io::Number{"0.5"}}},
+                {"surge_recovery_rate", io::Value{io::Number{"0.3333333333333333"}}},
+                {"front_load_share_target", io::Value{io::Number{"0.3"}}},
+                {"lean_trim_gain_rad_s", io::Value{io::Number{"0.3"}}},
+                {"lean_trim_limit_rad", io::Value{io::Number{"0.15"}}},
                 {"surge_budget_s", io::Value{io::Number{"15"}}},
                 {"trim_dead_time_s", io::Value{io::Number{"0.2"}}},
                 {"max_crank_torque_nm", io::Value{io::Number{"60.0"}}},

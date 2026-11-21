@@ -31,6 +31,33 @@ void post_init(ArticulatedConfig &config) {
     cfg::detail::post_init(config);
 }
 
+SeatedClimbConfig valid_seated_climb_config() {
+    SeatedClimbConfig config;
+    config.period_s = .00125;
+    config.reaction_delay_s = .15;
+    config.target_crank_power_w = 225.;
+    config.max_crank_torque_nm = 60.;
+    config.lean_gain = 1.;
+    config.max_forward_lean_rad = .35;
+    config.max_backward_lean_rad = .10;
+    config.lean_rate_rad_s = .5;
+    config.orientation_tau_s = .5;
+    config.surge_power_w = 400.;
+    config.surge_grade = .20;
+    config.surge_budget_s = 15.;
+    config.surge_recovery_rate = 1. / 3.;
+    config.front_load_share_target = .30;
+    config.lean_trim_gain_rad_s = .3;
+    config.lean_trim_limit_rad = .15;
+    config.trim_dead_time_s = .2;
+    config.min_elbow_flexion_deg = 15.;
+    config.climb_effort_cap_grades = {0.};
+    config.climb_effort_cap_grade_nm = {1000.};
+    config.climb_effort_rise_speed_mps = 2.5;
+    config.climb_effort_full_speed_mps = 4.;
+    return config;
+}
+
 // test_spindle_and_connect_are_valid_attachments
 void test_spindle_and_connect_are_valid_attachments() {
     ArticulatedConfig config;
@@ -227,7 +254,7 @@ void test_invalid_balance_thresholds_are_rejected() {
 // test_surge_and_trim_are_validated_in_climb_config
 void test_surge_and_trim_are_validated_in_climb_config() {
     {
-        SeatedClimbConfig config;
+        SeatedClimbConfig config = valid_seated_climb_config();
         config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
         config.period_s = .00125;
         config.reaction_delay_s = .15;
@@ -249,7 +276,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
     for (const auto field : {&SeatedClimbConfig::surge_power_w,
                              &SeatedClimbConfig::surge_budget_s})
         bt::invalid([&] {
-            SeatedClimbConfig config;
+            SeatedClimbConfig config = valid_seated_climb_config();
             config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
             config.period_s = .00125;
             config.reaction_delay_s = .15;
@@ -271,7 +298,7 @@ void test_surge_and_trim_are_validated_in_climb_config() {
           &SeatedClimbConfig::lean_trim_gain_rad_s,
           &SeatedClimbConfig::lean_trim_limit_rad})
         bt::invalid([&] {
-            SeatedClimbConfig config;
+            SeatedClimbConfig config = valid_seated_climb_config();
             config.surge_budget_s = 15.; config.trim_dead_time_s = .2;
             config.period_s = .00125;
             config.reaction_delay_s = .15;

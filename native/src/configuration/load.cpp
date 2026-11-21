@@ -25,6 +25,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -570,6 +571,8 @@ template <typename T>
 void construct_typed(const RecordSchema& schema, const Value::Object& obj,
                      T& out, const std::string& path) {
     T working{};
+    if constexpr (std::is_same_v<T, SimulationPhysicsConfig>)
+        working.seated_climb = default_physics().seated_climb;
     decode_record(schema, obj, &working, path);
     record_post_init(working);
     out = std::move(working);

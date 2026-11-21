@@ -140,6 +140,8 @@ return_foot_preload_n = 40.0
 enabled = true
 period_s = 0.00125
 reaction_delay_s = 0.15
+lean_gain = 1.0
+max_backward_lean_rad = 0.1
 lean_rate_rad_s = 0.5
 orientation_tau_s = 0.5
 # Rider holds ~250 W at the crank, torque-capped at 60 N*m (grinds below ~40 rpm).

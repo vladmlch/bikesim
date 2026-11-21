@@ -35,6 +35,15 @@ void test_period_must_be_an_integer_multiple_of_the_timestep() {
     for (std::size_t i = 0; i < ticks.size(); ++i) bt::require(clock.is_tick(static_cast<std::int64_t>(i)) == ticks[i], "control clock exact tick sequence");
     bt::invalid([] { runtime::ControlClock const invalid(.0005, .0012); });
     bike::configuration::SimulationPhysicsConfig config;
+    config.seated_climb.target_crank_power_w = 225.;
+    config.seated_climb.lean_gain = 1.;
+    config.seated_climb.max_backward_lean_rad = .10;
+    config.seated_climb.surge_power_w = 400.;
+    config.seated_climb.surge_grade = .20;
+    config.seated_climb.surge_recovery_rate = 1. / 3.;
+    config.seated_climb.front_load_share_target = .30;
+    config.seated_climb.lean_trim_gain_rad_s = .3;
+    config.seated_climb.lean_trim_limit_rad = .15;
     config.physics_mode = "physical"; config.timestep_s = .0005; config.control_period_s = .0012;
     config.monitors.grounded_hold_s = .005; config.monitors.contact_dropout_s = .005;
     config.seated_climb.period_s = .00125;

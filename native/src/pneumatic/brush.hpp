@@ -31,6 +31,10 @@
 
 #include "../config_types.hpp" // nativecfg::SurfaceSpec
 
+namespace tirecommon {
+    struct SurfaceSample;
+}
+
 namespace biketyre {
 
     // BRISTLE_DAMPING_S (brush.py:17) — the bristle dashpot relaxation
@@ -119,6 +123,12 @@ namespace biketyre {
                          const nativecfg::SurfaceSpec &surface,
                          double dt_s);
 
+        BrushResult step_heterogeneous(
+                std::span<const double> normal_loads_n,
+                double half_length_m, double v_x_mps, double v_s_mps,
+                double sigma_m, std::span<const tirecommon::SurfaceSample> samples,
+                double patch_normal_load_n, double wheel_normal_load_n, double dt_s);
+
         // Explicit semantic-state copy — the Task-11 writer's failure
         // rollback/probe boundary. Copies into the existing storage
         // (never reallocates); throws std::invalid_argument on an
@@ -158,7 +168,7 @@ namespace biketyre {
         // deflection row (interp must finish reading the bristle row
         // before the commit writes it) and the clipped force row that
         // np.sum reduces.
-        std::vector<double> updated_, force_n_;
+        std::vector<double> updated_, force_n_, stiffness_, mu_;
         double kappa_prime_ = 0.0;
     };
 

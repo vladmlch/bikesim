@@ -84,8 +84,14 @@ using namespace bt::pneumatic;
         const auto &snapshot = tire->snapshot_storage()[side];
         bt::require(tire->diagnostic_storage()[side].normal_load_n > 0. && !snapshot.patches.empty(), "both physical tyres loaded");
         bt::require(snapshot.geometric_contact && snapshot.backend == "pneumatic", "physical pneumatic contact");
-        for (const auto &patch : snapshot.patches)
+        for (const auto &patch : snapshot.patches) {
             add_jtf(*model.model, *model.data, sides[side], patch.point_m, runtime::patch_world_force(patch), expected);
+            const auto jac = bike::model::point_jacobian(*model.model, *model.data,
+                    bodies[side], patch.point_m);
+            for (std::size_t i = 0; i < expected.size(); ++i)
+                for (std::size_t k = 0; k < 3; ++k)
+                    expected[i] += jac.rotation[k * expected.size() + i] * patch.couple_world_nm[k];
+        }
     }
     for (std::size_t i = 0; i < qfrc.size(); ++i)
         bt::require(std::abs(qfrc[i] - expected[i]) <= 1e-8 + 1e-9 * std::abs(expected[i]), "physical per-patch J^T F");

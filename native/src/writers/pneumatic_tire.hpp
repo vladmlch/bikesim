@@ -310,12 +310,11 @@ private:
     // Tick scratch — construction-sized; the mutable rows also serve the
     // const stored_energy path.
     std::array<mjtNum, 6> velocity6_{};
-    std::vector<mjtNum> jacp_{};  // 3*nv patch-centroid Jacobian
+    std::vector<mjtNum> jacp_{}, jr_{};  // 3*nv translation and rotation Jacobians
     std::vector<double> tmp_{};   // nv gemv target
     std::vector<double> qfrc_out_{};
     mutable std::vector<double> hit_r_, hit_delta_, hit_rx_, hit_rz_;
     mutable std::vector<double> energy_scratch_;  // radial terms (n)
-    mutable std::vector<double> shear_scratch_;   // bristle² row (n)
     mutable std::vector<double> bristle_row_;     // state() assembly (n)
 
     // Commit staging — the oracle builds fresh dicts in locals; these

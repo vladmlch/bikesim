@@ -59,6 +59,7 @@
 #include <stdexcept>
 
 #include "../cblas_abi.hpp"
+#include "../contact/laws.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
 #include "../writers/pyfloat.hpp"
@@ -118,6 +119,8 @@ namespace biketyre {
             out.rim_strike_active = rim_strike_active;
             out.rim_event = rim_event;
             out.dissipated_power_w = 0.0;
+            out.carcass_dissipated_power_w = 0.0;
+            out.rolling_crr = 0.0;
             out.coverage_event = coverage_event;
             out.airborne = airborne;
             // The slot bank keeps its elements (and their string
@@ -145,6 +148,8 @@ namespace biketyre {
             out.rim_strike_active = false;
             out.rim_event.reset();
             out.dissipated_power_w = 0.0;
+            out.carcass_dissipated_power_w = 0.0;
+            out.rolling_crr = 0.0;
             out.coverage_event = false;
             out.airborne = true;
             out.patch_count = 0;
@@ -233,6 +238,7 @@ namespace biketyre {
                 .force_z_n = 0.0,
                 .normal_load_n = 0.0,
                 .rim_energy_j = 0.0,
+                .dissipated_power_w = 0.0,
                 .rim_strike_active = false,
                 .rim_event = std::nullopt};
 
@@ -243,6 +249,7 @@ namespace biketyre {
             slot.bristle_deflection_m.reserve(n);
         used_.assign(bound, false);
         loss_scratch_.assign(n, 0.0);
+        sample_scratch_.resize(n);
         brushes_.resize(n + 1);
         // Bound-sized slot banks: evaluate() writes patch elements in
         // place so their surface_name storage persists across calls —
@@ -272,6 +279,7 @@ namespace biketyre {
     }
 
     void PneumaticTyreModel::reserve_patch_names(std::size_t capacity) {
+        surface_scratch_.name.reserve(capacity);
         for (TyrePatchOutput &p: last_outputs_.patch_slots)
             p.surface_name.reserve(capacity);
         for (TyrePatchOutput &p: staging_.patch_slots)
@@ -465,13 +473,29 @@ namespace biketyre {
         if (hits.airborne && !carcass_state_.rim_strike_active() &&
             !any_nonzero(carcass_state_.delta_prev_m()) &&
             !any_nonzero(carcass_state_.elastic_prev_n())) {
+            const double ds = tyre_.outer_radius_mm * 0.001 * ring_.dtheta_rad();
+            double before = 0.0;
+            if (carcass_state_.initialized())
+                for (std::size_t i = 0; i < ring_.n(); ++i)
+                    before += ray_maxwell_energy_j(0.0, carcass_state_.elastic_prev_n()[i],
+                                                   carcass_state_.maxwell_force_n()[i], tyre_, ds);
             carcass_state_.advance_unloaded(
                     omega_forward_radps, dt_s, ring_.dtheta_rad(),
                     tyre_.rate_relaxation_s);
+            double after = 0.0;
+            if (carcass_state_.initialized())
+                for (std::size_t i = 0; i < ring_.n(); ++i)
+                    after += ray_maxwell_energy_j(0.0, carcass_state_.elastic_prev_n()[i],
+                                                  carcass_state_.maxwell_force_n()[i], tyre_, ds);
             patch_count_ = 0;
             write_unloaded(out, tyre_, hub, velocity,
                            omega_forward_radps, hits.coverage_event,
                            true, false, std::nullopt);
+            const double delta = before - after;
+            contactlaw::finite_result({before, after, delta});
+            out.carcass_dissipated_power_w = std::max(0.0, delta) / dt_s;
+            contactlaw::finite_result({out.carcass_dissipated_power_w});
+            out.dissipated_power_w = out.carcass_dissipated_power_w;
             return;
         }
 
@@ -491,6 +515,8 @@ namespace biketyre {
                            omega_forward_radps, hits.coverage_event,
                            hits.airborne, carcass.rim_strike_active,
                            carcass.rim_event);
+            out.carcass_dissipated_power_w = carcass.dissipated_power_w;
+            out.dissipated_power_w = carcass.dissipated_power_w;
             return;
         }
 
@@ -504,17 +530,23 @@ namespace biketyre {
         double weighted_deflection_m = 0.0, weighted_kappa = 0.0,
                 weighted_kappa_prime = 0.0;
         double total_contact_length_m = 0.0, brush_loss_w = 0.0;
+        double wheel_normal_load_n = 0.0, rolling_crr = 0.0;
         out.patch_count = 0;
 
-        // model.py:276-280 — carcass hysteresis dissipation clipped at
-        // zero per element, then the pairwise sum.
-        for (std::size_t i = 0; i < ring_.n(); ++i)
-            loss_scratch_[i] = numeric::np_maximum(
-                    carcass.hysteresis_force_n[i] *
-                            carcass.material_rate_mps[i],
-                    0.0);
-        const double carcass_loss_w =
-                numeric::numpy_sum(loss_scratch_);
+        const double carcass_loss_w = carcass.dissipated_power_w;
+        contactlaw::finite_result({carcass_loss_w});
+        for (std::size_t k = 0; k < carcass.patch_count; ++k) {
+            const auto [start, stop] = carcass.contact_patches[k];
+            const std::size_t first = static_cast<std::size_t>(start);
+            const int count = stop - start;
+            const auto forces = carcass.total_element_force_n.subspan(first, static_cast<std::size_t>(count));
+            const std::array<double, 3> normal{
+                    -blas::ddot(count, forces.data(), 1, ring_.ux().subspan(first, static_cast<std::size_t>(count)).data(), 1),
+                    0.0,
+                    -blas::ddot(count, forces.data(), 1, ring_.uz().subspan(first, static_cast<std::size_t>(count)).data(), 1)};
+            wheel_normal_load_n += std::sqrt(blas::ddot(3, normal.data(), 1, normal.data(), 1));
+        }
+        contactlaw::finite_result({wheel_normal_load_n});
 
         for (std::size_t k = 0; k < carcass.patch_count; ++k) {
             const auto [start_i, stop_i] = carcass.contact_patches[k];
@@ -597,8 +629,53 @@ namespace biketyre {
                     std::fabs(v_x_mps) > 1e-9
                             ? -v_s_mps / std::fabs(v_x_mps)
                             : 0.0;
-            const nativecfg::SurfaceSpec &surface =
-                    surface_at(surface_map, centroid_world_m[0]);
+            const auto x_values = hits.road_x_m.subspan(start_u, w);
+            const auto [min_x, max_x] = std::ranges::minmax_element(x_values);
+            const nativecfg::SurfaceSpec *uniform =
+                    tirecommon::uniform_surface_for_span(surface_map, *min_x, *max_x);
+            const nativecfg::SurfaceSpec *surface = uniform;
+            double patch_crr_delta = 0.0;
+            if (uniform != nullptr) {
+                patch_crr_delta = uniform->crr_delta;
+                if (wheel_normal_load_n > tirecommon::kSurfaceReferenceLoadN &&
+                    uniform->load_sensitivity > 0.0) {
+                    surface_scratch_ = *uniform;
+                    const double factor = tirecommon::load_sensitivity_factor(
+                            wheel_normal_load_n, uniform->load_sensitivity);
+                    surface_scratch_.mu_peak *= factor;
+                    surface_scratch_.mu_slide *= factor;
+                    surface = &surface_scratch_;
+                }
+            } else {
+                surface_scratch_ = surface_at(surface_map, centroid_world_m[0]);
+                surface_scratch_.mu_peak = 0.0;
+                surface_scratch_.mu_slide = 0.0;
+                surface_scratch_.slip_stiffness_per_load = 0.0;
+                surface_scratch_.stribeck_speed_mps = 0.0;
+                surface_scratch_.crr_delta = 0.0;
+                surface_scratch_.load_sensitivity = 0.0;
+                for (std::size_t i = 0; i < w; ++i) {
+                    const auto sample = tirecommon::eval_surface(surface_map, x_values[i]);
+                    sample_scratch_[i] = sample;
+                    const double weight = element_force_n[i] / weight_sum;
+                    surface_scratch_.mu_peak += weight * sample.mu_peak;
+                    surface_scratch_.mu_slide += weight * sample.mu_slide;
+                    surface_scratch_.slip_stiffness_per_load += weight * sample.slip_stiffness_per_load;
+                    surface_scratch_.stribeck_speed_mps += weight * sample.stribeck_speed_mps;
+                    surface_scratch_.crr_delta += weight * sample.crr_delta;
+                    surface_scratch_.load_sensitivity += weight * sample.load_sensitivity;
+                }
+                patch_crr_delta = surface_scratch_.crr_delta;
+                const double factor = tirecommon::load_sensitivity_factor(
+                        wheel_normal_load_n, surface_scratch_.load_sensitivity);
+                surface_scratch_.mu_peak *= factor;
+                surface_scratch_.mu_slide *= factor;
+                surface = &surface_scratch_;
+            }
+            const double patch_crr = tread_loss_crr_at_pressure(tyre_) + patch_crr_delta;
+            contactlaw::finite_result({patch_crr, wheel_normal_load_n});
+            rolling_crr += (normal_load_n / wheel_normal_load_n) * patch_crr;
+            contactlaw::finite_result({rolling_crr});
 
             // model.py:319-348 — patch slip state, then the brush.
             // The migration emitted one slot per contact patch in the
@@ -623,11 +700,17 @@ namespace biketyre {
                                           .begin());
                 engine.restore_kappa_prime(state.detailed_kappa_prime);
                 try {
-                    brush_result = engine.step(
-                            element_force_n, half_length_m, v_x_mps,
-                            v_s_mps,
-                            tyre_.relaxation_length_mm / 1000.0,
-                            surface, dt_s);
+                    if (uniform != nullptr) {
+                        brush_result = engine.step(
+                                element_force_n, half_length_m, v_x_mps, v_s_mps,
+                                tyre_.relaxation_length_mm / 1000.0, *surface, dt_s);
+                    } else {
+                        brush_result = engine.step_heterogeneous(
+                                element_force_n, half_length_m, v_x_mps, v_s_mps,
+                                tyre_.relaxation_length_mm / 1000.0,
+                                std::span<const tirecommon::SurfaceSample>(sample_scratch_).first(w),
+                                normal_load_n, wheel_normal_load_n, dt_s);
+                    }
                 } catch (...) {
                     state.detailed_kappa_prime = engine.kappa_prime();
                     std::ranges::copy(
@@ -648,18 +731,13 @@ namespace biketyre {
                               dt_s);
                 brush_result = lumped_brush(
                         state.kappa_prime, normal_load_n,
-                        half_length_m, surface, std::nullopt,
+                        half_length_m, *surface, std::nullopt,
                         std::fabs(v_s_mps));
             }
 
             // model.py:350-362 — tread rolling loss, the combined
             // patch force and the two clipped dissipation terms.
-            const double tread_loss_force_n =
-                    tread_loss_force(tread_loss_crr_at_pressure(tyre_),
-                                     normal_load_n,
-                                     omega_forward_radps, v_x_mps);
-            const double tangential_force_n =
-                    brush_result.force_n + tread_loss_force_n;
+            const double tangential_force_n = brush_result.force_n;
             const std::array<double, 3> patch_force_world_n{
                     normal_force_world_n[0] +
                             tangential_force_n * tangent_world[0],
@@ -668,12 +746,25 @@ namespace biketyre {
                     normal_force_world_n[2] +
                             tangential_force_n * tangent_world[2]};
             const double support_n = normal_force_world_n[2];
-            const double rolling_loss_w =
-                    std::max(0.0, -tread_loss_force_n * v_x_mps);
-            const double slip_loss_w =
-                    std::max(0.0, -brush_result.force_n * v_s_mps);
-            const double patch_loss_w = rolling_loss_w + slip_loss_w;
+            const double raw_slip_loss_w = -brush_result.force_n * v_s_mps;
+            contactlaw::finite_result({raw_slip_loss_w});
+            const double patch_loss_w = std::max(0.0, raw_slip_loss_w);
             brush_loss_w += patch_loss_w;
+            double shear_energy = 0.0;
+            if (discretised_) {
+                const double dx = 2.0 * half_length_m / static_cast<double>(w);
+                const double common = weight_sum /
+                        (2.0 * pyfloat::float_pow(half_length_m, 2.0));
+                for (std::size_t i = 0; i < w; ++i) {
+                    const double u = state.bristle_deflection_m[i];
+                    loss_scratch_[i] = uniform != nullptr ? u * u
+                            : sample_scratch_[i].slip_stiffness_per_load * common * dx * u * u;
+                }
+                const double sum = numeric::numpy_sum(std::span<const double>(loss_scratch_).first(w));
+                shear_energy = uniform != nullptr
+                        ? 0.5 * surface->slip_stiffness_per_load * common * dx * sum : 0.5 * sum;
+            }
+            contactlaw::finite_result({brush_loss_w, shear_energy});
 
             // model.py:364-392 — the patch record, then the
             // accumulate block in the oracle's order. Write the slot's
@@ -682,7 +773,7 @@ namespace biketyre {
             TyrePatchOutput &po = out.patch_slots[out.patch_count];
             po.ray_start = start_i;
             po.ray_stop = stop_i;
-            po.surface_name = surface.name;
+            po.surface_name = surface->name;
             po.normal_load_n = normal_load_n;
             po.support_n = support_n;
             po.tangential_force_n = tangential_force_n;
@@ -700,6 +791,8 @@ namespace biketyre {
                     brush_result.friction_coefficient;
             po.fully_sliding = brush_result.fully_sliding;
             po.dissipated_power_w = patch_loss_w;
+            po.shear_energy_j = shear_energy;
+            po.rolling_crr = patch_crr;
             ++out.patch_count;
 
             total_force_world_n[0] += patch_force_world_n[0];
@@ -745,6 +838,8 @@ namespace biketyre {
         out.rim_strike_active = carcass.rim_strike_active;
         out.rim_event = carcass.rim_event;
         out.dissipated_power_w = carcass_loss_w + brush_loss_w;
+        out.carcass_dissipated_power_w = carcass_loss_w;
+        out.rolling_crr = rolling_crr;
         out.coverage_event = hits.coverage_event;
         out.airborne = false;
     }

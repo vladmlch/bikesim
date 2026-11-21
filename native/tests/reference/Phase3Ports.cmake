@@ -74,6 +74,8 @@ bike_add_reference_test(pneumatic_tire_config ENGINE
   SOURCES test_pneumatic_tire_config.cpp LIBRARIES bike_app LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_forces ENGINE
   SOURCES test_pneumatic_tire_forces.cpp LIBRARIES bike_app LABELS t52 tyre)
+bike_add_reference_test(pneumatic_energy_balance ENGINE
+  SOURCES test_pneumatic_energy_balance.cpp LIBRARIES bike_app bike_validation bike_golden LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_oracle ENGINE
   SOURCES test_pneumatic_tire_oracle.cpp LIBRARIES bike_app LABELS t52 tyre golden)
 # 3.12a pneumatic kernel oracle ports (T52 batch) — replay the frozen

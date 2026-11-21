@@ -83,6 +83,8 @@
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
 #include "../writers/pyfloat.hpp"
+#include "../writers/tire_common.hpp"
+#include "../contact/laws.hpp"
 
 namespace biketyre {
     namespace {
@@ -265,6 +267,8 @@ namespace biketyre {
         bristle_deflection_m_.assign(n_elements_, 0.0);
         updated_.assign(n_elements_, 0.0);
         force_n_.assign(n_elements_, 0.0);
+        stiffness_.assign(n_elements_, 0.0);
+        mu_.assign(n_elements_, 0.0);
     }
 
     void DiscretisedBrush::reset() noexcept {
@@ -410,6 +414,88 @@ namespace biketyre {
         return {.force_n = numeric::numpy_sum(force_n_),
                 .fully_sliding = fully_sliding,
                 .friction_coefficient = mu};
+    }
+
+    BrushResult DiscretisedBrush::step_heterogeneous(
+            std::span<const double> loads, double half_length_m,
+            double v_x_mps, double v_s_mps, double sigma_m,
+            std::span<const tirecommon::SurfaceSample> samples,
+            double patch_normal_load_n, double wheel_normal_load_n, double dt_s) {
+        const std::size_t n = n_elements_;
+        if (loads.size() != n || samples.size() != n ||
+            !std::isfinite(half_length_m) || !std::isfinite(v_x_mps) ||
+            !std::isfinite(v_s_mps) || !std::isfinite(sigma_m) ||
+            !std::isfinite(patch_normal_load_n) || !std::isfinite(wheel_normal_load_n) || !std::isfinite(dt_s) ||
+            half_length_m < 0.0 || sigma_m < 0.0 ||
+            patch_normal_load_n < 0.0 || wheel_normal_load_n < 0.0 || dt_s <= 0.0)
+            throw std::invalid_argument("invalid heterogeneous brush input");
+        for (const double load : loads)
+            if (!std::isfinite(load) || load < 0.0)
+                throw std::invalid_argument("invalid heterogeneous brush load");
+        const double total = numeric::numpy_sum(loads);
+        contactlaw::finite_result({total});
+        const auto coefficient = [&](tirecommon::SurfaceSample sample) {
+            // Match the uniform path's binary64 order: adjust the
+            // Stribeck endpoints before interpolating between them.
+            if (wheel_normal_load_n > tirecommon::kSurfaceReferenceLoadN &&
+                sample.load_sensitivity > 0.0) {
+                const double factor = tirecommon::load_sensitivity_factor(
+                        wheel_normal_load_n, sample.load_sensitivity);
+                sample.mu_peak *= factor;
+                sample.mu_slide *= factor;
+                sample.load_sensitivity = 0.0;
+            }
+            return tirecommon::sample_mu(sample, std::fabs(v_s_mps), wheel_normal_load_n);
+        };
+        if (total <= 0.0 || half_length_m <= 0.0) {
+            const double mu = coefficient(samples[0]);
+            reset();
+            return {.force_n = 0.0, .fully_sliding = false, .friction_coefficient = mu};
+        }
+        const double dx = 2.0 * half_length_m / static_cast<double>(n);
+        double weighted_mu = 0.0;
+        bool identical_mu = true;
+        for (std::size_t i = 0; i < n; ++i) {
+            mu_[i] = coefficient(samples[i]);
+            stiffness_[i] = samples[i].slip_stiffness_per_load * total /
+                            (2.0 * py_pow2(half_length_m)) * dx;
+            weighted_mu += mu_[i] * loads[i];
+            if (i > 0 && mu_[i] != mu_[0]) identical_mu = false;
+            contactlaw::finite_result({mu_[i], stiffness_[i], weighted_mu});
+        }
+        const double next_kappa = relax(kappa_prime_, v_x_mps, v_s_mps,
+                                        std::max(0.0, sigma_m - half_length_m), dt_s);
+        const double filtered = v_x_mps != 0.0 ? -next_kappa * std::fabs(v_x_mps) : v_s_mps;
+        const double speed = v_x_mps - v_s_mps;
+        const double shift = speed * dt_s / dx;
+        contactlaw::finite_result({dx, next_kappa, filtered, speed, shift});
+        bool any_active = false, all_sliding = true;
+        for (std::size_t i = 0; i < n; ++i) {
+            const bool active = loads[i] > 0.0;
+            const double advected = speed != 0.0
+                    ? numeric::np_interp_unit_grid(static_cast<double>(i) + shift,
+                                                   bristle_deflection_m_, 0.0, 0.0)
+                    : bristle_deflection_m_[i];
+            const double updated = active ? advected - filtered * dt_s : 0.0;
+            const double damping = active ? stiffness_[i] * kBristleDampingS * (-filtered) : 0.0;
+            const double trial = stiffness_[i] * updated + damping;
+            const double limit = mu_[i] * loads[i];
+            contactlaw::finite_result({advected, updated, damping, trial, limit});
+            force_n_[i] = numeric::np_clip(trial, -limit, limit);
+            const bool sliding = active && std::fabs(trial) >= limit;
+            updated_[i] = stiffness_[i] > 0.0 && sliding
+                    ? (force_n_[i] - damping) / stiffness_[i] : updated;
+            contactlaw::finite_result({force_n_[i], updated_[i]});
+            any_active = any_active || active;
+            if (active) all_sliding = all_sliding && sliding;
+        }
+        const double force = numeric::numpy_sum(force_n_);
+        const double mean_mu = identical_mu ? mu_[0] : weighted_mu / total;
+        contactlaw::finite_result({force, mean_mu});
+        kappa_prime_ = next_kappa;
+        std::ranges::copy(updated_, bristle_deflection_m_.begin());
+        return {.force_n = force, .fully_sliding = any_active && all_sliding,
+                .friction_coefficient = mean_mu};
     }
 
 } // namespace biketyre

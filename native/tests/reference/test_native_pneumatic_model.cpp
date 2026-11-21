@@ -762,7 +762,7 @@ void test_model_rolling_loss_signs_bitwise(std::size_t tier_index) {
     run_sequence(golden, tyre, tier, flat_road(), uniform_map("asphalt"),
                  table,
                  [&](const biketyre::WheelOutputs &out,
-                     const biketyre::PneumaticTyreModel &model,
+                     const biketyre::PneumaticTyreModel &,
                      const std::string &tag) {
                      const std::size_t k =
                              std::stoul(tag.substr(5));
@@ -773,26 +773,25 @@ void test_model_rolling_loss_signs_bitwise(std::size_t tier_index) {
                              vel[1] * p.tangent_world[1] +
                              vel[2] * p.tangent_world[2];
                      loads.push_back(p.normal_load_n);
-                     losses.push_back(biketyre::tread_loss_force(
-                             biketyre::tread_loss_crr_at_pressure(
-                                     model.tyre()),
-                             p.normal_load_n, table[k].omega, v_x));
+                     // Writer applies this load-scaled moment coefficient
+                     // about the absolute wheel spin axis, then multiplies
+                     // by the effective rolling radius.
+                     losses.push_back(-out.rolling_crr * p.normal_load_n *
+                                      std::tanh(table[k].omega / tirecommon::kWheelRollingTaperRadps));
                      scalar(golden, v_x, tag + " loss.v_x");
+                     // Keep the historical label until the intentional
+                     // golden refresh records the new axial convention.
                      scalar(golden, losses.back(), tag + " loss.force");
                  });
     bt::require(losses[0] * losses[1] < 0.0, "signs oppose");
     bt::require(std::signbit(losses[2]) && !std::signbit(losses[3]),
-                "spin-sign fallback");
-    // The oracle asserts `== 0.0`; the recorded loss.force entry pins
-    // the sign bit too (a -0.0 payload would mismatch the golden).
-    bt::require(losses[4] == 0.0, "zero row returns no force");
+                "moment opposes spin at zero road speed");
+    bt::require(losses[4] == 0.0, "zero spin returns no moment");
     bt::require(std::abs(losses[5]) / loads[5] <
-                        std::abs(losses[6]) / loads[6],
-                "taper is linear below 1 rad/s");
-    bt::require(std::abs(std::abs(losses[6]) / loads[6] -
-                         std::abs(losses[7]) / loads[7]) <=
-                        1e-12 * std::abs(losses[7]) / loads[7],
-                "taper saturates");
+                        std::abs(losses[6]) / loads[6] &&
+                std::abs(losses[6]) / loads[6] <
+                        std::abs(losses[7]) / loads[7],
+                "tanh taper grows smoothly with absolute spin");
     golden.done();
 }
 

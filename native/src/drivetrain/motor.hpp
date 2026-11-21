@@ -8,6 +8,8 @@
 #include <utility>
 
 namespace drivetrain {
+    // Shared by the typed setter and the detached wire decoder.
+    void validate_assist_relations(const AssistSnapshot &state);
     // The closed set of profiled assist modes — MotorProfile.mode_gains in
     // motor_profile.py carries exactly these keys. The config field stays an
     // owned string at the wire boundary because a profile-less controller

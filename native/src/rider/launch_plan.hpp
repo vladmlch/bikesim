@@ -29,7 +29,7 @@ enum class ShiftResponse : std::uint8_t { none, accepted, deferred, rejected };
 struct ShiftFeedback {
     ShiftResponse response = ShiftResponse::none;
     std::int64_t shift_count = 0;   // committed shifts so far
-    bool cut_active = false;        // cut_remaining_s > 1e-12 (the ideal hub sweeps with it)
+    bool cut_active = false;        // drivetrain::shift_cut_active (the ideal hub sweeps with it)
 };
 
 struct LaunchInputs {

@@ -84,7 +84,7 @@ namespace drivetrain {
                 // Idempotent across the 0.15 s perception lag after commit.
                 if (next.rear_teeth >= *rider.stationary_target_teeth)
                     return finish(false);
-                if (next.cut_remaining_s > 1e-12) {
+                if (shift_cut_active(next.cut_remaining_s)) {
                     next.rider_response = "deferred";
                     return finish(false);
                 }
@@ -109,7 +109,7 @@ namespace drivetrain {
                 // Ownership alone suppresses the band — the rider asked
                 // for nothing this tick.
                 return finish(false);
-            if (!admitted || next.cut_remaining_s > 1e-12) {
+            if (!admitted || shift_cut_active(next.cut_remaining_s)) {
                 next.rider_response = "deferred";
                 return finish(false);
             }

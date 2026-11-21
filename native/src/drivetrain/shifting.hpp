@@ -10,6 +10,9 @@
 #include <utility>
 
 namespace drivetrain {
+    [[nodiscard]] constexpr bool shift_cut_active(double cut_remaining_s) noexcept {
+        return cut_remaining_s > 1e-12;
+    }
     // The closed serialization domain of ShiftingSnapshot.direction — the
     // snapshot keeps the Python wire strings ("none"/"up"/"down"), while
     // the update path dispatches on this enum so the valid set is
@@ -100,7 +103,7 @@ namespace drivetrain {
     [[nodiscard]] inline double
     shift_torque_factor(const ShiftingConfig &config,
                         const ShiftingSnapshot &state) noexcept {
-        if (state.cut_remaining_s <= 0.) {
+        if (!shift_cut_active(state.cut_remaining_s)) {
             return 1.;
         }
         const auto direction = shift_direction(state.direction);

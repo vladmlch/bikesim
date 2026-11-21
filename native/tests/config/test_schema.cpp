@@ -1017,6 +1017,12 @@ void test_validation() {
             c.drive.pedaling.reposition_on_stall = true;
             c.articulated.pedal_attachment = "flat";
         });
+    case_from_welded(
+        "drive.pedaling.reposition_on_stall requires drive.motor_clutch",
+        [](cfg::SimulationPhysicsConfig& c) {
+            c.drive.pedaling.reposition_on_stall = true;
+            c.drive.motor_clutch = false;
+        });
     // Control: the same request stays valid on the spindle-weld rider the
     // welded profile already uses.
     {

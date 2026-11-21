@@ -248,6 +248,14 @@ void test_invalid_config() {
         bt::invalid([&] { (void)nativecfg::decode(candidate); });
     }
 }
+
+void test_reposition_requires_motor_clutch_on_wire() {
+    auto candidate = writer_config(source());
+    auto &drive = member(candidate, "drive");
+    set(drive, "motor_clutch", Value{false});
+    put(drive, "pedaling", "reposition_on_stall", Value{true});
+    bt::invalid([&] { (void)nativecfg::decode(candidate); });
+}
 // Source: test_invalid_calls_are_atomic. The three Python-only type tests
 // for braking/active/advance are separate inventory drops: native TickInputs
 // stores bool and has no dynamic-call keyword adapter. The other six inputs
@@ -394,6 +402,28 @@ void test_diagnostic_state_validation() {
         (void)components(*owner, .002, 2.); auto bad = state(*owner); set(member(bad, "last"), item.key, item.value);
         bt::invalid([&] { restore(*owner, bad); }); state(golden, *owner); golden.done();
     }
+}
+
+void test_subthreshold_shift_writer_contract() {
+    const auto owner = pair();
+    auto snapshot = std::make_unique<drivetrain::DriveSnapshot>(owner->drive().state());
+    snapshot->shifting.shift_count = 1;
+    snapshot->shifting.direction = "down";
+    snapshot->shifting.from_teeth = 28;
+    snapshot->shifting.cut_remaining_s = .5e-12;
+    snapshot->shift_time_s = 0.;
+    owner->drive().restore(*snapshot);
+    (void)components(*owner, 1e-14, 0., {}, true, false, false);
+    bt::require(!std::get<bool>(field(diagnostics(*owner, true), "shift_active").data),
+                "writer telemetry agrees that a subthreshold cut is inactive");
+    const double to = static_cast<double>(owner->drive().config().policies.gearing.front_teeth) /
+                      snapshot->shifting.rear_teeth;
+    const double from = static_cast<double>(owner->drive().config().policies.gearing.front_teeth) /
+                        snapshot->shifting.from_teeth;
+    if (!snapshot->ideal_hub)
+        throw std::logic_error("test requires an ideal hub");
+    snapshot->ideal_hub->ratio = (to + from) * .5;
+    bt::invalid([&] { owner->drive().restore(*snapshot); });
 }
 
 // Source: test_prepared_state_requires_boundary.
@@ -607,6 +637,8 @@ int main() {
         test_ideal_drive_applies_no_bearing_drag();
         test_shifter_decides_on_the_chainring_cadence();
         test_rotor_inertia_wire_contract();
+        test_reposition_requires_motor_clutch_on_wire();
+        test_subthreshold_shift_writer_contract();
         test_chain_core(); test_force_staging(); test_solved_intervals();
         test_atomic_state_inputs_and_probes(); test_projection(); test_no_drive();
         test_transmission_core(); test_random_multiturn_staging(); test_shifting_prepared_state_and_clock();

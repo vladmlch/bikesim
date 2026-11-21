@@ -336,6 +336,8 @@ namespace {
                       .hold_torque_nm = num(a, "hold_torque_nm"),
                       .release_hold_left_s = num(a, "release_hold_left_s"),
                       .pedaling = boolean(a, "pedaling")};
+        validate_pedaling_relations(out.pedaling);
+        validate_assist_relations(out.assist);
     }
 
     [[nodiscard]] std::optional<TransmissionSnapshot> decode_transmission(

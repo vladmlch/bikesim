@@ -17,6 +17,19 @@ namespace drivetrain {
         return validation::derived(mean_nm * (1. - ripple * numeric::math_cos(validation::derived(2. * phase_rad, "human_crank_torque.phase"))), "human_crank_torque.torque");
     }
 
+    void validate_pedaling_relations(const PedalingSnapshot &s) {
+        if (s.coasting && s.effort != 0.)
+            throw std::invalid_argument("coasting effort");
+        if (!s.reposition) return;
+        const auto &r = *s.reposition;
+        if (!r.stall_elapsed_s && (r.crank_rad != 0. || r.wheel_rad != 0.))
+            throw std::invalid_argument("_reposition stall anchors");
+        if (r.goal_rad.has_value() != (r.reason == 1 || r.reason == 2))
+            throw std::invalid_argument("_reposition goal/reason");
+        if (r.goal_rad && (r.cooldown_s != 0. || s.coasting || s.effort != 0.))
+            throw std::invalid_argument("_reposition goal interlock");
+    }
+
     void PedalingPolicy::set_state(PedalingSnapshot s) {
         finite_optional(s.target_phase_rad, "target_phase_rad");
         finite_optional(s.cadence_ema, "_cadence_ema");
@@ -40,6 +53,7 @@ namespace drivetrain {
             if (r.reason > 2)
                 throw std::invalid_argument("_reposition.reason");
         }
+        validate_pedaling_relations(s);
         state_ = s;
     }
 

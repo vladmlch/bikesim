@@ -1114,6 +1114,8 @@ namespace nativecfg {
             if (c.brake_hold_release_radps < c.brake_hold_engage_radps)
                 throw std::invalid_argument("brake hold release must not precede engage");
             c.motor_clutch = boolean(d, "motor_clutch");
+            if (c.policies.pedaling.reposition_on_stall && !c.motor_clutch)
+                throw std::invalid_argument("reposition_on_stall requires motor_clutch");
             if ((c.drive_mode == "coast" || c.drive_mode == "ideal_speed_control") &&
                 (c.motor_clutch || c.rotor_inertia_kgm2 > 0.))
                 throw std::invalid_argument("passive drive cannot use the motor clutch or rotor inertia");

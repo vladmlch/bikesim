@@ -458,6 +458,9 @@ private:
     // means the apply_forces default (no explicit control).
     [[nodiscard]] double
     rollback_brake_demand(double speed_mps, const RideControl *control);
+    [[nodiscard]] double
+    peek_rollback_brake_demand(double speed_mps,
+                               const RideControl *control) const noexcept;
 
     // Launch part 1, task 4 — resolves the caller's demands, the
     // rollback reflex's demand and the rider-owned commands into the

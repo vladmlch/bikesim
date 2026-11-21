@@ -1329,6 +1329,8 @@ void post_init(SimulationPhysicsConfig &config) {
         fail("equilibrium_state_file must be a non-empty path or None");
     if (config.drive.pedaling.reposition_on_stall && config.articulated.pedal_attachment != "spindle")
         fail("drive.pedaling.reposition_on_stall requires articulated.pedal_attachment = 'spindle'");
+    if (config.drive.pedaling.reposition_on_stall && !config.drive.motor_clutch)
+        fail("drive.pedaling.reposition_on_stall requires drive.motor_clutch");
     // The six isinstance(...immutable...) checks are type-enforced.
     const auto *detailed = find_tire_tier("detailed");
     if (config.tires.backend == "pneumatic" &&

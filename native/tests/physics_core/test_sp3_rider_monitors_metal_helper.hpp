@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace bike::physics_core::test_sp3_metal {
+namespace bike::physics_core::test_sp3b_metal {
 
 struct MetalSp3Request {
     std::string physics_core_dir;
@@ -106,4 +106,4 @@ struct MetalSp3Output {
 
 [[nodiscard]] std::unique_ptr<MetalSp3Output> run_metal_sp3_parity(const MetalSp3Request &req);
 
-} // namespace bike::physics_core::test_sp3_metal
+} // namespace bike::physics_core::test_sp3b_metal

@@ -19,13 +19,6 @@ enum class ShiftDirection : u8 {
     down = 2
 };
 
-enum class ShiftResponse : u8 {
-    none = 0,
-    accepted = 1,
-    deferred = 2,
-    rejected = 3
-};
-
 enum class SlipMode : u8 {
     legacy_signed = 0,
     magnitude = 1

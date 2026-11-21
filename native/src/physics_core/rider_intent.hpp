@@ -21,8 +21,19 @@ BIKE_CONSTEXPR i32 kMaxPosturePulses = 4;
 BIKE_CONSTEXPR i32 kSurgeSubTicks = 600;
 
 struct PortableTrig {
+    BIKE_HD static float flush_subnorm(float x) noexcept {
+        const u32 u = pf_f32_to_u32(x);
+        return ((u & 0x7f800000u) == 0u) ? pf_u32_to_f32(u & 0x80000000u) : x;
+    }
+#if !defined(__METAL_VERSION__)
+    BIKE_HD static double flush_subnorm(double x) noexcept {
+        return x;
+    }
+#endif
+
     template <class Real, class TK>
-    BIKE_HD static Real atan_val(Real x) noexcept {
+    BIKE_HD static Real atan_val(Real x_in) noexcept {
+        const Real x = flush_subnorm(x_in);
         if (TK::isnan(x)) {
             return x;
         }
@@ -57,7 +68,9 @@ struct PortableTrig {
     }
 
     template <class Real, class TK>
-    BIKE_HD static Real atan2_val(Real y, Real x) noexcept {
+    BIKE_HD static Real atan2_val(Real y_in, Real x_in) noexcept {
+        const Real y = flush_subnorm(y_in);
+        const Real x = flush_subnorm(x_in);
         if (TK::isnan(y) || TK::isnan(x)) {
             return static_cast<Real>(pf_u32_to_f32(0x7fc00000u));
         }
@@ -99,7 +112,8 @@ struct PortableTrig {
     }
 
     template <class Real, class TK>
-    BIKE_HD static Real sin_val(Real x) noexcept {
+    BIKE_HD static Real sin_val(Real x_in) noexcept {
+        const Real x = flush_subnorm(x_in);
         if (!TK::isfinite(x)) {
             return static_cast<Real>(pf_u32_to_f32(0x7fc00000u));
         }
@@ -132,7 +146,8 @@ struct PortableTrig {
     }
 
     template <class Real, class TK>
-    BIKE_HD static Real cos_val(Real x) noexcept {
+    BIKE_HD static Real cos_val(Real x_in) noexcept {
+        const Real x = flush_subnorm(x_in);
         if (!TK::isfinite(x)) {
             return static_cast<Real>(pf_u32_to_f32(0x7fc00000u));
         }

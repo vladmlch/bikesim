@@ -1232,7 +1232,7 @@ WeldedEfcSnapshot test_welded_xml_post_solve_efc_parity() {
 
 void test_metal_parity(const WeldedEfcSnapshot &snap) {
 #if defined(__APPLE__)
-    bike::physics_core::test_sp3_metal::MetalSp3Request req;
+    bike::physics_core::test_sp3b_metal::MetalSp3Request req;
     req.physics_core_dir = BIKE_PHYSICS_CORE_SRC_DIR;
 
     // 1. Trig inputs
@@ -1354,7 +1354,7 @@ void test_metal_parity(const WeldedEfcSnapshot &snap) {
         req.mon_rider_enabled.push_back(1);
     }
 
-    const auto metal_ptr = bike::physics_core::test_sp3_metal::run_metal_sp3_parity(req);
+    const auto metal_ptr = bike::physics_core::test_sp3b_metal::run_metal_sp3_parity(req);
     const auto &metal = *metal_ptr;
     require(metal.device_available, "Metal device must be available on macOS");
     require(metal.error_message.empty(), "Metal SP3 error: " + metal.error_message);

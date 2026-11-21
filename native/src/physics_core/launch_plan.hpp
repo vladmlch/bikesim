@@ -31,13 +31,6 @@ enum class LaunchPhase : u8 {
     done = 6
 };
 
-enum class ShiftResponse : u8 {
-    none = 0,
-    accepted = 1,
-    deferred = 2,
-    rejected = 3
-};
-
 enum class ShiftRequest : u8 {
     none = 0,
     up = 1,

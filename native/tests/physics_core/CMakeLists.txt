@@ -131,7 +131,7 @@ target_include_directories(test_sp2_force_laws PRIVATE
 target_include_directories(test_sp2_force_laws SYSTEM PRIVATE
   "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(test_sp2_force_laws PRIVATE
-  bike_test_fixtures bike_core bike_engine bike_rider_math bike_tyre_upload)
+  bike_test_fixtures bike_core bike_engine bike_tyre_upload)
 bike_rewrite_mujoco_load_name(test_sp2_force_laws "${BIKE_DEP_mujoco_LIBRARY}")
 if(APPLE)
   target_link_libraries(test_sp2_force_laws PRIVATE
@@ -209,7 +209,7 @@ target_include_directories(test_sp3_rider_monitors PRIVATE
 target_include_directories(test_sp3_rider_monitors SYSTEM PRIVATE
   "${BIKE_DEP_mujoco_ROOT}/include")
 target_link_libraries(test_sp3_rider_monitors PRIVATE
-  bike_test_fixtures bike_core bike_engine bike_rider_math)
+  bike_test_fixtures bike_core bike_engine)
 bike_rewrite_mujoco_load_name(test_sp3_rider_monitors "${BIKE_DEP_mujoco_LIBRARY}")
 if(APPLE)
   target_link_libraries(test_sp3_rider_monitors PRIVATE

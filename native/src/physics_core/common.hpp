@@ -161,6 +161,13 @@ enum class Status : u8 {
     logic_error
 };
 
+enum class ShiftResponse : u8 {
+    none = 0,
+    accepted = 1,
+    deferred = 2,
+    rejected = 3
+};
+
 // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference/device ABI layout
 enum class ErrCode : u16 {
     none = 0,

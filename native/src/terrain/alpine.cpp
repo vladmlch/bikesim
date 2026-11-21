@@ -18,6 +18,7 @@ void AlpineGenSpec::validate()const{
     detail::range(n_scree,"n_scree");detail::range(n_wet,"n_wet");detail::range(n_boulders,"n_boulders");detail::range(n_rock_gardens,"n_rock_gardens");detail::range(n_water_bars,"n_water_bars");detail::range(n_sharp_edges,"n_sharp_edges");
     detail::positive(length_m,"length_m");detail::positive(lead_in_m,"lead_in_m");detail::positive(lead_out_m,"lead_out_m");detail::positive(transition_m,"transition_m");detail::positive(min_contact_radius_m,"min_contact_radius_m");detail::positive(max_kink_deg,"max_kink_deg");detail::positive(contact_window_m,"contact_window_m");
     detail::nonnegative(counter_prob,"counter_prob");detail::nonnegative(scree_ramp_bias,"scree_ramp_bias");detail::nonnegative(surface_blend_m,"surface_blend_m");
+    if(surface_blend_m>CLEARANCE_M||0.5*surface_blend_m>lead_in_m)throw std::invalid_argument("surface_blend_m must not exceed 1.0 m feature clearance or 2 * lead_in_m");
     if(counter_prob>1.||scree_ramp_bias>1.)throw std::invalid_argument("alpine probabilities must lie in [0, 1]");
     if(n_walls<0||n_walls>1)throw std::invalid_argument("n_walls must be 0 or 1");
     if(wall_grade[0]<ramp_grade[1])throw std::invalid_argument("wall_grade must start at or above the top of ramp_grade");

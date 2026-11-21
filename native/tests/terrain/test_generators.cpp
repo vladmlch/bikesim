@@ -143,6 +143,26 @@ void materials_and_contacts(){
         (void)t::SurfaceMap(t::get_surface("hardpack"),
             {{.start_m = 2.0, .end_m = 2.8, .surface = "loose", .blend_m = 1.0}});
     });
+    // Stage A alpine surface_blend_m bounds: 1.0 m feature clearance and
+    // half-blend inside the lead-in; exact boundaries stay valid.
+    bt::invalid([] {
+        t::AlpineGenSpec s{};
+        s.surface_blend_m = 1.5;
+        s.validate();
+    });
+    bt::invalid([] {
+        t::AlpineGenSpec s{};
+        s.surface_blend_m = 1.0;
+        s.lead_in_m = 0.4;
+        s.validate();
+    });
+    t::AlpineGenSpec clearance_boundary{};
+    clearance_boundary.surface_blend_m = 1.0;
+    clearance_boundary.validate();
+    t::AlpineGenSpec lead_in_boundary{};
+    lead_in_boundary.surface_blend_m = 1.0;
+    lead_in_boundary.lead_in_m = 0.5;
+    lead_in_boundary.validate();
     t::ProfileQuery road({{0.,0.},{1.,0.},{2.,0.}});
     const auto contact=road.contact({.5,.49},.5);exact(contact.point[0],.5,"flat contact station");exact(contact.point[1],0.,"flat contact height");bt::require(contact.delta>0.&&!contact.multi_support,"single flat support");
     bt::require(road.contact({.5,2.},.5).delta<0.,"airborne exact signed gap");

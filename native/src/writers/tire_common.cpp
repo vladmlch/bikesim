@@ -241,7 +241,8 @@ namespace tirecommon {
         const double u = wheel_normal_load_n / kSurfaceReferenceLoadN - 1.0;
         if (u <= 0.0)
             return 1.0;
-        const double g = (u * u) / (u + kSurfaceLoadSmoothDelta);
+        // u*u overflows binary64 above ~1.34e154; g(u) -> u long before that.
+        const double g = (u > 1e150) ? u : ((u * u) / (u + kSurfaceLoadSmoothDelta));
         return 1.0 / (1.0 + k_z * g);
     }
 

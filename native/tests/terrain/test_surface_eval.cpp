@@ -535,6 +535,40 @@ void test_load_sensitivity_factor_and_sample_mu() {
         bt::require(overflowed,
                     "non-finite derived Stribeck mu raises std::overflow_error");
     }
+
+    // 5g. Extreme finite load: u*u overflows binary64 once u exceeds
+    // ~1.34e154, so the unguarded rational form collapses to zero. The
+    // factor must stay strictly positive finite and track the high-load
+    // asymptote 500 / (k_z * F_z) (g(u) -> u for u >> delta).
+    {
+        constexpr double fz = 1e305;
+        constexpr double kz = 0.15;
+        const double extreme = tirecommon::load_sensitivity_factor(fz, kz);
+        bt::require(std::isfinite(extreme) && extreme > 0.0,
+                    "load_sensitivity_factor is strictly positive finite at F_z = 1e305 N");
+        const double asymptote = 500.0 / (kz * fz);
+        bt::require(std::abs(extreme - asymptote) <= 1e-14 * asymptote,
+                    "extreme-load factor matches 500 / (k_z * F_z) within 1e-14 relative");
+        const double max_load = tirecommon::load_sensitivity_factor(
+                std::numeric_limits<double>::max(), 0.5);
+        bt::require(std::isfinite(max_load) && max_load > 0.0,
+                    "load_sensitivity_factor is strictly positive finite at DBL_MAX, k_z = 0.5");
+        // Branch-boundary control: u = 1e150 keeps the rational form, and
+        // both sides of the switch agree with 1 / (1 + k_z * u) tightly.
+        const double f_edge = 500.0 * (1e150 + 1.0);
+        const double u_edge = f_edge / 500.0 - 1.0;
+        const double g_edge = (u_edge * u_edge) / (u_edge + 0.1);
+        const double want_edge = 1.0 / (1.0 + 0.15 * g_edge);
+        const double got_edge = tirecommon::load_sensitivity_factor(f_edge, 0.15);
+        bt::require(std::abs(got_edge - want_edge) <= 1e-15 * want_edge,
+                    "u at the 1e150 branch boundary keeps the rational value");
+        const double f_above = 500.0 * (2e150 + 1.0);
+        const double u_above = f_above / 500.0 - 1.0;
+        const double want_above = 1.0 / (1.0 + 0.15 * u_above);
+        const double got_above = tirecommon::load_sensitivity_factor(f_above, 0.15);
+        bt::require(std::abs(got_above - want_above) <= 1e-15 * want_above,
+                    "u above the 1e150 branch boundary follows g(u) = u");
+    }
 }
 
 } // namespace

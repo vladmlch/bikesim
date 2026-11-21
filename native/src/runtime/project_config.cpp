@@ -240,7 +240,7 @@ Value tire(const mdl::BuildRequest& request,
             Object sec{{"start_m", real(s.start_m)},
                 {"end_m", real(s.end_m)},
                 {"surface", surface(trn::get_surface(s.surface), include_stage_a)}};
-            if (s.blend_m > 0.) sec.emplace_back("blend_m", real(s.blend_m));
+            if (s.blend_m != 0.) sec.emplace_back("blend_m", real(s.blend_m));
             sections.push_back(Value{std::move(sec)});
         }
         set(out, "surface_map", Value{Object{

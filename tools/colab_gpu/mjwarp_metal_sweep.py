@@ -44,6 +44,10 @@ except Exception:  # pragma: no cover
 
 try:
     import warp_metal  # noqa: F401
+    try:
+        import warp_metal._bootstrap  # noqa: F401
+    except Exception:
+        pass
     import warp as wp
     import mujoco_warp as mjwarp
 except Exception:  # pragma: no cover
@@ -54,7 +58,10 @@ try:
     from tools.colab_gpu.build_cuda_writers import (
         DEFAULT_GPU_SRC_DIR,
         GpuModelIndicesStruct,
+        build_sp3_sweep_configs_bytes,
         build_sweep_configs_bytes,
+        expand_mjwarp_tendon_range_and_frictionloss,
+        materialize_model_12gears_xml,
         resolve_gpu_model_indices,
     )
     from tools.colab_gpu.metal_hybrid_sweep import compile_metal_batch_runner
@@ -68,8 +75,11 @@ try:
         _allocate_and_copy_device_bytes,
         _ensure_newton_solver,
         _mjwarp_clean_split_step,
+        _mjwarp_sp3_clean_split_step,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
+        _resolve_dof_frictionloss_binding,
+        _resolve_sp3_post_solve_bindings,
         _resolve_tendon_range_binding,
         _summarize_distribution,
         _upload_tyre_and_terrain_device,
@@ -80,7 +90,10 @@ except ImportError:
     from build_cuda_writers import (  # type: ignore[no-redef]
         DEFAULT_GPU_SRC_DIR,
         GpuModelIndicesStruct,
+        build_sp3_sweep_configs_bytes,
         build_sweep_configs_bytes,
+        expand_mjwarp_tendon_range_and_frictionloss,
+        materialize_model_12gears_xml,
         resolve_gpu_model_indices,
     )
     from metal_hybrid_sweep import compile_metal_batch_runner  # type: ignore[no-redef]
@@ -94,8 +107,11 @@ except ImportError:
         _allocate_and_copy_device_bytes,
         _ensure_newton_solver,
         _mjwarp_clean_split_step,
+        _mjwarp_sp3_clean_split_step,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
+        _resolve_dof_frictionloss_binding,
+        _resolve_sp3_post_solve_bindings,
         _resolve_tendon_range_binding,
         _summarize_distribution,
         _upload_tyre_and_terrain_device,
@@ -153,6 +169,97 @@ _WRITERS_PTR_OFFSETS_15 = (ctypes.c_size_t * 15)(*range(0, 120, 8))
 _WRITERS_PTR_OFFSETS_16 = (ctypes.c_size_t * 16)(*range(0, 128, 8))
 
 
+class _BikeWpSp3InitArgs(ctypes.Structure):
+    _fields_ = [
+        ("idx", ctypes.c_uint64),
+        ("configs", ctypes.c_uint64),
+        ("sp3_states", ctypes.c_uint64),
+        ("world_states", ctypes.c_uint64),
+        ("qpos", ctypes.c_uint64),
+        ("tendon_range", ctypes.c_uint64),
+        ("nworld", ctypes.c_int32),
+        ("per_world_config", ctypes.c_int32),
+        ("init_grade", ctypes.c_float),
+        ("ntendon", ctypes.c_int32),
+        ("tendon_range_world_stride", ctypes.c_int32),
+        ("has_world_states", ctypes.c_int32),
+        ("has_qpos", ctypes.c_int32),
+        ("has_tendon_range", ctypes.c_int32),
+    ]
+
+
+class _BikeWpSp3PreSolveArgs(ctypes.Structure):
+    _fields_ = [
+        ("idx", ctypes.c_uint64),
+        ("tyre_model", ctypes.c_uint64),
+        ("terrain_desc", ctypes.c_uint64),
+        ("terrain_f32", ctypes.c_uint64),
+        ("terrain_i32", ctypes.c_uint64),
+        ("configs", ctypes.c_uint64),
+        ("sp3_states", ctypes.c_uint64),
+        ("world_states", ctypes.c_uint64),
+        ("qpos", ctypes.c_uint64),
+        ("qvel", ctypes.c_uint64),
+        ("xpos", ctypes.c_uint64),
+        ("xmat", ctypes.c_uint64),
+        ("xanchor", ctypes.c_uint64),
+        ("xaxis", ctypes.c_uint64),
+        ("qfrc_applied", ctypes.c_uint64),
+        ("ctrl", ctypes.c_uint64),
+        ("tendon_range", ctypes.c_uint64),
+        ("dof_frictionloss", ctypes.c_uint64),
+        ("nworld", ctypes.c_int32),
+        ("dt_s", ctypes.c_float),
+        ("per_world_config", ctypes.c_int32),
+        ("ntendon", ctypes.c_int32),
+        ("tendon_range_world_stride", ctypes.c_int32),
+        ("dof_frictionloss_world_stride", ctypes.c_int32),
+        ("has_world_states", ctypes.c_int32),
+        ("has_tendon_range", ctypes.c_int32),
+        ("has_dof_frictionloss", ctypes.c_int32),
+    ]
+
+
+class _BikeWpSp3PostSolveArgs(ctypes.Structure):
+    _fields_ = [
+        ("idx", ctypes.c_uint64),
+        ("configs", ctypes.c_uint64),
+        ("sp3_states", ctypes.c_uint64),
+        ("qpos", ctypes.c_uint64),
+        ("qvel", ctypes.c_uint64),
+        ("xmat", ctypes.c_uint64),
+        ("sensordata", ctypes.c_uint64),
+        ("nefc", ctypes.c_uint64),
+        ("efc_type", ctypes.c_uint64),
+        ("efc_id", ctypes.c_uint64),
+        ("efc_J", ctypes.c_uint64),
+        ("efc_force", ctypes.c_uint64),
+        ("nacon", ctypes.c_uint64),
+        ("contact_worldid", ctypes.c_uint64),
+        ("contact_geom", ctypes.c_uint64),
+        ("contact_efc_address", ctypes.c_uint64),
+        ("contact_dim", ctypes.c_uint64),
+        ("nworld", ctypes.c_int32),
+        ("dt_s", ctypes.c_float),
+        ("per_world_config", ctypes.c_int32),
+        ("nsensordata", ctypes.c_int32),
+        ("njmax", ctypes.c_int32),
+        ("efc_J_row_stride", ctypes.c_int32),
+        ("nconmax", ctypes.c_int32),
+        ("contact_efc_stride", ctypes.c_int32),
+        ("has_sensordata", ctypes.c_int32),
+        ("has_efc", ctypes.c_int32),
+        ("has_contacts", ctypes.c_int32),
+        ("has_contact_worldid", ctypes.c_int32),
+        ("has_contact_dim", ctypes.c_int32),
+    ]
+
+
+_SP3_INIT_PTR_OFFSETS = (ctypes.c_size_t * 6)(*range(0, 48, 8))
+_SP3_PRESOLVE_PTR_OFFSETS = (ctypes.c_size_t * 18)(*range(0, 144, 8))
+_SP3_POSTSOLVE_PTR_OFFSETS = (ctypes.c_size_t * 17)(*range(0, 136, 8))
+
+
 class WarpMetalWritersRuntime:
     """Loads custom bicycle Metal force writer kernels into `warp-metal`'s native runtime."""
 
@@ -174,9 +281,28 @@ class WarpMetalWritersRuntime:
 
         self.k_init = self.core.wp_metal_get_kernel(self.mtl_lib, b"bike_wp_init_states_kernel")
         self.k_writers = self.core.wp_metal_get_kernel(self.mtl_lib, b"bike_wp_writers_metal_kernel")
-        if not self.k_init or not self.k_writers:
+        self.k_sp3_init = self.core.wp_metal_get_kernel(self.mtl_lib, b"bike_wp_sp3_init_kernel")
+        self.k_sp3_pre_solve = self.core.wp_metal_get_kernel(
+            self.mtl_lib, b"bike_wp_sp3_pre_solve_kernel"
+        )
+        self.k_sp3_post_solve = self.core.wp_metal_get_kernel(
+            self.mtl_lib, b"bike_wp_sp3_post_solve_kernel"
+        )
+        if (
+            not self.k_init
+            or not self.k_writers
+            or not self.k_sp3_init
+            or not self.k_sp3_pre_solve
+            or not self.k_sp3_post_solve
+        ):
             err = wp._src.context.runtime.get_error_string()
             raise RuntimeError(f"wp_metal_get_kernel failed:\n{err}")
+
+        dev_name = f"metal:{self.ordinal}"
+        self._dummy_f32 = wp.zeros(4, dtype=wp.float32, device=dev_name)
+        self._dummy_i32 = wp.zeros(4, dtype=wp.int32, device=dev_name)
+        ws_sz = max(64, int(self.lib.bike_gpu_sizeof_world_state()))
+        self._dummy_ws = wp.zeros(ws_sz, dtype=wp.uint8, device=dev_name)
 
     def launch_init_states(
         self,
@@ -318,6 +444,268 @@ class WarpMetalWritersRuntime:
         if rc != 0:
             err = wp._src.context.runtime.get_error_string()
             raise RuntimeError(f"wp_metal_launch_kernel(bike_wp_writers_metal_kernel) failed: {err}")
+
+    def launch_sp3_init(
+        self,
+        nworld: int,
+        d_idx_ptr: int,
+        d_sp3_configs_ptr: int,
+        per_world_config: int,
+        d_sp3_states_ptr: int,
+        d_world_states_ptr: int = 0,
+        d_qpos_ptr: int = 0,
+        init_grade: float = 0.0,
+        ntendon: int = 0,
+        d_tendon_range_ptr: int = 0,
+        tendon_range_world_stride: int = 0,
+    ) -> None:
+        if int(nworld) <= 0:
+            raise ValueError(f"nworld must be > 0, got {nworld}")
+        for name, ptr in (
+            ("d_idx_ptr", d_idx_ptr),
+            ("d_sp3_configs_ptr", d_sp3_configs_ptr),
+            ("d_sp3_states_ptr", d_sp3_states_ptr),
+        ):
+            if int(ptr) == 0:
+                raise ValueError(f"{name} must be non-zero")
+        has_ws = 1 if int(d_world_states_ptr) != 0 else 0
+        has_qpos = 1 if int(d_qpos_ptr) != 0 else 0
+        has_tr = (
+            1
+            if (
+                int(d_tendon_range_ptr) != 0
+                and int(ntendon) > 0
+                and (int(tendon_range_world_stride) > 0 or int(nworld) == 1)
+            )
+            else 0
+        )
+        bounds = _BikeWpBounds(shape0=int(nworld), _pad0=0, size=int(nworld), coord_mult=1)
+        args = _BikeWpSp3InitArgs(
+            idx=int(d_idx_ptr),
+            configs=int(d_sp3_configs_ptr),
+            sp3_states=int(d_sp3_states_ptr),
+            world_states=int(d_world_states_ptr) if has_ws else int(self._dummy_ws.ptr),
+            qpos=int(d_qpos_ptr) if has_qpos else int(self._dummy_f32.ptr),
+            tendon_range=int(d_tendon_range_ptr) if has_tr else int(self._dummy_f32.ptr),
+            nworld=int(nworld),
+            per_world_config=int(per_world_config),
+            init_grade=float(init_grade),
+            ntendon=int(ntendon),
+            tendon_range_world_stride=int(tendon_range_world_stride),
+            has_world_states=has_ws,
+            has_qpos=has_qpos,
+            has_tendon_range=has_tr,
+        )
+        rc = self.core.wp_metal_launch_kernel(
+            self.ordinal,
+            self.k_sp3_init,
+            int(nworld),
+            64,
+            ctypes.byref(bounds),
+            ctypes.sizeof(bounds),
+            ctypes.byref(args),
+            ctypes.sizeof(args),
+            _SP3_INIT_PTR_OFFSETS,
+            6,
+            0,
+        )
+        if rc != 0:
+            err = wp._src.context.runtime.get_error_string()
+            raise RuntimeError(f"wp_metal_launch_kernel(bike_wp_sp3_init_kernel) failed: {err}")
+
+    def launch_sp3_pre_solve(
+        self,
+        nworld: int,
+        dt_s: float,
+        d_idx_ptr: int,
+        d_tyre_model_ptr: int,
+        d_terrain_desc_ptr: int,
+        d_terrain_f32_ptr: int,
+        d_terrain_i32_ptr: int,
+        d_sp3_configs_ptr: int,
+        per_world_config: int,
+        d_sp3_states_ptr: int,
+        d_world_states_ptr: int,
+        d_qpos_ptr: int,
+        d_qvel_ptr: int,
+        d_xpos_ptr: int,
+        d_xmat_ptr: int,
+        d_xanchor_ptr: int,
+        d_xaxis_ptr: int,
+        d_qfrc_ptr: int,
+        d_ctrl_ptr: int,
+        ntendon: int = 0,
+        d_tendon_range_ptr: int = 0,
+        tendon_range_world_stride: int = 0,
+        d_dof_frictionloss_ptr: int = 0,
+        dof_frictionloss_world_stride: int = 0,
+    ) -> None:
+        if int(nworld) <= 0:
+            raise ValueError(f"nworld must be > 0, got {nworld}")
+        has_tr = (
+            1
+            if (
+                int(d_tendon_range_ptr) != 0
+                and int(ntendon) > 0
+                and (int(tendon_range_world_stride) > 0 or int(nworld) == 1)
+            )
+            else 0
+        )
+        has_fl = (
+            1
+            if (
+                int(d_dof_frictionloss_ptr) != 0
+                and (int(dof_frictionloss_world_stride) > 0 or int(nworld) == 1)
+            )
+            else 0
+        )
+        has_ws = 1 if int(d_world_states_ptr) != 0 else 0
+        bounds = _BikeWpBounds(shape0=int(nworld), _pad0=0, size=int(nworld), coord_mult=1)
+        args = _BikeWpSp3PreSolveArgs(
+            idx=int(d_idx_ptr),
+            tyre_model=int(d_tyre_model_ptr),
+            terrain_desc=int(d_terrain_desc_ptr),
+            terrain_f32=int(d_terrain_f32_ptr),
+            terrain_i32=int(d_terrain_i32_ptr),
+            configs=int(d_sp3_configs_ptr),
+            sp3_states=int(d_sp3_states_ptr),
+            world_states=int(d_world_states_ptr) if has_ws else int(self._dummy_ws.ptr),
+            qpos=int(d_qpos_ptr),
+            qvel=int(d_qvel_ptr),
+            xpos=int(d_xpos_ptr),
+            xmat=int(d_xmat_ptr),
+            xanchor=int(d_xanchor_ptr),
+            xaxis=int(d_xaxis_ptr),
+            qfrc_applied=int(d_qfrc_ptr),
+            ctrl=int(d_ctrl_ptr),
+            tendon_range=int(d_tendon_range_ptr) if has_tr else int(self._dummy_f32.ptr),
+            dof_frictionloss=(
+                int(d_dof_frictionloss_ptr) if has_fl else int(self._dummy_f32.ptr)
+            ),
+            nworld=int(nworld),
+            dt_s=float(dt_s),
+            per_world_config=int(per_world_config),
+            ntendon=int(ntendon),
+            tendon_range_world_stride=int(tendon_range_world_stride),
+            dof_frictionloss_world_stride=int(dof_frictionloss_world_stride),
+            has_world_states=has_ws,
+            has_tendon_range=has_tr,
+            has_dof_frictionloss=has_fl,
+        )
+        rc = self.core.wp_metal_launch_kernel(
+            self.ordinal,
+            self.k_sp3_pre_solve,
+            int(nworld),
+            64,
+            ctypes.byref(bounds),
+            ctypes.sizeof(bounds),
+            ctypes.byref(args),
+            ctypes.sizeof(args),
+            _SP3_PRESOLVE_PTR_OFFSETS,
+            18,
+            0,
+        )
+        if rc != 0:
+            err = wp._src.context.runtime.get_error_string()
+            raise RuntimeError(
+                f"wp_metal_launch_kernel(bike_wp_sp3_pre_solve_kernel) failed: {err}"
+            )
+
+    def launch_sp3_post_solve(
+        self,
+        nworld: int,
+        dt_s: float,
+        d_idx_ptr: int,
+        d_sp3_configs_ptr: int,
+        per_world_config: int,
+        d_sp3_states_ptr: int,
+        d_qpos_ptr: int,
+        d_qvel_ptr: int,
+        d_xmat_ptr: int,
+        nsensordata: int = 0,
+        d_sensordata_ptr: int = 0,
+        d_nefc_ptr: int = 0,
+        njmax: int = 0,
+        efc_J_row_stride: int = 0,
+        d_efc_type_ptr: int = 0,
+        d_efc_id_ptr: int = 0,
+        d_efc_J_ptr: int = 0,
+        d_efc_force_ptr: int = 0,
+        d_nacon_ptr: int = 0,
+        nconmax: int = 0,
+        contact_efc_stride: int = 1,
+        d_contact_worldid_ptr: int = 0,
+        d_contact_geom_ptr: int = 0,
+        d_contact_efc_address_ptr: int = 0,
+        d_contact_dim_ptr: int = 0,
+    ) -> None:
+        if int(nworld) <= 0:
+            raise ValueError(f"nworld must be > 0, got {nworld}")
+        has_sd = 1 if (int(d_sensordata_ptr) != 0 and int(nsensordata) > 0) else 0
+        has_efc = 1 if (int(d_nefc_ptr) != 0 and int(njmax) > 0) else 0
+        has_con = (
+            1
+            if (
+                int(d_nacon_ptr) != 0
+                and int(nconmax) > 0
+                and int(d_contact_geom_ptr) != 0
+                and int(d_contact_efc_address_ptr) != 0
+            )
+            else 0
+        )
+        has_cwid = 1 if (has_con and int(d_contact_worldid_ptr) != 0) else 0
+        has_cdim = 1 if (has_con and int(d_contact_dim_ptr) != 0) else 0
+        bounds = _BikeWpBounds(shape0=int(nworld), _pad0=0, size=int(nworld), coord_mult=1)
+        args = _BikeWpSp3PostSolveArgs(
+            idx=int(d_idx_ptr),
+            configs=int(d_sp3_configs_ptr),
+            sp3_states=int(d_sp3_states_ptr),
+            qpos=int(d_qpos_ptr),
+            qvel=int(d_qvel_ptr),
+            xmat=int(d_xmat_ptr),
+            sensordata=int(d_sensordata_ptr) if has_sd else int(self._dummy_f32.ptr),
+            nefc=int(d_nefc_ptr) if has_efc else int(self._dummy_i32.ptr),
+            efc_type=int(d_efc_type_ptr) if (has_efc and int(d_efc_type_ptr) != 0) else int(self._dummy_i32.ptr),
+            efc_id=int(d_efc_id_ptr) if (has_efc and int(d_efc_id_ptr) != 0) else int(self._dummy_i32.ptr),
+            efc_J=int(d_efc_J_ptr) if (has_efc and int(d_efc_J_ptr) != 0) else int(self._dummy_f32.ptr),
+            efc_force=int(d_efc_force_ptr) if (has_efc and int(d_efc_force_ptr) != 0) else int(self._dummy_f32.ptr),
+            nacon=int(d_nacon_ptr) if has_con else int(self._dummy_i32.ptr),
+            contact_worldid=int(d_contact_worldid_ptr) if has_cwid else int(self._dummy_i32.ptr),
+            contact_geom=int(d_contact_geom_ptr) if has_con else int(self._dummy_i32.ptr),
+            contact_efc_address=int(d_contact_efc_address_ptr) if has_con else int(self._dummy_i32.ptr),
+            contact_dim=int(d_contact_dim_ptr) if has_cdim else int(self._dummy_i32.ptr),
+            nworld=int(nworld),
+            dt_s=float(dt_s),
+            per_world_config=int(per_world_config),
+            nsensordata=int(nsensordata),
+            njmax=int(njmax),
+            efc_J_row_stride=int(efc_J_row_stride),
+            nconmax=int(nconmax),
+            contact_efc_stride=max(1, int(contact_efc_stride)),
+            has_sensordata=has_sd,
+            has_efc=has_efc,
+            has_contacts=has_con,
+            has_contact_worldid=has_cwid,
+            has_contact_dim=has_cdim,
+        )
+        rc = self.core.wp_metal_launch_kernel(
+            self.ordinal,
+            self.k_sp3_post_solve,
+            int(nworld),
+            64,
+            ctypes.byref(bounds),
+            ctypes.sizeof(bounds),
+            ctypes.byref(args),
+            ctypes.sizeof(args),
+            _SP3_POSTSOLVE_PTR_OFFSETS,
+            17,
+            0,
+        )
+        if rc != 0:
+            err = wp._src.context.runtime.get_error_string()
+            raise RuntimeError(
+                f"wp_metal_launch_kernel(bike_wp_sp3_post_solve_kernel) failed: {err}"
+            )
 
 
 def _init_metal_device() -> str:
@@ -681,6 +1069,235 @@ def run_mjwarp_metal_tyre_backend_scaling_benchmark(
     }
 
 
+def run_mjwarp_metal_sp3_autonomous_sweep(
+    model_xml_path: Path = DEFAULT_MODEL_XML,
+    nworld: int = 64,
+    n_steps: int = 80,
+    warmup_steps: int = 4,
+    seed: int = 42,
+    use_12gears: bool = True,
+    lib: ctypes.CDLL | None = None,
+    wm_rt: WarpMetalWritersRuntime | None = None,
+    device: str = "metal:0",
+    nconmax: int = 64,
+    njmax: int = 128,
+    backend: str = "compliant_2d",
+    station_count: int = 64,
+) -> dict[str, Any]:
+    """Autonomous SP3-C closed-loop sweep inside `wp.ScopedCapture()` on Apple Metal."""
+    gpu_name = _init_metal_device()
+    if lib is None:
+        lib = compile_metal_batch_runner(DEFAULT_GPU_SRC_DIR)
+    if wm_rt is None:
+        wm_rt = WarpMetalWritersRuntime(lib)
+
+    with tempfile.TemporaryDirectory(prefix="bike-sp3-metal-") as sp3_tmp:
+        resolved_xml = Path(model_xml_path).resolve()
+        if use_12gears:
+            xml12 = Path(sp3_tmp) / "model_12gears.xml"
+            m_src = load_model_with_assets(resolved_xml)
+            if int(m_src.nhfielddata) > 0:
+                (Path(sp3_tmp) / "hfield_data.bin").write_bytes(
+                    np.asarray(m_src.hfield_data, dtype="<f8").tobytes()
+                )
+            cb = resolved_xml.parent / "captured_bootstrap.json"
+            if cb.is_file():
+                (Path(sp3_tmp) / "captured_bootstrap.json").write_text(
+                    cb.read_text(encoding="utf-8"), encoding="utf-8"
+                )
+            resolved_xml = materialize_model_12gears_xml(resolved_xml, xml12)
+
+        m = load_model_with_assets(resolved_xml)
+        _ensure_newton_solver(m)
+        d0 = _prepare_initial_mjdata(
+            m, model_xml_path if not use_12gears else resolved_xml
+        )
+        dt_s = float(m.opt.timestep)
+        ops = _resolve_clean_split_ops(mjwarp)
+
+        idx_bytes = resolve_gpu_model_indices(m)
+        idx_struct = GpuModelIndicesStruct.from_buffer_copy(idx_bytes)
+        scales = generate_parameter_sweep_scales(nworld=nworld, seed=seed)
+        sp3_configs_bytes = build_sp3_sweep_configs_bytes(
+            lib=lib,
+            nworld=nworld,
+            m_mj=m,
+            fork_psi_scale=scales["fork_psi_scale"],
+            rebound_scale=scales["rebound_scale"],
+            shock_rate_scale=scales["shock_rate_scale"],
+            tire_stiff_scale=scales["tire_stiff_scale"],
+        )
+        sizeof_ws = int(lib.bike_gpu_sizeof_world_state())
+        sizeof_sp3 = int(lib.bike_gpu_sizeof_sp3_world_state())
+
+        d_idx = _allocate_and_copy_device_bytes(idx_bytes, device=device)
+        d_sp3_configs = _allocate_and_copy_device_bytes(sp3_configs_bytes, device=device)
+        d_world_states = wp.zeros(nworld * sizeof_ws, dtype=wp.uint8, device=device)
+        d_sp3_states = wp.zeros(nworld * sizeof_sp3, dtype=wp.uint8, device=device)
+        (
+            d_tyre_model,
+            d_terrain_desc,
+            _d_tf32,
+            _d_ti32,
+            terrain_f32_ptr,
+            terrain_i32_ptr,
+        ) = _upload_tyre_and_terrain_device(
+            lib, resolved_xml, backend, station_count, idx_bytes, device=device
+        )
+
+        m_wp = mjwarp.put_model(m)
+        expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
+
+        eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+        eff_njmax = max(int(njmax), int(d0.nefc) + 64)
+
+        def _alloc_and_init() -> tuple[Any, int, int, int, int, dict[str, int]]:
+            d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
+            mjwarp.forward(m_wp, d_b)
+            wp.synchronize()
+            tr_ptr, tr_stride = _resolve_tendon_range_binding(m_wp, nworld)
+            fl_ptr, fl_stride = _resolve_dof_frictionloss_binding(m_wp, nworld)
+            post_b = _resolve_sp3_post_solve_bindings(d_b)
+            wm_rt.launch_sp3_init(
+                nworld=nworld,
+                d_idx_ptr=int(d_idx.ptr),
+                d_sp3_configs_ptr=int(d_sp3_configs.ptr),
+                per_world_config=1,
+                d_sp3_states_ptr=int(d_sp3_states.ptr),
+                d_world_states_ptr=int(d_world_states.ptr),
+                d_qpos_ptr=int(d_b.qpos.ptr),
+                init_grade=0.0,
+                ntendon=int(m.ntendon),
+                d_tendon_range_ptr=tr_ptr,
+                tendon_range_world_stride=tr_stride,
+            )
+            wp.synchronize()
+            return d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b
+
+        def _make_step_fns(
+            d_b: Any,
+            tr_ptr: int,
+            tr_stride: int,
+            fl_ptr: int,
+            fl_stride: int,
+            post_b: dict[str, int],
+        ) -> tuple[Any, Any]:
+            def _pre() -> None:
+                wm_rt.launch_sp3_pre_solve(
+                    nworld=nworld,
+                    dt_s=dt_s,
+                    d_idx_ptr=int(d_idx.ptr),
+                    d_tyre_model_ptr=int(d_tyre_model.ptr),
+                    d_terrain_desc_ptr=int(d_terrain_desc.ptr),
+                    d_terrain_f32_ptr=terrain_f32_ptr,
+                    d_terrain_i32_ptr=terrain_i32_ptr,
+                    d_sp3_configs_ptr=int(d_sp3_configs.ptr),
+                    per_world_config=1,
+                    d_sp3_states_ptr=int(d_sp3_states.ptr),
+                    d_world_states_ptr=int(d_world_states.ptr),
+                    d_qpos_ptr=int(d_b.qpos.ptr),
+                    d_qvel_ptr=int(d_b.qvel.ptr),
+                    d_xpos_ptr=int(d_b.xpos.ptr),
+                    d_xmat_ptr=int(d_b.xmat.ptr),
+                    d_xanchor_ptr=int(d_b.xanchor.ptr),
+                    d_xaxis_ptr=int(d_b.xaxis.ptr),
+                    d_qfrc_ptr=int(d_b.qfrc_applied.ptr),
+                    d_ctrl_ptr=int(d_b.ctrl.ptr),
+                    ntendon=int(m.ntendon),
+                    d_tendon_range_ptr=tr_ptr,
+                    tendon_range_world_stride=tr_stride,
+                    d_dof_frictionloss_ptr=fl_ptr,
+                    dof_frictionloss_world_stride=fl_stride,
+                )
+
+            def _post() -> None:
+                wm_rt.launch_sp3_post_solve(
+                    nworld=nworld,
+                    dt_s=dt_s,
+                    d_idx_ptr=int(d_idx.ptr),
+                    d_sp3_configs_ptr=int(d_sp3_configs.ptr),
+                    per_world_config=1,
+                    d_sp3_states_ptr=int(d_sp3_states.ptr),
+                    d_qpos_ptr=int(d_b.qpos.ptr),
+                    d_qvel_ptr=int(d_b.qvel.ptr),
+                    d_xmat_ptr=int(d_b.xmat.ptr),
+                    nsensordata=int(post_b["nsensordata"]),
+                    d_sensordata_ptr=int(post_b["sensordata_ptr"]),
+                    d_nefc_ptr=int(post_b["nefc_ptr"]),
+                    njmax=int(post_b["njmax"]),
+                    efc_J_row_stride=int(post_b["efc_J_row_stride"]),
+                    d_efc_type_ptr=int(post_b["efc_type_ptr"]),
+                    d_efc_id_ptr=int(post_b["efc_id_ptr"]),
+                    d_efc_J_ptr=int(post_b["efc_J_ptr"]),
+                    d_efc_force_ptr=int(post_b["efc_force_ptr"]),
+                    d_nacon_ptr=int(post_b["nacon_ptr"]),
+                    nconmax=int(post_b["nconmax"]),
+                    contact_efc_stride=int(post_b["contact_efc_stride"]),
+                    d_contact_worldid_ptr=int(post_b["contact_worldid_ptr"]),
+                    d_contact_geom_ptr=int(post_b["contact_geom_ptr"]),
+                    d_contact_efc_address_ptr=int(post_b["contact_efc_address_ptr"]),
+                    d_contact_dim_ptr=int(post_b["contact_dim_ptr"]),
+                )
+
+            return _pre, _post
+
+        # Warmup uncaptured step so all Metal kernels are compiled before capture
+        d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b = _alloc_and_init()
+        pre_fn, post_fn = _make_step_fns(d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b)
+        _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, pre_fn, post_fn)
+        wp.synchronize()
+
+        # Re-init cleanly and capture graph
+        d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b = _alloc_and_init()
+        pre_fn, post_fn = _make_step_fns(d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b)
+        with wp.ScopedCapture() as capture:
+            _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, pre_fn, post_fn)
+        graph = capture.graph
+        for _ in range(warmup_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+
+        # Re-init cleanly for timed closed-loop rollout
+        d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b = _alloc_and_init()
+        pre_fn, post_fn = _make_step_fns(d_b, tr_ptr, tr_stride, fl_ptr, fl_stride, post_b)
+        with wp.ScopedCapture() as capture:
+            _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, pre_fn, post_fn)
+        graph = capture.graph
+        wp.synchronize()
+
+        t0 = time.perf_counter()
+        for _ in range(n_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+        wall_time_s = time.perf_counter() - t0
+
+        final_qpos = d_b.qpos.numpy()
+        final_qvel = d_b.qvel.numpy()
+        all_finite = bool(np.all(np.isfinite(final_qpos)) and np.all(np.isfinite(final_qvel)))
+        forward_distance_m = final_qpos[:, int(idx_struct.root_x_qpos)] - float(
+            d0.qpos[int(idx_struct.root_x_qpos)]
+        )
+        total_world_steps = int(nworld) * int(n_steps)
+        return {
+            "experiment": "SP3_C_metal_autonomous",
+            "backend": "metal_mjwarp_full_gpu_fp32",
+            "schedule": "clean_split",
+            "gpu_device": gpu_name,
+            "ntendon": int(m.ntendon),
+            "nworld": int(nworld),
+            "n_steps": int(n_steps),
+            "dt_s": dt_s,
+            "sizeof_sp3_world_state_bytes": sizeof_sp3,
+            "wall_time_ms": wall_time_s * 1000.0,
+            "us_per_step_per_world": (wall_time_s * 1e6) / float(total_world_steps),
+            "steps_per_s": float(total_world_steps) / max(wall_time_s, 1e-12),
+            "all_finite": all_finite,
+            "forward_distance_root_x_m": _summarize_distribution(forward_distance_m),
+            "final_qpos_world0": final_qpos[0].tolist(),
+            "final_qvel_world0": final_qvel[0].tolist(),
+        }
+
+
 def _print_report(results: dict[str, Any]) -> None:
     if "parameter_sweep" in results:
         sw = results["parameter_sweep"]
@@ -751,9 +1368,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--experiment",
-        choices=("all", "sweep", "tire_scaling"),
+        choices=("all", "sweep", "tire_scaling", "sp3_autonomous"),
         default="all",
         help="Which benchmark experiment to execute.",
+    )
+    parser.add_argument(
+        "--use-12gears",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Expand freehub tendon into 12 static cassette tendons for SP3 autonomous run.",
     )
     parser.add_argument(
         "--skip-single-world",
@@ -819,6 +1442,16 @@ def main(argv: list[str] | None = None) -> int:
                     lib=lib,
                     wm_rt=wm_rt,
                 )
+
+        if args.experiment == "sp3_autonomous":
+            results["sp3_autonomous"] = run_mjwarp_metal_sp3_autonomous_sweep(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
+                n_steps=args.n_steps,
+                use_12gears=args.use_12gears,
+                lib=lib,
+                wm_rt=wm_rt,
+            )
 
     _print_report(results)
 

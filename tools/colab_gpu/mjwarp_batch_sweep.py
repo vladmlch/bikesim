@@ -31,9 +31,12 @@ try:
         DEFAULT_GPU_SRC_DIR,
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
+        build_sp3_sweep_configs_bytes,
         build_sweep_configs_bytes,
         build_tyre_and_terrain_buffers,
         compile_cuda_writers,
+        expand_mjwarp_tendon_range_and_frictionloss,
+        materialize_model_12gears_xml,
         resolve_gpu_model_indices,
     )
     from tools.colab_gpu.model_assets import (
@@ -47,9 +50,12 @@ except ImportError:
         DEFAULT_GPU_SRC_DIR,
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
+        build_sp3_sweep_configs_bytes,
         build_sweep_configs_bytes,
         build_tyre_and_terrain_buffers,
         compile_cuda_writers,
+        expand_mjwarp_tendon_range_and_frictionloss,
+        materialize_model_12gears_xml,
         resolve_gpu_model_indices,
     )
     from model_assets import (  # type: ignore[no-redef]
@@ -251,6 +257,31 @@ def _mjwarp_clean_split_step(
     ops["implicit"](m_wp, d_b)
 
 
+def _mjwarp_sp3_clean_split_step(
+    ops: dict[str, Any],
+    m_wp: Any,
+    d_b: Any,
+    launch_pre_solve_fn: Callable[[], None],
+    launch_post_solve_fn: Callable[[], None],
+) -> None:
+    """Execute one autonomous SP3 ``clean_split`` step (pre_solve -> solve/implicit -> post_solve)."""
+    ops["fwd_kinematics"](m_wp, d_b)
+    ops["crb"](m_wp, d_b)
+    ops["tendon_armature"](m_wp, d_b)
+    ops["factor_m"](m_wp, d_b)
+    ops["collision"](m_wp, d_b)
+    ops["transmission"](m_wp, d_b)
+    ops["fwd_velocity"](m_wp, d_b)
+    launch_pre_solve_fn()
+    ops["make_constraint"](m_wp, d_b)
+    ops["fwd_actuation"](m_wp, d_b)
+    ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+    ops["solve"](m_wp, d_b)
+    ops["sensor_acc"](m_wp, d_b)
+    ops["implicit"](m_wp, d_b)
+    launch_post_solve_fn()
+
+
 def _resolve_tendon_range_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
     """Return `(tendon_range_ptr, tendon_range_world_stride)` for `m_wp.tendon_range`."""
     tendon_range = getattr(m_wp, "tendon_range", None)
@@ -265,6 +296,68 @@ def _resolve_tendon_range_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
     if nworld == 1:
         return ptr, 0
     return 0, 0
+
+
+def _resolve_dof_frictionloss_binding(m_wp: Any, nworld: int) -> tuple[int, int]:
+    """Return `(dof_frictionloss_ptr, world_stride)` for `m_wp.dof_frictionloss`."""
+    fl = getattr(m_wp, "dof_frictionloss", None)
+    if fl is None:
+        return 0, 0
+    shape = getattr(fl, "shape", ())
+    if len(shape) >= 2 and int(shape[0]) >= nworld:
+        return int(fl.ptr), int(shape[1])
+    if nworld == 1 and len(shape) >= 2:
+        return int(fl.ptr), int(shape[1])
+    if nworld == 1 and len(shape) == 1 and int(shape[0]) > 0:
+        return int(fl.ptr), 0
+    return 0, 0
+
+
+def _resolve_sp3_post_solve_bindings(d_b: Any) -> dict[str, int]:
+    """Extract device pointers and exact strides from a `mujoco_warp.Data` instance."""
+    sd = getattr(d_b, "sensordata", None)
+    nsensordata = int(sd.shape[1]) if sd is not None and len(getattr(sd, "shape", ())) >= 2 else 0
+    sensordata_ptr = int(sd.ptr) if (sd is not None and nsensordata > 0) else 0
+
+    efc = getattr(d_b, "efc", None)
+    nefc = getattr(d_b, "nefc", None)
+    efc_type = getattr(efc, "type", None) if efc is not None else None
+    efc_id = getattr(efc, "id", None) if efc is not None else None
+    efc_J = getattr(efc, "J", None) if efc is not None else None
+    efc_force = getattr(efc, "force", None) if efc is not None else None
+
+    njmax = int(efc_type.shape[1]) if efc_type is not None and len(efc_type.shape) >= 2 else 0
+    efc_J_row_stride = int(efc_J.shape[2]) if efc_J is not None and len(efc_J.shape) >= 3 else 0
+
+    contact = getattr(d_b, "contact", None)
+    nacon = getattr(d_b, "nacon", None)
+    c_wid = getattr(contact, "worldid", None) if contact is not None else None
+    c_geom = getattr(contact, "geom", None) if contact is not None else None
+    c_adr = getattr(contact, "efc_address", None) if contact is not None else None
+    c_dim = getattr(contact, "dim", None) if contact is not None else None
+    nconmax = int(c_geom.shape[0]) if c_geom is not None and len(c_geom.shape) >= 1 else 0
+    contact_efc_stride = (
+        int(c_adr.shape[1]) if c_adr is not None and len(c_adr.shape) >= 2 else 1
+    )
+
+    return {
+        "nsensordata": nsensordata,
+        "sensordata_ptr": sensordata_ptr,
+        "nefc_ptr": int(nefc.ptr) if nefc is not None else 0,
+        "njmax": njmax,
+        "efc_J_row_stride": efc_J_row_stride,
+        "efc_type_ptr": int(efc_type.ptr) if efc_type is not None else 0,
+        "efc_id_ptr": int(efc_id.ptr) if efc_id is not None else 0,
+        "efc_J_ptr": int(efc_J.ptr) if efc_J is not None else 0,
+        "efc_force_ptr": int(efc_force.ptr) if efc_force is not None else 0,
+        "nacon_ptr": int(nacon.ptr) if nacon is not None else 0,
+        "nconmax": nconmax,
+        "contact_efc_stride": contact_efc_stride,
+        "contact_worldid_ptr": int(c_wid.ptr) if c_wid is not None else 0,
+        "contact_geom_ptr": int(c_geom.ptr) if c_geom is not None else 0,
+        "contact_efc_address_ptr": int(c_adr.ptr) if c_adr is not None else 0,
+        "contact_dim_ptr": int(c_dim.ptr) if c_dim is not None else 0,
+    }
 
 
 def _prepare_initial_qpos_qvel(m: Any, xml_path: Path | str) -> tuple[np.ndarray, np.ndarray]:
@@ -848,6 +941,225 @@ def run_tyre_backend_scaling_benchmark(
     }
 
 
+def run_mjwarp_sp3_autonomous_sweep(
+    model_xml_path: Path = DEFAULT_MODEL_XML,
+    nworld: int = 2048,
+    n_steps: int = 200,
+    warmup_steps: int = 10,
+    seed: int = 42,
+    use_12gears: bool = True,
+    lib: ctypes.CDLL | None = None,
+    host_lib: ctypes.CDLL | None = None,
+    device: str = "cuda:0",
+    nconmax: int = 64,
+    njmax: int = 128,
+    backend: str = "compliant_2d",
+    station_count: int = 64,
+) -> dict[str, Any]:
+    """Autonomous SP3-C closed-loop sweep inside `wp.ScopedCapture()` on CUDA."""
+    _require_gpu_stack()
+    if lib is None:
+        lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
+    if host_lib is None:
+        try:
+            from tools.colab_gpu.cpu_batch_sweep import compile_cpu_batch_runner
+        except ImportError:
+            from cpu_batch_sweep import compile_cpu_batch_runner  # type: ignore[no-redef]
+        host_lib = compile_cpu_batch_runner()
+
+    with tempfile.TemporaryDirectory(prefix="bike-sp3-cuda-") as sp3_tmp:
+        resolved_xml = Path(model_xml_path).resolve()
+        if use_12gears:
+            xml12 = Path(sp3_tmp) / "model_12gears.xml"
+            m_src = load_model_with_assets(resolved_xml)
+            if int(m_src.nhfielddata) > 0:
+                (Path(sp3_tmp) / "hfield_data.bin").write_bytes(
+                    np.asarray(m_src.hfield_data, dtype="<f8").tobytes()
+                )
+            cb = resolved_xml.parent / "captured_bootstrap.json"
+            if cb.is_file():
+                (Path(sp3_tmp) / "captured_bootstrap.json").write_text(
+                    cb.read_text(encoding="utf-8"), encoding="utf-8"
+                )
+            resolved_xml = materialize_model_12gears_xml(resolved_xml, xml12)
+
+        m = load_model_with_assets(resolved_xml)
+        _ensure_newton_solver(m)
+        d0 = _prepare_initial_mjdata(
+            m, model_xml_path if not use_12gears else resolved_xml
+        )
+        dt_s = float(m.opt.timestep)
+        ops = _resolve_clean_split_ops(mjwarp)
+
+        idx_bytes = resolve_gpu_model_indices(m)
+        idx_struct = GpuModelIndicesStruct.from_buffer_copy(idx_bytes)
+        scales = generate_parameter_sweep_scales(nworld=nworld, seed=seed)
+        sp3_configs_bytes = build_sp3_sweep_configs_bytes(
+            lib=lib,
+            nworld=nworld,
+            m_mj=m,
+            fork_psi_scale=scales["fork_psi_scale"],
+            rebound_scale=scales["rebound_scale"],
+            shock_rate_scale=scales["shock_rate_scale"],
+            tire_stiff_scale=scales["tire_stiff_scale"],
+        )
+        sizeof_ws = int(lib.bike_gpu_sizeof_world_state())
+        sizeof_sp3 = int(lib.bike_gpu_sizeof_sp3_world_state())
+
+        d_idx = _allocate_and_copy_device_bytes(idx_bytes, device=device)
+        d_sp3_configs = _allocate_and_copy_device_bytes(sp3_configs_bytes, device=device)
+        d_world_states = wp.zeros(nworld * sizeof_ws, dtype=wp.uint8, device=device)
+        d_sp3_states = wp.zeros(nworld * sizeof_sp3, dtype=wp.uint8, device=device)
+        (
+            d_tyre_model,
+            d_terrain_desc,
+            _d_tf32,
+            _d_ti32,
+            terrain_f32_ptr,
+            terrain_i32_ptr,
+        ) = _upload_tyre_and_terrain_device(
+            host_lib, resolved_xml, backend, station_count, idx_bytes, device=device
+        )
+
+        m_wp = mjwarp.put_model(m)
+        expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
+        eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+        eff_njmax = max(int(njmax), int(d0.nefc) + 64)
+        d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
+        mjwarp.forward(m_wp, d_b)
+        wp.synchronize()
+
+        cuda_stream = wp.get_stream().cuda_stream
+        tr_ptr, tr_stride = _resolve_tendon_range_binding(m_wp, nworld)
+        fl_ptr, fl_stride = _resolve_dof_frictionloss_binding(m_wp, nworld)
+        post_b = _resolve_sp3_post_solve_bindings(d_b)
+
+        rc = int(
+            lib.bike_gpu_launch_sp3_init(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_sp3_configs.ptr),
+                1,
+                ctypes.c_void_p(d_sp3_states.ptr),
+                ctypes.c_void_p(d_world_states.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
+                ctypes.c_float(0.0),
+                int(m.ntendon),
+                ctypes.c_void_p(tr_ptr),
+                int(tr_stride),
+            )
+        )
+        if rc != 0:
+            raise RuntimeError(f"bike_gpu_launch_sp3_init failed with code {rc}")
+        wp.synchronize()
+
+        def _pre() -> None:
+            r = int(
+                lib.bike_gpu_launch_sp3_pre_solve(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_float(dt_s),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_tyre_model.ptr),
+                    ctypes.c_void_p(d_terrain_desc.ptr),
+                    ctypes.c_void_p(terrain_f32_ptr),
+                    ctypes.c_void_p(terrain_i32_ptr),
+                    ctypes.c_void_p(d_sp3_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_sp3_states.ptr),
+                    ctypes.c_void_p(d_world_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_void_p(d_b.qvel.ptr),
+                    ctypes.c_void_p(d_b.xpos.ptr),
+                    ctypes.c_void_p(d_b.xmat.ptr),
+                    ctypes.c_void_p(d_b.xanchor.ptr),
+                    ctypes.c_void_p(d_b.xaxis.ptr),
+                    ctypes.c_void_p(d_b.qfrc_applied.ptr),
+                    ctypes.c_void_p(d_b.ctrl.ptr),
+                    int(m.ntendon),
+                    ctypes.c_void_p(tr_ptr),
+                    int(tr_stride),
+                    ctypes.c_void_p(fl_ptr),
+                    int(fl_stride),
+                )
+            )
+            if r != 0:
+                raise RuntimeError(f"bike_gpu_launch_sp3_pre_solve failed with code {r}")
+
+        def _post() -> None:
+            r = int(
+                lib.bike_gpu_launch_sp3_post_solve(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_float(dt_s),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_sp3_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_sp3_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_void_p(d_b.qvel.ptr),
+                    ctypes.c_void_p(d_b.xmat.ptr),
+                    int(post_b["nsensordata"]),
+                    ctypes.c_void_p(post_b["sensordata_ptr"]),
+                    ctypes.c_void_p(post_b["nefc_ptr"]),
+                    int(post_b["njmax"]),
+                    int(post_b["efc_J_row_stride"]),
+                    ctypes.c_void_p(post_b["efc_type_ptr"]),
+                    ctypes.c_void_p(post_b["efc_id_ptr"]),
+                    ctypes.c_void_p(post_b["efc_J_ptr"]),
+                    ctypes.c_void_p(post_b["efc_force_ptr"]),
+                    ctypes.c_void_p(post_b["nacon_ptr"]),
+                    int(post_b["nconmax"]),
+                    int(post_b["contact_efc_stride"]),
+                    ctypes.c_void_p(post_b["contact_worldid_ptr"]),
+                    ctypes.c_void_p(post_b["contact_geom_ptr"]),
+                    ctypes.c_void_p(post_b["contact_efc_address_ptr"]),
+                    ctypes.c_void_p(post_b["contact_dim_ptr"]),
+                )
+            )
+            if r != 0:
+                raise RuntimeError(f"bike_gpu_launch_sp3_post_solve failed with code {r}")
+
+        _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, _pre, _post)
+        wp.synchronize()
+
+        with wp.ScopedCapture() as capture:
+            _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, _pre, _post)
+        graph = capture.graph
+        for _ in range(warmup_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+
+        t0 = time.perf_counter()
+        for _ in range(n_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+        wall_time_s = time.perf_counter() - t0
+
+        final_qpos = d_b.qpos.numpy()
+        final_qvel = d_b.qvel.numpy()
+        all_finite = bool(np.all(np.isfinite(final_qpos)) and np.all(np.isfinite(final_qvel)))
+        forward_distance_m = final_qpos[:, int(idx_struct.root_x_qpos)] - float(
+            d0.qpos[int(idx_struct.root_x_qpos)]
+        )
+        total_world_steps = int(nworld) * int(n_steps)
+        return {
+            "experiment": "SP3_C_autonomous",
+            "schedule": "clean_split",
+            "ntendon": int(m.ntendon),
+            "nworld": int(nworld),
+            "n_steps": int(n_steps),
+            "dt_s": dt_s,
+            "sizeof_sp3_world_state_bytes": sizeof_sp3,
+            "wall_time_ms": wall_time_s * 1000.0,
+            "us_per_step_per_world": (wall_time_s * 1e6) / float(total_world_steps),
+            "steps_per_s": float(total_world_steps) / max(wall_time_s, 1e-12),
+            "all_finite": all_finite,
+            "forward_distance_root_x_m": _summarize_distribution(forward_distance_m),
+        }
+
+
 def _print_report(results: dict[str, Any]) -> None:
     if "parameter_sweep" in results:
         sw = results["parameter_sweep"]
@@ -910,9 +1222,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--experiment",
-        choices=("all", "sweep", "tire_scaling"),
+        choices=("all", "sweep", "tire_scaling", "sp3_autonomous"),
         default="all",
         help="Which benchmark experiment to execute.",
+    )
+    parser.add_argument(
+        "--use-12gears",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Expand freehub tendon into 12 static cassette tendons for SP3 autonomous run.",
     )
     parser.add_argument(
         "--json-out",
@@ -949,6 +1267,15 @@ def main(argv: list[str] | None = None) -> int:
                 model_xml_path=model_xml_path,
                 nworld=args.nworld,
                 n_steps=args.tier_steps,
+                lib=lib,
+            )
+
+        if args.experiment == "sp3_autonomous":
+            results["sp3_autonomous"] = run_mjwarp_sp3_autonomous_sweep(
+                model_xml_path=model_xml_path,
+                nworld=args.nworld,
+                n_steps=args.n_steps,
+                use_12gears=args.use_12gears,
                 lib=lib,
             )
 

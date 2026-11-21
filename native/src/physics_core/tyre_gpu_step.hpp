@@ -53,6 +53,7 @@ struct GpuTerrainTableDesc {
 struct GpuWheelSummary {
     float normal_load_n = 0.0f;
     float effective_radius_m = 0.0f;
+    float slip_mps = 0.0f;
 };
 
 struct GpuTyreStepOutput {
@@ -378,6 +379,7 @@ struct GpuWheelSummaryIo {
     float sum_load[2]{};
     float sum_weighted_drop[2]{};
     float sum_unweighted_drop[2]{};
+    float sum_weighted_slip[2]{};
     GpuTyreStepOutput summary{};
 
     BIKE_HD bool eval_radial(
@@ -414,9 +416,11 @@ struct GpuWheelSummaryIo {
             const float drop =
                 -(dx * rec.normal.x + dy * rec.normal.y + dz * rec.normal.z);
             summary.wheels[side].effective_radius_m = GpuToolkit::max(0.0f, drop);
+            summary.wheels[side].slip_mps = rec.slip;
             summary.active_station_counts[side] = 1;
         } else {
             summary.wheels[side].effective_radius_m = 0.0f;
+            summary.wheels[side].slip_mps = 0.0f;
             summary.active_station_counts[side] = 0;
         }
         return Status::ok;
@@ -436,6 +440,7 @@ struct GpuWheelSummaryIo {
         sum_load[side] += rec.load;
         sum_weighted_drop[side] += rec.load * drop;
         sum_unweighted_drop[side] += drop;
+        sum_weighted_slip[side] += rec.load * rec.slip;
         return Status::ok;
     }
 
@@ -449,12 +454,15 @@ struct GpuWheelSummaryIo {
         summary.wheels[side].normal_load_n = sum_load[side];
         if (rec.active_count <= 0) {
             summary.wheels[side].effective_radius_m = 0.0f;
+            summary.wheels[side].slip_mps = 0.0f;
         } else if (sum_load[side] > 0.0f) {
             summary.wheels[side].effective_radius_m =
                 GpuToolkit::max(0.0f, sum_weighted_drop[side] / sum_load[side]);
+            summary.wheels[side].slip_mps = sum_weighted_slip[side] / sum_load[side];
         } else {
             summary.wheels[side].effective_radius_m = GpuToolkit::max(
                 0.0f, sum_unweighted_drop[side] / static_cast<float>(rec.active_count));
+            summary.wheels[side].slip_mps = 0.0f;
         }
         return Status::ok;
     }

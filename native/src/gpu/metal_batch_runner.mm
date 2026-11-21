@@ -6,6 +6,7 @@
 #include "cuda_kernels.cu"
 #else
 #include "batch_step.hpp"
+#include "sp3_autonomous_step.hpp"
 #endif
 
 #include <mujoco/mujoco.h>
@@ -109,8 +110,16 @@ std::string build_msl_shader_source(const std::string &gpu_src_dir) {
         "../physics_core/brake_hold.hpp",
         "../physics_core/joint_envelope.hpp",
         "../physics_core/ratchet.hpp",
+        "../physics_core/launch_plan.hpp",
+        "../physics_core/front_lift.hpp",
+        "../physics_core/rider_intent.hpp",
+        "../physics_core/efc_monitors.hpp",
+        "../physics_core/shifting.hpp",
+        "../physics_core/pedaling.hpp",
+        "../physics_core/assist.hpp",
         "common.hpp",
         "batch_step.hpp",
+        "sp3_autonomous_step.hpp",
     };
 
     std::string combined = R"MSL(
@@ -493,6 +502,553 @@ kernel void bike_metal_step_writers_fused_kernel(
 ) {
     bike_metal_step_writers_fused_impl(bounds_buf, args, gid);
 }
+
+inline void bike_metal_sp3_init_impl(
+    int w,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    int has_world_states,
+    device bike::gpu::GpuWorldState *world_states,
+    int has_qpos,
+    device const float *qpos_batch,
+    float init_grade,
+    int ntendon,
+    int has_tendon_range,
+    device float *tendon_range_batch,
+    int tendon_range_world_stride
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx, ntendon) ||
+        configs == nullptr || sp3_states == nullptr) {
+        return;
+    }
+    const long w64 = static_cast<long>(w);
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device bike::gpu::GpuWorldState *tyre_w =
+        (has_world_states != 0 && world_states != nullptr)
+            ? &world_states[w]
+            : static_cast<device bike::gpu::GpuWorldState *>(nullptr);
+    device const float *qpos_w =
+        (has_qpos != 0 && qpos_batch != nullptr)
+            ? (qpos_batch + w64 * idx.nq)
+            : static_cast<device const float *>(nullptr);
+    device float *tendon_w = static_cast<device float *>(nullptr);
+    if (has_tendon_range != 0 && tendon_range_batch != nullptr && ntendon > 0) {
+        if (tendon_range_world_stride >= 2 * ntendon) {
+            tendon_w = tendon_range_batch + w64 * tendon_range_world_stride;
+        } else if (tendon_range_world_stride == 0 && w == 0) {
+            tendon_w = tendon_range_batch;
+        } else {
+            return;
+        }
+    }
+    (void)bike::gpu::gpu_sp3_init_world(
+        idx, cfg_w, &sp3_states[w], tyre_w, qpos_w, init_grade, ntendon, tendon_w);
+}
+
+inline void bike_metal_sp3_pre_solve_world(
+    int w,
+    float dt_s,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::physics_core::GpuTyreModel *tyre_model,
+    thread const bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    device const float *terrain_f32,
+    device const bike::physics_core::i32 *terrain_i32,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    device bike::gpu::GpuWorldState *world_states,
+    device const float *qpos_batch,
+    device const float *qvel_batch,
+    device const float *xpos_batch,
+    device const float *xmat_batch,
+    device const float *xanchor_batch,
+    device const float *xaxis_batch,
+    device float *qfrc_batch,
+    device float *ctrl_batch,
+    int ntendon,
+    int has_tendon_range,
+    device float *tendon_range_batch,
+    int tendon_range_world_stride,
+    int has_dof_frictionloss,
+    device float *dof_frictionloss_batch,
+    int dof_frictionloss_world_stride
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx, ntendon) || tyre_model == nullptr ||
+        configs == nullptr || sp3_states == nullptr || world_states == nullptr) {
+        return;
+    }
+    float qpos_w[bike::gpu::kMaxNq];
+    float qvel_w[bike::gpu::kMaxNv];
+    float qfrc_w[bike::gpu::kMaxNv];
+    float ctrl_w[bike::gpu::kMaxNu];
+
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int nu = idx.nu;
+    const long w64 = static_cast<long>(w);
+
+    device const float *qpos_src = qpos_batch + w64 * nq;
+    device const float *qvel_src = qvel_batch + w64 * nv;
+    device const float *xpos_src = xpos_batch + w64 * idx.nbody * 3;
+    device const float *xmat_src = xmat_batch + w64 * idx.nbody * 9;
+    device const float *xanchor_src = xanchor_batch + w64 * tyre_model->njnt * 3;
+    device const float *xaxis_src = xaxis_batch + w64 * tyre_model->njnt * 3;
+
+    for (int i = 0; i < nq; ++i) qpos_w[i] = qpos_src[i];
+    for (int i = 0; i < nv; ++i) qvel_w[i] = qvel_src[i];
+
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device float *tendon_w = static_cast<device float *>(nullptr);
+    if (has_tendon_range != 0 && tendon_range_batch != nullptr && ntendon > 0) {
+        if (tendon_range_world_stride >= 2 * ntendon) {
+            tendon_w = tendon_range_batch + w64 * tendon_range_world_stride;
+        } else if (tendon_range_world_stride == 0 && w == 0) {
+            tendon_w = tendon_range_batch;
+        } else {
+            return;
+        }
+    }
+    device float *fl_w = static_cast<device float *>(nullptr);
+    if (has_dof_frictionloss != 0 && dof_frictionloss_batch != nullptr) {
+        if (dof_frictionloss_world_stride >= nv) {
+            fl_w = dof_frictionloss_batch + w64 * dof_frictionloss_world_stride;
+        } else if (dof_frictionloss_world_stride == 0 && w == 0) {
+            fl_w = dof_frictionloss_batch;
+        } else {
+            return;
+        }
+    }
+
+    const bike::physics_core::Status st = bike::gpu::gpu_sp3_pre_solve_world(
+        w,
+        dt_s,
+        idx,
+        tyre_model,
+        terrain_desc,
+        terrain_f32,
+        terrain_i32,
+        cfg_w,
+        &sp3_states[w],
+        world_states[w].compliant_wheels,
+        &world_states[w].distributed_wheels[0][0],
+        qpos_w,
+        qvel_w,
+        xpos_src,
+        xmat_src,
+        xanchor_src,
+        xaxis_src,
+        qfrc_w,
+        ctrl_w,
+        ntendon,
+        tendon_w,
+        fl_w);
+    if (st != bike::physics_core::Status::ok) {
+        return;
+    }
+
+    device float *qfrc_dst = qfrc_batch + w64 * nv;
+    device float *ctrl_dst = ctrl_batch + w64 * nu;
+    for (int i = 0; i < nv; ++i) qfrc_dst[i] = qfrc_w[i];
+    for (int i = 0; i < nu; ++i) ctrl_dst[i] = ctrl_w[i];
+}
+
+inline void bike_metal_sp3_post_solve_world(
+    int w,
+    float dt_s,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    device float *qpos_batch,
+    device const float *qvel_batch,
+    device const float *xmat_batch,
+    int has_sensordata,
+    int nsensordata,
+    device const float *sensordata_batch,
+    int has_efc,
+    device const int *nefc_batch,
+    int njmax,
+    int efc_J_row_stride,
+    device const int *efc_type_batch,
+    device const int *efc_id_batch,
+    device const float *efc_J_batch,
+    device const float *efc_force_batch,
+    int has_contacts,
+    device const int *nacon_batch,
+    int nconmax,
+    int contact_efc_stride,
+    int has_contact_worldid,
+    device const int *contact_worldid_batch,
+    device const int *contact_geom_batch,
+    device const int *contact_efc_address_batch,
+    int has_contact_dim,
+    device const int *contact_dim_batch
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx) || configs == nullptr || sp3_states == nullptr) {
+        return;
+    }
+    const long w64 = static_cast<long>(w);
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device const float *sd_w =
+        (has_sensordata != 0 && sensordata_batch != nullptr && nsensordata > 0)
+            ? (sensordata_batch + w64 * nsensordata)
+            : static_cast<device const float *>(nullptr);
+
+    int nefc_w = 0;
+    device const int *efc_type_w = static_cast<device const int *>(nullptr);
+    device const int *efc_id_w = static_cast<device const int *>(nullptr);
+    device const float *efc_J_w = static_cast<device const float *>(nullptr);
+    device const float *efc_force_w = static_cast<device const float *>(nullptr);
+    if (has_efc != 0 && nefc_batch != nullptr && njmax > 0) {
+        nefc_w = nefc_batch[w];
+        if (nefc_w < 0) {
+            nefc_w = 0;
+        }
+        if (nefc_w > njmax) {
+            nefc_w = njmax;
+        }
+        efc_type_w = (efc_type_batch != nullptr)
+                         ? (efc_type_batch + w64 * njmax)
+                         : static_cast<device const int *>(nullptr);
+        efc_id_w = (efc_id_batch != nullptr)
+                       ? (efc_id_batch + w64 * njmax)
+                       : static_cast<device const int *>(nullptr);
+        efc_force_w = (efc_force_batch != nullptr)
+                          ? (efc_force_batch + w64 * njmax)
+                          : static_cast<device const float *>(nullptr);
+        efc_J_w = (efc_J_batch != nullptr && efc_J_row_stride > 0)
+                      ? (efc_J_batch + w64 * static_cast<long>(njmax) * efc_J_row_stride)
+                      : static_cast<device const float *>(nullptr);
+    }
+
+    int ncon_or_total = 0;
+    device const int *c_wid = static_cast<device const int *>(nullptr);
+    device const int *c_geom = static_cast<device const int *>(nullptr);
+    device const int *c_adr = static_cast<device const int *>(nullptr);
+    device const int *c_dim = static_cast<device const int *>(nullptr);
+    if (has_contacts != 0 && nacon_batch != nullptr && nconmax > 0) {
+        if (has_contact_worldid != 0 && contact_worldid_batch != nullptr) {
+            ncon_or_total = nacon_batch[0];
+            if (ncon_or_total < 0) {
+                ncon_or_total = 0;
+            }
+            if (ncon_or_total > nconmax) {
+                ncon_or_total = nconmax;
+            }
+            c_wid = contact_worldid_batch;
+            c_geom = contact_geom_batch;
+            c_adr = contact_efc_address_batch;
+            c_dim = (has_contact_dim != 0) ? contact_dim_batch
+                                           : static_cast<device const int *>(nullptr);
+        } else {
+            ncon_or_total = nacon_batch[w];
+            if (ncon_or_total < 0) {
+                ncon_or_total = 0;
+            }
+            if (ncon_or_total > nconmax) {
+                ncon_or_total = nconmax;
+            }
+            c_geom = (contact_geom_batch != nullptr)
+                         ? (contact_geom_batch + w64 * 2 * nconmax)
+                         : static_cast<device const int *>(nullptr);
+            c_adr = (contact_efc_address_batch != nullptr)
+                        ? (contact_efc_address_batch + w64 * nconmax * contact_efc_stride)
+                        : static_cast<device const int *>(nullptr);
+            c_dim = (has_contact_dim != 0 && contact_dim_batch != nullptr)
+                        ? (contact_dim_batch + w64 * nconmax)
+                        : static_cast<device const int *>(nullptr);
+        }
+    }
+
+    (void)bike::gpu::gpu_sp3_post_solve_world(
+        w,
+        dt_s,
+        idx,
+        cfg_w,
+        &sp3_states[w],
+        qpos_batch + w64 * idx.nq,
+        qvel_batch + w64 * idx.nv,
+        xmat_batch + w64 * idx.nbody * 9,
+        nsensordata,
+        sd_w,
+        nefc_w,
+        efc_J_row_stride,
+        efc_type_w,
+        efc_id_w,
+        efc_J_w,
+        efc_force_w,
+        ncon_or_total,
+        contact_efc_stride,
+        c_wid,
+        c_geom,
+        c_adr,
+        c_dim);
+}
+
+struct BikeWpSp3InitArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::gpu::GpuSp3Config *configs;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device bike::gpu::GpuWorldState *world_states;
+    device const float *qpos;
+    device float *tendon_range;
+    int nworld;
+    int per_world_config;
+    float init_grade;
+    int ntendon;
+    int tendon_range_world_stride;
+    int has_world_states;
+    int has_qpos;
+    int has_tendon_range;
+};
+
+struct BikeWpSp3PreSolveArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::physics_core::GpuTyreModel *tyre_model;
+    device const bike::physics_core::GpuTerrainTableDesc *terrain_desc;
+    device const float *terrain_f32;
+    device const bike::physics_core::i32 *terrain_i32;
+    device const bike::gpu::GpuSp3Config *configs;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device bike::gpu::GpuWorldState *world_states;
+    device const float *qpos;
+    device const float *qvel;
+    device const float *xpos;
+    device const float *xmat;
+    device const float *xanchor;
+    device const float *xaxis;
+    device float *qfrc_applied;
+    device float *ctrl;
+    device float *tendon_range;
+    device float *dof_frictionloss;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int ntendon;
+    int tendon_range_world_stride;
+    int dof_frictionloss_world_stride;
+    int has_world_states;
+    int has_tendon_range;
+    int has_dof_frictionloss;
+};
+
+struct BikeWpSp3PostSolveArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::gpu::GpuSp3Config *configs;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device float *qpos;
+    device const float *qvel;
+    device const float *xmat;
+    device const float *sensordata;
+    device const int *nefc;
+    device const int *efc_type;
+    device const int *efc_id;
+    device const float *efc_J;
+    device const float *efc_force;
+    device const int *nacon;
+    device const int *contact_worldid;
+    device const int *contact_geom;
+    device const int *contact_efc_address;
+    device const int *contact_dim;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int nsensordata;
+    int njmax;
+    int efc_J_row_stride;
+    int nconmax;
+    int contact_efc_stride;
+    int has_sensordata;
+    int has_efc;
+    int has_contacts;
+    int has_contact_worldid;
+    int has_contact_dim;
+};
+
+kernel void bike_wp_sp3_init_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp3InitArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    bike_metal_sp3_init_impl(
+        w, idx, args->configs, args->per_world_config, args->sp3_states,
+        args->has_world_states, args->world_states, args->has_qpos, args->qpos,
+        args->init_grade, args->ntendon, args->has_tendon_range, args->tendon_range,
+        args->tendon_range_world_stride);
+}
+
+kernel void bike_wp_sp3_pre_solve_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp3PreSolveArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld || args->terrain_desc == nullptr || args->has_world_states == 0) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    const bike::physics_core::GpuTerrainTableDesc terrain_desc = *(args->terrain_desc);
+    bike_metal_sp3_pre_solve_world(
+        w, args->dt_s, idx, args->tyre_model, terrain_desc, args->terrain_f32, args->terrain_i32,
+        args->configs, args->per_world_config, args->sp3_states, args->world_states,
+        args->qpos, args->qvel, args->xpos, args->xmat, args->xanchor, args->xaxis,
+        args->qfrc_applied, args->ctrl, args->ntendon, args->has_tendon_range, args->tendon_range,
+        args->tendon_range_world_stride, args->has_dof_frictionloss, args->dof_frictionloss,
+        args->dof_frictionloss_world_stride);
+}
+
+kernel void bike_wp_sp3_post_solve_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp3PostSolveArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    bike_metal_sp3_post_solve_world(
+        w, args->dt_s, idx, args->configs, args->per_world_config, args->sp3_states,
+        args->qpos, args->qvel, args->xmat, args->has_sensordata, args->nsensordata,
+        args->sensordata, args->has_efc, args->nefc, args->njmax, args->efc_J_row_stride,
+        args->efc_type, args->efc_id, args->efc_J, args->efc_force,
+        args->has_contacts, args->nacon, args->nconmax, args->contact_efc_stride,
+        args->has_contact_worldid, args->contact_worldid, args->contact_geom,
+        args->contact_efc_address, args->has_contact_dim, args->contact_dim);
+}
+
+kernel void bike_gpu_sp3_init_metal_kernel(
+    constant int &nworld [[buffer(0)]],
+    constant bike::gpu::GpuModelIndices &idx_const [[buffer(1)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(2)]],
+    constant int &per_world_config [[buffer(3)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(4)]],
+    constant int &has_world_states [[buffer(5)]],
+    device bike::gpu::GpuWorldState *world_states [[buffer(6)]],
+    constant int &has_qpos [[buffer(7)]],
+    device const float *qpos_batch [[buffer(8)]],
+    constant float &init_grade [[buffer(9)]],
+    constant int &ntendon [[buffer(10)]],
+    constant int &has_tendon_range [[buffer(11)]],
+    device float *tendon_range_batch [[buffer(12)]],
+    constant int &tendon_range_world_stride [[buffer(13)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = idx_const;
+    bike_metal_sp3_init_impl(
+        w, idx, configs, per_world_config, sp3_states, has_world_states, world_states,
+        has_qpos, qpos_batch, init_grade, ntendon, has_tendon_range, tendon_range_batch,
+        tendon_range_world_stride);
+}
+
+kernel void bike_gpu_sp3_pre_solve_metal_kernel(
+    constant int &nworld [[buffer(0)]],
+    constant float &dt_s [[buffer(1)]],
+    constant bike::gpu::GpuModelIndices &idx_const [[buffer(2)]],
+    device const bike::physics_core::GpuTyreModel *tyre_model [[buffer(3)]],
+    constant bike::physics_core::GpuTerrainTableDesc &terrain_desc_const [[buffer(4)]],
+    device const float *terrain_f32 [[buffer(5)]],
+    device const bike::physics_core::i32 *terrain_i32 [[buffer(6)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(7)]],
+    constant int &per_world_config [[buffer(8)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(9)]],
+    device bike::gpu::GpuWorldState *world_states [[buffer(10)]],
+    device const float *qpos_batch [[buffer(11)]],
+    device const float *qvel_batch [[buffer(12)]],
+    device const float *xpos_batch [[buffer(13)]],
+    device const float *xmat_batch [[buffer(14)]],
+    device const float *xanchor_batch [[buffer(15)]],
+    device const float *xaxis_batch [[buffer(16)]],
+    device float *qfrc_batch [[buffer(17)]],
+    device float *ctrl_batch [[buffer(18)]],
+    constant int &ntendon [[buffer(19)]],
+    constant int &has_tendon_range [[buffer(20)]],
+    device float *tendon_range_batch [[buffer(21)]],
+    constant int &tendon_range_world_stride [[buffer(22)]],
+    constant int &has_dof_frictionloss [[buffer(23)]],
+    device float *dof_frictionloss_batch [[buffer(24)]],
+    constant int &dof_frictionloss_world_stride [[buffer(25)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = idx_const;
+    const bike::physics_core::GpuTerrainTableDesc terrain_desc = terrain_desc_const;
+    bike_metal_sp3_pre_solve_world(
+        w, dt_s, idx, tyre_model, terrain_desc, terrain_f32, terrain_i32,
+        configs, per_world_config, sp3_states, world_states,
+        qpos_batch, qvel_batch, xpos_batch, xmat_batch, xanchor_batch, xaxis_batch,
+        qfrc_batch, ctrl_batch, ntendon, has_tendon_range, tendon_range_batch,
+        tendon_range_world_stride, has_dof_frictionloss, dof_frictionloss_batch,
+        dof_frictionloss_world_stride);
+}
+
+kernel void bike_gpu_sp3_post_solve_metal_kernel(
+    constant int &nworld [[buffer(0)]],
+    constant float &dt_s [[buffer(1)]],
+    constant bike::gpu::GpuModelIndices &idx_const [[buffer(2)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(3)]],
+    constant int &per_world_config [[buffer(4)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(5)]],
+    device float *qpos_batch [[buffer(6)]],
+    device const float *qvel_batch [[buffer(7)]],
+    device const float *xmat_batch [[buffer(8)]],
+    constant int &has_sensordata [[buffer(9)]],
+    constant int &nsensordata [[buffer(10)]],
+    device const float *sensordata_batch [[buffer(11)]],
+    constant int &has_efc [[buffer(12)]],
+    device const int *nefc_batch [[buffer(13)]],
+    constant int &njmax [[buffer(14)]],
+    constant int &efc_J_row_stride [[buffer(15)]],
+    device const int *efc_type_batch [[buffer(16)]],
+    device const int *efc_id_batch [[buffer(17)]],
+    device const float *efc_J_batch [[buffer(18)]],
+    device const float *efc_force_batch [[buffer(19)]],
+    constant int &has_contacts [[buffer(20)]],
+    device const int *nacon_batch [[buffer(21)]],
+    constant int &nconmax [[buffer(22)]],
+    constant int &contact_efc_stride [[buffer(23)]],
+    constant int &has_contact_worldid [[buffer(24)]],
+    device const int *contact_worldid_batch [[buffer(25)]],
+    device const int *contact_geom_batch [[buffer(26)]],
+    device const int *contact_efc_address_batch [[buffer(27)]],
+    constant int &has_contact_dim [[buffer(28)]],
+    device const int *contact_dim_batch [[buffer(29)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = idx_const;
+    bike_metal_sp3_post_solve_world(
+        w, dt_s, idx, configs, per_world_config, sp3_states,
+        qpos_batch, qvel_batch, xmat_batch, has_sensordata, nsensordata,
+        sensordata_batch, has_efc, nefc_batch, njmax, efc_J_row_stride,
+        efc_type_batch, efc_id_batch, efc_J_batch, efc_force_batch,
+        has_contacts, nacon_batch, nconmax, contact_efc_stride,
+        has_contact_worldid, contact_worldid_batch, contact_geom_batch,
+        contact_efc_address_batch, has_contact_dim, contact_dim_batch);
+}
 )MSL";
     return combined;
 }
@@ -537,10 +1093,14 @@ struct MetalWritersContext {
     id<MTLComputePipelineState> pso_init_states = nil;
     id<MTLComputePipelineState> pso_1thread = nil;
     id<MTLComputePipelineState> pso_step_writers_fused = nil;
+    id<MTLComputePipelineState> pso_sp3_init = nil;
+    id<MTLComputePipelineState> pso_sp3_pre_solve = nil;
+    id<MTLComputePipelineState> pso_sp3_post_solve = nil;
     bool ok = false;
 
     bool init(const std::string &gpu_src_dir) {
-        if (ok && pso_1thread != nil && pso_init_states != nil) {
+        if (ok && pso_1thread != nil && pso_init_states != nil &&
+            pso_sp3_init != nil && pso_sp3_pre_solve != nil && pso_sp3_post_solve != nil) {
             return true;
         }
         device = MTLCreateSystemDefaultDevice();
@@ -573,7 +1133,10 @@ struct MetalWritersContext {
         id<MTLFunction> fn_init = [library newFunctionWithName:@"bike_gpu_init_states_metal_kernel"];
         id<MTLFunction> fn1 = [library newFunctionWithName:@"bike_gpu_writers_metal_kernel"];
         id<MTLFunction> fn_wp1 = [library newFunctionWithName:@"bike_wp_writers_metal_kernel"];
-        if (!fn_init || !fn1 || !fn_wp1) {
+        id<MTLFunction> fn_sp3_init = [library newFunctionWithName:@"bike_gpu_sp3_init_metal_kernel"];
+        id<MTLFunction> fn_sp3_pre = [library newFunctionWithName:@"bike_gpu_sp3_pre_solve_metal_kernel"];
+        id<MTLFunction> fn_sp3_post = [library newFunctionWithName:@"bike_gpu_sp3_post_solve_metal_kernel"];
+        if (!fn_init || !fn1 || !fn_wp1 || !fn_sp3_init || !fn_sp3_pre || !fn_sp3_post) {
             std::cerr << "[MetalWritersContext] Failed to look up MSL kernel functions\n";
             return false;
         }
@@ -581,7 +1144,11 @@ struct MetalWritersContext {
         pso_init_states = [device newComputePipelineStateWithFunction:fn_init error:&err];
         pso_1thread = [device newComputePipelineStateWithFunction:fn1 error:&err];
         pso_step_writers_fused = [device newComputePipelineStateWithFunction:fn_wp1 error:&err];
-        if (!pso_init_states || !pso_1thread || !pso_step_writers_fused) {
+        pso_sp3_init = [device newComputePipelineStateWithFunction:fn_sp3_init error:&err];
+        pso_sp3_pre_solve = [device newComputePipelineStateWithFunction:fn_sp3_pre error:&err];
+        pso_sp3_post_solve = [device newComputePipelineStateWithFunction:fn_sp3_post error:&err];
+        if (!pso_init_states || !pso_1thread || !pso_step_writers_fused ||
+            !pso_sp3_init || !pso_sp3_pre_solve || !pso_sp3_post_solve) {
             std::cerr << "[MetalWritersContext] PSO error:\n"
                       << (err ? [[err localizedDescription] UTF8String] : "unknown Metal error")
                       << '\n';
@@ -1855,6 +2422,560 @@ int bike_metal_build_tyre_and_terrain(
         out_terrain_f32, io_f32_count,
         out_terrain_i32, io_i32_count
     );
+}
+
+int bike_metal_sizeof_sp3_config() {
+    return static_cast<int>(sizeof(bike::gpu::GpuSp3Config));
+}
+
+int bike_metal_sizeof_sp3_world_state() {
+    return static_cast<int>(sizeof(bike::gpu::GpuSp3WorldState));
+}
+
+int bike_metal_init_default_sp3_config(bike::gpu::GpuSp3Config *cfg) {
+    if (cfg == nullptr) {
+        return -1;
+    }
+    bike::gpu::gpu_init_default_sp3_config(*cfg);
+    return 0;
+}
+
+int bike_metal_launch_sp3_init(
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+) {
+    if (nworld <= 0 || ntendon < 0 || tendon_range_world_stride < 0 ||
+        d_idx == nullptr || d_sp3_configs == nullptr || d_sp3_states == nullptr ||
+        !std::isfinite(init_grade)) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val, ntendon)) {
+        return -1;
+    }
+    if (d_tendon_range != nullptr && ntendon > 0 &&
+        ((tendon_range_world_stride > 0 && tendon_range_world_stride < 2 * ntendon) ||
+         (tendon_range_world_stride == 0 && nworld > 1))) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp3_init) {
+        return -2;
+    }
+    const int n_cfg = per_world_config ? nworld : 1;
+    const int has_world_states = (d_world_states != nullptr) ? 1 : 0;
+    const int has_qpos = (d_qpos != nullptr && idx_val.nq > 0) ? 1 : 0;
+    const int has_tendon_range =
+        (d_tendon_range != nullptr && ntendon > 0 &&
+         (tendon_range_world_stride >= 2 * ntendon ||
+          (tendon_range_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t tr_elems = has_tendon_range
+        ? (tendon_range_world_stride >= 2 * ntendon
+               ? (nworld_u * to_index(tendon_range_world_stride))
+               : to_index(2 * ntendon))
+        : 1ULL;
+
+    @autoreleasepool {
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:to_index(n_cfg) * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_ws = has_world_states
+            ? [ctx.device newBufferWithBytes:d_world_states
+                                      length:nworld_u * sizeof(bike::gpu::GpuWorldState)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(bike::gpu::GpuWorldState)
+                                       options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qpos = has_qpos
+            ? [ctx.device newBufferWithBytes:d_qpos
+                                      length:nworld_u * to_index(idx_val.nq) * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_tr = has_tendon_range
+            ? [ctx.device newBufferWithBytes:d_tendon_range
+                                      length:tr_elems * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+
+        if (!b_cfg || !b_sp3 || !b_ws || !b_qpos || !b_tr) {
+            return -3;
+        }
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp3_init];
+        [enc setBytes:&nworld length:sizeof(int) atIndex:0];
+        [enc setBytes:&idx_val length:sizeof(bike::gpu::GpuModelIndices) atIndex:1];
+        [enc setBuffer:b_cfg offset:0 atIndex:2];
+        [enc setBytes:&per_world_config length:sizeof(int) atIndex:3];
+        [enc setBuffer:b_sp3 offset:0 atIndex:4];
+        [enc setBytes:&has_world_states length:sizeof(int) atIndex:5];
+        [enc setBuffer:b_ws offset:0 atIndex:6];
+        [enc setBytes:&has_qpos length:sizeof(int) atIndex:7];
+        [enc setBuffer:b_qpos offset:0 atIndex:8];
+        [enc setBytes:&init_grade length:sizeof(float) atIndex:9];
+        [enc setBytes:&ntendon length:sizeof(int) atIndex:10];
+        [enc setBytes:&has_tendon_range length:sizeof(int) atIndex:11];
+        [enc setBuffer:b_tr offset:0 atIndex:12];
+        [enc setBytes:&tendon_range_world_stride length:sizeof(int) atIndex:13];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp3_init")) {
+            return -4;
+        }
+
+        const auto sp3_src = boundary_span(
+            static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u);
+        std::ranges::copy(sp3_src, boundary_span(d_sp3_states, nworld_u).begin());
+        if (has_world_states) {
+            const auto ws_src = boundary_span(
+                static_cast<const bike::gpu::GpuWorldState *>([b_ws contents]), nworld_u);
+            std::ranges::copy(ws_src, boundary_span(d_world_states, nworld_u).begin());
+        }
+        if (has_tendon_range) {
+            const auto tr_src = boundary_span(
+                static_cast<const float *>([b_tr contents]), tr_elems);
+            std::ranges::copy(tr_src, boundary_span(d_tendon_range, tr_elems).begin());
+        }
+    }
+    return 0;
+}
+
+int bike_metal_launch_sp3_pre_solve(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride
+) {
+    if (nworld <= 0 || !std::isfinite(dt_s) || dt_s <= 0.0f ||
+        ntendon < 0 || tendon_range_world_stride < 0 || dof_frictionloss_world_stride < 0 ||
+        d_idx == nullptr || d_tyre_model == nullptr || d_terrain_desc == nullptr ||
+        d_sp3_configs == nullptr || d_sp3_states == nullptr || d_world_states == nullptr ||
+        d_qpos == nullptr || d_qvel == nullptr || d_xpos == nullptr || d_xmat == nullptr ||
+        d_xanchor == nullptr || d_xaxis == nullptr || d_qfrc_applied == nullptr || d_ctrl == nullptr) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val, ntendon)) {
+        return -1;
+    }
+    if (d_tendon_range != nullptr && ntendon > 0 &&
+        ((tendon_range_world_stride > 0 && tendon_range_world_stride < 2 * ntendon) ||
+         (tendon_range_world_stride == 0 && nworld > 1))) {
+        return -1;
+    }
+    if (d_dof_frictionloss != nullptr &&
+        ((dof_frictionloss_world_stride > 0 && dof_frictionloss_world_stride < idx_val.nv) ||
+         (dof_frictionloss_world_stride == 0 && nworld > 1))) {
+        return -1;
+    }
+    if (bike::gpu::validate_host_tyre_and_terrain(
+            d_tyre_model,
+            idx_val.nq,
+            idx_val.nv,
+            idx_val.nbody,
+            d_terrain_desc,
+            d_terrain_f32,
+            d_terrain_i32) != 0) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp3_pre_solve) {
+        return -2;
+    }
+
+    const int nq = idx_val.nq;
+    const int nv = idx_val.nv;
+    const int nu = idx_val.nu;
+    const int nbody = idx_val.nbody;
+    const int njnt = d_tyre_model->njnt;
+    const int n_cfg = per_world_config ? nworld : 1;
+    const int has_tendon_range =
+        (d_tendon_range != nullptr && ntendon > 0 &&
+         (tendon_range_world_stride >= 2 * ntendon ||
+          (tendon_range_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    const int has_dof_frictionloss =
+        (d_dof_frictionloss != nullptr &&
+         (dof_frictionloss_world_stride >= nv ||
+          (dof_frictionloss_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t tr_elems = has_tendon_range
+        ? (tendon_range_world_stride >= 2 * ntendon
+               ? (nworld_u * to_index(tendon_range_world_stride))
+               : to_index(2 * ntendon))
+        : 1ULL;
+    const std::size_t fl_elems = has_dof_frictionloss
+        ? (dof_frictionloss_world_stride >= nv
+               ? (nworld_u * to_index(dof_frictionloss_world_stride))
+               : to_index(nv))
+        : 1ULL;
+
+    @autoreleasepool {
+        id<MTLBuffer> b_tyre = [ctx.device newBufferWithBytes:d_tyre_model
+                                                       length:sizeof(bike::physics_core::GpuTyreModel)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_tf32 = (d_terrain_desc->f32_count > 0 && d_terrain_f32 != nullptr)
+            ? [ctx.device newBufferWithBytes:d_terrain_f32
+                                      length:to_index(d_terrain_desc->f32_count) * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_ti32 = (d_terrain_desc->i32_count > 0 && d_terrain_i32 != nullptr)
+            ? [ctx.device newBufferWithBytes:d_terrain_i32
+                                      length:to_index(d_terrain_desc->i32_count) * sizeof(bike::physics_core::i32)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(bike::physics_core::i32) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:to_index(n_cfg) * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_ws = [ctx.device newBufferWithBytes:d_world_states
+                                                     length:nworld_u * sizeof(bike::gpu::GpuWorldState)
+                                                    options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qpos = [ctx.device newBufferWithBytes:d_qpos
+                                                       length:nworld_u * to_index(nq) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qvel = [ctx.device newBufferWithBytes:d_qvel
+                                                       length:nworld_u * to_index(nv) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_xpos = [ctx.device newBufferWithBytes:d_xpos
+                                                       length:nworld_u * to_index(nbody * 3) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_xmat = [ctx.device newBufferWithBytes:d_xmat
+                                                       length:nworld_u * to_index(nbody * 9) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_xanchor = [ctx.device newBufferWithBytes:d_xanchor
+                                                          length:nworld_u * to_index(njnt * 3) * sizeof(float)
+                                                         options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_xaxis = [ctx.device newBufferWithBytes:d_xaxis
+                                                        length:nworld_u * to_index(njnt * 3) * sizeof(float)
+                                                       options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qfrc = [ctx.device newBufferWithLength:nworld_u * to_index(nv) * sizeof(float)
+                                                       options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_ctrl = [ctx.device newBufferWithLength:nworld_u * to_index(std::max(1, nu)) * sizeof(float)
+                                                       options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_tr = has_tendon_range
+            ? [ctx.device newBufferWithBytes:d_tendon_range
+                                      length:tr_elems * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_fl = has_dof_frictionloss
+            ? [ctx.device newBufferWithBytes:d_dof_frictionloss
+                                      length:fl_elems * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+
+        if (!b_tyre || !b_tf32 || !b_ti32 || !b_cfg || !b_sp3 || !b_ws ||
+            !b_qpos || !b_qvel || !b_xpos || !b_xmat || !b_xanchor || !b_xaxis ||
+            !b_qfrc || !b_ctrl || !b_tr || !b_fl) {
+            return -3;
+        }
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp3_pre_solve];
+        [enc setBytes:&nworld length:sizeof(int) atIndex:0];
+        [enc setBytes:&dt_s length:sizeof(float) atIndex:1];
+        [enc setBytes:&idx_val length:sizeof(bike::gpu::GpuModelIndices) atIndex:2];
+        [enc setBuffer:b_tyre offset:0 atIndex:3];
+        [enc setBytes:d_terrain_desc length:sizeof(bike::physics_core::GpuTerrainTableDesc) atIndex:4];
+        [enc setBuffer:b_tf32 offset:0 atIndex:5];
+        [enc setBuffer:b_ti32 offset:0 atIndex:6];
+        [enc setBuffer:b_cfg offset:0 atIndex:7];
+        [enc setBytes:&per_world_config length:sizeof(int) atIndex:8];
+        [enc setBuffer:b_sp3 offset:0 atIndex:9];
+        [enc setBuffer:b_ws offset:0 atIndex:10];
+        [enc setBuffer:b_qpos offset:0 atIndex:11];
+        [enc setBuffer:b_qvel offset:0 atIndex:12];
+        [enc setBuffer:b_xpos offset:0 atIndex:13];
+        [enc setBuffer:b_xmat offset:0 atIndex:14];
+        [enc setBuffer:b_xanchor offset:0 atIndex:15];
+        [enc setBuffer:b_xaxis offset:0 atIndex:16];
+        [enc setBuffer:b_qfrc offset:0 atIndex:17];
+        [enc setBuffer:b_ctrl offset:0 atIndex:18];
+        [enc setBytes:&ntendon length:sizeof(int) atIndex:19];
+        [enc setBytes:&has_tendon_range length:sizeof(int) atIndex:20];
+        [enc setBuffer:b_tr offset:0 atIndex:21];
+        [enc setBytes:&tendon_range_world_stride length:sizeof(int) atIndex:22];
+        [enc setBytes:&has_dof_frictionloss length:sizeof(int) atIndex:23];
+        [enc setBuffer:b_fl offset:0 atIndex:24];
+        [enc setBytes:&dof_frictionloss_world_stride length:sizeof(int) atIndex:25];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp3_pre_solve")) {
+            return -4;
+        }
+
+        const std::size_t qfrc_elems = nworld_u * to_index(nv);
+        const std::size_t ctrl_elems = nworld_u * to_index(nu);
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_qfrc contents]), qfrc_elems),
+            boundary_span(d_qfrc_applied, qfrc_elems).begin());
+        if (nu > 0) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_ctrl contents]), ctrl_elems),
+                boundary_span(d_ctrl, ctrl_elems).begin());
+        }
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
+            boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuWorldState *>([b_ws contents]), nworld_u),
+            boundary_span(d_world_states, nworld_u).begin());
+        if (has_tendon_range) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_tr contents]), tr_elems),
+                boundary_span(d_tendon_range, tr_elems).begin());
+        }
+        if (has_dof_frictionloss) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_fl contents]), fl_elems),
+                boundary_span(d_dof_frictionloss, fl_elems).begin());
+        }
+    }
+    return 0;
+}
+
+int bike_metal_launch_sp3_post_solve(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xmat,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+) {
+    if (nworld <= 0 || !std::isfinite(dt_s) || dt_s <= 0.0f ||
+        nsensordata < 0 || njmax < 0 || efc_J_row_stride < 0 ||
+        nconmax < 0 || contact_efc_stride < 0 ||
+        d_idx == nullptr || d_sp3_configs == nullptr || d_sp3_states == nullptr ||
+        d_qpos == nullptr || d_qvel == nullptr || d_xmat == nullptr) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp3_post_solve) {
+        return -2;
+    }
+
+    const int n_cfg = per_world_config ? nworld : 1;
+    const int has_sensordata = (d_sensordata != nullptr && nsensordata > 0) ? 1 : 0;
+    const int has_efc = (d_nefc != nullptr && njmax > 0) ? 1 : 0;
+    const int has_contacts = (d_nacon != nullptr && nconmax > 0 && d_contact_geom != nullptr &&
+                              d_contact_efc_address != nullptr)
+                                 ? 1
+                                 : 0;
+    const int has_contact_worldid = (has_contacts && d_contact_worldid != nullptr) ? 1 : 0;
+    const int has_contact_dim = (has_contacts && d_contact_dim != nullptr) ? 1 : 0;
+
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t qpos_elems = nworld_u * to_index(idx_val.nq);
+    const std::size_t efc_rows = has_efc ? (nworld_u * to_index(njmax)) : 1ULL;
+    const std::size_t efc_j_elems =
+        (has_efc && d_efc_J != nullptr && efc_J_row_stride > 0)
+            ? (efc_rows * to_index(efc_J_row_stride))
+            : 1ULL;
+    const std::size_t con_elems =
+        has_contacts ? (has_contact_worldid ? to_index(nconmax) : (nworld_u * to_index(nconmax))) : 1ULL;
+    const std::size_t nacon_elems = has_contacts ? (has_contact_worldid ? 1ULL : nworld_u) : 1ULL;
+
+    @autoreleasepool {
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:to_index(n_cfg) * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qpos = [ctx.device newBufferWithBytes:d_qpos
+                                                       length:qpos_elems * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_qvel = [ctx.device newBufferWithBytes:d_qvel
+                                                       length:nworld_u * to_index(idx_val.nv) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_xmat = [ctx.device newBufferWithBytes:d_xmat
+                                                       length:nworld_u * to_index(idx_val.nbody * 9) * sizeof(float)
+                                                      options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_sd = has_sensordata
+            ? [ctx.device newBufferWithBytes:d_sensordata
+                                      length:nworld_u * to_index(nsensordata) * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_nefc = has_efc
+            ? [ctx.device newBufferWithBytes:d_nefc
+                                      length:nworld_u * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_et = (has_efc && d_efc_type != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_type
+                                      length:efc_rows * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_eid = (has_efc && d_efc_id != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_id
+                                      length:efc_rows * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_eJ = (has_efc && d_efc_J != nullptr && efc_J_row_stride > 0)
+            ? [ctx.device newBufferWithBytes:d_efc_J
+                                      length:efc_j_elems * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_ef = (has_efc && d_efc_force != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_force
+                                      length:efc_rows * sizeof(float)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(float) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_nacon = has_contacts
+            ? [ctx.device newBufferWithBytes:d_nacon
+                                      length:nacon_elems * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_cwid = has_contact_worldid
+            ? [ctx.device newBufferWithBytes:d_contact_worldid
+                                      length:con_elems * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_cgeom = has_contacts
+            ? [ctx.device newBufferWithBytes:d_contact_geom
+                                      length:con_elems * 2ULL * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) * 2ULL options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_cadr = has_contacts
+            ? [ctx.device newBufferWithBytes:d_contact_efc_address
+                                      length:con_elems * to_index(std::max(1, contact_efc_stride)) * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+        id<MTLBuffer> b_cdim = has_contact_dim
+            ? [ctx.device newBufferWithBytes:d_contact_dim
+                                      length:con_elems * sizeof(int)
+                                     options:MTLResourceStorageModeShared]
+            : [ctx.device newBufferWithLength:sizeof(int) options:MTLResourceStorageModeShared];
+
+        if (!b_cfg || !b_sp3 || !b_qpos || !b_qvel || !b_xmat || !b_sd ||
+            !b_nefc || !b_et || !b_eid || !b_eJ || !b_ef ||
+            !b_nacon || !b_cwid || !b_cgeom || !b_cadr || !b_cdim) {
+            return -3;
+        }
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp3_post_solve];
+        [enc setBytes:&nworld length:sizeof(int) atIndex:0];
+        [enc setBytes:&dt_s length:sizeof(float) atIndex:1];
+        [enc setBytes:&idx_val length:sizeof(bike::gpu::GpuModelIndices) atIndex:2];
+        [enc setBuffer:b_cfg offset:0 atIndex:3];
+        [enc setBytes:&per_world_config length:sizeof(int) atIndex:4];
+        [enc setBuffer:b_sp3 offset:0 atIndex:5];
+        [enc setBuffer:b_qpos offset:0 atIndex:6];
+        [enc setBuffer:b_qvel offset:0 atIndex:7];
+        [enc setBuffer:b_xmat offset:0 atIndex:8];
+        [enc setBytes:&has_sensordata length:sizeof(int) atIndex:9];
+        [enc setBytes:&nsensordata length:sizeof(int) atIndex:10];
+        [enc setBuffer:b_sd offset:0 atIndex:11];
+        [enc setBytes:&has_efc length:sizeof(int) atIndex:12];
+        [enc setBuffer:b_nefc offset:0 atIndex:13];
+        [enc setBytes:&njmax length:sizeof(int) atIndex:14];
+        [enc setBytes:&efc_J_row_stride length:sizeof(int) atIndex:15];
+        [enc setBuffer:b_et offset:0 atIndex:16];
+        [enc setBuffer:b_eid offset:0 atIndex:17];
+        [enc setBuffer:b_eJ offset:0 atIndex:18];
+        [enc setBuffer:b_ef offset:0 atIndex:19];
+        [enc setBytes:&has_contacts length:sizeof(int) atIndex:20];
+        [enc setBuffer:b_nacon offset:0 atIndex:21];
+        [enc setBytes:&nconmax length:sizeof(int) atIndex:22];
+        [enc setBytes:&contact_efc_stride length:sizeof(int) atIndex:23];
+        [enc setBytes:&has_contact_worldid length:sizeof(int) atIndex:24];
+        [enc setBuffer:b_cwid offset:0 atIndex:25];
+        [enc setBuffer:b_cgeom offset:0 atIndex:26];
+        [enc setBuffer:b_cadr offset:0 atIndex:27];
+        [enc setBytes:&has_contact_dim length:sizeof(int) atIndex:28];
+        [enc setBuffer:b_cdim offset:0 atIndex:29];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp3_post_solve")) {
+            return -4;
+        }
+
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
+            boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_qpos contents]), qpos_elems),
+            boundary_span(d_qpos, qpos_elems).begin());
+    }
+    return 0;
 }
 
 } // extern "C"

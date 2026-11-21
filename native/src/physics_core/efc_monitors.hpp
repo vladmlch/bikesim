@@ -176,8 +176,9 @@ BIKE_HD Status scan_efc_reactions(
                     ++ff_cnt;
                 }
                 if (cfg->crank_dof >= 0 && efc_J != nullptr) {
+                    const long row_off = static_cast<long>(row) * static_cast<long>(efc_J_stride);
                     out.delivered_crank_torque_nm +=
-                        efc_J[row * efc_J_stride + cfg->crank_dof] * f;
+                        efc_J[row_off + static_cast<long>(cfg->crank_dof)] * f;
                 }
             } else if (cid == cfg->foot_rear_eq_id) {
                 if (fr_cnt < 3) {
@@ -185,8 +186,9 @@ BIKE_HD Status scan_efc_reactions(
                     ++fr_cnt;
                 }
                 if (cfg->crank_dof >= 0 && efc_J != nullptr) {
+                    const long row_off = static_cast<long>(row) * static_cast<long>(efc_J_stride);
                     out.delivered_crank_torque_nm +=
-                        efc_J[row * efc_J_stride + cfg->crank_dof] * f;
+                        efc_J[row_off + static_cast<long>(cfg->crank_dof)] * f;
                 }
             } else if (cid == cfg->grip_left_eq_id) {
                 if (gl_cnt < 3) {
@@ -206,15 +208,17 @@ BIKE_HD Status scan_efc_reactions(
             }
         } else if (ctype == kCnstrFrictionDof) {
             if (cid == cfg->front_wheel_dof && cfg->front_wheel_dof >= 0) {
+                const long row_off = static_cast<long>(row) * static_cast<long>(efc_J_stride);
                 const Real jac =
                     (efc_J != nullptr && cfg->front_wheel_dof < efc_J_stride)
-                        ? efc_J[row * efc_J_stride + cfg->front_wheel_dof]
+                        ? efc_J[row_off + static_cast<long>(cfg->front_wheel_dof)]
                         : BIKE_REAL(Real, 1.0);
                 out.front_brake_friction_torque_nm += jac * f;
             } else if (cid == cfg->rear_wheel_dof && cfg->rear_wheel_dof >= 0) {
+                const long row_off = static_cast<long>(row) * static_cast<long>(efc_J_stride);
                 const Real jac =
                     (efc_J != nullptr && cfg->rear_wheel_dof < efc_J_stride)
-                        ? efc_J[row * efc_J_stride + cfg->rear_wheel_dof]
+                        ? efc_J[row_off + static_cast<long>(cfg->rear_wheel_dof)]
                         : BIKE_REAL(Real, 1.0);
                 out.rear_brake_friction_torque_nm += jac * f;
             }

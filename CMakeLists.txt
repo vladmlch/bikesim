@@ -763,6 +763,20 @@ if(BUILD_TESTING)
       "-framework Metal" "-framework Foundation")
   endif()
 
+  set(_bike_gpu_sp3_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_sp3_autonomous.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_sp3_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_sp3_autonomous ${_bike_gpu_sp3_sources})
+  target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(bike_test_gpu_sp3_autonomous "${BIKE_DEP_mujoco_LIBRARY}")
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
   # Subproject 1 Stage 1 gate: 4 × 30 s golden episode digests. Registered at
   # root scope (outside native/tests/recording/) so the test binary links only
   # bike_test_fixtures + bike_recording_digest_cli + bike_platform without any

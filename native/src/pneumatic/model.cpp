@@ -460,6 +460,9 @@ namespace biketyre {
             !any_nonzero(carcass_state_.elastic_prev_n())) {
             double power = 0.0;
             if (carcass_state_.initialized()) {
+                if (!std::isfinite(dt_s) || dt_s <= 0.0)
+                    throw std::invalid_argument(
+                            "airborne relaxation needs positive finite dt_s");
                 const double ds = tyre_.outer_radius_mm * 0.001 * ring_.dtheta_rad();
                 double before = 0.0;
                 for (std::size_t i = 0; i < ring_.n(); ++i)

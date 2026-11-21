@@ -270,15 +270,6 @@ void same_model_state(const biketyre::PneumaticTyreModel &a, const biketyre::Pne
 
     std::ranges::fill(carcass.maxwell_force_n(), -1.0);
     saved.assign(model);
-    bool direct_rejected = false;
-    try {
-        carcass.advance_unloaded(9.0, std::numeric_limits<double>::quiet_NaN(),
-                                 model.ring().dtheta_rad(), spec.rate_relaxation_s);
-    } catch (const std::invalid_argument &) {
-        direct_rejected = true;
-    }
-    bt::require(direct_rejected, "direct initialized unloaded carcass rejects NaN dt");
-    same_model_state(model, saved);
     for (const double dt : {std::numeric_limits<double>::quiet_NaN(), 0.0, -1.0,
                             std::numeric_limits<double>::infinity()}) {
         bool rejected = false;

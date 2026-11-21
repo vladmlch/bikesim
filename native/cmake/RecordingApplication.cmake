@@ -69,6 +69,8 @@ function(bike_add_recording_application native_dir core_target mujoco_library)
     "${native_dir}/src/replay/rebuild.cpp"
     "${native_dir}/src/replay/session.cpp"
     "${native_dir}/src/replay/playback.cpp"
+    "${native_dir}/src/replay/trajectory.cpp"
+    "${native_dir}/src/replay/golden_overlay.cpp"
     "${native_dir}/src/replay/export.cpp")
   bike_startup_target_policy(bike_replay "${native_dir}")
   target_link_libraries(bike_replay PUBLIC bike_recording_reader bike_app bike_numpy_io)

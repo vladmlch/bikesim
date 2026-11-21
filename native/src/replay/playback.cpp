@@ -148,17 +148,22 @@ PlaybackData load_playback(const std::filesystem::path& path, std::optional<std:
         }
     }
     auto model = make_playback_model(output);
-    const auto types=model_access::readonly_buffer(model->jnt_type,model->njnt);
-    const auto addresses=model_access::readonly_buffer(model->jnt_qposadr,model->njnt);
+    fill_quaternion_starts(output, *model);
+    if (!output.ends_s.empty()) output.duration_s = output.ends_s.back();
+    validate_playback(output, static_cast<std::size_t>(model->nq), static_cast<std::size_t>(model->nv));
+    return output;
+}
+
+void fill_quaternion_starts(PlaybackData& output, const mjModel& model) {
+    output.quaternion_starts.clear();
+    const auto types = model_access::readonly_buffer(model.jnt_type, model.njnt);
+    const auto addresses = model_access::readonly_buffer(model.jnt_qposadr, model.njnt);
     for (std::size_t j = 0; j < types.size(); ++j) {
-        model_access::require_id(addresses[j],model->nq,"playback joint position address");
+        model_access::require_id(addresses[j], model.nq, "playback joint position address");
         const auto address = static_cast<std::size_t>(addresses[j]);
         if (types[j] == mjJNT_FREE) output.quaternion_starts.push_back(address + 3);
         else if (types[j] == mjJNT_BALL) output.quaternion_starts.push_back(address);
     }
-    if (!output.ends_s.empty()) output.duration_s = output.ends_s.back();
-    validate_playback(output, static_cast<std::size_t>(model->nq), static_cast<std::size_t>(model->nv));
-    return output;
 }
 
 std::vector<double> pose_at(const PlaybackData& data, double time_s) {

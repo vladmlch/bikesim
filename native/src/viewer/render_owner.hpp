@@ -1,4 +1,5 @@
 #pragma once
+#include "decorations.hpp"
 #include "../runtime/runtime.hpp"
 #include <memory>
 #include <cstdint>
@@ -41,6 +42,7 @@ public:
     void move_camera(int action, double dx, double dy);
     void set_markers(bool);
     void set_overlay(std::string);
+    void set_decorations(Decorations);
     void close() noexcept;
     [[nodiscard]] bool closed() const noexcept;
     [[nodiscard]] bool has_markers() const noexcept;

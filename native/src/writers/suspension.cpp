@@ -182,8 +182,9 @@ namespace {
             case SuspDiagField::invalid_damper_clicks_denom:
                 throw std::invalid_argument("invalid damper click range");
             case SuspDiagField::none:
-                throw std::invalid_argument("suspension evaluation failed");
+                break;
         }
+        throw std::invalid_argument("suspension evaluation failed");
     }
 
     // ForkAirSpring.compute_axial_force (air_spring.py:142-154) — delegates

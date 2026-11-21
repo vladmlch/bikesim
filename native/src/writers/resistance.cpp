@@ -93,9 +93,9 @@ namespace {
                     "ExternalResistanceApplier.aerodynamic must be finite");
             case ResDiagField::invalid_nv:
             case ResDiagField::none:
-                throw std::invalid_argument(
-                    "invalid resistance evaluation state");
+                break;
         }
+        throw std::invalid_argument("invalid resistance evaluation state");
     }
 } // namespace
 

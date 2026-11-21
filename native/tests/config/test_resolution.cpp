@@ -328,10 +328,8 @@ std::string complete_seated_climb_test_table(std::string_view toml) {
     std::string result(toml);
     const std::size_t insertion =
         next_table == std::string_view::npos ? result.size() : end;
-    if (insertion == result.size() &&
-        (result.empty() || result.back() != '\n'))
-        additions.insert(additions.begin(), '\n');
-    else if (insertion < result.size())
+    if (insertion < result.size() || result.empty() ||
+        result.back() != '\n')
         additions.insert(additions.begin(), '\n');
     result.insert(insertion, additions);
     return result;

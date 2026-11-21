@@ -16,7 +16,9 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <vector>
@@ -169,6 +171,258 @@ namespace {
             .slip_stiffness_per_load = s.slip_stiffness_per_load,
             .stribeck_speed_mps = s.stribeck_speed_mps,
             .crr_delta = s.crr_delta, .load_sensitivity = s.load_sensitivity};
+}
+
+void bitwise_equal(std::span<const double> a, std::span<const double> b) {
+    bt::require(a.size() == b.size(), "bitwise arrays have the same size");
+    for (std::size_t i = 0; i < a.size(); ++i)
+        bt::require(std::bit_cast<std::uint64_t>(a[i]) == std::bit_cast<std::uint64_t>(b[i]),
+                    "binary64 state unchanged");
+}
+
+void same_patch_output(const biketyre::TyrePatchOutput &a, const biketyre::TyrePatchOutput &b) {
+    bt::require(a.ray_start == b.ray_start && a.ray_stop == b.ray_stop &&
+                a.surface_name == b.surface_name && a.fully_sliding == b.fully_sliding,
+                "patch output metadata unchanged");
+    bitwise_equal(a.normal_force_world_n, b.normal_force_world_n);
+    bitwise_equal(a.tangent_world, b.tangent_world);
+    bitwise_equal(a.force_world_n, b.force_world_n);
+    bitwise_equal(a.centroid_world_m, b.centroid_world_m);
+    bitwise_equal(std::array{a.normal_load_n, a.support_n, a.tangential_force_n,
+                             a.mean_deflection_m, a.contact_length_m, a.slip_ratio,
+                             a.transient_slip_ratio, a.sliding_speed_mps, a.slip_speed_mps,
+                             a.friction_coefficient, a.dissipated_power_w, a.shear_energy_j, a.rolling_crr},
+                  std::array{b.normal_load_n, b.support_n, b.tangential_force_n,
+                             b.mean_deflection_m, b.contact_length_m, b.slip_ratio,
+                             b.transient_slip_ratio, b.sliding_speed_mps, b.slip_speed_mps,
+                             b.friction_coefficient, b.dissipated_power_w, b.shear_energy_j, b.rolling_crr});
+}
+
+void same_model_state(const biketyre::PneumaticTyreModel &a, const biketyre::PneumaticTyreModel &b) {
+    const auto &ac = a.carcass_state();
+    const auto &bc = b.carcass_state();
+    bt::require(ac.initialized() == bc.initialized() && ac.rim_strike_active() == bc.rim_strike_active(),
+                "carcass flags unchanged");
+    bitwise_equal(ac.delta_prev_m(), bc.delta_prev_m());
+    bitwise_equal(ac.elastic_prev_n(), bc.elastic_prev_n());
+    bitwise_equal(ac.maxwell_force_n(), bc.maxwell_force_n());
+    bitwise_equal(std::array{ac.rim_event_x_m(), ac.rim_event_speed_mps(), ac.rim_event_peak_load_n(),
+                             ac.rim_event_peak_force_n(), ac.rim_event_energy_j()},
+                  std::array{bc.rim_event_x_m(), bc.rim_event_speed_mps(), bc.rim_event_peak_load_n(),
+                             bc.rim_event_peak_force_n(), bc.rim_event_energy_j()});
+    const auto ap = a.patch_states(), bp = b.patch_states();
+    bt::require(ap.size() == bp.size(), "patch state count unchanged");
+    for (std::size_t i = 0; i < ap.size(); ++i) {
+        bt::require(ap[i].start == bp[i].start && ap[i].stop == bp[i].stop &&
+                    ap[i].has_detailed == bp[i].has_detailed, "patch state metadata unchanged");
+        bitwise_equal(std::array{ap[i].kappa_prime, ap[i].detailed_kappa_prime},
+                      std::array{bp[i].kappa_prime, bp[i].detailed_kappa_prime});
+        bitwise_equal(ap[i].bristle_deflection_m, bp[i].bristle_deflection_m);
+    }
+    const auto &ao = a.last_outputs(), &bo = b.last_outputs();
+    bt::require(ao.tyre_name == bo.tyre_name && ao.fully_sliding == bo.fully_sliding &&
+                ao.rim_strike_active == bo.rim_strike_active && ao.coverage_event == bo.coverage_event &&
+                ao.airborne == bo.airborne && ao.patch_count == bo.patch_count &&
+                ao.rim_event.has_value() == bo.rim_event.has_value() &&
+                ao.patch_slots.size() == bo.patch_slots.size(), "wheel output metadata unchanged");
+    bitwise_equal(ao.hub_position_world_m, bo.hub_position_world_m);
+    bitwise_equal(ao.hub_velocity_world_mps, bo.hub_velocity_world_mps);
+    bitwise_equal(ao.force_world_n, bo.force_world_n);
+    bitwise_equal(std::array{ao.pressure_bar, ao.omega_forward_radps, ao.normal_load_n, ao.support_n,
+                             ao.mean_deflection_m, ao.contact_length_m, ao.slip_ratio, ao.transient_slip_ratio,
+                             ao.dissipated_power_w, ao.carcass_dissipated_power_w, ao.rolling_crr},
+                  std::array{bo.pressure_bar, bo.omega_forward_radps, bo.normal_load_n, bo.support_n,
+                             bo.mean_deflection_m, bo.contact_length_m, bo.slip_ratio, bo.transient_slip_ratio,
+                             bo.dissipated_power_w, bo.carcass_dissipated_power_w, bo.rolling_crr});
+    if (ao.rim_event && bo.rim_event) {
+        const auto &x = *ao.rim_event, &y = *bo.rim_event;
+        bitwise_equal(std::array{x.x_m, x.speed_mps, x.peak_load_n, x.peak_rim_force_n, x.absorbed_energy_j},
+                      std::array{y.x_m, y.speed_mps, y.peak_load_n, y.peak_rim_force_n, y.absorbed_energy_j});
+    }
+    for (std::size_t i = 0; i < ao.patch_slots.size(); ++i)
+        same_patch_output(ao.patch_slots[i], bo.patch_slots[i]);
+}
+
+[[gnu::noinline]] void test_airborne_zero_dt_and_rejection_atomicity() {
+    auto spec = bt::tyres::front_tyre();
+    spec.rate_stiffening = 0.35;
+    const nativecfg::SurfaceMap map{.surface = surface("hardpack"), .sections = {}};
+    const biketyre::RoadProfile road(-1.0, 0.005, std::vector<double>(1801, 0.0));
+    const std::array<double, 3> velocity{2.0, 0.0, 0.0};
+    const std::array<double, 3> air{0.0, 0.0, spec.outer_radius_mm * 0.001 + 0.5};
+    const std::array<double, 3> loaded{0.0, 0.0, spec.outer_radius_mm * 0.001 - 0.008};
+    biketyre::PneumaticTyreModel model(spec, 128, 75.0, true), saved(spec, 128, 75.0, true);
+    (void)model.evaluate(loaded, velocity, 7.0, road, map, 0.00025);
+    bt::require(model.patch_states().size() == 1, "atomicity fixture has a patch");
+    auto &carcass = model.carcass_state();
+    std::ranges::fill(carcass.delta_prev_m(), 0.0);
+    std::ranges::fill(carcass.elastic_prev_n(), 0.0);
+    std::ranges::fill(carcass.maxwell_force_n(), -1e160);
+    saved.assign(model);
+    bool overflow = false;
+    try {
+        (void)model.evaluate(air, velocity, std::numeric_limits<double>::max(), road, map, 2.0);
+    } catch (const std::overflow_error &) {
+        overflow = true;
+    }
+    bt::require(overflow, "extreme airborne energy is rejected");
+    same_model_state(model, saved);
+
+    std::ranges::fill(carcass.maxwell_force_n(), -1.0);
+    saved.assign(model);
+    bool direct_rejected = false;
+    try {
+        carcass.advance_unloaded(9.0, std::numeric_limits<double>::quiet_NaN(),
+                                 model.ring().dtheta_rad(), spec.rate_relaxation_s);
+    } catch (const std::invalid_argument &) {
+        direct_rejected = true;
+    }
+    bt::require(direct_rejected, "direct initialized unloaded carcass rejects NaN dt");
+    same_model_state(model, saved);
+    for (const double dt : {std::numeric_limits<double>::quiet_NaN(), 0.0, -1.0,
+                            std::numeric_limits<double>::infinity()}) {
+        bool rejected = false;
+        try {
+            (void)model.evaluate(air, velocity, 9.0, road, map, dt);
+        } catch (const std::invalid_argument &) {
+            rejected = true;
+        }
+        bt::require(rejected, "initialized airborne invalid dt rejected as invalid_argument");
+        same_model_state(model, saved);
+    }
+    const double ds = spec.outer_radius_mm * 0.001 * model.ring().dtheta_rad();
+    double before = 0.0;
+    for (const double force : saved.carcass_state().maxwell_force_n())
+        before += biketyre::ray_maxwell_energy_j(0.0, 0.0, force, spec, ds);
+    biketyre::CarcassState direct(128);
+    direct.assign(saved.carcass_state());
+    direct.advance_unloaded(9.0, 0.00025, model.ring().dtheta_rad(), spec.rate_relaxation_s);
+    double after = 0.0;
+    for (const double force : direct.maxwell_force_n())
+        after += biketyre::ray_maxwell_energy_j(0.0, 0.0, force, spec, ds);
+    const auto &air_result = model.evaluate(air, velocity, 9.0, road, map, 0.00025);
+    bitwise_equal(model.carcass_state().maxwell_force_n(), direct.maxwell_force_n());
+    bitwise_equal(std::array{air_result.carcass_dissipated_power_w, air_result.dissipated_power_w},
+                  std::array{std::max(0.0, before - after) / 0.00025, std::max(0.0, before - after) / 0.00025});
+    (void)saved.evaluate(air, velocity, 9.0, road, map, 0.00025);
+    same_model_state(model, saved);
+    biketyre::PneumaticTyreModel fresh(spec, 128, 75.0, true);
+    const auto &silent = fresh.evaluate(air, velocity, 9.0, road, map, 0.0);
+    bt::require(silent.airborne && silent.dissipated_power_w == 0.0 &&
+                silent.carcass_dissipated_power_w == 0.0, "fresh airborne zero dt is lossless");
+}
+
+[[gnu::noinline]] void test_zero_contact_length_shear_energy() {
+    auto spec = bt::tyres::front_tyre();
+    spec.contact_length_factor = 0.0;
+    const nativecfg::SurfaceMap map{
+            .surface = surface("hardpack"),
+            .sections = {{.start_m = 0.0, .end_m = 5.0, .surface = surface("scree"), .blend_m = 0.0}}};
+    const biketyre::RoadProfile road(-1.0, 0.005, std::vector<double>(1801, 0.0));
+    for (const double x : {1.0, 5.0}) {
+        biketyre::PneumaticTyreModel model(spec, 128, 75.0, true);
+        const auto hits = biketyre::intersect(model.ring(), x, spec.outer_radius_mm * 0.001 - 0.008,
+                                              spec.outer_radius_mm * 0.001, road);
+        const auto &out = model.evaluate(std::array{x, 0.0, spec.outer_radius_mm * 0.001 - 0.008},
+                                         std::array{2.0, 0.0, 0.0}, 7.0, road, map, 0.00025);
+        bt::require(out.patch_count == 1 && out.patches()[0].contact_length_m == 0.0 &&
+                    out.patches()[0].shear_energy_j == 0.0 &&
+                    out.patches()[0].tangential_force_n == 0.0, "zero contact length resets shear energy");
+        const auto &patch = out.patches()[0];
+        const auto xs = std::span<const double>(hits.road_x_m).subspan(
+                static_cast<std::size_t>(patch.ray_start),
+                static_cast<std::size_t>(patch.ray_stop - patch.ray_start));
+        const auto [lo, hi] = std::ranges::minmax_element(xs);
+        bt::require((tirecommon::uniform_surface_for_span(map, *lo, *hi) != nullptr) == (x == 1.0),
+                    "zero contact length covers uniform and mixed brush paths");
+    }
+}
+
+// Non-golden counterpart of test_native_pneumatic_model's validation block.
+[[gnu::noinline]] void test_model_validation_without_golden() {
+    const auto spec = bt::tyres::front_tyre();
+    const nativecfg::SurfaceMap map{.surface = surface("hardpack"), .sections = {}};
+    const biketyre::RoadProfile road(-1.0, 0.005, std::vector<double>(1801, 0.0));
+    const std::array<double, 3> hub{0.0, 0.0, spec.outer_radius_mm * 0.001 - 0.008}, vel{2.0, 0.0, 0.0};
+    const double nan = std::numeric_limits<double>::quiet_NaN(), inf = std::numeric_limits<double>::infinity();
+    const std::array<double, 4> hub4{};
+    const std::array<double, 2> vel2{};
+    const std::array<double, 3> nan_hub{0.0, nan, hub[2]}, inf_hub{0.0, 0.0, inf},
+            nan_vel{nan, 0.0, 0.0}, inf_vel{0.0, 0.0, -inf};
+    struct BadInput {
+        std::span<const double> h, v;
+        double omega, dt;
+    };
+    const std::array bad{
+            BadInput{.h = hub4, .v = vel, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = hub, .v = vel2, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = nan_hub, .v = vel, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = inf_hub, .v = vel, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = hub, .v = nan_vel, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = hub, .v = inf_vel, .omega = 9.0, .dt = 0.002},
+            BadInput{.h = hub, .v = vel, .omega = nan, .dt = 0.002},
+            BadInput{.h = hub, .v = vel, .omega = inf, .dt = 0.002},
+            BadInput{.h = hub, .v = vel, .omega = 9.0, .dt = 0.0},
+            BadInput{.h = hub, .v = vel, .omega = 9.0, .dt = -0.002},
+            BadInput{.h = hub, .v = vel, .omega = 9.0, .dt = nan},
+            BadInput{.h = hub, .v = vel, .omega = 9.0, .dt = inf}};
+    for (const bool detailed : {false, true}) {
+        biketyre::PneumaticTyreModel model(spec, 128, 75.0, detailed), saved(spec, 128, 75.0, detailed);
+        (void)model.evaluate(hub, vel, 9.0, road, map, 0.002);
+        saved.assign(model);
+        for (const auto &row : bad) {
+            bool rejected = false;
+            try {
+                (void)model.evaluate(row.h, row.v, row.omega, road, map, row.dt);
+            } catch (const std::invalid_argument &) {
+                rejected = true;
+            }
+            bt::require(rejected, "loaded invalid model input rejected");
+            same_model_state(model, saved);
+        }
+        const std::array<double, 1> nan1{nan};
+        bt::pneumatic::rejects<std::invalid_argument>(
+                [&] { (void)model.evaluate(hub4, nan1, nan, road, map, 0.002); }, "3-vectors");
+        bt::pneumatic::rejects<std::invalid_argument>(
+                [&] { (void)model.evaluate(inf_hub, vel, nan, road, map, 0.002); }, "finite");
+        biketyre::CarcassState narrow(127);
+        bt::pneumatic::rejects<std::invalid_argument>([&] { model.carcass_state().assign(narrow); }, "mismatch");
+        biketyre::PatchBrushState wide;
+        wide.bristle_deflection_m.resize(129);
+        bt::pneumatic::rejects<std::invalid_argument>(
+                [&] { model.restore_patch_states(std::array{wide}); }, "exceeds");
+        same_model_state(model, saved);
+        (void)model.evaluate(hub, vel, 9.0, road, map, 0.002);
+        (void)saved.evaluate(hub, vel, 9.0, road, map, 0.002);
+        same_model_state(model, saved);
+    }
+}
+
+[[gnu::noinline]] void test_negative_centroid_mixed_surface_name() {
+    const auto spec = bt::tyres::front_tyre();
+    auto first = surface("scree");
+    first.name = "first_section_long_surface_name";
+    const nativecfg::SurfaceMap map{
+            .surface = surface("hardpack"),
+            .sections = {{.start_m = 0.0, .end_m = 0.025, .surface = first, .blend_m = 0.04}}};
+    const biketyre::RoadProfile road(-1.0, 0.001, std::vector<double>(9001, 0.0));
+    biketyre::PneumaticTyreModel model(spec, 256, 75.0, true);
+    model.reserve_patch_names(first.name.size());
+    const auto &out = model.evaluate(std::array{-0.02, 0.0, spec.outer_radius_mm * 0.001 - 0.008},
+                                     std::array{2.0, 0.0, 0.0}, 7.0, road, map, 0.00025);
+    bt::require(out.patch_count == 1, "mixed surface has one patch");
+    const auto &patch = out.patches()[0];
+    const auto hits = biketyre::intersect(model.ring(), -0.02, spec.outer_radius_mm * 0.001 - 0.008,
+                                          spec.outer_radius_mm * 0.001, road);
+    const auto xs = std::span<const double>(hits.road_x_m).subspan(
+            static_cast<std::size_t>(patch.ray_start), static_cast<std::size_t>(patch.ray_stop - patch.ray_start));
+    const auto [lo, hi] = std::ranges::minmax_element(xs);
+    bt::require(*lo < 0.0 && *hi > 0.025 && patch.centroid_world_m[0] < 0.0 &&
+                tirecommon::uniform_surface_for_span(map, *lo, *hi) == nullptr,
+                "mixed patch straddles x zero and section transition with negative centroid");
+    bt::require(patch.surface_name == first.name &&
+                patch.surface_name == tirecommon::eval_surface(map, patch.centroid_world_m[0]).name,
+                "negative mixed centroid uses canonical first-section name");
 }
 
 [[gnu::noinline]] void test_uniform_and_heterogeneous_brush_equivalence() {
@@ -512,6 +766,10 @@ namespace {
 int main() {
     // cppcheck-suppress throwInEntryPoint
     return bt::run([] {
+        test_airborne_zero_dt_and_rejection_atomicity();
+        test_zero_contact_length_shear_energy();
+        test_negative_centroid_mixed_surface_name();
+        test_model_validation_without_golden();
         test_air_chord_and_ray_elastic_quadrature();
         test_maxwell_zero_carcass_stiffness_cap_inverse();
         test_maxwell_hold_and_closed_cycle_passivity();

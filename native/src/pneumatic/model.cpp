@@ -74,21 +74,6 @@ namespace biketyre {
                     row, [](double v) { return v != 0.0; });
         }
 
-        // SurfaceMap.at (terrain/surface.py:201-212) — the scalar()
-        // finite gate then the half-open section scan; the oracle
-        // sorts sections at construction and validation keeps them
-        // non-overlapping, so a linear first-match scan is identical.
-        const nativecfg::SurfaceSpec &
-        surface_at(const nativecfg::SurfaceMap &map, double x_m) {
-            if (!std::isfinite(x_m))
-                throw std::invalid_argument(
-                        "SurfaceMap.x_m: expected finite real scalar");
-            for (const nativecfg::SurfaceSection &section: map.sections)
-                if (section.start_m <= x_m && x_m < section.end_m)
-                    return section.surface;
-            return map.surface;
-        }
-
         // _unloaded_outputs (model.py:121-153) — the zero-force result
         // shared by the airborne and no-patch paths.
         // NOLINTBEGIN(bugprone-easily-swappable-parameters) flag order mirrors _unloaded_outputs' keyword sequence
@@ -202,7 +187,7 @@ namespace biketyre {
           // model.py:162 — RayRing(n_rays, half_angle_deg * _RAD),
           // _RAD = np.pi / 180.0 (model.py:30).
           ring_(n_rays, half_angle_deg * (std::numbers::pi / 180.0)),
-          carcass_state_(n_rays) {
+          carcass_state_(n_rays), airborne_carcass_scratch_(n_rays) {
         const std::size_t n = ring_.n();
         const std::size_t bound = max_patches();
 
@@ -473,29 +458,37 @@ namespace biketyre {
         if (hits.airborne && !carcass_state_.rim_strike_active() &&
             !any_nonzero(carcass_state_.delta_prev_m()) &&
             !any_nonzero(carcass_state_.elastic_prev_n())) {
-            const double ds = tyre_.outer_radius_mm * 0.001 * ring_.dtheta_rad();
-            double before = 0.0;
-            if (carcass_state_.initialized())
+            double power = 0.0;
+            if (carcass_state_.initialized()) {
+                const double ds = tyre_.outer_radius_mm * 0.001 * ring_.dtheta_rad();
+                double before = 0.0;
                 for (std::size_t i = 0; i < ring_.n(); ++i)
                     before += ray_maxwell_energy_j(0.0, carcass_state_.elastic_prev_n()[i],
                                                    carcass_state_.maxwell_force_n()[i], tyre_, ds);
-            carcass_state_.advance_unloaded(
-                    omega_forward_radps, dt_s, ring_.dtheta_rad(),
-                    tyre_.rate_relaxation_s);
-            double after = 0.0;
-            if (carcass_state_.initialized())
-                for (std::size_t i = 0; i < ring_.n(); ++i)
-                    after += ray_maxwell_energy_j(0.0, carcass_state_.elastic_prev_n()[i],
-                                                  carcass_state_.maxwell_force_n()[i], tyre_, ds);
-            patch_count_ = 0;
+                airborne_carcass_scratch_.assign(carcass_state_);
+                airborne_carcass_scratch_.advance_unloaded(
+                        omega_forward_radps, dt_s, ring_.dtheta_rad(),
+                        tyre_.rate_relaxation_s);
+                double after = 0.0;
+                for (std::size_t i = 0; i < ring_.n(); ++i) {
+                    const double force = airborne_carcass_scratch_.maxwell_force_n()[i];
+                    contactlaw::finite_result({force});
+                    after += ray_maxwell_energy_j(0.0, airborne_carcass_scratch_.elastic_prev_n()[i],
+                                                  force, tyre_, ds);
+                }
+                const double delta = before - after;
+                contactlaw::finite_result({before, after, delta});
+                power = std::max(0.0, delta) / dt_s;
+                contactlaw::finite_result({power});
+            }
             write_unloaded(out, tyre_, hub, velocity,
                            omega_forward_radps, hits.coverage_event,
                            true, false, std::nullopt);
-            const double delta = before - after;
-            contactlaw::finite_result({before, after, delta});
-            out.carcass_dissipated_power_w = std::max(0.0, delta) / dt_s;
-            contactlaw::finite_result({out.carcass_dissipated_power_w});
-            out.dissipated_power_w = out.carcass_dissipated_power_w;
+            out.carcass_dissipated_power_w = power;
+            out.dissipated_power_w = power;
+            if (carcass_state_.initialized())
+                carcass_state_.assign(airborne_carcass_scratch_);
+            patch_count_ = 0;
             return;
         }
 
@@ -647,7 +640,7 @@ namespace biketyre {
                     surface = &surface_scratch_;
                 }
             } else {
-                surface_scratch_ = surface_at(surface_map, centroid_world_m[0]);
+                surface_scratch_.name = tirecommon::eval_surface(surface_map, centroid_world_m[0]).name;
                 surface_scratch_.mu_peak = 0.0;
                 surface_scratch_.mu_slide = 0.0;
                 surface_scratch_.slip_stiffness_per_load = 0.0;
@@ -751,7 +744,7 @@ namespace biketyre {
             const double patch_loss_w = std::max(0.0, raw_slip_loss_w);
             brush_loss_w += patch_loss_w;
             double shear_energy = 0.0;
-            if (discretised_) {
+            if (discretised_ && half_length_m > 0.0) {
                 const double dx = 2.0 * half_length_m / static_cast<double>(w);
                 const double common = weight_sum /
                         (2.0 * pyfloat::float_pow(half_length_m, 2.0));

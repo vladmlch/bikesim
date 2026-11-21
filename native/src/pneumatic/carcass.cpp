@@ -252,7 +252,7 @@ namespace biketyre {
                                         double relaxation_s) {
         // carcass.py:83-84 — the early return precedes validation.
         if (!initialized_) return;
-        if (dt_s <= 0.0 || dtheta_rad <= 0.0 || relaxation_s <= 0.0)
+        if (!std::isfinite(dt_s) || dt_s <= 0.0 || dtheta_rad <= 0.0 || relaxation_s <= 0.0)
             throw std::invalid_argument(
                     "time, angular spacing and relaxation time must be "
                     "positive");

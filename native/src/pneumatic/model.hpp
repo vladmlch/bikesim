@@ -337,6 +337,7 @@ namespace biketyre {
         WheelOutputs last_outputs_;
 
         // Construction-sized scratch — never escapes the class.
+        CarcassState airborne_carcass_scratch_;
         struct HitsScratch {
             std::vector<double> r_m, delta_m, road_x_m, road_z_m;
         } hits_scratch_;

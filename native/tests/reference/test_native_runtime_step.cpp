@@ -13,6 +13,8 @@
 #include "diag.hpp"
 
 #include <array>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <memory>
 #include <utility>
@@ -34,6 +36,59 @@ int joint_dof(const mjModel *model, const char *name) {
 
 NATIVE_DIAG_PUSH
 NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_probe_combined_brake_budget() {
+    const auto rig = rider_control_reference::pinned_rig([](auto &physics) {
+        physics.rider_launch.plan_enabled = false;
+        physics.seated_climb.enabled = false;
+        physics.drive.brake_ceiling_nm = 200.;
+        physics.drive.brake_hold_torque_nm = 400.;
+        physics.drive.brake_hold_stiffness_nm_rad = 1000.;
+    });
+    const auto *model = rig->stepper->model();
+    const auto *data = rig->stepper->data();
+    const auto front = static_cast<std::size_t>(joint_dof(model, "front_wheel_spin"));
+    const auto rear = static_cast<std::size_t>(joint_dof(model, "rear_wheel_spin"));
+    const auto qpos = model_access::mutable_buffer(data->qpos, model->nq);
+    const auto qposadr = model_access::readonly_buffer(model->jnt_qposadr, model->njnt);
+    const auto dofjnt = model_access::readonly_buffer(model->dof_jntid, model->nv);
+    const auto front_pos = static_cast<std::size_t>(qposadr[static_cast<std::size_t>(dofjnt[front])]);
+    const auto rear_pos = static_cast<std::size_t>(qposadr[static_cast<std::size_t>(dofjnt[rear])]);
+    const auto velocity = model_access::mutable_buffer(data->qvel, model->nv);
+    velocity[front] = 0.;
+    velocity[rear] = 0.;
+    rig->stepper->note_posvel_stale();
+    (void)rig->physical->advance_physics(.5, .75, std::nullopt, {});
+    const auto state = rig->physical->state();
+    bt::require(state.brake_latch.latch_front.has_value() &&
+                    state.brake_latch.latch_rear.has_value(),
+                "advancing at standstill latches both brakes");
+    qpos[front_pos] = state.brake_latch.latch_front.value_or(0.) + .2;
+    qpos[rear_pos] = state.brake_latch.latch_rear.value_or(0.) - .04;
+    velocity[front] = 0.;
+    velocity[rear] = 0.;
+    const auto friction = model_access::mutable_buffer(model->dof_frictionloss, model->nv);
+    friction[front] = 3.;
+    friction[rear] = 7.;
+    rig->stepper->note_posvel_stale();
+    rig->stepper->forward();
+    const auto probe = rig->physical->probe_step_inputs({}, .5, .75);
+    const auto it = std::ranges::find_if(probe.components, [](const auto &component) {
+        return component.first == "brake_hold";
+    });
+    bt::require(it != probe.components.end(), "probe publishes nonzero brake hold");
+    const auto &hold = it->second;
+    bt::require(std::abs(hold[front]) == 100.,
+                "hold torque above the ceiling is capped by demand");
+    bt::require(std::abs(hold[rear]) > 1.,
+                "rear wheel exercises a nonzero unsaturated hold");
+    bt::require(std::abs(probe.front_brake_bound_nm + std::abs(hold[front]) - 100.) < 1e-9 &&
+                std::abs(probe.rear_brake_bound_nm + std::abs(hold[rear]) - 150.) < 1e-9,
+                "probe exposes only the residual budget on both wheels");
+    bt::require(friction[front] == 3. && friction[rear] == 7. &&
+                !rig->stepper->posvel_fresh(),
+                "probe restores model bounds and invalidates changed cache");
+}
+
 void test_probe_includes_held_rollback() {
     const auto rig = rider_control_reference::pinned_rig([](auto &physics) {
         physics.rider_launch.plan_enabled = false;
@@ -420,6 +475,7 @@ NATIVE_DIAG_POP
 int main() {
     try {
         int failures = 0;
+        failures += bt::run(test_probe_combined_brake_budget);
         failures += bt::run(test_probe_includes_held_rollback);
         failures += bt::run(test_probe_brake_purity_and_rollback);
         failures += bt::run(

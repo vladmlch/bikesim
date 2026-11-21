@@ -1322,10 +1322,6 @@ PhysicalStep::apply_forces_body(
         std::ranges::fill(wbuf(d->qfrc_applied, m->nv), 0.);
         std::ranges::fill(wbuf(d->xfrc_applied, m->nbody * 6), 0.);
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
-        // dof_frictionloss is a position-stage model input — a bound that
-        // actually changed invalidates the cached makeConstraint rows.
-        if (brake_.apply(m, brakes.final_front, brakes.final_rear))
-            stepper_->note_posvel_stale();
         // The latched elastic bite at standstill; an advancing pass may
         // latch or release, a probe reads the committed latch
         // (static_braking.py hold_qfrc — physical_runtime.py:296).
@@ -1338,6 +1334,12 @@ PhysicalStep::apply_forces_body(
         std::vector<double> brake_hold =
             brake_.hold_qfrc(m, d, brakes.final_front, brakes.final_rear,
                              advance, !active);
+        // The bite consumes part of the same budget as solver friction.
+        // A changed position-stage bound invalidates makeConstraint rows.
+        if (brake_.apply(m, brakes.final_front, brakes.final_rear,
+                         brake_hold[static_cast<std::size_t>(brake_.front_dof())],
+                         brake_hold[static_cast<std::size_t>(brake_.rear_dof())]))
+            stepper_->note_posvel_stale();
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{

@@ -1,5 +1,5 @@
 // runtime/static_brake.cpp — StaticBrakeApplier port; see the header for
-// the contract. Expression order follows static_braking.py literally.
+// the contract. The hold and solver friction share one brake budget.
 #include "static_brake.hpp"
 
 #include <algorithm>
@@ -42,10 +42,13 @@ StaticBrake::StaticBrake(int front_dofadr, int rear_dofadr,
 }
 
 bool StaticBrake::apply(mjModel *model, double front_demand,
-                        double rear_demand) const {
+                        double rear_demand, double front_hold_nm,
+                        double rear_hold_nm) const {
     const double front =
         validation::finite(front_demand, "front brake demand");
     const double rear = validation::finite(rear_demand, "rear brake demand");
+    validation::finite(front_hold_nm, "front brake hold torque");
+    validation::finite(rear_hold_nm, "rear brake hold torque");
     if (std::max(front_, rear_) >= model->nv)
         throw std::invalid_argument("brake DOF is outside this model");
     const auto frictionloss = model_access::mutable_buffer(
@@ -55,8 +58,8 @@ bool StaticBrake::apply(mjModel *model, double front_demand,
     // reset.
     // ctor guarantees 0 <= front_/rear_ and the nv bound ran above, so the
     // size_t casts below can only wrap an already-rejected index.
-    const double front_loss = ceiling_nm_ * std::clamp(front, 0., 1.);
-    const double rear_loss = ceiling_nm_ * std::clamp(rear, 0., 1.);
+    const double front_loss = std::max(0., ceiling_nm_ * std::clamp(front, 0., 1.) - std::abs(front_hold_nm));
+    const double rear_loss = std::max(0., ceiling_nm_ * std::clamp(rear, 0., 1.) - std::abs(rear_hold_nm));
     const std::size_t fi = static_cast<std::size_t>(front_);
     const std::size_t ri = static_cast<std::size_t>(rear_);
     // dof_frictionloss is a position-stage model input (makeConstraint
@@ -89,6 +92,7 @@ std::vector<double> StaticBrake::hold_qfrc(
          {std::tuple{front_, front, &latch_front_},
           std::tuple{rear_, rear, &latch_rear_}}) {
         const double u = std::clamp(demand, 0., 1.);
+        const double cap = std::min(hold_.torque_nm, ceiling_nm_) * u;
         const std::size_t di = static_cast<std::size_t>(dof);
         const double theta = qpos[static_cast<std::size_t>(
             jnt_qposadr[static_cast<std::size_t>(dof_jntid[di])])];
@@ -108,7 +112,7 @@ std::vector<double> StaticBrake::hold_qfrc(
             } else if (reseat && std::abs(omega) <= hold_.engage_radps &&
                        std::abs(-hold_.stiffness_nm_rad * (theta - *latched) -
                                 hold_.damping_nms_rad * omega) >
-                           hold_.torque_nm * u) {
+                           cap) {
                 // A saturated bite inside the engage band is a slipped pad:
                 // re-seat the anchor at the current angle (the oracle's
                 // `reseat` branch — static_braking.py).
@@ -117,7 +121,6 @@ std::vector<double> StaticBrake::hold_qfrc(
             }
         }
         if (!latched.has_value()) continue;
-        const double cap = hold_.torque_nm * u;
         out[di] = std::clamp(
             -hold_.stiffness_nm_rad * (theta - *latched) -
                 hold_.damping_nms_rad * omega,

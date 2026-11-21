@@ -60,6 +60,15 @@ void test_apply_rejects_nonfinite_demands() {
     bt::invalid([&] { (void)probe.brake.apply(probe.model.get(), std::numeric_limits<double>::quiet_NaN(), 0.); });
     bt::invalid([&] { (void)probe.brake.apply(probe.model.get(), 0., std::numeric_limits<double>::infinity()); });
     bt::require(std::ranges::all_of(probe.friction(), [](double value) { return value == 0.; }), "invalid demands publish neither side");
+    (void)probe.brake.apply(probe.model.get(), .25, .5);
+    const auto before = std::vector<double>(probe.friction().begin(), probe.friction().end());
+    bt::invalid([&] { (void)probe.brake.apply(probe.model.get(), 1., 1., std::numeric_limits<double>::quiet_NaN(), 0.); });
+    bt::invalid([&] { (void)probe.brake.apply(probe.model.get(), 1., 1., 10., std::numeric_limits<double>::infinity()); });
+    bt::require(std::ranges::equal(before, probe.friction()), "invalid hold torque changes neither bound");
+    (void)probe.brake.apply(probe.model.get(), .5, .75, -20., 200.);
+    bt::require(probe.friction()[static_cast<std::size_t>(probe.brake.front_dof())] == 80. &&
+                    probe.friction()[static_cast<std::size_t>(probe.brake.rear_dof())] == 0.,
+                "signed holds consume their magnitudes and residual floors at zero");
 }
 
 // --- standstill bite (brake_hold_*) -------------------------------------------
@@ -94,6 +103,80 @@ struct HoldProbe : bt::ModelFixture {
             .at(static_cast<std::size_t>(brake.front_dof()));
     }
 };
+
+// Exercise both the actual MuJoCo friction row and the elastic bite on a
+// wheel with unit inertia, with no other forces or constraints.
+constexpr std::string_view budget_xml = R"(<mujoco>
+  <option timestep=".001" gravity="0 0 0"/>
+  <worldbody>
+    <body><joint name="front" type="hinge" axis="0 1 0"/>
+      <geom type="sphere" size=".5" mass="10"/></body>
+    <body pos="2 0 0"><joint name="rear" type="hinge" axis="0 1 0"/>
+      <geom type="sphere" size=".5" mass="10"/></body>
+  </worldbody></mujoco>)";
+
+void test_combined_budget_and_breakaway() {
+    for (const double load : {150., 300.}) {
+        bt::ModelFixture rig(budget_xml);
+        const int front = rig.dof("front"), rear = rig.dof("rear");
+        const auto fi = static_cast<std::size_t>(front);
+        runtime::StaticBrake brake(front, rear, 200.,
+            {.torque_nm = 200., .stiffness_nm_rad = 1000.,
+             .damping_nms_rad = 0., .engage_radps = .3,
+             .release_radps = .6});
+        brake.restore({.latch_front = 0., .latch_rear = std::nullopt});
+        const auto qpos = model_access::mutable_buffer(rig.data->qpos, rig.model->nq);
+        const auto qvel = model_access::mutable_buffer(rig.data->qvel, rig.model->nv);
+        const auto applied = model_access::mutable_buffer(rig.data->qfrc_applied, rig.model->nv);
+        qpos[fi] = .15;
+        bool saw_release = false;
+        for (int step = 0; step < 1000; ++step) {
+            const auto hold = brake.hold_qfrc(rig.model.get(), rig.data.get(), 1., 0., true);
+            (void)brake.apply(rig.model.get(), 1., 0., hold[fi], 0.);
+            if (!brake.state().latch_front.has_value()) {
+                saw_release = true;
+                const auto friction = model_access::readonly_buffer(rig.model->dof_frictionloss, rig.model->nv);
+                bt::require(hold[fi] == 0. && friction[fi] == 200.,
+                            "after release all 200 Nm return to solver friction");
+            }
+            applied[fi] = load + hold[fi];
+            engine::forward(rig.model.get(), rig.data.get());
+            const auto solved = brake.solved_components(rig.model.get(), rig.data.get());
+            const double resistance = hold[fi] + solved.first[fi];
+            bt::require(std::abs(resistance) <= 200. + 1e-6,
+                        "combined solved friction and hold never exceed 200 Nm");
+            if (load == 150.) {
+                bt::require(std::abs(resistance + 150.) < 1e-6,
+                            "the preloaded stationary wheel balances 150 Nm");
+            }
+            engine::step(rig.model.get(), rig.data.get());
+        }
+        if (load == 150.) {
+            bt::require(std::abs(qpos[fi] - .15) < 1e-9 && std::abs(qvel[fi]) < 1e-9,
+                        "sub-ceiling torque holds without creep");
+        } else {
+            bt::require(saw_release && qvel[fi] > .6 && qpos[fi] > .15,
+                        "super-ceiling torque breaks away and accelerates");
+        }
+    }
+}
+
+void test_ceiling_also_controls_reseat() {
+    HoldProbe probe;
+    runtime::StaticBrake brake(probe.brake.front_dof(), probe.brake.rear_dof(), 200.,
+        {.torque_nm = 400., .stiffness_nm_rad = 1000.,
+         .damping_nms_rad = 0., .engage_radps = .3, .release_radps = .6});
+    probe.wheel(0., 0.);
+    (void)brake.hold_qfrc(probe.model.get(), probe.data.get(), .5, 0., true);
+    probe.wheel(.15, 0.);
+    const auto clipped = brake.hold_qfrc(probe.model.get(), probe.data.get(), .5, 0., false);
+    bt::require(clipped[static_cast<std::size_t>(brake.front_dof())] == -100.,
+                "hold torque itself cannot exceed the brake ceiling");
+    const auto reseated = brake.hold_qfrc(probe.model.get(), probe.data.get(), .5, 0., true, true);
+    bt::require(reseated[static_cast<std::size_t>(brake.front_dof())] == 0. &&
+                    brake.state().latch_front == .15,
+                "reseat uses the ceiling cap, not the larger configured hold");
+}
 void test_hold_bite_engagement_clip_release() {
     HoldProbe probe;
     // rolling wheel past the release speed never latches — friction bound only
@@ -191,6 +274,8 @@ void test_hold_validation_matches_python() {
 }
 } // namespace
 int main() { return bt::run([] {
+    test_combined_budget_and_breakaway();
+    test_ceiling_also_controls_reseat();
     test_brake_validation_matches_python(); test_apply_rejects_nonfinite_demands();
     test_demands_clamp_and_sides_are_independent();
     test_frictionloss_writes_match_python(); test_solved_components_match_python();

@@ -366,12 +366,12 @@ inline int resolve_runner_tyre_and_terrain(
             std::cerr << "[resolve_runner_tyre_and_terrain] Failed to find front/rear wheel contact geoms\n";
             return -1;
         }
-        const bike::physics_core::HostTyreUploadBundle bundle =
-            bike::physics_core::build_gpu_tyre_model(
+        const auto bundle =
+            bike::physics_core::build_gpu_tyre_model_ptr(
                 m, d, make_default_compliant_tire_config(),
                 front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body);
-        out.model = bundle.gpu_model;
-        out.terrain = pack_upload_bundle_terrain(bundle);
+        out.model = bundle->gpu_model;
+        out.terrain = pack_upload_bundle_terrain(*bundle);
         return 0;
     } catch (const std::exception &e) {
         std::cerr << "[resolve_runner_tyre_and_terrain] " << e.what() << '\n';
@@ -457,9 +457,9 @@ inline int build_runner_tyre_and_terrain_buffers_for_surface(
                    : ((backend_kind == 2)
                           ? make_default_pneumatic_tire_config(station_count >= 256)
                           : make_default_distributed_tire_config(station_count)));
-        const auto bundle = std::make_unique<bike::physics_core::HostTyreUploadBundle>(
-            bike::physics_core::build_gpu_tyre_model(
-                m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body));
+        const auto bundle =
+            bike::physics_core::build_gpu_tyre_model_ptr(
+                m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body);
         const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
 
         const int req_f32 = static_cast<int>(terrain.f32.size());

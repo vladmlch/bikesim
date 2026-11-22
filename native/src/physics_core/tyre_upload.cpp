@@ -1060,7 +1060,7 @@ HostTyreUploadBundle build_gpu_tyre_model(
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters) Task 5 positional upload signature; validated by geom_bodyid == expected_body_id.
-HostTyreUploadBundle build_gpu_tyre_model(
+std::unique_ptr<HostTyreUploadBundle> build_gpu_tyre_model_ptr(
     const mjModel *m,
     const mjData *d,
     const nativecfg::TireConfig &cfg,
@@ -1101,7 +1101,8 @@ HostTyreUploadBundle build_gpu_tyre_model(
         throw std::invalid_argument("invalid multi-support thresholds in TireConfig");
     }
 
-    HostTyreUploadBundle bundle;
+    auto bundle_ptr = std::make_unique<HostTyreUploadBundle>();
+    HostTyreUploadBundle &bundle = *bundle_ptr;
     bundle.gpu_model.backend = backend_kind;
     bundle.gpu_model.nq = static_cast<i32>(m->nq);
     bundle.gpu_model.nv = static_cast<i32>(m->nv);
@@ -1177,7 +1178,50 @@ HostTyreUploadBundle build_gpu_tyre_model(
     populate_surface_map(cfg, bundle.gpu_model.surface_map);
     populate_terrain_views(m, d, cfg, bundle);
     bundle.rebind_views();
-    return bundle;
+    return bundle_ptr;
+}
+
+std::unique_ptr<HostTyreUploadBundle> build_gpu_tyre_model_ptr(
+    const mjModel *m,
+    const mjData *d,
+    const nativecfg::TireConfig &cfg,
+    int front_geom,
+    int rear_geom
+) {
+    if (m == nullptr || d == nullptr) {
+        throw std::invalid_argument("null mjModel or mjData in build_gpu_tyre_model");
+    }
+    if (front_geom < 0 || front_geom >= m->ngeom ||
+        rear_geom < 0 || rear_geom >= m->ngeom) {
+        throw std::invalid_argument("wheel geom_id out of bounds in build_gpu_tyre_model");
+    }
+    const std::span<const int> geom_bodyid =
+        model_access::readonly_buffer(m->geom_bodyid, m->ngeom, "geom_bodyid");
+    return build_gpu_tyre_model_ptr(
+        m,
+        d,
+        cfg,
+        front_geom,
+        rear_geom,
+        geom_bodyid[to_idx(front_geom)],
+        geom_bodyid[to_idx(rear_geom)]
+    );
+}
+
+// NOLINTBEGIN(bugprone-easily-swappable-parameters) Task 5 positional upload signature; validated by geom_bodyid == expected_body_id.
+HostTyreUploadBundle build_gpu_tyre_model(
+    const mjModel *m,
+    const mjData *d,
+    const nativecfg::TireConfig &cfg,
+    int front_geom,
+    int rear_geom,
+    int front_body,
+    int rear_body,
+    int frame_body
+) {
+// NOLINTEND(bugprone-easily-swappable-parameters)
+    return std::move(*build_gpu_tyre_model_ptr(
+        m, d, cfg, front_geom, rear_geom, front_body, rear_body, frame_body));
 }
 
 } // namespace bike::physics_core

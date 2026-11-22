@@ -690,8 +690,6 @@ if(BUILD_TESTING)
 
   bike_add_gpu_unit_test(bike_test_gpu_suspension
     "${_bike_native_tests_dir}/gpu/test_gpu_suspension.cpp")
-  bike_add_gpu_unit_test(bike_test_gpu_tire
-    "${_bike_native_tests_dir}/gpu/test_gpu_tire.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_drivetrain_resistance
     "${_bike_native_tests_dir}/gpu/test_gpu_drivetrain_resistance.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_rider
@@ -699,8 +697,6 @@ if(BUILD_TESTING)
   bike_add_gpu_unit_test(bike_test_gpu_batch_step
     "${_bike_native_tests_dir}/gpu/test_gpu_batch_step.cpp")
   bike_link_gpu_reference_core(bike_test_gpu_suspension)
-  bike_link_gpu_reference_core(bike_test_gpu_tire)
-  target_link_libraries(bike_test_gpu_tire PRIVATE bike_tyre_upload)
   bike_link_gpu_reference_core(bike_test_gpu_drivetrain_resistance)
   target_link_libraries(bike_test_gpu_drivetrain_resistance PRIVATE bike_tyre_upload)
   target_link_libraries(bike_test_gpu_rider PRIVATE bike_rider_math)
@@ -767,6 +763,20 @@ if(BUILD_TESTING)
   bike_rewrite_mujoco_load_name(bike_test_gpu_batch_runners "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
+  set(_bike_gpu_tire_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_tire.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_tire_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_tire ${_bike_gpu_tire_sources})
+  bike_link_gpu_reference_core(bike_test_gpu_tire)
+  target_link_libraries(bike_test_gpu_tire PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload Threads::Threads ${CMAKE_DL_LIBS})
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_tire PRIVATE
       "-framework Metal" "-framework Foundation")
   endif()
 

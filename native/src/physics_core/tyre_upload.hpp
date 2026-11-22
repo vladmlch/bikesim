@@ -12,6 +12,7 @@
 
 #include <mujoco/mujoco.h>
 
+#include <memory>
 #include <vector>
 
 namespace bike::physics_core {
@@ -69,6 +70,25 @@ struct HostTyreUploadBundle {
     int front_body,
     int rear_body,
     int frame_body = -1
+);
+
+[[nodiscard]] std::unique_ptr<HostTyreUploadBundle> build_gpu_tyre_model_ptr(
+    const mjModel *m,
+    const mjData *d,
+    const nativecfg::TireConfig &cfg,
+    int front_geom,
+    int rear_geom,
+    int front_body,
+    int rear_body,
+    int frame_body = -1
+);
+
+[[nodiscard]] std::unique_ptr<HostTyreUploadBundle> build_gpu_tyre_model_ptr(
+    const mjModel *m,
+    const mjData *d,
+    const nativecfg::TireConfig &cfg,
+    int front_geom,
+    int rear_geom
 );
 
 } // namespace bike::physics_core

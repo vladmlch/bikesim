@@ -511,10 +511,10 @@ class GpuPneumaticWheelStateStruct(ctypes.Structure):
 
 class RatchetBoundStateStruct(ctypes.Structure):
     _fields_ = [
-        ("engaged", ctypes.c_uint8),
+        ("boundary", ctypes.c_float),
+        ("ratio", ctypes.c_float),
+        ("has_boundary", ctypes.c_uint8),
         ("pad", ctypes.c_uint8 * 3),
-        ("latch_theta", ctypes.c_float),
-        ("slack_rad", ctypes.c_float),
     ]
 
 
@@ -1700,6 +1700,7 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
             ctypes.c_void_p,
             ctypes.c_void_p,
             ctypes.c_void_p,
+            ctypes.c_void_p,
             ctypes.c_int,
             ctypes.c_int,
             ctypes.c_void_p,
@@ -1989,6 +1990,25 @@ def _as_float32_ptr(
     return contig, contig.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
 
 
+def _apply_backend_sag_defaults(
+    arr: Any,
+    nworld: int,
+    backend: str,
+    fork_psi_scale: np.ndarray | None = None,
+    shock_rate_scale: np.ndarray | None = None,
+) -> None:
+    """Apply backend-specific 30/30% sag suspension defaults across ``nworld`` configs."""
+    if backend not in _BACKEND_DEFAULT_SUSPENSION_SAG or backend == "compliant_2d":
+        return
+    psi_def, rate_def = _BACKEND_DEFAULT_SUSPENSION_SAG[backend]
+    for w in range(int(nworld)):
+        psi_s = float(fork_psi_scale[w]) if fork_psi_scale is not None else 1.0
+        rate_s = float(shock_rate_scale[w]) if shock_rate_scale is not None else 1.0
+        arr[w].suspension.params.air_spring.gauge_pressure_psi = float(psi_def) * psi_s
+        arr[w].suspension.params.coil.rate_n_m = float(rate_def) * rate_s
+        recompute_suspension_preloads(arr[w].suspension)
+
+
 def build_sweep_configs_bytes(
     lib: ctypes.CDLL,
     nworld: int,
@@ -1996,6 +2016,7 @@ def build_sweep_configs_bytes(
     rebound_scale: np.ndarray | None = None,
     shock_rate_scale: np.ndarray | None = None,
     tire_stiff_scale: np.ndarray | None = None,
+    backend: str = "compliant_2d",
 ) -> bytes:
     """Populate ``nworld`` ``GpuWorldConfig`` structs on the host and return their raw bytes."""
     cfg_size = int(lib.bike_gpu_sizeof_world_config())
@@ -2018,6 +2039,15 @@ def build_sweep_configs_bytes(
     )
     if rc != 0:
         raise RuntimeError(f"bike_gpu_build_sweep_configs failed with return code {rc}")
+    if backend in _BACKEND_DEFAULT_SUSPENSION_SAG and backend != "compliant_2d":
+        arr = (GpuWorldConfigStruct * int(nworld)).from_buffer(buf)
+        _apply_backend_sag_defaults(
+            arr,
+            nworld,
+            backend,
+            fork_psi_scale=fork_psi_scale,
+            shock_rate_scale=shock_rate_scale,
+        )
     return buf.raw
 
 
@@ -2877,6 +2907,7 @@ def build_sp3_sweep_configs_bytes(
     rebound_scale: np.ndarray | None = None,
     shock_rate_scale: np.ndarray | None = None,
     tire_stiff_scale: np.ndarray | None = None,
+    backend: str = "compliant_2d",
 ) -> bytes:
     """Build ``nworld`` ``GpuSp3Config`` structs resolved against ``m_mj`` with optional sweep scales."""
     cfg_size = int(lib.bike_gpu_sizeof_sp3_config())
@@ -2899,19 +2930,28 @@ def build_sp3_sweep_configs_bytes(
     if rc != 0:
         raise RuntimeError(f"bike_gpu_build_sp3_sweep_configs failed with return code {rc}")
 
-    if m_mj is not None:
-        base_resolved = build_sp3_config_struct_from_mjmodel(lib, m_mj)
+    need_arr = m_mj is not None or (backend in _BACKEND_DEFAULT_SUSPENSION_SAG and backend != "compliant_2d")
+    if need_arr:
         arr_type = GpuSp3ConfigStruct * int(nworld)
         arr = arr_type.from_buffer(buf)
-        for w in range(int(nworld)):
-            arr[w].efc_scan = base_resolved.efc_scan
-            arr[w].rider.envelope = base_resolved.rider.envelope
-            arr[w].motor_actuator_idx = base_resolved.motor_actuator_idx
-            arr[w].motor_ctrl_min_nm = base_resolved.motor_ctrl_min_nm
-            arr[w].motor_ctrl_max_nm = base_resolved.motor_ctrl_max_nm
-            arr[w].accel_sensor_adr = base_resolved.accel_sensor_adr
-            arr[w].gyro_sensor_adr = base_resolved.gyro_sensor_adr
-            arr[w].shifting.cassette_tendon_ids = base_resolved.shifting.cassette_tendon_ids
+        _apply_backend_sag_defaults(
+            arr,
+            nworld,
+            backend,
+            fork_psi_scale=fork_psi_scale,
+            shock_rate_scale=shock_rate_scale,
+        )
+        if m_mj is not None:
+            base_resolved = build_sp3_config_struct_from_mjmodel(lib, m_mj)
+            for w in range(int(nworld)):
+                arr[w].efc_scan = base_resolved.efc_scan
+                arr[w].rider.envelope = base_resolved.rider.envelope
+                arr[w].motor_actuator_idx = base_resolved.motor_actuator_idx
+                arr[w].motor_ctrl_min_nm = base_resolved.motor_ctrl_min_nm
+                arr[w].motor_ctrl_max_nm = base_resolved.motor_ctrl_max_nm
+                arr[w].accel_sensor_adr = base_resolved.accel_sensor_adr
+                arr[w].gyro_sensor_adr = base_resolved.gyro_sensor_adr
+                arr[w].shifting.cassette_tendon_ids = base_resolved.shifting.cassette_tendon_ids
     return buf.raw
 
 
@@ -3166,9 +3206,6 @@ def build_gpu_tyre_model_struct_from_mjmodel(
 
     distinct_deg = float(tires.get("distinct_normal_deg", 10.0))
     model.distinct_normal_cosine = float(math.cos(math.radians(distinct_deg)))
-    model.dt_s = float(pc.get("timestep_s", m_mj.opt.timestep))
-    model.gravity_mps2 = float(abs(m_mj.opt.gravity[2])) if abs(float(m_mj.opt.gravity[2])) > 0.0 else 9.81
-    model.load_threshold_n = 1.0
 
     pneu_cfg = tires.get("pneumatic") if isinstance(tires.get("pneumatic"), dict) else {}
     tier_str = str(pneu_cfg.get("tier", "fast")).strip().lower()
@@ -3186,8 +3223,10 @@ def build_gpu_tyre_model_struct_from_mjmodel(
         discretised_brush = False
 
     wheel_body_names = (("front_wheel",), ("rear_wheel",))
-    wheel_geom_names = (("front_tire", "front_wheel"), ("rear_tire", "rear_wheel"))
-    wheel_jnt_names = (("front_wheel_spin",), ("rear_wheel_spin",))
+    wheel_geom_names = (
+        ("geom_front_contact", "front_contact", "front_tire", "front_wheel"),
+        ("geom_rear_contact", "rear_contact", "rear_tire", "rear_wheel"),
+    )
     default_radii = (0.372, 0.352)
     rb = manifest.get("resolved_bike") if isinstance(manifest, dict) and isinstance(manifest.get("resolved_bike"), dict) else {}
     rb_radii = (
@@ -3252,15 +3291,6 @@ def build_gpu_tyre_model_struct_from_mjmodel(
                 gid = cand
                 break
         w.geom_id = gid
-        jid = -1
-        for jname in wheel_jnt_names[s]:
-            cand = int(mujoco.mj_name2id(m_mj, mujoco.mjtObj.mjOBJ_JOINT, jname))
-            if cand >= 0:
-                jid = cand
-                break
-        w.hinge_joint_id = jid
-        w.nv = int(m_mj.nv)
-        w.njnt = int(m_mj.njnt)
 
         geom_r = float(m_mj.geom_size[gid, 0]) if gid >= 0 else default_radii[s]
         w.radius_m = float(rb_radii[s] or geom_r or default_radii[s])
@@ -3322,7 +3352,7 @@ def build_gpu_tyre_model_struct_from_mjmodel(
 
         if be_name == "distributed_2d_reference":
             scnt = max(1, min(int(model.station_count), 128))
-            w.station_weight = float(1.0 / float(scnt))
+            w.station_weight = float((2.0 * math.pi) / float(scnt))
             for st in range(scnt):
                 ang = (2.0 * math.pi * float(st)) / float(scnt)
                 w.local_xyz[3 * st + 0] = float(w.radius_m * math.cos(ang))
@@ -3419,26 +3449,55 @@ def build_terrain_buffers_from_mjmodel(
     px32 = np.asarray(px, dtype=np.float32)
     pz32 = np.asarray(pz, dtype=np.float32)
     n_pts = int(px32.size)
-    n_seg = max(0, n_pts - 1)
+    if n_pts < 2:
+        raise ValueError(f"Terrain polyline requires at least 2 vertices, got {n_pts}")
     dx = px32[1:] - px32[:-1]
+    if not bool(np.all(dx > 0.0)):
+        raise ValueError("Terrain profile x coordinates must be strictly increasing")
     dz = pz32[1:] - pz32[:-1]
     len_sq = dx * dx + dz * dz
 
-    # Signed profile (closed CCW polygon below road for non-pneumatic)
-    z_bot = float(np.min(pz32) - 5.0)
-    sp_x = np.concatenate([px32, np.array([px32[-1], px32[0]], dtype=np.float32)])
-    sp_z = np.concatenate([pz32, np.array([z_bot, z_bot], dtype=np.float32)])
-    n_sp = int(sp_x.size)
-    sp_x_next = np.roll(sp_x, -1)
-    sp_z_next = np.roll(sp_z, -1)
-    sp_ex = sp_x_next - sp_x
-    sp_ez = sp_z_next - sp_z
-    sp_len2 = sp_ex * sp_ex + sp_ez * sp_ez
-    sp_len = np.sqrt(np.maximum(sp_len2, 1e-12))
-    sp_nx = -sp_ez / sp_len
-    sp_nz = sp_ex / sp_len
+    left_x = np.zeros(n_pts, dtype=np.float32)
+    left_z = np.zeros(n_pts, dtype=np.float32)
+    left_x[1:] = -dx
+    left_z[1:] = -dz
+    right_x = np.zeros(n_pts, dtype=np.float32)
+    right_z = np.zeros(n_pts, dtype=np.float32)
+    right_x[:-1] = dx
+    right_z[:-1] = dz
 
-    f32_parts = [px32, pz32, dx, dz, len_sq, sp_x, sp_z, sp_ex, sp_ez, sp_len2, sp_nx, sp_nz]
+    height_changes = np.zeros(n_pts, dtype=np.int32)
+    height_changes[1:] = np.cumsum((dz != 0.0).astype(np.int32), dtype=np.int32)
+
+    # Signed profile shares the strictly monotonic polyline vertices (tyre_upload.cpp)
+    sp_x = px32
+    sp_z = pz32
+    n_sp = n_pts
+    sp_ex = dx
+    sp_ez = dz
+    sp_len2 = len_sq
+    sp_len = np.sqrt(np.maximum(sp_len2, 1e-12))
+    sp_nx = (-sp_ez / sp_len).astype(np.float32)
+    sp_nz = (sp_ex / sp_len).astype(np.float32)
+
+    f32_parts = [
+        px32,
+        pz32,
+        dx,
+        dz,
+        len_sq,
+        left_x,
+        left_z,
+        right_x,
+        right_z,
+        sp_x,
+        sp_z,
+        sp_ex,
+        sp_ez,
+        sp_len2,
+        sp_nx,
+        sp_nz,
+    ]
     offsets: list[int] = []
     cur = 0
     for part in f32_parts:
@@ -3446,7 +3505,7 @@ def build_terrain_buffers_from_mjmodel(
         cur += int(part.size)
     f32_arr = np.ascontiguousarray(np.concatenate(f32_parts), dtype=np.float32)
 
-    i32_arr = np.zeros(max(1, 5 * max(1, n_seg)), dtype=np.int32)
+    i32_arr = np.ascontiguousarray(height_changes, dtype=np.int32)
     desc = GpuTerrainTableDescStruct()
     desc.polyline_vertex_count = n_pts
     desc.px_offset = offsets[0]
@@ -3455,22 +3514,22 @@ def build_terrain_buffers_from_mjmodel(
     desc.seg_z_offset = offsets[3]
     desc.seg_len_sq_offset = offsets[4]
     desc.height_changes_offset = 0
-    desc.left_x_offset = 0
-    desc.left_z_offset = 0
-    desc.right_x_offset = 0
-    desc.right_z_offset = 0
+    desc.left_x_offset = offsets[5]
+    desc.left_z_offset = offsets[6]
+    desc.right_x_offset = offsets[7]
+    desc.right_z_offset = offsets[8]
     desc.maximum_z = float(np.max(pz32))
     desc.significant_delta_m = float(significant_delta_m)
     desc.significance_fraction = float(significance_fraction)
     desc.normal_cosine = float(model_struct.distinct_normal_cosine)
     desc.signed_vertex_count = n_sp
-    desc.sp_x_offset = offsets[5]
-    desc.sp_z_offset = offsets[6]
-    desc.sp_edge_x_offset = offsets[7]
-    desc.sp_edge_z_offset = offsets[8]
-    desc.sp_length2_offset = offsets[9]
-    desc.sp_normal_x_offset = offsets[10]
-    desc.sp_normal_z_offset = offsets[11]
+    desc.sp_x_offset = offsets[9]
+    desc.sp_z_offset = offsets[10]
+    desc.sp_edge_x_offset = offsets[11]
+    desc.sp_edge_z_offset = offsets[12]
+    desc.sp_length2_offset = offsets[13]
+    desc.sp_normal_x_offset = offsets[14]
+    desc.sp_normal_z_offset = offsets[15]
     desc.f32_count = int(f32_arr.size)
     desc.i32_count = int(i32_arr.size)
 

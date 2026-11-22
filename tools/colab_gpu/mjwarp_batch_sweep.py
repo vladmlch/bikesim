@@ -360,12 +360,14 @@ def _get_sp4_xz_shift_kernel() -> Any:
     def _sp4_shift_xz_kernel(
         qpos: wp.array2d[float],
         xpos: wp.array2d[wp.vec3],
+        xipos: wp.array2d[wp.vec3],
         xanchor: wp.array2d[wp.vec3],
         site_xpos: wp.array2d[wp.vec3],
         subtree_com: wp.array2d[wp.vec3],
         xz_off: wp.array[wp.vec2],
         saved_xz: wp.array2d[float],
         saved_xpos: wp.array2d[wp.vec3],
+        saved_xipos: wp.array2d[wp.vec3],
         saved_xanchor: wp.array2d[wp.vec3],
         saved_site_xpos: wp.array2d[wp.vec3],
         saved_subtree_com: wp.array2d[wp.vec3],
@@ -388,6 +390,15 @@ def _get_sp4_xz_shift_kernel() -> Any:
             if rz1 >= 0:
                 qpos[w, rz1] = qpos[w, rz1] - dz
             return
+        if mode == 4:
+            off = xz_off[w]
+            qpos[w, rx0] = qpos[w, rx0] + sign * off[0]
+            qpos[w, rz0] = qpos[w, rz0] + sign * off[1]
+            if rx1 >= 0:
+                qpos[w, rx1] = qpos[w, rx1] + sign * off[0]
+            if rz1 >= 0:
+                qpos[w, rz1] = qpos[w, rz1] + sign * off[1]
+            return
         if mode == 3:
             qpos[w, rx0] = saved_xz[w, 0]
             qpos[w, rz0] = saved_xz[w, 1]
@@ -397,6 +408,8 @@ def _get_sp4_xz_shift_kernel() -> Any:
                 qpos[w, rz1] = saved_xz[w, 3]
             for i in range(1, xpos.shape[1]):
                 xpos[w, i] = saved_xpos[w, i]
+            for i in range(1, xipos.shape[1]):
+                xipos[w, i] = saved_xipos[w, i]
             for i in range(xanchor.shape[1]):
                 xanchor[w, i] = saved_xanchor[w, i]
             for i in range(site_xpos.shape[1]):
@@ -413,6 +426,8 @@ def _get_sp4_xz_shift_kernel() -> Any:
                 saved_xz[w, 3] = qpos[w, rz1]
             for i in range(1, xpos.shape[1]):
                 saved_xpos[w, i] = xpos[w, i]
+            for i in range(1, xipos.shape[1]):
+                saved_xipos[w, i] = xipos[w, i]
             for i in range(xanchor.shape[1]):
                 saved_xanchor[w, i] = xanchor[w, i]
             for i in range(site_xpos.shape[1]):
@@ -429,6 +444,8 @@ def _get_sp4_xz_shift_kernel() -> Any:
             qpos[w, rz1] = qpos[w, rz1] + s[2]
         for i in range(1, xpos.shape[1]):
             xpos[w, i] = xpos[w, i] + s
+        for i in range(1, xipos.shape[1]):
+            xipos[w, i] = xipos[w, i] + s
         for i in range(xanchor.shape[1]):
             xanchor[w, i] = xanchor[w, i] + s
         for i in range(site_xpos.shape[1]):
@@ -558,6 +575,7 @@ def _build_sp4_xz_rebase_ctx(m_mj: Any, nworld: int, device: str) -> dict[str, A
         "xz_off": wp.zeros(int(nworld), dtype=wp.vec2, device=device),
         "saved_xz": wp.zeros((int(nworld), 4), dtype=wp.float32, device=device),
         "saved_xpos": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
+        "saved_xipos": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
         "saved_xanchor": wp.zeros((int(nworld), int(m_mj.njnt)), dtype=wp.vec3, device=device),
         "saved_site_xpos": wp.zeros((int(nworld), int(m_mj.nsite)), dtype=wp.vec3, device=device),
         "saved_subtree_com": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
@@ -585,12 +603,14 @@ def _launch_sp4_xz_shift(
         inputs=[
             d_b.qpos,
             d_b.xpos,
+            d_b.xipos,
             d_b.xanchor,
             d_b.site_xpos,
             d_b.subtree_com,
             xz_ctx["xz_off"],
             xz_ctx["saved_xz"],
             xz_ctx["saved_xpos"],
+            xz_ctx["saved_xipos"],
             xz_ctx["saved_xanchor"],
             xz_ctx["saved_site_xpos"],
             xz_ctx["saved_subtree_com"],
@@ -680,6 +700,10 @@ def _mjwarp_sp4_clean_split_step(
     _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
     launch_post_solve_fn()
     if launch_energy_post_step_fn is not None:
+        _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 4)
+        ops["fwd_kinematics"](m_wp, d_b)
+        ops["crb"](m_wp, d_b)
+        _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
         launch_energy_post_step_fn()
 
 
@@ -725,6 +749,10 @@ def _mjwarp_sp4_m0_clean_split_step(
     _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
     launch_m0_post_solve_fn()
     if launch_energy_post_step_fn is not None:
+        _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 4)
+        ops["fwd_kinematics"](m_wp, d_b)
+        ops["crb"](m_wp, d_b)
+        _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
         launch_energy_post_step_fn()
 
 
@@ -1328,6 +1356,7 @@ def run_parameter_sweep(
         rebound_scale=scales["rebound_scale"],
         shock_rate_scale=scales["shock_rate_scale"],
         tire_stiff_scale=scales["tire_stiff_scale"],
+        backend=backend,
     )
     sizeof_state = int(lib.bike_gpu_sizeof_world_state())
 
@@ -1530,8 +1559,6 @@ def run_tyre_backend_scaling_benchmark(
     cuda_stream = wp.get_stream().cuda_stream
     tendon_range_ptr, tendon_range_stride = _resolve_tendon_range_binding(m_wp, nworld)
 
-    configs_bytes = build_sweep_configs_bytes(lib=lib, nworld=1)
-    d_configs = _allocate_and_copy_device_bytes(configs_bytes, device=device)
     d_states = wp.zeros(nworld * sizeof_state, dtype=wp.uint8, device=device)
 
     tier_results: list[dict[str, Any]] = []
@@ -1541,6 +1568,8 @@ def run_tyre_backend_scaling_benchmark(
         backend = str(tier["backend"])
         station_count = int(tier["station_count"])
         units_per_world = int(tier["units_per_world"])
+        configs_bytes = build_sweep_configs_bytes(lib=lib, nworld=1, backend=backend)
+        d_configs = _allocate_and_copy_device_bytes(configs_bytes, device=device)
         (
             d_tyre_model,
             d_terrain_desc,
@@ -1735,6 +1764,7 @@ def run_mjwarp_sp3_autonomous_sweep(
             rebound_scale=scales["rebound_scale"],
             shock_rate_scale=scales["shock_rate_scale"],
             tire_stiff_scale=scales["tire_stiff_scale"],
+            backend=backend,
         )
         sizeof_ws = int(lib.bike_gpu_sizeof_world_state())
         sizeof_sp3 = int(lib.bike_gpu_sizeof_sp3_world_state())
@@ -2420,6 +2450,7 @@ def _run_cuda_sp4_batch(
                 ctypes.c_void_p(d_b.M.ptr),
                 ctypes.c_void_p(d_b.qpos.ptr),
                 ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.xpos.ptr),
                 ctypes.c_void_p(d_b.ctrl.ptr),
                 ctypes.c_void_p(int(m_wp.body_mass.ptr)),
                 ctypes.c_void_p(int(d_b.xipos.ptr)),

@@ -669,13 +669,115 @@ void test_spindle_controller_m2k2_zero_bit_parity(const MultiStateCaptureBundle 
         require_bits_f64(ctrl_m2k2->state().coast_hold_nm.value_or(0.0),
                          ref_state->coast_hold_nm,
                          "SpindleController(m2k2) coast_hold_nm 0-bit parity");
+
+        const auto &ik = ctrl_m2k2->presentation_ik();
+        const auto m2k2_diag_state = ctrl_m2k2->state();
+        const auto &alloc = m2k2_diag_state.allocation_diagnostics;
+        const auto &eff = m2k2_diag_state.effort_diagnostics;
+        const auto &terms = ctrl_m2k2->presentation_terms();
+        if (!st.cpu_cmd.enabled) {
+            require(ik.empty(), "SpindleController(m2k2) disabled command clears saturated_ik");
+            require_bits_f64(alloc.crank_task_nm, 0.0,
+                             "SpindleController(m2k2) disabled crank_task_nm");
+            require_bits_f64(alloc.crank_task_shortfall_nm, 0.0,
+                             "SpindleController(m2k2) disabled crank_task_shortfall_nm");
+        } else {
+            require(ik.size() == 2 && ik[0].first == "torso" && ik[1].first == "arms",
+                    "SpindleController(m2k2) saturated_ik keys");
+            require(ik[0].second == (ref_scratch->torso_saturated != 0),
+                    "SpindleController(m2k2) torso_saturated parity");
+            require(ik[1].second == (ref_scratch->arms_saturated != 0),
+                    "SpindleController(m2k2) arms_saturated parity");
+            require_bits_f64(alloc.crank_task_nm, ref_scratch->crank_task_nm,
+                             "SpindleController(m2k2) crank_task_nm 0-bit parity");
+        }
+        require(alloc.present && !alloc.invalid_controller,
+                "SpindleController(m2k2) allocation_diagnostics present");
+        require(std::isfinite(alloc.crank_task_shortfall_nm),
+                "SpindleController(m2k2) crank_task_shortfall_nm finite");
+        require(eff.present, "SpindleController(m2k2) effort_diagnostics present");
+        require(terms.size() == static_cast<std::size_t>(pc::kNumSpindleJoints),
+                "SpindleController(m2k2) last_terms width");
+        const std::span ref_req{ref_scratch->last_req};
+        const std::span ref_exc{ref_scratch->last_exc};
+        for (int i = 0; i < pc::kNumSpindleJoints; ++i) {
+            const int aid = std::span{params64.joint_actuator_id}[to_idx(i)];
+            const std::size_t slot = to_idx(i);
+            require_bits_f64(terms[slot].second.requested_nm,
+                             ref_req[slot],
+                             "SpindleController(m2k2) terms.requested_nm parity");
+            require(terms[slot].second.active_request_nm.has_value() &&
+                        terms[slot].second.active_delivered_nm.has_value(),
+                    "SpindleController(m2k2) terms active fields set");
+            require_bits_f64(*terms[slot].second.active_request_nm,
+                             ref_exc[slot],
+                             "SpindleController(m2k2) terms.active_request_nm parity");
+            require_bits_f64(*terms[slot].second.active_delivered_nm,
+                             ctrl_ref[to_idx(aid)],
+                             "SpindleController(m2k2) terms.active_delivered_nm parity");
+        }
     }
 
     // Verify switching back to m0 preserves default CPU(m0) 0-bit parity
-    ctrl_m2k2->set_solver_mode(rider::SpindleSolverMode::m0);
+    // and compare saturated_ik / diagnostics under extreme lean + high torque.
     auto ctrl_default = std::make_unique<rider::SpindleController>(
         m, bundle.pose, bundle.spindle_cfg, bundle.crank_length_m);
     const auto &probe = bundle.states[bundle.states.size() / 2u];
+    {
+        auto ext_cmd = probe.cpu_cmd;
+        ext_cmd.enabled = true;
+        ext_cmd.posture.torso_lean_rad = 1.5;
+        copy_state_to_mjdata(m, d_cpu.get(), probe);
+        copy_state_to_mjdata(m, d_ref.get(), probe);
+        (void)ctrl_m2k2->compute(
+            d_cpu.get(), ext_cmd, /*advance=*/false, std::nullopt,
+            /*steady_state=*/false, std::nullopt, false, probe.weld_crank_torque_nm);
+        (void)ctrl_default->compute(
+            d_ref.get(), ext_cmd, /*advance=*/false, std::nullopt,
+            /*steady_state=*/false, std::nullopt, false, probe.weld_crank_torque_nm);
+        const auto &ik_m2 = ctrl_m2k2->presentation_ik();
+        const auto &ik_m0 = ctrl_default->presentation_ik();
+        require(ik_m2 == ik_m0,
+                "SpindleController(m2k2) extreme-lean saturated_ik matches M0");
+        require(ik_m2.size() == 2 && (ik_m2[0].second || ik_m2[1].second),
+                "extreme lean triggers non-trivial IK saturation");
+    }
+    {
+        rider::SpindleConfig tight_cfg = bundle.spindle_cfg;
+        tight_cfg.has_strength = false;
+        tight_cfg.joint_limit_nm = 5.0;
+        tight_cfg.joint_power_limit_w = 10.0;
+        auto tight_m2 = std::make_unique<rider::SpindleController>(
+            m, bundle.pose, tight_cfg, bundle.crank_length_m);
+        tight_m2->set_solver_mode(rider::SpindleSolverMode::m2k2);
+        auto tight_m0 = std::make_unique<rider::SpindleController>(
+            m, bundle.pose, tight_cfg, bundle.crank_length_m);
+        auto tight_cmd = probe.cpu_cmd;
+        tight_cmd.enabled = true;
+        tight_cmd.mean_crank_torque_nm = 100.0;
+        copy_state_to_mjdata(m, d_cpu.get(), probe);
+        copy_state_to_mjdata(m, d_ref.get(), probe);
+        (void)tight_m2->compute(
+            d_cpu.get(), tight_cmd, /*advance=*/false, std::nullopt,
+            /*steady_state=*/false, std::nullopt, false, probe.weld_crank_torque_nm);
+        (void)tight_m0->compute(
+            d_ref.get(), tight_cmd, /*advance=*/false, std::nullopt,
+            /*steady_state=*/false, std::nullopt, false, probe.weld_crank_torque_nm);
+        const auto st_m2 = tight_m2->state();
+        const auto st_m0 = tight_m0->state();
+        require(st_m2.allocation_diagnostics.crank_task_nm > 1.0 &&
+                    st_m2.allocation_diagnostics.crank_task_shortfall_nm > 1.0,
+                "tight torque/power ceiling produces positive crank task & shortfall");
+        require(std::abs(st_m2.allocation_diagnostics.crank_task_shortfall_nm -
+                         st_m0.allocation_diagnostics.crank_task_shortfall_nm) < 0.5,
+                "tight ceiling shortfall matches M0 within 0.5 Nm");
+        const bool any_sat = std::ranges::any_of(
+            tight_m2->presentation_terms(),
+            [](const auto &kv) { return kv.second.saturated; });
+        require(any_sat, "tight ceiling marks saturated joint term(s)");
+    }
+
+    ctrl_m2k2->set_solver_mode(rider::SpindleSolverMode::m0);
     copy_state_to_mjdata(m, d_cpu.get(), probe);
     copy_state_to_mjdata(m, d_ref.get(), probe);
     const auto t_switched = ctrl_m2k2->compute(
@@ -738,7 +840,15 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
         }
     }
 
-    const auto run_batched_fp32 = [&](float newton_eps, float conv_tol, std::string_view label) {
+    static_assert(pc::SpindleM0Options<float>{}.newton_eps == 1e-2f);
+    static_assert(pc::SpindleM0Options<float>{}.conv_tol == 1e-4f);
+    static_assert(pc::SpindleM0Options<float>{}.det_eps == 1e-12f);
+    static_assert(pc::SpindleM0Options<double>{}.newton_eps == 1e-3);
+    static_assert(pc::SpindleM0Options<double>{}.conv_tol == 1e-6);
+    static_assert(pc::SpindleM0Options<double>{}.det_eps == 1e-18);
+
+    const auto run_batched_fp32 = [&](std::optional<pc::SpindleM0Options<float>> opts_opt,
+                                      std::string_view label) {
         const std::size_t nworld = bundle.states.size();
         std::vector<DataPtr> d_worlds;
         d_worlds.reserve(nworld);
@@ -750,12 +860,6 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
         std::vector<int> world_solves(nworld, 0);
         std::vector<std::vector<float>> done_ctrl_snapshot(nworld);
         std::vector<pc::u8> has_done_snapshot(nworld, 0u);
-
-        const pc::SpindleM0Options<float> opts{
-            .newton_eps = newton_eps,
-            .conv_tol = conv_tol,
-            .det_eps = 1e-12f,
-        };
 
         for (std::size_t w = 0; w < nworld; ++w) {
             const auto &st = bundle.states[w];
@@ -821,11 +925,19 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
                 const auto qacc_f32 = to_real_vec<float>(dw->qacc, m->nv);
                 const auto dM_f32 = to_real_vec<float>(dw->M, static_cast<int>(m->nC));
 
-                pc::spindle_m0_step<float, pc::GpuToolkit>(
-                    &params32, qpos_f32.data(), qvel_f32.data(), bias_f32.data(), qacc_f32.data(),
-                    M_rowadr_i32.data(), M_rownnz_i32.data(), M_colind_i32.data(), dM_f32.data(),
-                    &st_worlds[w], &scr_worlds[w], ctrl_worlds[w].data(),
-                    needs_solve[w], done[w], opts);
+                if (opts_opt.has_value()) {
+                    pc::spindle_m0_step<float, pc::GpuToolkit>(
+                        &params32, qpos_f32.data(), qvel_f32.data(), bias_f32.data(), qacc_f32.data(),
+                        M_rowadr_i32.data(), M_rownnz_i32.data(), M_colind_i32.data(), dM_f32.data(),
+                        &st_worlds[w], &scr_worlds[w], ctrl_worlds[w].data(),
+                        needs_solve[w], done[w], *opts_opt);
+                } else {
+                    pc::spindle_m0_step<float, pc::GpuToolkit>(
+                        &params32, qpos_f32.data(), qvel_f32.data(), bias_f32.data(), qacc_f32.data(),
+                        M_rowadr_i32.data(), M_rownnz_i32.data(), M_colind_i32.data(), dM_f32.data(),
+                        &st_worlds[w], &scr_worlds[w], ctrl_worlds[w].data(),
+                        needs_solve[w], done[w]);
+                }
 
                 if (has_done_snapshot[w] != 0) {
                     require(done[w] == 1 && needs_solve[w] == 0,
@@ -869,10 +981,16 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
         return std::array<double, 3>{p50, p95, errs.back()};
     };
 
-    const auto err_1e3_tol1e4 = run_batched_fp32(1e-3f, 1e-4f, "kEps=1e-3f, tol=1e-4f");
-    const auto err_1e3_tol1e5 = run_batched_fp32(1e-3f, 1e-5f, "kEps=1e-3f, tol=1e-5f");
-    const auto err_1e2_tol1e4 = run_batched_fp32(1e-2f, 1e-4f, "kEps=1e-2f, tol=1e-4f");
-    const auto err_1e2_tol1e5 = run_batched_fp32(1e-2f, 1e-5f, "kEps=1e-2f, tol=1e-5f");
+    const auto err_1e3_tol1e4 = run_batched_fp32(
+        pc::SpindleM0Options<float>{1e-3f, 1e-4f, 1e-12f}, "kEps=1e-3f, tol=1e-4f");
+    const auto err_1e3_tol1e5 = run_batched_fp32(
+        pc::SpindleM0Options<float>{1e-3f, 1e-5f, 1e-12f}, "kEps=1e-3f, tol=1e-5f");
+    const auto err_1e2_tol1e4 = run_batched_fp32(
+        pc::SpindleM0Options<float>{1e-2f, 1e-4f, 1e-12f}, "kEps=1e-2f, tol=1e-4f");
+    const auto err_1e2_tol1e5 = run_batched_fp32(
+        pc::SpindleM0Options<float>{1e-2f, 1e-5f, 1e-12f}, "kEps=1e-2f, tol=1e-5f");
+    const auto err_default_f32 = run_batched_fp32(
+        std::nullopt, "default SpindleM0Options<float>{}");
 
     // In FP32, kEps=1e-3f suffers finite-difference cancellation on one handover/kink state
     // (p95 <= 0.01 Nm, isolated max ~177 Nm), whereas kEps=1e-2f eliminates the cancellation
@@ -881,6 +999,7 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
             "FP32 kEps=1e-3f p95 |dTau| < 0.01 Nm");
     require(err_1e2_tol1e4[2] < 0.01, "FP32 (kEps=1e-2f, tol=1e-4f) max |dTau| < 0.01 Nm");
     require(err_1e2_tol1e5[2] < 0.01, "FP32 (kEps=1e-2f, tol=1e-5f) max |dTau| < 0.01 Nm");
+    require(err_default_f32[2] < 0.01, "FP32 default SpindleM0Options<float>{} max |dTau| < 0.01 Nm");
 
     // Verify dense strided qM + nullptr subtreemass matches CSR on FP32 M0
     const CapturedTestState &st0 = bundle.states[bundle.states.size() / 2u];

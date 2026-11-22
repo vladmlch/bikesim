@@ -120,26 +120,62 @@ struct PedalingOutput {
     u8 pad = 0;
 };
 
-template <class Real>
-BIKE_HD Real pedaling_flush_subnormal(Real x) noexcept {
-    if constexpr (sizeof(Real) == 4) {
-        const u32 bits = pf_f32_to_u32(static_cast<float>(x));
-        if ((bits & 0x7f800000u) == 0u) {
-            return static_cast<Real>(pf_u32_to_f32(bits & 0x80000000u));
-        }
+namespace detail {
+
+BIKE_HD float pedaling_flush_subnormal_impl(float x) noexcept {
+    const u32 bits = pf_f32_to_u32(x);
+    if ((bits & 0x7f800000u) == 0u) {
+        return pf_u32_to_f32(bits & 0x80000000u);
     }
     return x;
 }
 
+#if !defined(__METAL_VERSION__)
+BIKE_HD double pedaling_flush_subnormal_impl(double x) noexcept {
+    return x;
+}
+#endif
+
+BIKE_HD float pedaling_copysign_impl(float mag, float sign_src) noexcept {
+    const u32 m_bits = pf_f32_to_u32(mag) & 0x7fffffffu;
+    const u32 s_bits = pf_f32_to_u32(sign_src) & 0x80000000u;
+    return pf_u32_to_f32(m_bits | s_bits);
+}
+
+#if !defined(__METAL_VERSION__)
+BIKE_HD double pedaling_copysign_impl(double mag, double sign_src) noexcept {
+    return sign_src < 0.0 ? -mag : mag;
+}
+#endif
+
+BIKE_HD float pedaling_cody_waite_r(float ax, float q_f) noexcept {
+    // bitwise-locked FP32 Cody-Waite pi/2 split
+    const float kHalfPiHi = 1.57080078125f;
+    const float kHalfPiMid = -4.410743713378906e-06f;
+    const float kHalfPiLo = -4.371138828673793e-08f;
+    return ((ax - q_f * kHalfPiHi) - q_f * kHalfPiMid) - q_f * kHalfPiLo;
+}
+
+#if !defined(__METAL_VERSION__)
+BIKE_HD double pedaling_cody_waite_r(double ax, double q_f) noexcept {
+    // bitwise-locked FP64 Cody-Waite pi/2 split
+    const double kHalfPiHi = 1.5707963109016418;
+    const double kHalfPiMid = 1.5893256488652696e-08;
+    const double kHalfPiLo = -1.7763568394002505e-15;
+    return ((ax - q_f * kHalfPiHi) - q_f * kHalfPiMid) - q_f * kHalfPiLo;
+}
+#endif
+
+} // namespace detail
+
+template <class Real>
+BIKE_HD Real pedaling_flush_subnormal(Real x) noexcept {
+    return detail::pedaling_flush_subnormal_impl(x);
+}
+
 template <class Real>
 BIKE_HD Real pedaling_copysign(Real mag, Real sign_src) noexcept {
-    if constexpr (sizeof(Real) == 4) {
-        const u32 m_bits = pf_f32_to_u32(static_cast<float>(mag)) & 0x7fffffffu;
-        const u32 s_bits = pf_f32_to_u32(static_cast<float>(sign_src)) & 0x80000000u;
-        return static_cast<Real>(pf_u32_to_f32(m_bits | s_bits));
-    } else {
-        return sign_src < BIKE_REAL(Real, 0.0) ? -mag : mag;
-    }
+    return detail::pedaling_copysign_impl(mag, sign_src);
 }
 
 template <class Real, class TK>
@@ -152,24 +188,7 @@ BIKE_HD Real pedaling_cos_portable(Real x) noexcept {
     const Real q4 = q_f - BIKE_REAL(Real, 4.0) * TK::floor(q_f * BIKE_REAL(Real, 0.25));
     const u32 quadrant = static_cast<u32>(static_cast<i32>(q4)) & 3u;
 
-    Real r = ax;
-    if constexpr (sizeof(Real) == 4) {
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP32 Cody-Waite pi/2 split
-        const Real kHalfPiHi = BIKE_REAL(Real, 1.57080078125);
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP32 Cody-Waite pi/2 split
-        const Real kHalfPiMid = BIKE_REAL(Real, -4.410743713378906e-06);
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP32 Cody-Waite pi/2 split
-        const Real kHalfPiLo = BIKE_REAL(Real, -4.371138828673793e-08);
-        r = ((ax - q_f * kHalfPiHi) - q_f * kHalfPiMid) - q_f * kHalfPiLo;
-    } else {
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP64 Cody-Waite pi/2 split
-        const Real kHalfPiHi = BIKE_REAL(Real, 1.5707963109016418);
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP64 Cody-Waite pi/2 split
-        const Real kHalfPiMid = BIKE_REAL(Real, 1.5893256488652696e-08);
-        // NOLINTNEXTLINE(modernize-use-std-numbers) bitwise-locked FP64 Cody-Waite pi/2 split
-        const Real kHalfPiLo = BIKE_REAL(Real, -1.7763568394002505e-15);
-        r = ((ax - q_f * kHalfPiHi) - q_f * kHalfPiMid) - q_f * kHalfPiLo;
-    }
+    const Real r = detail::pedaling_cody_waite_r(ax, q_f);
 
     const Real r2 = r * r;
     Real mag = BIKE_REAL(Real, 0.0);

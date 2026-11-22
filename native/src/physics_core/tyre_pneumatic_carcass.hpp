@@ -74,10 +74,8 @@ struct PneumaticCarcassStatePod {
 
 template <class Real>
 struct PneumaticCarcassScratch {
-    Real pressure_force_n[kMaxPneumaticRays]{};
     Real elastic_force_n[kMaxPneumaticRays]{};
     Real maxwell_force_n[kMaxPneumaticRays]{};
-    Real hysteresis_force_n[kMaxPneumaticRays]{};
     Real rim_force_n[kMaxPneumaticRays]{};
     Real total_element_force_n[kMaxPneumaticRays]{};
     Real material_rate_mps[kMaxPneumaticRays]{};
@@ -484,7 +482,6 @@ BIKE_HD Status pneumatic_evaluate_carcass(
             : (BIKE_REAL(Real, 2.0) * TK::sqrt(inner));
         const Real pressure_line = area_pressure * chord;
         const Real carcass_line = carcass_si * d;
-        scratch->pressure_force_n[i] = pressure_line * ds_m;
         scratch->elastic_force_n[i] = (pressure_line + carcass_line) * ds_m;
     }
 
@@ -545,7 +542,6 @@ BIKE_HD Status pneumatic_evaluate_carcass(
         const Real carcass_hysteresis =
             tyre.loss_factor * scratch->elastic_force_n[i] * sign;
         const Real rim_hysteresis = tyre.loss_factor * rim_elastic * sign;
-        scratch->hysteresis_force_n[i] = carcass_hysteresis;
         hysteresis_loss_w += TK::max(
             (carcass_hysteresis + rim_hysteresis) *
                 scratch->material_rate_mps[i],
@@ -553,7 +549,7 @@ BIKE_HD Status pneumatic_evaluate_carcass(
         scratch->rim_force_n[i] = rim_elastic + rim_hysteresis;
         const Real total = TK::max(
             scratch->elastic_force_n[i] + scratch->maxwell_force_n[i] +
-                scratch->hysteresis_force_n[i] + scratch->rim_force_n[i],
+                carcass_hysteresis + scratch->rim_force_n[i],
             static_cast<Real>(0));
         scratch->total_element_force_n[i] =
             d > static_cast<Real>(0) ? total : static_cast<Real>(0);

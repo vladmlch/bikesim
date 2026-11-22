@@ -7,7 +7,7 @@
 #include "gpu_math.hpp"
 #include "tyre_types.hpp"
 
-#if !defined(__METAL_VERSION__)
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
 #include <cmath>
 #include <limits>
 #endif
@@ -34,13 +34,19 @@ BIKE_HD i32 clamp_i32(i32 v, i32 lo, i32 hi) noexcept {
     return v < lo ? lo : (v > hi ? hi : v);
 }
 
+BIKE_HD float pos_inf_of(float) noexcept {
+    return pf_u32_to_f32(0x7f800000u);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double pos_inf_of(double) noexcept {
+    return std::numeric_limits<double>::infinity();
+}
+#endif
+
 template <class Real>
 BIKE_HD Real pos_inf() noexcept {
-#if !defined(__METAL_VERSION__)
-    return std::numeric_limits<Real>::infinity();
-#else
-    return static_cast<Real>(pf_u32_to_f32(0x7f800000u));
-#endif
+    return pos_inf_of(Real{});
 }
 
 template <class Real>
@@ -53,65 +59,83 @@ BIKE_HD float flush_subnorm_f32(float x) noexcept {
     return ((u & 0x7f800000u) == 0u) ? pf_u32_to_f32(u & 0x80000000u) : x;
 }
 
-template <class Real>
-BIKE_HD Real flush_subnorm(Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return x;
-    }
-#endif
-    return static_cast<Real>(flush_subnorm_f32(static_cast<float>(x)));
+BIKE_HD float flush_subnorm(float x) noexcept {
+    return flush_subnorm_f32(x);
 }
 
-template <class Real>
-BIKE_HD bool isinf_val(Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return std::isinf(static_cast<double>(x));
-    }
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double flush_subnorm(double x) noexcept {
+    return x;
+}
 #endif
-    return pf_isinf(static_cast<float>(x));
+
+BIKE_HD bool isinf_val(float x) noexcept {
+    return pf_isinf(x);
 }
 
-template <class Real>
-BIKE_HD Real copysign_val(Real mag, Real sign_src) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(std::copysign(
-            static_cast<double>(mag), static_cast<double>(sign_src)));
-    }
-#endif
-    const u32 m_bits = pf_f32_to_u32(static_cast<float>(mag)) & 0x7fffffffu;
-    const u32 s_bits = pf_f32_to_u32(static_cast<float>(sign_src)) & 0x80000000u;
-    return static_cast<Real>(pf_u32_to_f32(m_bits | s_bits));
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline bool isinf_val(double x) noexcept {
+    return std::isinf(x);
 }
+#endif
+
+BIKE_HD float copysign_val(float mag, float sign_src) noexcept {
+    const u32 m_bits = pf_f32_to_u32(mag) & 0x7fffffffu;
+    const u32 s_bits = pf_f32_to_u32(sign_src) & 0x80000000u;
+    return pf_u32_to_f32(m_bits | s_bits);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double copysign_val(double mag, double sign_src) noexcept {
+    return std::copysign(mag, sign_src);
+}
+#endif
+
+BIKE_HD float ceil_val_of(float x) noexcept {
+#if defined(__METAL_VERSION__)
+    return metal::ceil(x);
+#elif defined(__CUDACC__)
+    return ::ceilf(x);
+#else
+    return std::ceilf(x);
+#endif
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double ceil_val_of(double x) noexcept {
+    return std::ceil(x);
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real ceil_val(Real x) noexcept {
-#if defined(__METAL_VERSION__)
-    return static_cast<Real>(metal::ceil(static_cast<float>(x)));
-#elif defined(__CUDACC__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(::ceil(static_cast<double>(x)));
-    } else {
-        return static_cast<Real>(::ceilf(static_cast<float>(x)));
-    }
-#else
-    return static_cast<Real>(std::ceil(x));
-#endif
+    return ceil_val_of(x);
 }
+
+BIKE_HD float hypot_libm_of(float a, float b) noexcept {
+    return hypot2f_portable(a, b);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double hypot_libm_of(double a, double b) noexcept {
+    return std::hypot(a, b);
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real hypot_libm(Real a, Real b) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(
-            std::hypot(static_cast<double>(a), static_cast<double>(b)));
-    }
-#endif
-    return static_cast<Real>(
-        hypot2f_portable(static_cast<float>(a), static_cast<float>(b)));
+    return hypot_libm_of(a, b);
 }
+
+BIKE_HD float idx_bound_for(float) noexcept {
+    return 1.0e9f;
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+inline double idx_bound_for(double) noexcept {
+    return 2.0e9;
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real portable_atan(Real x_in) noexcept {
@@ -271,59 +295,108 @@ BIKE_HD Real portable_cos(Real x_in) noexcept {
     return (q == 1u) ? -s : s;
 }
 
+template <class TK>
+BIKE_HD float sin_val_of(float x) noexcept {
+    return portable_sin<float, TK>(x);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+template <class TK>
+inline double sin_val_of(double x) noexcept {
+    return std::sin(x);
+}
+#endif
+
 template <class Real, class TK>
 BIKE_HD Real sin_val(Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(std::sin(static_cast<double>(x)));
-    }
-#endif
-    return portable_sin<Real, TK>(x);
+    return sin_val_of<TK>(x);
 }
+
+template <class TK>
+BIKE_HD float cos_val_of(float x) noexcept {
+    return portable_cos<float, TK>(x);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+template <class TK>
+inline double cos_val_of(double x) noexcept {
+    return std::cos(x);
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real cos_val(Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(std::cos(static_cast<double>(x)));
-    }
-#endif
-    return portable_cos<Real, TK>(x);
+    return cos_val_of<TK>(x);
 }
+
+template <class TK>
+BIKE_HD float ring_sin_val_of(float x) noexcept {
+    return portable_sin<float, TK>(x);
+}
+
+template <class TK>
+BIKE_HD float ring_cos_val_of(float x) noexcept {
+    return portable_cos<float, TK>(x);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+template <class TK>
+inline double ring_sin_val_of(double x) noexcept {
+    const volatile double angle = x;
+    return std::sin(angle);
+}
+
+template <class TK>
+inline double ring_cos_val_of(double x) noexcept {
+    const volatile double angle = x;
+    return std::cos(angle);
+}
+#endif
+
+template <class TK>
+BIKE_HD float atan2_val_of(float y, float x) noexcept {
+    return portable_atan2<float, TK>(y, x);
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+template <class TK>
+inline double atan2_val_of(double y, double x) noexcept {
+    return std::atan2(y, x);
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real atan2_val(Real y, Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(
-            std::atan2(static_cast<double>(y), static_cast<double>(x)));
-    }
-#endif
-    return portable_atan2<Real, TK>(y, x);
+    return atan2_val_of<TK>(y, x);
 }
+
+template <class TK>
+BIKE_HD float asin_val_of(float x) noexcept {
+    if (TK::isnan(x) || x > 1.0f || x < -1.0f) {
+        return qnan_val<float>();
+    }
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const float kPi2 = 1.57079632679489661923f;
+    if (x == 1.0f) {
+        return kPi2;
+    }
+    if (x == -1.0f) {
+        return -kPi2;
+    }
+    const float c_sq = TK::max(0.0f, (1.0f - x) * (1.0f + x));
+    return portable_atan2<float, TK>(x, TK::sqrt(c_sq));
+}
+
+#if !defined(__METAL_VERSION__) && !defined(__CUDACC__)
+template <class TK>
+inline double asin_val_of(double x) noexcept {
+    return std::asin(x);
+}
+#endif
 
 template <class Real, class TK>
 BIKE_HD Real asin_val(Real x) noexcept {
-#if !defined(__METAL_VERSION__)
-    if constexpr (sizeof(Real) == 8) {
-        return static_cast<Real>(std::asin(static_cast<double>(x)));
-    }
-#endif
-    if (TK::isnan(x) || x > static_cast<Real>(1) || x < static_cast<Real>(-1)) {
-        return qnan_val<Real>();
-    }
-    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
-    const Real kPi2 = BIKE_REAL(Real, 1.57079632679489661923);
-    if (x == static_cast<Real>(1)) {
-        return kPi2;
-    }
-    if (x == static_cast<Real>(-1)) {
-        return -kPi2;
-    }
-    const Real c_sq = TK::max(
-        static_cast<Real>(0),
-        (static_cast<Real>(1) - x) * (static_cast<Real>(1) + x));
-    return portable_atan2<Real, TK>(x, TK::sqrt(c_sq));
+    return asin_val_of<TK>(x);
 }
 
 template <class Real, class TK, class PtrVals>
@@ -405,8 +478,8 @@ BIKE_HD i32 phi_upper_bound(
     return first;
 }
 
-template <class Real>
-BIKE_HD int search_right(BIKE_DEVICE const Real *x, i32 n, Real v) noexcept {
+template <class Real, class PtrX>
+BIKE_HD int search_right(PtrX x, i32 n, Real v) noexcept {
     i32 first = 0;
     i32 count = n;
     while (count > 0) {
@@ -422,8 +495,8 @@ BIKE_HD int search_right(BIKE_DEVICE const Real *x, i32 n, Real v) noexcept {
     return first;
 }
 
-template <class Real>
-BIKE_HD int search_left(BIKE_DEVICE const Real *x, i32 n, Real v) noexcept {
+template <class Real, class PtrX>
+BIKE_HD int search_left(PtrX x, i32 n, Real v) noexcept {
     i32 first = 0;
     i32 count = n;
     while (count > 0) {
@@ -485,16 +558,9 @@ BIKE_HD Status init_pneumatic_ray_ring(
     out.theta_rad[n_rays - 1] = half_angle_rad;
     out.dtheta_rad = out.theta_rad[1] - out.theta_rad[0];
     for (i32 i = 0; i < n_rays; ++i) {
-#if !defined(__METAL_VERSION__)
-        if constexpr (sizeof(Real) == 8) {
-            const volatile double angle = static_cast<double>(out.theta_rad[i]);
-            out.ux[i] = static_cast<Real>(std::sin(angle));
-            out.uz[i] = static_cast<Real>(-std::cos(angle));
-            continue;
-        }
-#endif
-        out.ux[i] = pneumatic_detail::sin_val<Real, TK>(out.theta_rad[i]);
-        out.uz[i] = -pneumatic_detail::cos_val<Real, TK>(out.theta_rad[i]);
+        const Real angle = out.theta_rad[i];
+        out.ux[i] = pneumatic_detail::ring_sin_val_of<TK>(angle);
+        out.uz[i] = -pneumatic_detail::ring_cos_val_of<TK>(angle);
     }
     err = ErrCode::none;
     return Status::ok;
@@ -771,15 +837,65 @@ BIKE_HD Status pneumatic_intersect_uniform_grid(
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
-    const Real idx_bound = (sizeof(Real) == 4)
-        ? BIKE_REAL(Real, 1.0e9)
-        : BIKE_REAL(Real, 2.0e9);
+    const Real idx_bound = pneumatic_detail::idx_bound_for(Real{});
     const i32 lo_raw = static_cast<i32>(TK::clamp(lo_f, -idx_bound, idx_bound));
     const i32 hi_raw = static_cast<i32>(TK::clamp(hi_f, -idx_bound, idx_bound)) + 1;
     const i32 lo = pneumatic_detail::max_i32(0, lo_raw);
     const i32 hi = pneumatic_detail::min_i32(num_vertices, hi_raw);
     return pneumatic_intersect_window<Real, TK>(
         ring, centre_x_m, centre_z_m, radius_m, xs, zs, lo, hi,
+        out_r_m, out_delta_m, out_road_x_m, out_road_z_m,
+        out_coverage_event, out_airborne, err);
+}
+
+template <
+    class Real,
+    class TK,
+    class RingPtr,
+    class PtrPx,
+    class PtrPz,
+    class PtrR,
+    class PtrDelta,
+    class PtrRx,
+    class PtrRz>
+BIKE_HD Status pneumatic_intersect_polyline_arrays(
+    RingPtr ring,
+    Real centre_x_m,
+    Real centre_z_m,
+    Real radius_m,
+    PtrPx px,
+    PtrPz pz,
+    i32 num_vertices,
+    PtrR out_r_m,
+    PtrDelta out_delta_m,
+    PtrRx out_road_x_m,
+    PtrRz out_road_z_m,
+    BIKE_REF(u8) out_coverage_event,
+    BIKE_REF(u8) out_airborne,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    if (num_vertices < 2 || px == nullptr || pz == nullptr) {
+        err = ErrCode::degenerate_contact;
+        return Status::invalid_argument;
+    }
+    if (!TK::isfinite(centre_x_m) || !TK::isfinite(centre_z_m)) {
+        err = ErrCode::nonfinite_center;
+        return Status::invalid_argument;
+    }
+    if (!TK::isfinite(radius_m) || radius_m < static_cast<Real>(0)) {
+        err = ErrCode::invalid_radius;
+        return Status::invalid_argument;
+    }
+    const i32 lo = pneumatic_detail::max_i32(
+        0,
+        pneumatic_detail::search_right<Real>(
+            px, num_vertices, centre_x_m - radius_m) - 1);
+    const i32 hi = pneumatic_detail::min_i32(
+        num_vertices,
+        pneumatic_detail::search_left<Real>(
+            px, num_vertices, centre_x_m + radius_m) + 1);
+    return pneumatic_intersect_window<Real, TK>(
+        ring, centre_x_m, centre_z_m, radius_m, px, pz, lo, hi,
         out_r_m, out_delta_m, out_road_x_m, out_road_z_m,
         out_coverage_event, out_airborne, err);
 }
@@ -806,28 +922,8 @@ BIKE_HD Status pneumatic_intersect_polyline(
     BIKE_REF(u8) out_airborne,
     BIKE_REF(ErrCode) err
 ) noexcept {
-    if (pl.num_vertices < 2 || pl.px == nullptr || pl.pz == nullptr) {
-        err = ErrCode::degenerate_contact;
-        return Status::invalid_argument;
-    }
-    if (!TK::isfinite(centre_x_m) || !TK::isfinite(centre_z_m)) {
-        err = ErrCode::nonfinite_center;
-        return Status::invalid_argument;
-    }
-    if (!TK::isfinite(radius_m) || radius_m < static_cast<Real>(0)) {
-        err = ErrCode::invalid_radius;
-        return Status::invalid_argument;
-    }
-    const i32 lo = pneumatic_detail::max_i32(
-        0,
-        pneumatic_detail::search_right<Real>(
-            pl.px, pl.num_vertices, centre_x_m - radius_m) - 1);
-    const i32 hi = pneumatic_detail::min_i32(
-        pl.num_vertices,
-        pneumatic_detail::search_left<Real>(
-            pl.px, pl.num_vertices, centre_x_m + radius_m) + 1);
-    return pneumatic_intersect_window<Real, TK>(
-        ring, centre_x_m, centre_z_m, radius_m, pl.px, pl.pz, lo, hi,
+    return pneumatic_intersect_polyline_arrays<Real, TK>(
+        ring, centre_x_m, centre_z_m, radius_m, pl.px, pl.pz, pl.num_vertices,
         out_r_m, out_delta_m, out_road_x_m, out_road_z_m,
         out_coverage_event, out_airborne, err);
 }

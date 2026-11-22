@@ -67,7 +67,7 @@ using bike::physics_core::cruise_set_target_speed_kmh;
 using bike::physics_core::cruise_step;
 using bike::physics_core::cruise_validate_config;
 using bike::physics_core::energy_brake_dissipation_step;
-using bike::physics_core::energy_closure_work_ok;
+using bike::physics_core::energy_constraint_work_ok;
 using bike::physics_core::energy_ledger_contract_ok;
 using bike::physics_core::energy_ledger_init;
 using bike::physics_core::energy_ledger_step;
@@ -661,19 +661,28 @@ void test_pedaling_p01b_c2_and_stall_reposition() {
 void test_assist_c3_limit_ordering_and_settle() {
     ErrCode err = ErrCode::none;
 
-    // C3 relational invariants
+    // C3 / motor.cpp:28-34 relational invariants (including hold_power_w underflow)
     {
         AssistState<double> s{};
         require(assist_validate_state_invariants<double, CpuExactToolkit>(
                     &s, err) == Status::ok,
                 "fresh AssistState valid");
 
+        // Positive hold_torque_nm with hold_power_w == 0 is valid (torque*omega underflow)
         s.release_hold_ticks = 10;
         s.hold_power_w = 0.0;
         s.hold_torque_nm = 20.0;
         require(assist_validate_state_invariants<double, CpuExactToolkit>(
+                    &s, err) == Status::ok,
+                "C3 permits armed hold_power_w == 0 with hold_torque_nm > 0");
+
+        // release_hold_ticks > 0 with hold_torque_nm == 0 is invalid
+        s.release_hold_ticks = 10;
+        s.hold_power_w = 0.0;
+        s.hold_torque_nm = 0.0;
+        require(assist_validate_state_invariants<double, CpuExactToolkit>(
                     &s, err) == Status::invalid_argument,
-                "C3 rejects release_hold_ticks > 0 with hold_power_w == 0");
+                "C3 rejects release_hold_ticks > 0 with hold_torque_nm == 0");
 
         s.release_hold_ticks = 0;
         s.hold_power_w = 100.0;
@@ -686,6 +695,38 @@ void test_assist_c3_limit_ordering_and_settle() {
         require(assist_validate_state_invariants<double, CpuExactToolkit>(
                     &s, err) == Status::ok,
                 "C3 accepts spent hold marker (release_hold_ticks == 0)");
+    }
+
+    // UnderflowParity: when next.torque > 0 && omega > 0 and next.torque * omega
+    // underflows to 0, assist_step still arms release_hold_ticks and delivers 0
+    // (matching drivetrain::AssistController::step).
+    {
+        AssistParams<float> ap32{};
+        ap32.gain = 2.0f;
+        ap32.max_torque = 85.0f;
+        ap32.max_power = 600.0f;
+        ap32.tau = 0.04f;
+        ap32.slew = 2000.0f;
+        ap32.engage_torque_nm = 0.0f;
+        ap32.release_hold_ticks = 20;
+        ap32.cutoff_mps = 25.0f / 3.6f;
+        ap32.taper_width_mps = 2.0f / 3.6f;
+
+        AssistState<float> as32{};
+        as32.torque = 1e-22f;
+        float out_tq32 = -1.0f;
+        require(assist_step<float, GpuToolkit>(
+                    &ap32, &as32, 0.0f, 1e-24f, 4.0f, false, 0.00125f,
+                    false, 0.0f, false, 0.0f, out_tq32, err) == Status::ok,
+                "underflow assist_step ok");
+        require(as32.release_hold_ticks == 19,
+                "underflow hold armed and ticked down once");
+        require(as32.hold_torque_nm == 1e-22f,
+                "underflow hold_torque_nm preserved");
+        require(as32.hold_power_w == 0.0f,
+                "underflow hold_power_w is 0.0f");
+        require(out_tq32 == 0.0f,
+                "underflow hold delivers 0.0f (matching motor.cpp)");
     }
 
     AssistParams<double> ap{};
@@ -746,16 +787,16 @@ void test_energy_ledger_csr_and_conservation() {
     // M = [[4, 1, 0],
     //      [1, 3, 0.5],
     //      [0, 0.5, 2]]
-    const i32 M_rowadr[3] = {0, 1, 3};
-    const i32 M_rownnz[3] = {1, 2, 2};
-    const i32 M_colind[5] = {0, 0, 1, 1, 2};
-    const double M_vals[5] = {4.0, 1.0, 3.0, 0.5, 2.0};
-    const double qvel[3] = {2.0, -1.0, 3.0};
+    const std::array<i32, 3> M_rowadr{0, 1, 3};
+    const std::array<i32, 3> M_rownnz{1, 2, 2};
+    const std::array<i32, 5> M_colind{0, 0, 1, 1, 2};
+    const std::array<double, 5> M_vals{4.0, 1.0, 3.0, 0.5, 2.0};
+    const std::array<double, 3> qvel{2.0, -1.0, 3.0};
     // q^T M q = 4*4 + 3*1 + 2*9 + 2*(1*2*(-1) + 0.5*(-1)*3) = 37 + 2*(-3.5) = 30 -> K = 15.0
 
-    const double body_mass[2] = {10.0, 70.0};
-    const double xipos[6] = {1.0, 0.0, 0.5, 1.2, 0.0, 1.2};
-    const double gravity[3] = {0.0, 0.0, -9.81};
+    const std::array<double, 2> body_mass{10.0, 70.0};
+    const std::array<double, 6> xipos{1.0, 0.0, 0.5, 1.2, 0.0, 1.2};
+    const std::array<double, 3> gravity{0.0, 0.0, -9.81};
     // U_g = -(10*(-9.81)*0.5 + 70*(-9.81)*1.2) = 9.81 * (5 + 84) = 873.09
 
     ElasticEnergyBreakdown<double> elastic{};
@@ -765,16 +806,20 @@ void test_energy_ledger_csr_and_conservation() {
     elastic.u_tyre_shear = 1.5;
     elastic.u_tyre_maxwell = 0.75;
     elastic.u_tyre_rim = 0.25;
+    elastic.u_rider_envelope = 2.0;
+    elastic.u_closures = 1.25;
 
     MechanicalEnergyBreakdown<double> mech{};
     require(compute_mechanical_energy<double, CpuExactToolkit>(
-                3, 2, M_rowadr, M_rownnz, M_colind, M_vals, qvel,
-                body_mass, xipos, gravity, elastic, mech, err) == Status::ok,
+                3, 2, M_rowadr.data(), M_rownnz.data(), M_colind.data(),
+                M_vals.data(), qvel.data(), body_mass.data(), xipos.data(),
+                gravity.data(), elastic, mech, err) == Status::ok,
             "compute_mechanical_energy ok");
     require_near(mech.kinetic_j, 15.0, 1e-13, "CSR kinetic energy exact");
     require_near(mech.gravitational_j, 873.09, 1e-12, "gravitational PE exact");
-    require_near(mech.elastic_j, 37.5, 1e-13, "elastic energy sum exact");
-    require_near(mech.total_j, 15.0 + 873.09 + 37.5, 1e-12, "total E_mech exact");
+    require_near(mech.elastic_j, 40.75, 1e-13,
+                 "elastic energy sum includes u_rider_envelope + u_closures");
+    require_near(mech.total_j, 15.0 + 873.09 + 40.75, 1e-12, "total E_mech exact");
 
     // 2. Exact energy conservation on a synthetic damped & forced harmonic oscillator
     // integrated with implicit midpoint (discrete work-energy identity holds to < 1e-13):
@@ -784,27 +829,29 @@ void test_energy_ledger_csr_and_conservation() {
     const double k_val = 180.0;
     const double c_val = 1.8;
     const double dt = 0.00125;
-    const i32 m1_ra[1] = {0};
-    const i32 m1_nnz[1] = {1};
-    const i32 m1_ci[1] = {0};
-    const double m1_d[1] = {m_val};
-    const double g_zero[3] = {0.0, 0.0, 0.0};
-    const double bm1[1] = {m_val};
-    double xi1[3] = {0.0, 0.0, 0.0};
+    const std::array<i32, 1> m1_ra{0};
+    const std::array<i32, 1> m1_nnz{1};
+    const std::array<i32, 1> m1_ci{0};
+    const std::array<double, 1> m1_d{m_val};
+    const std::array<double, 3> g_zero{0.0, 0.0, 0.0};
+    const std::array<double, 1> bm1{m_val};
+    const std::array<double, 3> xi1{0.0, 0.0, 0.0};
 
     double x = 0.15;
     double v = 0.8;
 
     auto eval_E = [&](double pos, double vel) {
-        double E = 0.0;
-        const double u_fork = 0.5 * k_val * pos * pos;
-        const double qv[1] = {vel};
+        MechanicalEnergyBreakdown<double> b{};
+        ElasticEnergyBreakdown<double> el{};
+        el.u_susp_fork = 0.5 * k_val * pos * pos;
+        const std::array<double, 1> qv{vel};
         ErrCode e = ErrCode::none;
         require(compute_mechanical_energy<double, CpuExactToolkit>(
-                    1, 1, m1_ra, m1_nnz, m1_ci, m1_d, qv, bm1, xi1, g_zero,
-                    u_fork, 0.0, 0.0, 0.0, 0.0, 0.0, E, e) == Status::ok,
+                    1, 1, m1_ra.data(), m1_nnz.data(), m1_ci.data(),
+                    m1_d.data(), qv.data(), bm1.data(), xi1.data(),
+                    g_zero.data(), el, b, e) == Status::ok,
                 "eval_E ok");
-        return E;
+        return b;
     };
 
     GpuEnergyLedger<double> ledger{};
@@ -832,7 +879,7 @@ void test_energy_ledger_csr_and_conservation() {
         const double d_susp = c_val * v_mid * v_mid * dt;
 
         GpuStepEnergyInputs<double> in{};
-        in.E_mech = eval_E(x_next, v_next);
+        in.E_mech = eval_E(x_next, v_next).total_j;
         in.w_muscle_signed_j = w_muscle;
         in.w_muscle_pos_j = std::max(0.0, w_muscle);
         in.w_motor_signed_j = w_motor;
@@ -852,7 +899,103 @@ void test_energy_ledger_csr_and_conservation() {
                 &ledger, 0.05, 1e-8),
             "ledger passes < 0.05 strict contract");
 
-    // 3. Brake dissipation helper & closure work check
+    // 3. Decision 32: soft closures are exempt from 1% constraint gate,
+    //    whereas numerical constraint work > 1% fails contract.
+    {
+        GpuEnergyLedger<double> dec32{};
+        MechanicalEnergyBreakdown<double> m0{};
+        m0.kinetic_j = 10.0;
+        m0.elastic_j = 5.0;
+        m0.gravitational_j = 500.0;
+        m0.total_j = 515.0;
+        require(energy_ledger_init<double, CpuExactToolkit>(
+                    &dec32, m0, 1.0, err) == Status::ok,
+                "Decision 32 init ok");
+
+        // Large soft closure work (50% of source_positive) still passes
+        GpuStepEnergyInputs<double> s1{};
+        s1.E_mech = 525.0;
+        s1.w_muscle_signed_j = 10.0;
+        s1.w_muscle_pos_j = 10.0;
+        s1.w_closure_signed_j = 5.0;
+        s1.w_closure_abs_j = 5.0;
+        s1.w_constraint_signed_j = 0.05;
+        s1.w_constraint_abs_j = 0.05;
+        require(energy_ledger_step<double, CpuExactToolkit>(&dec32, s1, err) ==
+                    Status::ok,
+                "Decision 32 closure step ok");
+        require(energy_ledger_contract_ok<double, CpuExactToolkit>(
+                    &dec32, 0.05, 1e-8),
+                "Decision 32 exempts W_closure_abs from 1% constraint gate");
+
+        // Numerical constraint work > 1% fails contract
+        GpuStepEnergyInputs<double> s2{};
+        s2.E_mech = 525.0;
+        s2.w_constraint_abs_j = 0.2; // total 0.25 > 0.01 * 10.0 = 0.10
+        require(energy_ledger_step<double, CpuExactToolkit>(&dec32, s2, err) ==
+                    Status::ok,
+                "Decision 32 constraint step ok");
+        require(!energy_ledger_contract_ok<double, CpuExactToolkit>(
+                    &dec32, 0.05, 1e-8),
+                "Decision 32 rejects W_constraint_abs > 1% source_positive_j");
+    }
+
+    // 4. Cruise ("rear_drive"), external, rider_end_stop channels & datum independence
+    {
+        const std::array<double, 6> xipos_low{1.0, 0.0, 0.5, 1.2, 0.0, 1.2};
+        const std::array<double, 6> xipos_high{1.0, 0.0, 10000.5, 1.2, 0.0, 10001.2};
+
+        MechanicalEnergyBreakdown<double> m_low0{};
+        MechanicalEnergyBreakdown<double> m_high0{};
+        require(compute_mechanical_energy<double, CpuExactToolkit>(
+                    3, 2, M_rowadr.data(), M_rownnz.data(), M_colind.data(),
+                    M_vals.data(), qvel.data(), body_mass.data(), xipos_low.data(),
+                    gravity.data(), elastic, m_low0, err) == Status::ok,
+                "datum low init ok");
+        require(compute_mechanical_energy<double, CpuExactToolkit>(
+                    3, 2, M_rowadr.data(), M_rownnz.data(), M_colind.data(),
+                    M_vals.data(), qvel.data(), body_mass.data(), xipos_high.data(),
+                    gravity.data(), elastic, m_high0, err) == Status::ok,
+                "datum high init ok");
+
+        GpuEnergyLedger<double> l_low{};
+        GpuEnergyLedger<double> l_high{};
+        require(energy_ledger_init<double, CpuExactToolkit>(
+                    &l_low, m_low0, 1.0, err) == Status::ok &&
+                energy_ledger_init<double, CpuExactToolkit>(
+                    &l_high, m_high0, 1.0, err) == Status::ok,
+                "datum ledger init ok");
+        // energy_scale_j must be identical and independent of U_grav datum
+        require_bits_f64(l_low.energy_scale_j, l_high.energy_scale_j,
+                         "datum-independent initial energy_scale_j");
+        require_near(l_low.energy_scale_j, m_low0.kinetic_j + m_low0.elastic_j,
+                     1e-13, "initial scale equals max(1, K + U_elastic)");
+
+        GpuStepEnergyInputs<double> step_low{};
+        step_low.E_mech = m_low0.total_j + 20.0 - 5.0 - 3.0;
+        step_low.w_cruise_signed_j = 20.0;
+        step_low.w_external_signed_j = -5.0;
+        step_low.d_rider_end_stop_j = 3.0;
+        GpuStepEnergyInputs<double> step_high = step_low;
+        step_high.E_mech = m_high0.total_j + 20.0 - 5.0 - 3.0;
+
+        require(energy_ledger_step<double, CpuExactToolkit>(
+                    &l_low, step_low, err) == Status::ok &&
+                energy_ledger_step<double, CpuExactToolkit>(
+                    &l_high, step_high, err) == Status::ok,
+                "cruise + end_stop + external step ok");
+        require_near(l_low.residual_j, 0.0, 1e-12,
+                     "cruise + external + end_stop balances exactly");
+        require_near(l_low.source_j, 20.0, 1e-13, "cruise in source_j");
+        require_near(l_low.source_positive_j, 20.0, 1e-13,
+                     "cruise in source_positive_j");
+        require_bits_f64(l_low.energy_scale_j, l_high.energy_scale_j,
+                         "datum-independent step energy_scale_j");
+        require_bits_f64(l_low.rel_residual, l_high.rel_residual,
+                         "datum-independent rel_residual");
+    }
+
+    // 5. Brake dissipation helper & constraint work check
     double hold_j = 0.0;
     double fric_j = 0.0;
     require(energy_brake_dissipation_step<double, CpuExactToolkit>(
@@ -862,18 +1005,23 @@ void test_energy_ledger_csr_and_conservation() {
     require_near(hold_j, (50.0 + 40.0) * 5.0 * dt, 1e-13, "hold brake dissipation");
     require_near(fric_j, (100.0 + 80.0) * 5.0 * dt, 1e-13,
                  "friction dof brake dissipation");
-    require(energy_closure_work_ok<double, CpuExactToolkit>(0.5, 100.0, 1e-8),
-            "closure work <= 1% source positive ok");
-    require(!energy_closure_work_ok<double, CpuExactToolkit>(1.5, 100.0, 1e-8),
-            "closure work > 1% source positive rejected");
+    require(energy_constraint_work_ok<double, CpuExactToolkit>(0.5, 100.0, 1e-8),
+            "constraint work <= 1% source positive ok");
+    require(!energy_constraint_work_ok<double, CpuExactToolkit>(1.5, 100.0, 1e-8),
+            "constraint work > 1% source positive rejected");
 
-    // 4. FP32 GpuToolkit ledger check
+    // 6. FP32 GpuToolkit ledger check
     GpuEnergyLedger<float> ledger32{};
-    require(energy_ledger_init<float, GpuToolkit>(&ledger32, 10.0f, 1.0f, err) ==
+    MechanicalEnergyBreakdown<float> mech32{};
+    mech32.kinetic_j = 6.0f;
+    mech32.elastic_j = 4.0f;
+    mech32.gravitational_j = 500.0f;
+    mech32.total_j = 510.0f;
+    require(energy_ledger_init<float, GpuToolkit>(&ledger32, mech32, 1.0f, err) ==
                 Status::ok,
             "FP32 ledger init ok");
     GpuStepEnergyInputs<float> in32{};
-    in32.E_mech = 12.5f;
+    in32.E_mech = 512.5f;
     in32.w_muscle_signed_j = 4.0f;
     in32.w_muscle_pos_j = 4.0f;
     in32.d_tyre_radial_j = 0.5f;

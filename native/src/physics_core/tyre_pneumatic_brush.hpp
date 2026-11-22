@@ -116,9 +116,15 @@ BIKE_HD Status eval_surface_sample(
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
-    if (map == nullptr || map->has_surface_map == 0) {
+    if (map == nullptr) {
         out_sample = PneumaticSurfaceSample<Real>{};
         out_surface_id = 0;
+        err = ErrCode::out_of_bounds_station;
+        return Status::invalid_argument;
+    }
+    if (map->has_surface_map == 0 || map->section_count <= 0) {
+        out_sample = map->default_surface;
+        out_surface_id = map->default_surface_id;
         err = ErrCode::none;
         return Status::ok;
     }
@@ -222,7 +228,11 @@ BIKE_HD Status pneumatic_uniform_surface_for_span(
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
-    if (map == nullptr || map->has_surface_map == 0 || map->section_count <= 0) {
+    if (map == nullptr) {
+        err = ErrCode::out_of_bounds_station;
+        return Status::invalid_argument;
+    }
+    if (map->has_surface_map == 0 || map->section_count <= 0) {
         out_section_idx = -1;
         out_is_uniform = true;
         err = ErrCode::none;
@@ -580,14 +590,12 @@ BIKE_HD Status discretised_brush_step(
     BIKE_REF(Real) kappa_prime,
     PtrBristle bristle_deflection_m,
     PtrScratch updated_buf,
-    PtrScratch force_buf,
     BIKE_REF(PneumaticBrushResult<Real>) out,
     BIKE_REF(ErrCode) err
 ) noexcept {
     out = PneumaticBrushResult<Real>{};
     if (n < 1 || n > kMaxPneumaticRays || normal_loads_n == nullptr ||
-        bristle_deflection_m == nullptr || updated_buf == nullptr ||
-        force_buf == nullptr) {
+        bristle_deflection_m == nullptr || updated_buf == nullptr) {
         err = ErrCode::out_of_bounds_station;
         return Status::invalid_argument;
     }
@@ -685,13 +693,14 @@ BIKE_HD Status discretised_brush_step(
 
     bool any_active = false;
     bool all_active_sliding = true;
+    Real force_sum = static_cast<Real>(0);
     for (i32 i = 0; i < n; ++i) {
         const bool active = normal_loads_n[i] > static_cast<Real>(0);
         const Real damping = active ? damping_active_n : static_cast<Real>(0);
         const Real trial = element_stiffness_n_m * updated_buf[i] + damping;
         const Real limit = mu * normal_loads_n[i];
         const Real force = TK::clamp(trial, -limit, limit);
-        force_buf[i] = force;
+        force_sum += force;
         const bool sliding = active && TK::abs(trial) >= limit;
         any_active = any_active || active;
         if (active) {
@@ -706,7 +715,7 @@ BIKE_HD Status discretised_brush_step(
     for (i32 i = 0; i < n; ++i) {
         bristle_deflection_m[i] = updated_buf[i];
     }
-    out.force_n = pneumatic_detail::array_sum<Real, TK>(n, force_buf);
+    out.force_n = force_sum;
     out.fully_sliding = (any_active && all_active_sliding) ? 1 : 0;
     out.friction_coefficient = mu;
     err = ErrCode::none;
@@ -734,7 +743,6 @@ BIKE_HD Status discretised_brush_step_heterogeneous(
     BIKE_REF(Real) kappa_prime,
     PtrBristle bristle_deflection_m,
     PtrScratch updated_buf,
-    PtrScratch force_buf,
     PtrScratch stiffness_buf,
     PtrScratch mu_buf,
     BIKE_REF(PneumaticBrushResult<Real>) out,
@@ -743,8 +751,8 @@ BIKE_HD Status discretised_brush_step_heterogeneous(
     out = PneumaticBrushResult<Real>{};
     if (n < 1 || n > kMaxPneumaticRays || loads == nullptr ||
         samples == nullptr || bristle_deflection_m == nullptr ||
-        updated_buf == nullptr || force_buf == nullptr ||
-        stiffness_buf == nullptr || mu_buf == nullptr) {
+        updated_buf == nullptr || stiffness_buf == nullptr ||
+        mu_buf == nullptr) {
         err = ErrCode::out_of_bounds_station;
         return Status::invalid_argument;
     }
@@ -866,6 +874,7 @@ BIKE_HD Status discretised_brush_step_heterogeneous(
 
     bool any_active = false;
     bool all_sliding = true;
+    Real force = static_cast<Real>(0);
     for (i32 i = 0; i < n; ++i) {
         const bool active = loads[i] > static_cast<Real>(0);
         const Real advected = speed != static_cast<Real>(0)
@@ -888,23 +897,23 @@ BIKE_HD Status discretised_brush_step_heterogeneous(
             err = ErrCode::overflow_nonfinite;
             return Status::overflow;
         }
-        force_buf[i] = TK::clamp(trial, -limit, limit);
+        const Real clamped_force = TK::clamp(trial, -limit, limit);
         const bool sliding = active && TK::abs(trial) >= limit;
         updated_buf[i] =
             (stiffness_buf[i] > static_cast<Real>(0) && sliding)
-                ? TK::div(force_buf[i] - damping, stiffness_buf[i])
+                ? TK::div(clamped_force - damping, stiffness_buf[i])
                 : updated;
-        if (!TK::isfinite(force_buf[i]) || !TK::isfinite(updated_buf[i])) {
+        if (!TK::isfinite(clamped_force) || !TK::isfinite(updated_buf[i])) {
             err = ErrCode::overflow_nonfinite;
             return Status::overflow;
         }
+        force += clamped_force;
         any_active = any_active || active;
         if (active) {
             all_sliding = all_sliding && sliding;
         }
     }
 
-    const Real force = pneumatic_detail::array_sum<Real, TK>(n, force_buf);
     const Real mean_mu = identical_mu ? mu_buf[0] : TK::div(weighted_mu, total);
     if (!TK::isfinite(force) || !TK::isfinite(mean_mu)) {
         err = ErrCode::overflow_nonfinite;

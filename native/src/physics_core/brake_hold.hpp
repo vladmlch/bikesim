@@ -110,7 +110,7 @@ BIKE_HD Status apply_static_brake(
 }
 
 template <class Real, class TK, class SpecPtr>
-BIKE_HD Status eval_brake_hold_wheel(
+BIKE_HD void eval_brake_hold_wheel_core(
     SpecPtr spec,
     Real ceiling_nm,
     Real demand,
@@ -120,18 +120,9 @@ BIKE_HD Status eval_brake_hold_wheel(
     bool reseat,
     BIKE_THREAD bool &has_latch,
     BIKE_THREAD Real &latch_theta,
-    BIKE_THREAD Real &out_torque,
-    BIKE_THREAD ErrCode &err
+    BIKE_THREAD Real &out_torque
 ) noexcept {
-    err = ErrCode::none;
     out_torque = BIKE_REAL(Real, 0.0);
-    if (!TK::isfinite(ceiling_nm) || ceiling_nm < BIKE_REAL(Real, 0.0) ||
-        !TK::isfinite(demand) || !TK::isfinite(theta) || !TK::isfinite(omega) ||
-        (has_latch && !TK::isfinite(latch_theta))) {
-        err = ErrCode::outside_domain;
-        return Status::invalid_argument;
-    }
-
     const Real u = TK::clamp(demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0));
     const Real cap = TK::min(spec->torque_nm, ceiling_nm) * u;
     bool latched = has_latch;
@@ -158,11 +149,38 @@ BIKE_HD Status eval_brake_hold_wheel(
         }
     }
     if (!latched) {
-        return Status::ok;
+        return;
     }
     out_torque = TK::clamp(
         -spec->stiffness_nm_rad * (theta - anchor) - spec->damping_nms_rad * omega,
         -cap, cap);
+}
+
+template <class Real, class TK, class SpecPtr>
+BIKE_HD Status eval_brake_hold_wheel(
+    SpecPtr spec,
+    Real ceiling_nm,
+    Real demand,
+    Real theta,
+    Real omega,
+    bool advance,
+    bool reseat,
+    BIKE_THREAD bool &has_latch,
+    BIKE_THREAD Real &latch_theta,
+    BIKE_THREAD Real &out_torque,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    out_torque = BIKE_REAL(Real, 0.0);
+    if (!TK::isfinite(ceiling_nm) || ceiling_nm < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(demand) || !TK::isfinite(theta) || !TK::isfinite(omega) ||
+        (has_latch && !TK::isfinite(latch_theta))) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    eval_brake_hold_wheel_core<Real, TK>(
+        spec, ceiling_nm, demand, theta, omega, advance, reseat,
+        has_latch, latch_theta, out_torque);
     return Status::ok;
 }
 

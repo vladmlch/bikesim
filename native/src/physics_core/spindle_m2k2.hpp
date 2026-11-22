@@ -380,7 +380,9 @@ struct SpindleM2K2StepScratch {
     u8 perturbed0 = 0;
     u8 perturbed1 = 0;
     u8 adaptive_mode = 0;
-    u8 pad_flags[3]{};
+    u8 torso_saturated = 0;
+    u8 arms_saturated = 0;
+    u8 pad_flags[4]{};
 
     PressStateCore<Real> ps0{};
     PressStateCore<Real> P{};
@@ -388,6 +390,9 @@ struct SpindleM2K2StepScratch {
     PressStateCore<Real> ps_trial{};
     Real base_leg_req[4]{};
     Real base_leg_prio[4]{};
+    Real crank_task_nm = BIKE_REAL(Real, 0.0);
+    Real last_req[kNumSpindleJoints]{};
+    Real last_exc[kNumSpindleJoints]{};
 };
 
 namespace detail {
@@ -1553,6 +1558,7 @@ BIKE_HD void populate_leg_torques_core(
     if (commit_hold != 0) {
         state->coast_hold_nm = hold_nm;
     }
+    scratch->crank_task_nm = total;
 
     for (i32 s = 0; s < 2; ++s) {
         const Real leg_task_nm = scratch->shares[s] * total;
@@ -1947,8 +1953,8 @@ BIKE_HD void spindle_populate_step_scratch_invariants(
     upper_targets_core<Real, TK, Trig>(
         params, qpos, body_xpos, body_xmat, jnt_xanchor, cmd.torso_lean_rad,
         up_targets, torso_sat, arms_sat);
-    (void)torso_sat;
-    (void)arms_sat;
+    scratch->torso_saturated = torso_sat;
+    scratch->arms_saturated = arms_sat;
 
     for (i32 k = 0; k < kNumUpperSpindleJoints; ++k) {
         const i32 dof = params->joint_dof_adr[k];
@@ -2078,6 +2084,13 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
     scratch->steady_state = cmd.steady_state;
 
     if (cmd_en == 0) {
+        scratch->torso_saturated = 0;
+        scratch->arms_saturated = 0;
+        scratch->crank_task_nm = BIKE_REAL(Real, 0.0);
+        for (i32 i = 0; i < kNumSpindleJoints; ++i) {
+            scratch->last_req[i] = BIKE_REAL(Real, 0.0);
+            scratch->last_exc[i] = BIKE_REAL(Real, 0.0);
+        }
         if (cmd.advance != 0) {
             state->coast_hold_nm = BIKE_REAL(Real, 0.0);
             for (i32 i = 0; i < kNumSpindleJoints; ++i) {
@@ -2128,6 +2141,10 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
         populate_leg_torques_core<Real, TK, Trig>(
             params, scratch, ps0, cmd.advance, qvel, state, req, prio);
         limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
+        for (i32 i = 0; i < kNumSpindleJoints; ++i) {
+            scratch->last_req[i] = req[i];
+            scratch->last_exc[i] = exc[i];
+        }
         if (cmd.advance != 0) {
             for (i32 i = 0; i < kNumSpindleJoints; ++i) {
                 state->held_torques[i] = exc[i];
@@ -2537,6 +2554,10 @@ BIKE_HD void spindle_m2k2_pass3_commit(
     populate_leg_torques_core<Real, TK, Trig>(
         params, scratch, ps_final, scratch->advance, qvel, state, req, prio);
     limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
+    for (i32 i = 0; i < kNumSpindleJoints; ++i) {
+        scratch->last_req[i] = req[i];
+        scratch->last_exc[i] = exc[i];
+    }
     if (scratch->advance != 0) {
         for (i32 i = 0; i < kNumSpindleJoints; ++i) {
             state->held_torques[i] = exc[i];

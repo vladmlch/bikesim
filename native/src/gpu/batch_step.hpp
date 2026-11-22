@@ -632,6 +632,7 @@ BIKE_HD bike::physics_core::Status gpu_eval_wheel_brake_torque(
     const bike::physics_core::Status st =
         bike::physics_core::eval_brake_hold_wheel<float, bike::physics_core::GpuToolkit>(
             &dp.brake_hold,
+            dp.static_brake_ceiling_nm,
             u,
             theta_rad,
             omega_rad_s,
@@ -758,25 +759,9 @@ BIKE_HD bike::physics_core::Status gpu_write_drivetrain_qfrc(
     }
 
     // 3. Brake hold (latched standstill bite) + optional static frictionloss + dynamic opposing torque.
+    // Decision 11: evaluate hold torque first under static_brake_ceiling_nm, then allocate
+    // remaining frictionloss budget max(0, ceiling * u - |hold_nm|) per wheel.
     const bool has_static_fl = (dof_frictionloss != nullptr);
-    if (has_static_fl) {
-        bool fl_changed = false;
-        const bike::physics_core::Status fl_st =
-            bike::physics_core::apply_static_brake<float, bike::physics_core::GpuToolkit>(
-                dp.static_brake_ceiling_nm,
-                front_brake_demand,
-                rear_brake_demand,
-                idx.front_wheel_spin_dof,
-                idx.rear_wheel_spin_dof,
-                idx.nv,
-                dof_frictionloss,
-                fl_changed,
-                err);
-        if (fl_st != bike::physics_core::Status::ok) {
-            return fl_st;
-        }
-    }
-
     const float fw_qpos = (idx.front_wheel_spin_qpos >= 0) ? qpos[idx.front_wheel_spin_qpos] : 0.0f;
     const float fw_omega = (idx.front_wheel_spin_dof >= 0) ? qvel[idx.front_wheel_spin_dof] : 0.0f;
     const float rw_omega = (idx.rear_wheel_spin_dof >= 0) ? qvel[idx.rear_wheel_spin_dof] : 0.0f;
@@ -806,6 +791,26 @@ BIKE_HD bike::physics_core::Status gpu_write_drivetrain_qfrc(
         out.rear_brake_torque_nm);
     if (rb_st != bike::physics_core::Status::ok) {
         return rb_st;
+    }
+
+    if (has_static_fl) {
+        bool fl_changed = false;
+        const bike::physics_core::Status fl_st =
+            bike::physics_core::apply_static_brake<float, bike::physics_core::GpuToolkit>(
+                dp.static_brake_ceiling_nm,
+                front_brake_demand,
+                rear_brake_demand,
+                out.front_brake_torque_nm,
+                out.rear_brake_torque_nm,
+                idx.front_wheel_spin_dof,
+                idx.rear_wheel_spin_dof,
+                idx.nv,
+                dof_frictionloss,
+                fl_changed,
+                err);
+        if (fl_st != bike::physics_core::Status::ok) {
+            return fl_st;
+        }
     }
 
     out.front_brake_latched = dt_st.front_brake_latched;

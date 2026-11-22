@@ -1699,21 +1699,26 @@ void test_sp3_assist_coast_gate_and_launch_preload(const TempSp3Models &models) 
         cfg->shifting.enabled = 0;
         cfg->pedaling.effort_slew_nm_s = 100000.0f;
         cfg->program_enabled = 1;
-        cfg->ride_program.segment_count = 2;
+        cfg->ride_program.segment_count = 3;
         cfg->ride_program.reaction_delay_s = 0.0f;
         const std::span segs(cfg->ride_program.segments);
         segs[0].t_end_s = 0.01f;
         segs[0].channel_mask =
-            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque) |
-            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_front_brake);
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque);
         segs[0].human_torque_nm = 32.0f;
-        segs[0].front_brake = 0.25f;
 
         segs[1].t_end_s = 0.02f;
         segs[1].channel_mask =
             static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque) |
             static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::linear_ramp);
         segs[1].human_torque_nm = 52.0f;
+
+        segs[2].t_end_s = 0.03f;
+        segs[2].channel_mask =
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque) |
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_front_brake);
+        segs[2].human_torque_nm = 32.0f;
+        segs[2].front_brake = 0.25f;
 
         DataPtr d(nullptr, &mj_deleteData);
         build_riding_initial_state(m13.get(), idx13, {.speed_mps = 3.0, .crank_omega_rad_s = 6.0}, d);
@@ -1737,8 +1742,8 @@ void test_sp3_assist_coast_gate_and_launch_preload(const TempSp3Models &models) 
                     b.dof_frictionloss.data(), nv13) == 0,
                 "ride_program seg0 pre_solve failed");
         require(std::abs(st->pedaling.effort - 32.0f) <= 1e-3f &&
-                    std::abs(st->last_brakes.final_front - 0.25f) <= 1e-4f,
-                "RideProgram step segment must override human_torque_nm and front_brake");
+                    st->last_brakes.final_front == 0.0f,
+                "RideProgram step segment must override human_torque_nm without braking");
 
         // Segment 1 linear ramp midpoint at t = 0.015 s (step_index = 12).
         st->step_index = 12;
@@ -1754,6 +1759,21 @@ void test_sp3_assist_coast_gate_and_launch_preload(const TempSp3Models &models) 
         require(std::abs(st->pedaling.effort - 42.0f) <= 1e-2f &&
                     st->last_brakes.final_front == 0.0f,
                 "RideProgram linear_ramp segment must interpolate human_torque_nm to midpoint (42 Nm)");
+
+        // Segment 2 braking segment at t = 0.025 s (step_index = 20): front_brake > 0 forces legs_coast.
+        st->step_index = 20;
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "ride_program seg2 brake pre_solve failed");
+        require(std::abs(st->last_brakes.final_front - 0.25f) <= 1e-4f &&
+                    st->pedaling.effort == 0.0f,
+                "RideProgram braking segment must set final_front=0.25 and coast legs (effort=0)");
     }
     std::cout << "[test_sp3_cruise_and_ride_program] passed\n";
 }

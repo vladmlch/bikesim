@@ -794,6 +794,14 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_pre_solve_and_begin_world(
     return bike::physics_core::Status::ok;
 }
 
+BIKE_HD bike::physics_core::SpindleM0Options<float> gpu_sp4_default_m0_options() noexcept {
+    bike::physics_core::SpindleM0Options<float> opts{};
+    // 2e-3 N (2x CPU's 1e-3) avoids crossing unilateral efc active-set boundaries
+    // on rough terrain while keeping ample SNR above FP32 qacc roundoff.
+    opts.newton_eps = 2.0e-3f;
+    return opts;
+}
+
 template <
     class Sp3CfgPtr,
     class SpindleParamsPtr,
@@ -831,8 +839,7 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_step_world(
     PtrWarmstart qacc_warmstart_w,
     BIKE_THREAD bike::physics_core::u8 &out_needs_solve,
     BIKE_THREAD bike::physics_core::u8 &out_done,
-    bike::physics_core::SpindleM0Options<float> opts =
-        bike::physics_core::SpindleM0Options<float>{}
+    bike::physics_core::SpindleM0Options<float> opts = gpu_sp4_default_m0_options()
 ) noexcept {
     out_needs_solve = 0;
     out_done = 1;
@@ -1233,6 +1240,162 @@ BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_distributed_stored_
     return bike::physics_core::Status::ok;
 }
 
+template <class WorldStatePtr, class PneumScratchPtr>
+BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_pneumatic_shear_side(
+    int side,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuPneumaticSpecRef &spec,
+    WorldStatePtr world_states_w,
+    PneumScratchPtr pneum_scratch_w,
+    BIKE_THREAD float &out_shear_j,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    out_shear_j = 0.0f;
+    if (spec.discretised_brush == 0 ||
+        world_states_w->pneumatic_wheels[side].carcass.initialized == 0 ||
+        world_states_w->pneumatic_wheels[side].patch_count <= 0) {
+        return bike::physics_core::Status::ok;
+    }
+
+    bike::physics_core::PneumaticSurfaceMap<float> pmap{};
+    pmap.default_surface.mu_peak = tyre_model->surface_map.default_surface.mu_peak;
+    pmap.default_surface.mu_slide = tyre_model->surface_map.default_surface.mu_slide;
+    pmap.default_surface.slip_stiffness_per_load =
+        tyre_model->surface_map.default_surface.slip_stiffness_per_load;
+    pmap.default_surface.stribeck_speed_mps =
+        tyre_model->surface_map.default_surface.stribeck_speed_mps;
+    pmap.default_surface.crr_delta = tyre_model->surface_map.default_surface.crr_delta;
+    pmap.default_surface.load_sensitivity =
+        tyre_model->surface_map.default_surface.load_sensitivity;
+    pmap.default_surface_id = tyre_model->surface_map.default_surface.surface_id;
+    pmap.has_surface_map = tyre_model->surface_map.has_surface_map;
+    pmap.section_count = tyre_model->surface_map.section_count;
+    const int sec_count =
+        (pmap.section_count < bike::physics_core::kMaxSurfaceSections)
+            ? pmap.section_count
+            : bike::physics_core::kMaxSurfaceSections;
+    for (int s = 0; s < sec_count; ++s) {
+        pmap.sections[s].start_m = tyre_model->surface_map.sections[s].start_m;
+        pmap.sections[s].end_m = tyre_model->surface_map.sections[s].end_m;
+        pmap.sections[s].blend_m = tyre_model->surface_map.sections[s].blend_m;
+        pmap.sections[s].surface_id =
+            tyre_model->surface_map.sections[s].surface.surface_id;
+        pmap.sections[s].surface.mu_peak =
+            tyre_model->surface_map.sections[s].surface.mu_peak;
+        pmap.sections[s].surface.mu_slide =
+            tyre_model->surface_map.sections[s].surface.mu_slide;
+        pmap.sections[s].surface.slip_stiffness_per_load =
+            tyre_model->surface_map.sections[s].surface.slip_stiffness_per_load;
+        pmap.sections[s].surface.stribeck_speed_mps =
+            tyre_model->surface_map.sections[s].surface.stribeck_speed_mps;
+        pmap.sections[s].surface.crr_delta =
+            tyre_model->surface_map.sections[s].surface.crr_delta;
+        pmap.sections[s].surface.load_sensitivity =
+            tyre_model->surface_map.sections[s].surface.load_sensitivity;
+    }
+
+    const float outer_radius_m = spec.tyre.outer_radius_mm * 0.001f;
+    const float ds_m = outer_radius_m * spec.ring.dtheta_rad;
+    const float rim_deflection_m = spec.tyre.rim_strike_deflection_mm() * 0.001f;
+    const float rim_si = spec.tyre.rim_stiffness_n_mm2 * 1000000.0f;
+    const int n_patches =
+        (world_states_w->pneumatic_wheels[side].patch_count < bike::physics_core::kMaxPneumaticPatches)
+            ? world_states_w->pneumatic_wheels[side].patch_count
+            : bike::physics_core::kMaxPneumaticPatches;
+
+    for (int k = 0; k < n_patches; ++k) {
+        if (world_states_w->pneumatic_wheels[side].patches[k].active == 0) {
+            continue;
+        }
+        const int start_i = world_states_w->pneumatic_wheels[side].patches[k].start;
+        const int stop_i = world_states_w->pneumatic_wheels[side].patches[k].stop;
+        const int w = stop_i - start_i;
+        if (start_i < 0 || stop_i > spec.ring.n_rays || w <= 0) {
+            continue;
+        }
+        const float length_m = (w == 1)
+            ? ds_m
+            : bike::physics_core::pneumatic_detail::hypot_libm<
+                  float, bike::physics_core::GpuToolkit>(
+                  pneum_scratch_w->road_x_m[stop_i - 1] - pneum_scratch_w->road_x_m[start_i],
+                  pneum_scratch_w->road_z_m[stop_i - 1] - pneum_scratch_w->road_z_m[start_i]);
+        const float half_length_m = 0.5f * spec.tyre.contact_length_factor * length_m;
+        if (half_length_m <= 0.0f) {
+            continue;
+        }
+        float weight_sum = 0.0f;
+        for (int i = 0; i < w; ++i) {
+            const int r = start_i + i;
+            const float d = world_states_w->pneumatic_wheels[side].carcass.delta_prev_m[r];
+            if (d > 0.0f) {
+                const float overlap = gpu_max(d - rim_deflection_m, 0.0f);
+                const float rim_el = rim_si * overlap * ds_m;
+                const float tot = gpu_max(
+                    world_states_w->pneumatic_wheels[side].carcass.elastic_prev_n[r] +
+                    world_states_w->pneumatic_wheels[side].carcass.maxwell_force_n[r] +
+                    rim_el,
+                    0.0f);
+                weight_sum += tot;
+            }
+        }
+        if (weight_sum <= 0.0f) {
+            continue;
+        }
+
+        float min_x = pneum_scratch_w->road_x_m[start_i];
+        float max_x = min_x;
+        for (int i = 1; i < w; ++i) {
+            const float xv = pneum_scratch_w->road_x_m[start_i + i];
+            if (xv < min_x) min_x = xv;
+            if (xv > max_x) max_x = xv;
+        }
+        bike::physics_core::i32 uniform_sec_idx = -1;
+        bool is_uniform = false;
+        const bike::physics_core::Status u_st =
+            bike::physics_core::pneumatic_uniform_surface_for_span<
+                float, bike::physics_core::GpuToolkit>(
+                &pmap, min_x, max_x, uniform_sec_idx, is_uniform, err);
+        if (u_st != bike::physics_core::Status::ok) {
+            return u_st;
+        }
+
+        const float dx = (2.0f * half_length_m) / static_cast<float>(w);
+        const float common = weight_sum / (2.0f * half_length_m * half_length_m);
+        float sum = 0.0f;
+        float uniform_slip_k = 0.0f;
+        if (is_uniform) {
+            uniform_slip_k = (uniform_sec_idx >= 0)
+                ? pmap.sections[uniform_sec_idx].surface.slip_stiffness_per_load
+                : pmap.default_surface.slip_stiffness_per_load;
+        }
+        for (int i = 0; i < w; ++i) {
+            const float u =
+                world_states_w->pneumatic_wheels[side].bristle_deflection_m[start_i + i];
+            if (is_uniform) {
+                sum += u * u;
+            } else {
+                bike::physics_core::i32 ray_sid = 0;
+                bike::physics_core::PneumaticSurfaceSample<float> ray_sample{};
+                const bike::physics_core::Status es_st =
+                    bike::physics_core::eval_surface_sample<
+                        float, bike::physics_core::GpuToolkit>(
+                        &pmap, pneum_scratch_w->road_x_m[start_i + i],
+                        ray_sample, ray_sid, err);
+                if (es_st != bike::physics_core::Status::ok) {
+                    return es_st;
+                }
+                sum += ray_sample.slip_stiffness_per_load * common * dx * u * u;
+            }
+        }
+        const float patch_shear = is_uniform
+            ? (0.5f * uniform_slip_k * common * dx * sum)
+            : (0.5f * sum);
+        out_shear_j += patch_shear;
+    }
+    return bike::physics_core::Status::ok;
+}
+
 template <class XposPtr, class WorldStatePtr, class PneumScratchPtr>
 BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_pneumatic_stored_energy(
     const BIKE_THREAD GpuModelIndices &idx,
@@ -1331,7 +1494,14 @@ BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_pneumatic_stored_en
             float, bike::physics_core::GpuToolkit>(
             spec.tyre, &spec.ring, &world_states_w->pneumatic_wheels[side],
             pneum_scratch_w->delta_m, rad_j, max_j, rim_j);
+        float shear_j = 0.0f;
+        const bike::physics_core::Status sh_st = gpu_sp4_eval_pneumatic_shear_side(
+            side, tyre_model, spec, world_states_w, pneum_scratch_w, shear_j, err);
+        if (sh_st != bike::physics_core::Status::ok) {
+            return sh_st;
+        }
         out_elastic.u_tyre_radial += rad_j;
+        out_elastic.u_tyre_shear += shear_j;
         out_elastic.u_tyre_maxwell += max_j;
         out_elastic.u_tyre_rim += rim_j;
     }

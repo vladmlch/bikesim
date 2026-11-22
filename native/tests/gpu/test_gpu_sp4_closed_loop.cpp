@@ -298,6 +298,7 @@ int bike_metal_launch_sp4_energy_post_step(
     const float *d_M_or_qM,
     const float *d_qpos,
     const float *d_qvel,
+    const float *d_xpos,
     const float *d_ctrl,
     const float *d_body_mass,
     const float *d_xipos,
@@ -1635,7 +1636,7 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
             tt->terrain_f32.data(), cfgs.data(), 1, sp_params.get(),
             h_sp3.data(), h_sp4.data(), h_ws.data(),
             0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
-            h_qpos.data(), qvel_b.data(), h_ctrl.data(),
+            h_qpos.data(), qvel_b.data(), xpos_b.data(), h_ctrl.data(),
             p_bmass.data(), xipos_b.data(), grav_f.data(),
             nefc_b.data(), njmax, nv,
             et_b.data(), eJ_b.data(), ef_b.data()) == 0,
@@ -1657,7 +1658,7 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
             tt->terrain_f32.data(), cfgs.data(), 1, sp_params.get(),
             m_sp3.data(), m_sp4.data(), m_ws.data(),
             0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
-            m_qpos.data(), qvel_b.data(), m_ctrl.data(),
+            m_qpos.data(), qvel_b.data(), xpos_b.data(), m_ctrl.data(),
             p_bmass.data(), xipos_b.data(), grav_f.data(),
             nefc_b.data(), njmax, nv,
             et_b.data(), eJ_b.data(), ef_b.data()) == 0,
@@ -1847,7 +1848,7 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
         }
 
         std::vector<double> ws_saved(to_index(nv), 0.0);
-        constexpr int kSteps = 400;
+        constexpr int kSteps = 600;
         for (int step = 0; step < kSteps; ++step) {
             mj_fwdPosition(m.get(), d.get());
             mj_fwdVelocity(m.get(), d.get());
@@ -1932,17 +1933,18 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
             copy_cast(d->qpos, to_index(nq), qpos_f);
             copy_cast(d->qvel, to_index(nv), qvel_f);
             copy_cast(d->sensordata, to_index(nsd), sd_f);
-            copy_cast(d->efc_type, to_index(std::max(1, d->nefc)), et_i);
-            copy_cast(d->efc_id, to_index(std::max(1, d->nefc)), eid_i);
-            copy_cast(d->efc_J, to_index(std::max(1, d->nefc)) * to_index(nv), eJ_f);
-            copy_cast(d->efc_force, to_index(std::max(1, d->nefc)), ef_f);
+            const int nefc_val = d->nefc;
+            copy_cast(d->efc_type, to_index(std::max(1, nefc_val)), et_i);
+            copy_cast(d->efc_id, to_index(std::max(1, nefc_val)), eid_i);
+            copy_cast(d->efc_J, to_index(std::max(1, nefc_val)) * to_index(nv), eJ_f);
+            copy_cast(d->efc_force, to_index(std::max(1, nefc_val)), ef_f);
 
             require(
                 bike_gpu_launch_sp4_m0_post_solve(
                     nullptr, 1, kDtS, &idx, cfg.get(), 0, sp_params.get(),
                     sp3_st.get(), sp4_st.get(), m0_scratch.get(),
                     qpos_f.data(), qvel_f.data(), xpos_f.data(), xmat_f.data(), xa_f.data(),
-                    nsd, sd_f.data(), &d->nefc, std::max(1, d->nefc), nv,
+                    nsd, sd_f.data(), &nefc_val, std::max(1, nefc_val), nv,
                     et_i.data(), eid_i.data(), eJ_f.data(), ef_f.data(),
                     nullptr, 0, 1, nullptr, nullptr, nullptr, nullptr) == 0,
                 "m0 rollout post_solve failed");
@@ -1955,6 +1957,7 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
                 }
             }
             mj_fwdPosition(m.get(), d.get());
+            copy_cast(d->xpos, to_index(nbody) * 3U, xpos_f);
             copy_cast(d->xipos, to_index(nbody) * 3U, xipos_f);
             copy_cast(d->M, to_index(nM), M_f);
 
@@ -1964,9 +1967,9 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
                     tt->terrain_f32.data(), cfg.get(), 0, sp_params.get(),
                     sp3_st.get(), sp4_st.get(), ws.get(),
                     0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
-                    qpos_f.data(), qvel_f.data(), ctrl_f.data(),
+                    qpos_f.data(), qvel_f.data(), xpos_f.data(), ctrl_f.data(),
                     bmass_f.data(), xipos_f.data(), grav_f.data(),
-                    &d->nefc, std::max(1, d->nefc), nv,
+                    &nefc_val, std::max(1, nefc_val), nv,
                     et_i.data(), eJ_f.data(), ef_f.data()) == 0,
                 "m0 rollout energy_post_step failed");
         }

@@ -843,6 +843,11 @@ def run_level_a_sp3_sp4_parity(
         if hasattr(cuda_lib, "bike_gpu_launch_sp4_energy_post_step") and hasattr(
             host_lib, "bike_gpu_launch_sp4_energy_post_step"
         ):
+            ops["fwd_kinematics"](m_wp, d_b)
+            ops["crb"](m_wp, d_b)
+            wp.synchronize()
+            h_M_post = np.ascontiguousarray(d_b.M.numpy(), dtype=np.float32)
+            h_xpos_e = np.ascontiguousarray(d_b.xpos.numpy(), dtype=np.float32)
             h_bmass = np.ascontiguousarray(m_wp.body_mass.numpy(), dtype=np.float32)
             h_xipos = np.ascontiguousarray(d_b.xipos.numpy(), dtype=np.float32)
             h_grav = np.ascontiguousarray(m_wp.opt.gravity.numpy(), dtype=np.float32)
@@ -855,7 +860,7 @@ def run_level_a_sp3_sp4_parity(
                     ctypes.c_void_p(d_idx.ptr),
                     ctypes.c_void_p(d_tyre.ptr),
                     ctypes.c_void_p(d_desc.ptr),
-                    ctypes.c_void_p(d_tf32.ptr),
+                    ctypes.c_void_p(tf32_ptr),
                     ctypes.c_void_p(d_cfg.ptr),
                     1,
                     ctypes.c_void_p(d_spindle.ptr),
@@ -870,6 +875,7 @@ def run_level_a_sp3_sp4_parity(
                     ctypes.c_void_p(d_b.M.ptr),
                     ctypes.c_void_p(d_b.qpos.ptr),
                     ctypes.c_void_p(d_b.qvel.ptr),
+                    ctypes.c_void_p(d_b.xpos.ptr),
                     ctypes.c_void_p(d_b.ctrl.ptr),
                     ctypes.c_void_p(int(m_wp.body_mass.ptr)),
                     ctypes.c_void_p(int(d_b.xipos.ptr)),
@@ -900,12 +906,13 @@ def run_level_a_sp3_sp4_parity(
                     _ptr_buf(h_ws),
                     0,
                     int(m_world_stride),
-                    ctypes.c_void_p(h_rowadr.ctypes.data),
-                    ctypes.c_void_p(h_rownnz.ctypes.data),
-                    ctypes.c_void_p(h_colind.ctypes.data),
+                    ctypes.c_void_p(h_m_rowadr.ctypes.data),
+                    ctypes.c_void_p(h_m_rownnz.ctypes.data),
+                    ctypes.c_void_p(h_m_colind.ctypes.data),
                     _ptr_f32(h_M_post),
                     _ptr_f32(h_qpos_post),
                     _ptr_f32(h_qvel_post),
+                    _ptr_f32(h_xpos_e),
                     _ptr_f32(h_ctrl_e),
                     _ptr_f32(h_bmass),
                     _ptr_f32(h_xipos),
@@ -1365,7 +1372,6 @@ def run_level_a_sp4_m0_parity(
         h_xpos_post = np.ascontiguousarray(d_b.xpos.numpy(), dtype=np.float32)
         h_xmat_post = np.ascontiguousarray(d_b.xmat.numpy(), dtype=np.float32)
         h_xanc_post = np.ascontiguousarray(d_b.xanchor.numpy(), dtype=np.float32)
-        h_M_post = np.ascontiguousarray(d_b.M.numpy(), dtype=np.float32)
         h_sd = np.ascontiguousarray(d_b.sensordata.numpy(), dtype=np.float32) if post_b["sensordata_ptr"] != 0 else np.zeros(1, dtype=np.float32)
         efc = getattr(d_b, "efc", None)
         h_nefc = np.ascontiguousarray(d_b.nefc.numpy(), dtype=np.int32) if post_b["nefc_ptr"] != 0 else np.zeros(nworld, dtype=np.int32)
@@ -1454,6 +1460,11 @@ def run_level_a_sp4_m0_parity(
         if rc_g != 0 or rc_c != 0:
             raise RuntimeError(f"sp4_m0_post_solve failed: gpu={rc_g}, cpu={rc_c}")
 
+        ops["fwd_kinematics"](m_wp, d_b)
+        ops["crb"](m_wp, d_b)
+        wp.synchronize()
+        h_M_post = np.ascontiguousarray(d_b.M.numpy(), dtype=np.float32)
+        h_xpos_e = np.ascontiguousarray(d_b.xpos.numpy(), dtype=np.float32)
         h_bmass = np.ascontiguousarray(m_wp.body_mass.numpy(), dtype=np.float32)
         h_xipos = np.ascontiguousarray(d_b.xipos.numpy(), dtype=np.float32)
         h_grav = np.ascontiguousarray(m_wp.opt.gravity.numpy(), dtype=np.float32)
@@ -1481,6 +1492,7 @@ def run_level_a_sp4_m0_parity(
                 ctypes.c_void_p(d_b.M.ptr),
                 ctypes.c_void_p(d_b.qpos.ptr),
                 ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.xpos.ptr),
                 ctypes.c_void_p(d_b.ctrl.ptr),
                 ctypes.c_void_p(int(m_wp.body_mass.ptr)),
                 ctypes.c_void_p(int(d_b.xipos.ptr)),
@@ -1517,6 +1529,7 @@ def run_level_a_sp4_m0_parity(
                 _ptr_f32(h_M_post),
                 _ptr_f32(h_qpos_post),
                 _ptr_f32(h_qvel_post),
+                _ptr_f32(h_xpos_e),
                 _ptr_f32(h_ctrl_e),
                 _ptr_f32(h_bmass),
                 _ptr_f32(h_xipos),

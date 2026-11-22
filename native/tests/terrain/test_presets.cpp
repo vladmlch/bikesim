@@ -6,6 +6,7 @@
 #include "io/json.hpp"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -59,6 +60,24 @@ void carving_and_placement(){
     const auto& left=std::get<t::RoadRoughness>(pieces[0].shape);const auto& right=std::get<t::RoadRoughness>(pieces[2].shape);
     bt::require(left.start_m==1.&&left.section_length_m==3.&&right.start_m==5.&&right.section_length_m==4.0,"split geometry preserves exact neighbors");
     bt::require(right.seed=="100000000000000001000002","split seed addition is arbitrary precision");
+    // An iso8608 roughness section carves around a defect like any other;
+    // the spectral fields propagate to the pieces and the sub-metre tail
+    // piece stays bounded under the analytic normalization.
+    const auto spectral_carve=t::track_from_dict(toml("name='iso carve'\nlength_m=20\n[[obstacles]]\ntype='roughness'\nstart_m=2\nsection_length_m=10\namplitude_m=0.03\ncorrelation_length_m=0.2\nspectrum='iso8608'\nwaviness=2.2\nseed=7\n[[obstacles]]\ntype='square_edge'\nstart_m=11\nheight_m=0.1\nledge_length_m=0.5\n"));
+    std::vector<const t::RoadRoughness*> iso_pieces;
+    for(const auto& o:spectral_carve.obstacles)if(const auto* rr=std::get_if<t::RoadRoughness>(&o.shape))iso_pieces.push_back(rr);
+    bt::require(iso_pieces.size()==2,"iso8608 roughness splits around the defect");
+    const t::RoadRoughness* tail=nullptr;
+    for(const auto* rr:iso_pieces){
+        bt::require(rr->spectrum=="iso8608"&&rr->waviness==2.2,"carved pieces keep the spectral fields");
+        if(rr->section_length_m<1.)tail=rr;
+    }
+    bt::require(tail&&tail->start_m==11.5&&tail->section_length_m==.5,"defect leaves a 0.5 m iso8608 tail piece");
+    const auto [tx,tz]=tail->nodes();
+    bt::require(tx.size()==tz.size()&&tz.size()>2,"carved tail keeps its node grid");
+    double iso_peak=0.;for(double const v:tz)iso_peak=std::max(iso_peak,std::abs(v));
+    bt::require(iso_peak<=.06,"0.5 m carved iso8608 piece stays within twice the amplitude");
+    bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(spectral_carve))))==t::dump_track(spectral_carve),"carved iso8608 track round trips");
     const std::array<t::Interval,2> taken{{{2.0,3.},{6.0,7.}}};const auto free=t::free_intervals({0.0,10.},taken,1.);
     bt::require(free==std::vector<t::Interval>{{0.0,1.},{4.0,5.},{8.0,10.}},"free intervals honor exact gap");
     bike::random::NumpyRng rng(0);bt::require(!t::place(rng,100.0,0.0,5.0,{},false),"impossible placement terminates");

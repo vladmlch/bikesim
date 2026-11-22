@@ -271,6 +271,20 @@ void iso8608_roughness(){
     bt::require(narrow_slope>=-2.5&&narrow_slope<=-1.5,"iso8608 PSD slope holds on a 20 m section");
     const t::RoadRoughness gauss{.start_m=0.,.section_length_m=10.,.amplitude_m=.003,.correlation_length_m=.2,.seed="0"};
     bt::require(gauss.spectrum=="gaussian"&&gauss.waviness==2.,"gaussian defaults preserved");
+    // carve_roughness leaves 0.5-0.8 m iso8608 pieces around defects; with a
+    // one- or two-sample interior a realized-RMS fit divides by a near-zero
+    // draw, so the analytic normalization must keep every seed bounded. The
+    // correlation_length 0.4 m cases also collapse the band floor onto the
+    // Nyquist ceiling (n_min == n_max, dn == 0).
+    const std::array<std::pair<double,double>,4> short_cases{{{.6,.20},{.8,.20},{.5,.40},{.6,.40}}};
+    for(int seed=0;seed<20;++seed)for(const auto& [length,corr]:short_cases){
+        const t::RoadRoughness piece{.start_m=0.,.section_length_m=length,.amplitude_m=.03,.correlation_length_m=corr,.seed=std::to_string(seed),.spectrum="iso8608",.waviness=2.};
+        const auto [px,pz]=piece.nodes();
+        bt::require(px.size()==pz.size()&&pz.size()>2,"short iso8608 piece keeps its node grid");
+        double peak=0.;for(double const v:pz)peak=std::max(peak,std::abs(v));
+        bt::require(peak<=2.*.03,"iso8608 "+std::to_string(length)+" m piece seed "+std::to_string(seed)+" stays within twice the amplitude");
+    }
+    bt::invalid([]{const t::RoadRoughness r{.section_length_m=1.,.amplitude_m=std::numeric_limits<double>::quiet_NaN(),.spectrum="iso8608"};(void)r.nodes();});
     bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.spectrum="bogus"}};o.validate();});
     bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.spectrum="iso8608",.waviness=.5}};o.validate();});
     bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.waviness=4.5}};o.validate();});

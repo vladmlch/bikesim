@@ -58,11 +58,17 @@ template<class T> auto make_nodes(const T& o) {
 // ISO 8608 harmonic synthesis: M cosine modes with NumpyRng phases uniform on
 // [0, 2*pi) and amplitudes ~ n^(-waviness/2) over the spatial-frequency band
 // [max(1/section_length, 0.2), 1/(2*correlation_length)] cycles/metre. The
-// edge taper matches make_nodes; the untapered interior RMS — not the peak —
-// is normalized to amplitude_m/3 so the level is section-length invariant.
+// edge taper matches make_nodes; the untapered sum is normalized by its exact
+// analytical RMS sqrt(.5*sum(w^2)) — the phase-averaged mean square of the
+// harmonic sum — scaled to amplitude_m/3 so the expected interior level is
+// section-length invariant. A realized-RMS fit is unusable on the 0.5-0.8 m
+// pieces carve_roughness leaves around defects: there the "interior" is one
+// or two samples and dividing by their draw spikes the level by orders of
+// magnitude.
 std::pair<std::vector<double>,std::vector<double>> iso8608_nodes(const RoadRoughness& o) {
     detail::positive(o.correlation_length_m,"RoadRoughness.correlation_length_m");
     detail::nonnegative(o.section_length_m,"RoadRoughness.section_length_m");
+    detail::finite(o.amplitude_m,"RoadRoughness.amplitude_m");
     if(o.spectrum!="gaussian"&&o.spectrum!="iso8608")throw std::invalid_argument("RoadRoughness.spectrum: expected 'gaussian' or 'iso8608'");
     detail::finite(o.waviness,"RoadRoughness.waviness");
     if(o.waviness<1.||o.waviness>4.)throw std::invalid_argument("RoadRoughness.waviness must lie in [1,4]");
@@ -70,13 +76,18 @@ std::pair<std::vector<double>,std::vector<double>> iso8608_nodes(const RoadRough
     const auto n=detail::count(std::max(std::ceil(o.section_length_m/spacing)+1.,4.),"RoadRoughness.nodes");
     auto x=detail::gd::np_linspace(0.,o.section_length_m,n);
     constexpr std::size_t modes=64;
-    const double n_min=std::max(o.section_length_m>0.?1./o.section_length_m:0.,0.2);
     const double n_max=1./(2.*o.correlation_length_m);
+    // Clamp the band floor under the Nyquist ceiling: a section shorter than
+    // 1/n_max (down to the 0.5 m carve_roughness minimum) would otherwise put
+    // n_min above n_max and stack all 64 modes past the band edge.
+    const double n_min=std::min(std::max(1./o.section_length_m,.2),n_max);
     const double dn=n_max>n_min?(n_max-n_min)/static_cast<double>(modes-1):0.;
     bike::random::NumpyRng rng(o.seed,{});
     std::vector<double> freq(modes),phase(modes),weight(modes);
     rng.uniform(0.,2.*pi,phase);
-    for(std::size_t m=0;m<modes;++m){freq[m]=n_min+static_cast<double>(m)*dn;weight[m]=std::pow(freq[m],-.5*o.waviness);}
+    double weights_sq=0.;
+    for(std::size_t m=0;m<modes;++m){freq[m]=n_min+static_cast<double>(m)*dn;weight[m]=std::pow(freq[m],-.5*o.waviness);weights_sq+=weight[m]*weight[m];}
+    const double scale=o.amplitude_m/3./std::sqrt(.5*weights_sq);
     const double taper_len=std::min(o.correlation_length_m*2.,o.section_length_m/2.);
     std::vector<double> z(n,0.);
     for(std::size_t i=0;i<n;++i) {
@@ -85,13 +96,8 @@ std::pair<std::vector<double>,std::vector<double>> iso8608_nodes(const RoadRough
         double taper=1.;
         if(x[i]<taper_len)taper=.5*(1.-numeric::np_cos(pi*x[i]/taper_len));
         if(x[i]>o.section_length_m-taper_len)taper=.5*(1.-numeric::np_cos(pi*(o.section_length_m-x[i])/taper_len));
-        z[i]=sum*taper;
+        z[i]=sum*scale*taper;
     }
-    double sumsq=0.;std::size_t interior=0;
-    for(std::size_t i=0;i<n;++i)if(x[i]>=taper_len&&x[i]<=o.section_length_m-taper_len){sumsq+=z[i]*z[i];++interior;}
-    if(interior==0){for(double const v:z)sumsq+=v*v;interior=n;}
-    const double rms=interior>0?std::sqrt(sumsq/static_cast<double>(interior)):0.;
-    if(rms>0.)for(double& v:z)v*=o.amplitude_m/3./rms;
     return {std::move(x),std::move(z)};
 }
 template<class T> double length(const T& s) {
@@ -239,7 +245,9 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
                 } else if constexpr(std::is_same_v<T,StepUp>) {
                     // C1 cosine ramp on [0, ramp_m); the deck past the ramp is
                     // carried by datum_shift_m, so the local profile holds h.
-                    if(s.ramp_m>0.)out[i]=x<s.ramp_m?s.height_m*.5*(1.-numeric::np_cos(pi*x/s.ramp_m)):s.height_m;
+                    // Ahead of the foot (x <= 0) the approach datum holds 0 —
+                    // the cosine tail must not leak a bump before the step.
+                    if(s.ramp_m>0.)out[i]=x<=0.?0.:(x<s.ramp_m?s.height_m*.5*(1.-numeric::np_cos(pi*x/s.ramp_m)):s.height_m);
                 }
             }
         }

@@ -10,10 +10,13 @@
 #pragma once
 
 #include "../physics_core/assist.hpp"
+#include "../physics_core/cruise.hpp"
 #include "../physics_core/efc_monitors.hpp"
+#include "../physics_core/energy_ledger.hpp"
 #include "../physics_core/front_lift.hpp"
 #include "../physics_core/launch_plan.hpp"
 #include "../physics_core/pedaling.hpp"
+#include "../physics_core/ride_program.hpp"
 #include "../physics_core/rider_intent.hpp"
 #include "../physics_core/shifting.hpp"
 #include "batch_step.hpp"
@@ -84,6 +87,14 @@ struct GpuSp3Config {
     bike::physics_core::u8 use_bridged_load = 0;
     bike::physics_core::u8 reposition_request = 0;
     bike::physics_core::u8 pad1 = 0;
+
+    bike::physics_core::CruiseConfigPod<float> cruise{};
+    bike::physics_core::GpuRideProgram<float> ride_program{};
+    bike::physics_core::i32 control_period_steps = 1;
+    bike::physics_core::u8 cruise_enabled = 0;
+    bike::physics_core::u8 program_enabled = 0;
+    bike::physics_core::u8 freeze_on_crash = 0;
+    bike::physics_core::u8 track_energy_ledger = 1;
 };
 
 struct GpuSp3WorldState {
@@ -95,6 +106,9 @@ struct GpuSp3WorldState {
     bike::physics_core::RatchetBoundState<float> crank_clutch{};
     bike::physics_core::EfcScanResult<float> last_efc{};
     bike::physics_core::BrakeResolutionCore<float> last_brakes{};
+    bike::physics_core::CruiseStatePod<float> cruise{};
+    bike::physics_core::StallRepositionStatePod<float> stall_reposition{};
+    bike::physics_core::GpuEnergyLedger<float> energy_ledger{};
     bike::physics_core::i32 step_index = 0;
     float last_wheel_load_n[2]{};
     float last_wheel_slip_mps[2]{};
@@ -102,6 +116,16 @@ struct GpuSp3WorldState {
     float last_front_load_share = 0.0f;
     float last_commanded_crank_torque_nm = 0.0f;
     float last_motor_torque_nm = 0.0f;
+    float last_cruise_torque_nm = 0.0f;
+    float last_front_hold_nm = 0.0f;
+    float last_rear_hold_nm = 0.0f;
+    float last_front_frictionloss_nm = 0.0f;
+    float last_rear_frictionloss_nm = 0.0f;
+    float last_step_u_elastic_pre_j = 0.0f;
+    float last_step_d_tyre_radial_j = 0.0f;
+    float last_step_d_tyre_brush_roll_j = 0.0f;
+    float last_step_d_susp_j = 0.0f;
+    float last_step_d_res_j = 0.0f;
     float last_pitch_rate_up_rad_s = 0.0f;
     float last_specific_force_body_mps2[3]{0.0f, 0.0f, 9.81f};
     float cached_posture_grade = 0.0f;
@@ -113,6 +137,8 @@ struct GpuSp3WorldState {
     bike::physics_core::u8 last_wheel_grounded[2]{};
     bike::physics_core::u8 last_has_front_load_share = 0;
     bike::physics_core::u8 using_cassette_tendons = 0;
+    bike::physics_core::u8 frozen = 0;
+    bike::physics_core::u8 pad_sp3 = 0;
 };
 
 static_assert(
@@ -266,7 +292,7 @@ BIKE_HD void gpu_init_default_sp3_config(BIKE_THREAD GpuSp3Config &cfg) noexcept
     cfg.launch.effort_cap_scree_nm = 40.0f;
     cfg.launch.effort_cap_count = 10;
     const float cap_grades[10] = {0.0f, 0.05f, 0.08f, 0.10f, 0.12f, 0.13f, 0.15f, 0.20f, 0.22f, 0.25f};
-    const float cap_nm[10] = {38.5f, 15.0f, 14.5f, 13.2f, 14.0f, 15.5f, 19.5f, 18.5f, 21.0f, 22.5f};
+    const float cap_nm[10] = {36.0f, 15.0f, 14.5f, 13.2f, 14.0f, 15.5f, 19.5f, 18.5f, 21.0f, 20.0f};
     for (int i = 0; i < 10; ++i) {
         cfg.launch.effort_cap_grades[i] = cap_grades[i];
         cfg.launch.effort_cap_grade_nm[i] = cap_nm[i];
@@ -337,10 +363,9 @@ BIKE_HD int gpu_build_sp3_sweep_configs(
     if (configs == nullptr || nworld <= 0) {
         return -1;
     }
-    GpuSp3Config base{};
-    gpu_init_default_sp3_config(base);
     for (int w = 0; w < nworld; ++w) {
-        GpuSp3Config cfg = base;
+        BIKE_THREAD GpuSp3Config &cfg = configs[w];
+        gpu_init_default_sp3_config(cfg);
         if (fork_psi_scale != nullptr) {
             cfg.suspension.params.air_spring.gauge_pressure_psi *= fork_psi_scale[w];
         }
@@ -372,7 +397,6 @@ BIKE_HD int gpu_build_sp3_sweep_configs(
             cfg.tire_stiff_scale = gpu_max(0.0f, tire_stiff_scale[w]);
         }
         gpu_init_suspension_preloads(cfg.suspension);
-        configs[w] = cfg;
     }
     return 0;
 }
@@ -475,12 +499,23 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
     }
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
 
-    // 1. Reset RiderIntent, monitors, shifting, pedaling, assist in-place (zero large stack allocs)
+    // 1. Reset RiderIntent, monitors, shifting, pedaling, assist, cruise, energy in-place (zero large stack allocs)
     bike::physics_core::rider_intent_reset<float>(&cfg->intent, &sp3_st->sp3.intent);
     gpu_sp3_reset_monitors(cfg, &sp3_st->sp3.monitors);
     bike::physics_core::shifting_reset<float>(&cfg->shifting, &sp3_st->shifting);
     bike::physics_core::pedaling_reset<float>(&sp3_st->pedaling);
+    sp3_st->stall_reposition = bike::physics_core::StallRepositionStatePod<float>{};
     bike::physics_core::assist_reset<float>(&sp3_st->assist);
+    sp3_st->cruise = bike::physics_core::CruiseStatePod<float>{};
+    if (cfg->cruise_enabled != 0 || cfg->program_enabled != 0) {
+        const bike::physics_core::Status cr_st =
+            bike::physics_core::cruise_init<float, bike::physics_core::GpuToolkit>(
+                &cfg->cruise, &sp3_st->cruise, err);
+        if (cr_st != bike::physics_core::Status::ok) {
+            return cr_st;
+        }
+    }
+    sp3_st->energy_ledger = bike::physics_core::GpuEnergyLedger<float>{};
 
     if (tyre_world_st != nullptr) {
         tyre_world_st->compliant_wheels[0] = bike::physics_core::GpuCompliantWheelState{};
@@ -584,6 +619,16 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
     sp3_st->last_has_front_load_share = 0;
     sp3_st->last_commanded_crank_torque_nm = 0.0f;
     sp3_st->last_motor_torque_nm = 0.0f;
+    sp3_st->last_cruise_torque_nm = 0.0f;
+    sp3_st->last_front_hold_nm = 0.0f;
+    sp3_st->last_rear_hold_nm = 0.0f;
+    sp3_st->last_front_frictionloss_nm = 0.0f;
+    sp3_st->last_rear_frictionloss_nm = 0.0f;
+    sp3_st->last_step_u_elastic_pre_j = 0.0f;
+    sp3_st->last_step_d_tyre_radial_j = 0.0f;
+    sp3_st->last_step_d_tyre_brush_roll_j = 0.0f;
+    sp3_st->last_step_d_susp_j = 0.0f;
+    sp3_st->last_step_d_res_j = 0.0f;
     sp3_st->last_pitch_rate_up_rad_s = 0.0f;
     sp3_st->last_specific_force_body_mps2[0] = 0.0f;
     sp3_st->last_specific_force_body_mps2[1] = 0.0f;
@@ -595,12 +640,113 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
     sp3_st->has_cached_road_state = 0;
     sp3_st->reposition_consumed = 0;
     sp3_st->using_cassette_tendons = (ntendon >= cfg->shifting.cog_count) ? 1 : 0;
+    sp3_st->frozen = 0;
 
     return gpu_sp3_write_tendon_ranges(
         cfg, &sp3_st->shifting, idx, ntendon, fh_bound, has_ds, cc_bound, tendon_range_w, err);
 }
 
 namespace detail {
+
+template <class AirPtr>
+BIKE_HD bike::physics_core::Status gpu_sp3_eval_fork_air_energy_j(
+    AirPtr air,
+    float fork_qpos_m,
+    BIKE_THREAD float &out_energy_j,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    out_energy_j = 0.0f;
+    if (air == nullptr || !bike::physics_core::GpuToolkit::isfinite(fork_qpos_m)) {
+        err = bike::physics_core::ErrCode::outside_domain;
+        return bike::physics_core::Status::invalid_argument;
+    }
+    const float kPsiToPa = 6894.757293168f;
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const float kPi = 3.14159265358979323846f;
+    const float limit = air->total_travel_mm / 1000.0f;
+    const float inside = gpu_min(gpu_max(fork_qpos_m, 0.0f), limit);
+    const float r_m = (air->stanchion_inner_diam_mm / 2.0f) / 1000.0f;
+    const float area = kPi * r_m * r_m;
+    const bike::physics_core::i32 tokens =
+        (air->num_tokens < 0)
+            ? 0
+            : ((air->num_tokens > air->max_tokens) ? air->max_tokens : air->num_tokens);
+    const float vp0 = area * (air->pos_chamber_length_mm / 1000.0f) -
+                      static_cast<float>(tokens) * (air->token_volume_cm3 * 1e-6f);
+    const float vn0 = area * (air->neg_chamber_length_mm / 1000.0f);
+    const float disp = area * inside;
+    const float p0 = air->gauge_pressure_psi * kPsiToPa + air->atm_pressure_pa;
+    const float v_pos = vp0 - disp;
+    const float v_neg = vn0 + disp;
+    if (vp0 <= 0.0f || vn0 <= 0.0f || v_pos <= 0.0f || v_neg <= 0.0f ||
+        p0 <= 0.0f || air->gamma <= 0.0f) {
+        err = bike::physics_core::ErrCode::outside_domain;
+        return bike::physics_core::Status::invalid_argument;
+    }
+    const float log_pos = bike::physics_core::GpuToolkit::log(v_pos / vp0);
+    const float log_neg = bike::physics_core::GpuToolkit::log(v_neg / vn0);
+    float energy = 0.0f;
+    if (gpu_abs(air->gamma - 1.0f) < 1e-6f) {
+        energy = -p0 * vp0 * log_pos - p0 * vn0 * log_neg;
+    } else {
+        const float one_minus_g = 1.0f - air->gamma;
+        const float denom = air->gamma - 1.0f;
+        energy = p0 * vp0 *
+                     bike::physics_core::assist_expm1<float, bike::physics_core::GpuToolkit>(
+                         one_minus_g * log_pos) /
+                     denom +
+                 p0 * vn0 *
+                     bike::physics_core::assist_expm1<float, bike::physics_core::GpuToolkit>(
+                         one_minus_g * log_neg) /
+                     denom;
+    }
+    if (fork_qpos_m > limit) {
+        float f_max = 0.0f;
+        float v_disp = 0.0f;
+        float v_pos0 = 0.0f;
+        bike::physics_core::SuspDiagField diag = bike::physics_core::SuspDiagField::none;
+        const bike::physics_core::Status af_st =
+            bike::physics_core::eval_air_axial_force<float, bike::physics_core::GpuToolkit>(
+                air, air->total_travel_mm, f_max, v_disp, v_pos0, err, diag);
+        if (af_st != bike::physics_core::Status::ok) {
+            return af_st;
+        }
+        energy += f_max * (fork_qpos_m - limit);
+    }
+    if (!bike::physics_core::GpuToolkit::isfinite(energy) || energy < -1e-4f) {
+        err = bike::physics_core::ErrCode::overflow_nonfinite;
+        return bike::physics_core::Status::overflow;
+    }
+    out_energy_j = gpu_max(0.0f, energy);
+    return bike::physics_core::Status::ok;
+}
+
+template <class SuspCfgPtr>
+BIKE_HD float gpu_sp3_eval_suspension_loss_w(
+    SuspCfgPtr susp_cfg,
+    const BIKE_THREAD bike::physics_core::SuspensionResult<float> &res,
+    float fork_qvel_mps,
+    float shock_qpos_m,
+    float shock_qvel_mps
+) noexcept {
+    float loss_w = gpu_max(0.0f, res.fork_damper * fork_qvel_mps) +
+                   gpu_max(0.0f, res.shock_damper * shock_qvel_mps);
+    const float limit_m = susp_cfg->coil.stroke_mm / 1000.0f;
+    if (shock_qpos_m < 0.0f) {
+        const float low_depth = -shock_qpos_m;
+        const float top_out_mag = -res.shock_top_out;
+        const float elastic_f = susp_cfg->end_stops.stiffness_n_m * low_depth;
+        loss_w += gpu_max(0.0f, -(top_out_mag - elastic_f) * shock_qvel_mps);
+    } else if (shock_qpos_m > limit_m) {
+        const float high_depth = shock_qpos_m - limit_m;
+        const float upper_mag = res.shock_upper_stop;
+        const float elastic_f =
+            susp_cfg->coil.bumper_peak_n + susp_cfg->end_stops.stiffness_n_m * high_depth;
+        loss_w += gpu_max(0.0f, (upper_mag - elastic_f) * shock_qvel_mps);
+    }
+    return gpu_max(0.0f, loss_w);
+}
 
 template <
     class CfgPtr,
@@ -662,8 +808,67 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         ctrl_w[i] = 0.0f;
     }
 
+    if (sp3_st->frozen != 0 && cfg->freeze_on_crash != 0) {
+        if (out_intent_res != nullptr) {
+            *out_intent_res = bike::physics_core::IntentResolutionCore<float>{};
+        }
+        if (out_pedal_out != nullptr) {
+            *out_pedal_out = bike::physics_core::PedalingOutput<float>{};
+        }
+        return bike::physics_core::Status::ok;
+    }
+
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
     const float kTwoPi = 6.28318530717958647692f;
+
+    // 0. Optional scripted ride program evaluation
+    bike::physics_core::GpuProgramOverride<float> prog_ov{};
+    if (cfg->program_enabled != 0) {
+        const float prog_time_s = static_cast<float>(sp3_st->step_index) * dt_s;
+        const bike::physics_core::Status pr_st =
+            bike::physics_core::eval_ride_program<float, bike::physics_core::GpuToolkit>(
+                &cfg->ride_program, prog_time_s, prog_ov, err);
+        if (pr_st != bike::physics_core::Status::ok) {
+            return pr_st;
+        }
+    }
+    const bike::physics_core::u32 ov_mask = prog_ov.channel_mask;
+    const bool ov_human_tq =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_human_torque)) != 0u;
+    const bool ov_motor_tq =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_motor_torque)) != 0u;
+    const bool ov_motor_lim =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_motor_limit)) != 0u;
+    const bool ov_crank_rate =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_crank_rate)) != 0u;
+    const bool ov_front_brake =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_front_brake)) != 0u;
+    const bool ov_rear_brake =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_rear_brake)) != 0u;
+    const bool ov_cruise_kmh =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_cruise_speed_kmh)) != 0u;
+    const bool ov_posture_lean =
+        (ov_mask & static_cast<bike::physics_core::u32>(
+                       bike::physics_core::GpuProgramChannelMask::has_posture_lean)) != 0u;
+
+    if (ov_cruise_kmh) {
+        const bike::physics_core::Status cs_st =
+            bike::physics_core::cruise_set_target_speed_kmh<float, bike::physics_core::GpuToolkit>(
+                &sp3_st->cruise, prog_ov.cruise_speed_kmh, err);
+        if (cs_st != bike::physics_core::Status::ok) {
+            return cs_st;
+        }
+    }
+
+    const float eff_caller_front_brake = ov_front_brake ? prog_ov.front_brake : cfg->caller_front_brake;
+    const float eff_caller_rear_brake = ov_rear_brake ? prog_ov.rear_brake : cfg->caller_rear_brake;
 
     // 1. Road grades & surface labels from shared polyline terrain (updated on control_tick,
     // matching runtime/step.cpp:1248-1258).
@@ -738,17 +943,35 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
 
     bike::physics_core::IntentControlCore<float> in_control{};
     in_control.rider_enabled = (cfg->rider.rider_enabled != 0) ? 1 : 0;
-    if (cfg->caller_motor_torque_nm >= 0.0f) {
+    if (ov_motor_tq) {
+        in_control.has_motor_torque_nm = 1;
+        in_control.motor_torque_nm = prog_ov.motor_torque_nm;
+    } else if (cfg->caller_motor_torque_nm >= 0.0f) {
         in_control.has_motor_torque_nm = 1;
         in_control.motor_torque_nm = cfg->caller_motor_torque_nm;
     }
-    if (cfg->caller_motor_limit_nm >= 0.0f) {
+    if (ov_motor_lim) {
+        in_control.has_motor_limit_nm = 1;
+        in_control.motor_limit_nm = prog_ov.motor_limit_nm;
+    } else if (cfg->caller_motor_limit_nm >= 0.0f) {
         in_control.has_motor_limit_nm = 1;
         in_control.motor_limit_nm = cfg->caller_motor_limit_nm;
     }
-    if (cfg->caller_human_torque_nm >= 0.0f) {
+    if (ov_human_tq) {
+        in_control.has_human_torque_nm = 1;
+        in_control.human_torque_nm = prog_ov.human_torque_nm;
+    } else if (cfg->caller_human_torque_nm >= 0.0f) {
         in_control.has_human_torque_nm = 1;
         in_control.human_torque_nm = cfg->caller_human_torque_nm;
+    }
+    if (ov_crank_rate) {
+        in_control.has_crank_target_rate_rad_s = 1;
+        in_control.crank_target_rate_rad_s = prog_ov.crank_rate_rad_s;
+    }
+    if (ov_posture_lean) {
+        in_control.has_posture = 1;
+        in_control.posture.torso_lean_rad = prog_ov.posture_lean_rad;
+        in_control.posture.use_saddle = 1;
     }
 
     bike::physics_core::IntentSignalsCore<float> signals{};
@@ -778,7 +1001,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     launch_ctx.shift.cut_active = (sp3_st->shifting.cut_remaining_ticks > 0) ? 1 : 0;
     launch_ctx.effort_mode = cfg->effort_mode;
     launch_ctx.external_brake =
-        (cfg->caller_front_brake > 0.0f || cfg->caller_rear_brake > 0.0f || cfg->caller_braking != 0)
+        (eff_caller_front_brake > 0.0f || eff_caller_rear_brake > 0.0f || cfg->caller_braking != 0)
             ? 1
             : 0;
 
@@ -817,7 +1040,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         return ri_st;
     }
 
-    // 3. Brakes: rollback_brake_demand -> resolve_brakes_core -> dof_frictionloss -> eval_brake_hold_wheel
+    // 3. Brakes: rollback_brake_demand -> resolve_brakes_core -> eval_brake_hold_wheel(ceiling) -> apply_static_brake(11-arg)
     float rollback_dem = 0.0f;
     const bike::physics_core::Status rb_st =
         bike::physics_core::rollback_brake_demand<float, bike::physics_core::GpuToolkit>(
@@ -832,13 +1055,13 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     }
 
     bike::physics_core::BrakeRequestCore<float> breq{};
-    breq.caller_front = cfg->caller_front_brake;
-    breq.caller_rear = cfg->caller_rear_brake;
+    breq.caller_front = eff_caller_front_brake;
+    breq.caller_rear = eff_caller_rear_brake;
     breq.rollback_demand = rollback_dem;
     breq.rider_front = (cfg->intent.enabled != 0) ? sp3_st->sp3.intent.commands.front_brake : 0.0f;
     breq.rider_rear = (cfg->intent.enabled != 0) ? sp3_st->sp3.intent.commands.rear_brake : 0.0f;
     breq.caller_braking =
-        (cfg->caller_braking != 0 || cfg->caller_front_brake > 0.0f || cfg->caller_rear_brake > 0.0f)
+        (cfg->caller_braking != 0 || eff_caller_front_brake > 0.0f || eff_caller_rear_brake > 0.0f)
             ? 1
             : 0;
     breq.rider_present = cfg->rider_present;
@@ -849,6 +1072,85 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     sp3_st->last_brakes = brakes;
 
     const bool has_static_fl = (dof_frictionloss_w != nullptr);
+    const float fw_qpos = (idx.front_wheel_spin_qpos >= 0) ? qpos_w[idx.front_wheel_spin_qpos] : 0.0f;
+    const float fw_omega = (idx.front_wheel_spin_dof >= 0) ? qvel_w[idx.front_wheel_spin_dof] : 0.0f;
+    const float rw_qpos = (idx.rear_wheel_spin_qpos >= 0) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
+    const float rw_omega = (idx.rear_wheel_spin_dof >= 0) ? qvel_w[idx.rear_wheel_spin_dof] : 0.0f;
+
+    float front_hold_nm = 0.0f;
+    float rear_hold_nm = 0.0f;
+    float front_brake_tq = 0.0f;
+    float rear_brake_tq = 0.0f;
+    {
+        bool latch_f = (sp3_st->sp3.monitors.brake.latch_front != 0);
+        float latch_f_rad = sp3_st->sp3.monitors.brake.latch_front_rad;
+        const bike::physics_core::Status fb_st =
+            bike::physics_core::eval_brake_hold_wheel<float, bike::physics_core::GpuToolkit>(
+                &cfg->brake_hold,
+                cfg->static_brake_ceiling_nm,
+                brakes.final_front,
+                fw_qpos,
+                fw_omega,
+                true,
+                false,
+                latch_f,
+                latch_f_rad,
+                front_hold_nm,
+                err);
+        if (fb_st != bike::physics_core::Status::ok) {
+            return fb_st;
+        }
+        sp3_st->sp3.monitors.brake.latch_front = latch_f ? 1 : 0;
+        sp3_st->sp3.monitors.brake.latch_front_rad = latch_f_rad;
+        front_brake_tq = front_hold_nm;
+        if (!latch_f && !has_static_fl && brakes.final_front > 0.0f && fw_omega != 0.0f &&
+            cfg->brake_taper_rad_s > 0.0f && cfg->front_max_brake_torque_nm > 0.0f) {
+            const float u = gpu_clamp(brakes.final_front, 0.0f, 1.0f);
+            front_brake_tq = -(u * cfg->front_max_brake_torque_nm) *
+                             bike::physics_core::tanhf_portable(fw_omega / cfg->brake_taper_rad_s);
+        }
+        if (idx.front_wheel_spin_dof >= 0) {
+            qfrc_w[idx.front_wheel_spin_dof] += front_brake_tq;
+        }
+    }
+    {
+        bool latch_r = (sp3_st->sp3.monitors.brake.latch_rear != 0);
+        float latch_r_rad = sp3_st->sp3.monitors.brake.latch_rear_rad;
+        const bike::physics_core::Status rb_st_w =
+            bike::physics_core::eval_brake_hold_wheel<float, bike::physics_core::GpuToolkit>(
+                &cfg->brake_hold,
+                cfg->static_brake_ceiling_nm,
+                brakes.final_rear,
+                rw_qpos,
+                rw_omega,
+                true,
+                false,
+                latch_r,
+                latch_r_rad,
+                rear_hold_nm,
+                err);
+        if (rb_st_w != bike::physics_core::Status::ok) {
+            return rb_st_w;
+        }
+        sp3_st->sp3.monitors.brake.latch_rear = latch_r ? 1 : 0;
+        sp3_st->sp3.monitors.brake.latch_rear_rad = latch_r_rad;
+        rear_brake_tq = rear_hold_nm;
+        if (!latch_r && !has_static_fl && brakes.final_rear > 0.0f && rw_omega != 0.0f &&
+            cfg->brake_taper_rad_s > 0.0f && cfg->rear_max_brake_torque_nm > 0.0f) {
+            const float u = gpu_clamp(brakes.final_rear, 0.0f, 1.0f);
+            rear_brake_tq = -(u * cfg->rear_max_brake_torque_nm) *
+                            bike::physics_core::tanhf_portable(rw_omega / cfg->brake_taper_rad_s);
+        }
+        if (idx.rear_wheel_spin_dof >= 0) {
+            qfrc_w[idx.rear_wheel_spin_dof] += rear_brake_tq;
+        }
+    }
+
+    sp3_st->last_front_hold_nm = front_brake_tq;
+    sp3_st->last_rear_hold_nm = rear_brake_tq;
+    sp3_st->last_front_frictionloss_nm = 0.0f;
+    sp3_st->last_rear_frictionloss_nm = 0.0f;
+
     if (has_static_fl) {
         bool fl_changed = false;
         const bike::physics_core::Status fl_st =
@@ -856,6 +1158,8 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
                 cfg->static_brake_ceiling_nm,
                 brakes.final_front,
                 brakes.final_rear,
+                front_hold_nm,
+                rear_hold_nm,
                 idx.front_wheel_spin_dof,
                 idx.rear_wheel_spin_dof,
                 idx.nv,
@@ -865,75 +1169,11 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         if (fl_st != bike::physics_core::Status::ok) {
             return fl_st;
         }
-    }
-
-    const float fw_qpos = (idx.front_wheel_spin_qpos >= 0) ? qpos_w[idx.front_wheel_spin_qpos] : 0.0f;
-    const float fw_omega = (idx.front_wheel_spin_dof >= 0) ? qvel_w[idx.front_wheel_spin_dof] : 0.0f;
-    const float rw_qpos = (idx.rear_wheel_spin_qpos >= 0) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
-    const float rw_omega = (idx.rear_wheel_spin_dof >= 0) ? qvel_w[idx.rear_wheel_spin_dof] : 0.0f;
-
-    {
-        bool latch_f = (sp3_st->sp3.monitors.brake.latch_front != 0);
-        float latch_f_rad = sp3_st->sp3.monitors.brake.latch_front_rad;
-        float fb_hold_tq = 0.0f;
-        const bike::physics_core::Status fb_st =
-            bike::physics_core::eval_brake_hold_wheel<float, bike::physics_core::GpuToolkit>(
-                &cfg->brake_hold,
-                brakes.final_front,
-                fw_qpos,
-                fw_omega,
-                true,
-                false,
-                latch_f,
-                latch_f_rad,
-                fb_hold_tq,
-                err);
-        if (fb_st != bike::physics_core::Status::ok) {
-            return fb_st;
+        if (idx.front_wheel_spin_dof >= 0 && idx.front_wheel_spin_dof < idx.nv) {
+            sp3_st->last_front_frictionloss_nm = dof_frictionloss_w[idx.front_wheel_spin_dof];
         }
-        sp3_st->sp3.monitors.brake.latch_front = latch_f ? 1 : 0;
-        sp3_st->sp3.monitors.brake.latch_front_rad = latch_f_rad;
-        float fb_tq = fb_hold_tq;
-        if (!latch_f && !has_static_fl && brakes.final_front > 0.0f && fw_omega != 0.0f &&
-            cfg->brake_taper_rad_s > 0.0f && cfg->front_max_brake_torque_nm > 0.0f) {
-            const float u = gpu_clamp(brakes.final_front, 0.0f, 1.0f);
-            fb_tq = -(u * cfg->front_max_brake_torque_nm) *
-                    bike::physics_core::tanhf_portable(fw_omega / cfg->brake_taper_rad_s);
-        }
-        if (idx.front_wheel_spin_dof >= 0) {
-            qfrc_w[idx.front_wheel_spin_dof] += fb_tq;
-        }
-    }
-    {
-        bool latch_r = (sp3_st->sp3.monitors.brake.latch_rear != 0);
-        float latch_r_rad = sp3_st->sp3.monitors.brake.latch_rear_rad;
-        float rb_hold_tq = 0.0f;
-        const bike::physics_core::Status rb_st_w =
-            bike::physics_core::eval_brake_hold_wheel<float, bike::physics_core::GpuToolkit>(
-                &cfg->brake_hold,
-                brakes.final_rear,
-                rw_qpos,
-                rw_omega,
-                true,
-                false,
-                latch_r,
-                latch_r_rad,
-                rb_hold_tq,
-                err);
-        if (rb_st_w != bike::physics_core::Status::ok) {
-            return rb_st_w;
-        }
-        sp3_st->sp3.monitors.brake.latch_rear = latch_r ? 1 : 0;
-        sp3_st->sp3.monitors.brake.latch_rear_rad = latch_r_rad;
-        float rb_tq = rb_hold_tq;
-        if (!latch_r && !has_static_fl && brakes.final_rear > 0.0f && rw_omega != 0.0f &&
-            cfg->brake_taper_rad_s > 0.0f && cfg->rear_max_brake_torque_nm > 0.0f) {
-            const float u = gpu_clamp(brakes.final_rear, 0.0f, 1.0f);
-            rb_tq = -(u * cfg->rear_max_brake_torque_nm) *
-                    bike::physics_core::tanhf_portable(rw_omega / cfg->brake_taper_rad_s);
-        }
-        if (idx.rear_wheel_spin_dof >= 0) {
-            qfrc_w[idx.rear_wheel_spin_dof] += rb_tq;
+        if (idx.rear_wheel_spin_dof >= 0 && idx.rear_wheel_spin_dof < idx.nv) {
+            sp3_st->last_rear_frictionloss_nm = dof_frictionloss_w[idx.rear_wheel_spin_dof];
         }
     }
 
@@ -1060,6 +1300,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     const bool automatic_effort =
         (cfg->intent.enabled != 0) &&
         (cfg->caller_human_torque_nm < 0.0f) &&
+        !ov_human_tq &&
         (cfg->rider.rider_enabled != 0);
     const bool has_ceiling =
         automatic_effort && (intent_res.control.has_human_torque_nm != 0);
@@ -1080,9 +1321,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     bike::physics_core::PedalingOutput<float> pedal_out{};
     if (!rider_enabled || cfg->effort_mode == 0) {
         bike::physics_core::pedaling_reset<float>(&sp3_st->pedaling);
+        sp3_st->stall_reposition = bike::physics_core::StallRepositionStatePod<float>{};
         if (fire_reposition) {
             sp3_st->pedaling.reposition.active = 1;
             sp3_st->pedaling.reposition.armed = 0;
+            sp3_st->stall_reposition.active = 1;
+            sp3_st->stall_reposition.armed = 0;
         }
         pedal_out.mode = bike::physics_core::PedalMode::disabled;
         pedal_out.reason = bike::physics_core::CoastReason::disabled;
@@ -1092,10 +1336,32 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         pedal_out.target_phase_rad = 0.0f;
         pedal_out.target_rate_rad_s = 0.0f;
     } else {
+        bike::physics_core::StallRepositionConfigPod<float> repos_cfg{};
+        repos_cfg.min_effort_nm = cfg->pedaling.reposition_min_effort_nm;
+        repos_cfg.stall_window_s = gpu_max(
+            dt_s,
+            static_cast<float>(cfg->pedaling.reposition_stall_window_ticks) * dt_s);
+        repos_cfg.stall_progress_rad = cfg->pedaling.reposition_stall_progress_rad;
+        repos_cfg.cooldown_s = gpu_max(
+            0.0f,
+            static_cast<float>(cfg->pedaling.reposition_cooldown_ticks) * dt_s);
+        repos_cfg.back_rate_rad_s = cfg->pedaling.reposition_back_rate_rad_s;
+        repos_cfg.timeout_s = gpu_max(
+            dt_s,
+            static_cast<float>(cfg->pedaling.reposition_timeout_ticks) * dt_s);
+        repos_cfg.phase_tolerance_rad = cfg->pedaling.reposition_phase_tolerance_rad;
+        repos_cfg.noop_rad = cfg->pedaling.reposition_noop_rad;
+        repos_cfg.reposition_on_stall = cfg->pedaling.reposition_on_stall;
+        repos_cfg.motor_clutch_present = has_drive_shaft ? 1 : 0;
+        repos_cfg.spindle_pedal_attachment =
+            (!write_sp3_pd_ctrl || cfg->apply_direct_crank_torque == 0) ? 1 : 0;
+
         const bike::physics_core::Status ped_st =
-            bike::physics_core::pedaling_update<float, bike::physics_core::GpuToolkit>(
+            bike::physics_core::pedaling_step_with_reposition<float, bike::physics_core::GpuToolkit>(
                 &cfg->pedaling,
                 &sp3_st->pedaling,
+                &repos_cfg,
+                &sp3_st->stall_reposition,
                 crank_qpos,
                 crank_omega,
                 req_cadence_after,
@@ -1130,11 +1396,13 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
 
     // 6. Motor assist step -> actuator ctrl or drive_shaft_spin qfrc
     // Matches DrivetrainWriter::stage_motor_assist + stage_settle (drivetrain.cpp:862-895,1054-1065):
-    // assist_step receives only explicit motor_torque_nm, then motor_limit_nm and actuator range clamp
-    // the delivered torque and reconcile assist.torque.
+    // assist_step_with_limit receives only explicit motor_torque_nm and motor_limit_nm,
+    // clamps against actuator range, and reconciles assist.torque in post_solve.
     const float crank_rpm = crank_omega * (60.0f / kTwoPi);
     const bool has_tq_req = (intent_res.control.has_motor_torque_nm != 0);
     const float tq_req = has_tq_req ? intent_res.control.motor_torque_nm : 0.0f;
+    const bool has_motor_lim = (intent_res.control.has_motor_limit_nm != 0);
+    const float motor_lim = has_motor_lim ? intent_res.control.motor_limit_nm : 0.0f;
 
     float motor_tq = 0.0f;
     if (cfg->effort_mode != 0) {
@@ -1146,8 +1414,9 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
             (pedal_out.mode == bike::physics_core::PedalMode::pedaling)
                 ? sensed_human_tq
                 : 0.0f;
+        bike::physics_core::AssistTickOutput<float> ast_out{};
         const bike::physics_core::Status ast_st =
-            bike::physics_core::assist_step<float, bike::physics_core::GpuToolkit>(
+            bike::physics_core::assist_step_with_limit<float, bike::physics_core::GpuToolkit>(
                 &cfg->assist,
                 &sp3_st->assist,
                 assist_sensor_tq,
@@ -1157,19 +1426,17 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
                 dt_s,
                 has_tq_req,
                 tq_req,
+                has_motor_lim,
+                motor_lim,
                 has_drive_shaft,
                 cadence_rpm,
-                motor_tq,
+                true,
+                ast_out,
                 err);
         if (ast_st != bike::physics_core::Status::ok) {
             return ast_st;
         }
-        if (intent_res.control.has_motor_limit_nm != 0) {
-            motor_tq = gpu_min(motor_tq, intent_res.control.motor_limit_nm);
-        }
-        if (!(motor_tq > 0.0f) || brakes.motor_braking != 0) {
-            motor_tq = 0.0f;
-        }
+        motor_tq = ast_out.delivered_nm;
     }
     if (cfg->motor_actuator_idx >= 0 && cfg->motor_actuator_idx < idx.nu) {
         motor_tq = gpu_clamp(motor_tq, cfg->motor_ctrl_min_nm, cfg->motor_ctrl_max_nm);
@@ -1182,13 +1449,23 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     }
     sp3_st->last_motor_torque_nm = motor_tq;
 
-    // 7. Suspension, tyres, resistance, and rider posture/envelope
+    // 7. Suspension, tyres, resistance, cruise, and rider posture/envelope
     const GpuSuspensionParams susp_p = cfg->suspension;
+    bike::physics_core::SuspensionResult<float> susp_res{};
     const bike::physics_core::Status susp_st =
-        gpu_write_suspension_qfrc(susp_p, idx, qpos_w, qvel_w, qfrc_w);
+        gpu_write_suspension_qfrc(susp_p, idx, qpos_w, qvel_w, qfrc_w, &susp_res);
     if (susp_st != bike::physics_core::Status::ok) {
         return susp_st;
     }
+
+    const float fork_qpos_m = (idx.fork_travel_qpos >= 0) ? qpos_w[idx.fork_travel_qpos] : 0.0f;
+    const float fork_qvel_mps = (idx.fork_travel_dof >= 0) ? qvel_w[idx.fork_travel_dof] : 0.0f;
+    const float shock_qpos_m = (idx.shock_stroke_qpos >= 0) ? qpos_w[idx.shock_stroke_qpos] : 0.0f;
+    const float shock_qvel_mps = (idx.shock_stroke_dof >= 0) ? qvel_w[idx.shock_stroke_dof] : 0.0f;
+    sp3_st->last_step_d_susp_j =
+        dt_s *
+        gpu_sp3_eval_suspension_loss_w(
+            &susp_p.params, susp_res, fork_qvel_mps, shock_qpos_m, shock_qvel_mps);
 
     bike::physics_core::GpuTyreStepOutput tyre_out{};
     bike::physics_core::ErrCode tyre_err = bike::physics_core::ErrCode::none;
@@ -1214,6 +1491,11 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         return tyre_st;
     }
 
+    sp3_st->last_step_d_tyre_radial_j = 0.0f;
+    sp3_st->last_step_d_tyre_brush_roll_j =
+        gpu_max(0.0f, tyre_out.wheels[0].rolling_dissipation_j) +
+        gpu_max(0.0f, tyre_out.wheels[1].rolling_dissipation_j);
+
     for (int s = 0; s < 2; ++s) {
         sp3_st->last_wheel_load_n[s] = tyre_out.wheels[s].normal_load_n;
         sp3_st->last_wheel_slip_mps[s] = tyre_out.wheels[s].slip_mps;
@@ -1237,6 +1519,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     if (tyre_model->backend == bike::physics_core::TyreBackendKind::distributed_2d_reference) {
         res_p.crr = 0.0f;
     }
+    float qfrc_res_before[bike::physics_core::kMaxNv]{};
+    if (cfg->track_energy_ledger != 0) {
+        for (int i = 0; i < idx.nv; ++i) {
+            qfrc_res_before[i] = qfrc_w[i];
+        }
+    }
     const bike::physics_core::Status res_st = gpu_write_resistance_qfrc(
         res_p,
         tyre_model,
@@ -1254,6 +1542,53 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     if (res_st != bike::physics_core::Status::ok) {
         return res_st;
     }
+    if (cfg->track_energy_ledger != 0) {
+        float res_power_w = 0.0f;
+        for (int i = 0; i < idx.nv; ++i) {
+            res_power_w += -(qfrc_w[i] - qfrc_res_before[i]) * qvel_w[i];
+        }
+        sp3_st->last_step_d_res_j = dt_s * gpu_max(0.0f, res_power_w);
+    } else {
+        sp3_st->last_step_d_res_j = 0.0f;
+    }
+
+    // Ideal-speed cruise controller (when cruise_enabled or program overrides cruise speed).
+    float cruise_tq = 0.0f;
+    if (cfg->cruise_enabled != 0 || ov_cruise_kmh) {
+        const bool braking_cruise =
+            (brakes.final_front > 0.0f) || (brakes.final_rear > 0.0f) ||
+            (cfg->caller_braking != 0) || (brakes.motor_braking != 0);
+        if (control_tick) {
+            const bike::physics_core::i32 period =
+                (cfg->control_period_steps > 1) ? cfg->control_period_steps : 1;
+            const float cruise_dt_s = dt_s * static_cast<float>(period);
+            const bike::physics_core::Status cr_st =
+                bike::physics_core::cruise_step<float, bike::physics_core::GpuToolkit>(
+                    &cfg->cruise,
+                    &sp3_st->cruise,
+                    speed_mps,
+                    cruise_dt_s,
+                    sp3_st->last_wheel_grounded[1] != 0,
+                    false,
+                    true,
+                    sp3_st->sp3.monitors.grounded[1].value != 0,
+                    cruise_tq,
+                    err);
+            if (cr_st != bike::physics_core::Status::ok) {
+                return cr_st;
+            }
+        } else {
+            cruise_tq = sp3_st->last_cruise_torque_nm;
+        }
+        if (braking_cruise && cruise_tq > 0.0f) {
+            cruise_tq = 0.0f;
+            sp3_st->cruise.torque_nm = 0.0f;
+        }
+        if (idx.rear_wheel_spin_dof >= 0 && idx.rear_wheel_spin_dof < idx.nv) {
+            qfrc_w[idx.rear_wheel_spin_dof] += cruise_tq;
+        }
+    }
+    sp3_st->last_cruise_torque_nm = cruise_tq;
 
     GpuRiderParams rider_p = cfg->rider;
     rider_p.rider_enabled = intent_res.control.rider_enabled;
@@ -1267,10 +1602,34 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     if (out_pedal_out != nullptr) {
         *out_pedal_out = pedal_out;
     }
+    float env_energy_j = 0.0f;
+    bike::physics_core::Status rider_st = bike::physics_core::Status::ok;
     if (write_sp3_pd_ctrl) {
-        return gpu_write_rider_qfrc_and_ctrl(rider_p, idx, qpos_w, qvel_w, qfrc_w, ctrl_w);
+        rider_st = gpu_write_rider_qfrc_and_ctrl(
+            rider_p, idx, qpos_w, qvel_w, qfrc_w, ctrl_w, &env_energy_j);
+    } else {
+        rider_st = gpu_write_rider_envelope_qfrc(
+            rider_p, idx, qpos_w, qfrc_w, &env_energy_j);
     }
-    return gpu_write_rider_envelope_qfrc(rider_p, idx, qpos_w, qfrc_w);
+    if (rider_st != bike::physics_core::Status::ok) {
+        return rider_st;
+    }
+
+    if (cfg->track_energy_ledger != 0) {
+        float fork_energy_j = 0.0f;
+        const bike::physics_core::Status fa_st = gpu_sp3_eval_fork_air_energy_j(
+            &susp_p.params.air_spring, fork_qpos_m, fork_energy_j, err);
+        if (fa_st != bike::physics_core::Status::ok) {
+            return fa_st;
+        }
+        const float shock_energy_j =
+            susp_res.coil_energy + susp_res.bumper_energy +
+            susp_res.top_out_energy + susp_res.upper_energy;
+        sp3_st->last_step_u_elastic_pre_j = fork_energy_j + shock_energy_j + env_energy_j;
+    } else {
+        sp3_st->last_step_u_elastic_pre_j = 0.0f;
+    }
+    return bike::physics_core::Status::ok;
 }
 
 } // namespace detail
@@ -1310,13 +1669,17 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
     TendonRangePtr tendon_range_w,
     FrictionLossPtr dof_frictionloss_w
 ) noexcept {
+    const bike::physics_core::i32 period =
+        (cfg != nullptr && cfg->control_period_steps > 1) ? cfg->control_period_steps : 1;
+    const bool control_tick =
+        (sp3_st != nullptr) ? ((sp3_st->step_index % period) == 0) : true;
     return detail::gpu_sp3_pre_solve_core(
         w, dt_s, idx, tyre_model, terrain_desc, terrain_f32, terrain_i32,
         cfg, sp3_st, compliant_wheels_w, dist_wheels_w,
         qpos_w, qvel_w, xpos_w, xmat_w, xanchor_w, xaxis_w,
         qfrc_w, ctrl_w, ntendon, tendon_range_w, dof_frictionloss_w,
         false, false, 0.0f, false, 0.0f,
-        true, true, nullptr, nullptr);
+        true, control_tick, nullptr, nullptr);
 }
 
 namespace detail {
@@ -1482,7 +1845,8 @@ template <
     class PtrWorldId,
     class PtrGeom,
     class PtrEfcAdr,
-    class PtrDim>
+    class PtrDim,
+    class ActForcePtr = const float *>
 BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     int w,
     float dt_s,
@@ -1505,11 +1869,16 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     PtrWorldId contact_worldid,
     PtrGeom contact_geom,
     PtrEfcAdr contact_efc_address,
-    PtrDim contact_dim
+    PtrDim contact_dim,
+    ActForcePtr actuator_force_w = static_cast<const float *>(nullptr)
 ) noexcept {
     if (w < 0 || cfg == nullptr || sp3_st == nullptr || !gpu_validate_model_indices(idx) ||
         qpos_w == nullptr || qvel_w == nullptr || xmat_w == nullptr) {
         return bike::physics_core::Status::invalid_argument;
+    }
+
+    if (sp3_st->frozen != 0 && cfg->freeze_on_crash != 0) {
+        return bike::physics_core::Status::ok;
     }
 
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
@@ -1627,6 +1996,28 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
         pos_x_m,
         root_pitch_rad,
         &sp3_st->sp3.monitors.crash);
+    if (cfg->freeze_on_crash != 0 &&
+        sp3_st->sp3.monitors.crash.cause != bike::physics_core::CrashCause::none) {
+        sp3_st->frozen = 1;
+    }
+
+    // Reconcile motor assist state against solved actuator torque when effort_mode != 0.
+    if (cfg->effort_mode != 0) {
+        const float req_motor = gpu_max(0.0f, sp3_st->last_motor_torque_nm);
+        float solved_motor = req_motor;
+        if (actuator_force_w != nullptr &&
+            cfg->motor_actuator_idx >= 0 &&
+            cfg->motor_actuator_idx < idx.nu) {
+            solved_motor = actuator_force_w[cfg->motor_actuator_idx];
+        }
+        float settled_motor = 0.0f;
+        const bike::physics_core::Status stl_st =
+            bike::physics_core::assist_post_solve_settle<float, bike::physics_core::GpuToolkit>(
+                &sp3_st->assist, req_motor, solved_motor, settled_motor, err);
+        if (stl_st != bike::physics_core::Status::ok) {
+            return stl_st;
+        }
+    }
 
     // 4. Capture IMU specific_force_body_mps2 & pitch_rate_up_rad_s
     if (sensordata_w != nullptr && cfg->accel_sensor_adr >= 0 &&
@@ -1705,11 +2096,369 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
         sp3_st->sp3.monitors.brake.latch_rear_rad = rb.brake_latch[1];
 
         bike::physics_core::PedalingState<float> ped_tmp = sp3_st->pedaling;
-        bike::physics_core::rebase_pedaling_2pi<float>(ped_tmp, dq_crank, dq_rw);
+        bike::physics_core::StallRepositionStatePod<float> repos_tmp = sp3_st->stall_reposition;
+        bike::physics_core::rebase_pedaling_2pi<float>(ped_tmp, repos_tmp, dq_crank, dq_rw);
         sp3_st->pedaling = ped_tmp;
+        sp3_st->stall_reposition = repos_tmp;
     }
 
     return bike::physics_core::Status::ok;
+}
+
+template <class CfgPtr, class QposPtr>
+BIKE_HD bike::physics_core::Status gpu_sp3_eval_suspension_and_envelope_energy(
+    CfgPtr cfg,
+    const BIKE_THREAD GpuModelIndices &idx,
+    QposPtr qpos_w,
+    BIKE_THREAD float &out_u_susp_fork_j,
+    BIKE_THREAD float &out_u_susp_shock_j,
+    BIKE_THREAD float &out_u_rider_envelope_j,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    out_u_susp_fork_j = 0.0f;
+    out_u_susp_shock_j = 0.0f;
+    out_u_rider_envelope_j = 0.0f;
+    if (cfg == nullptr || qpos_w == nullptr) {
+        err = bike::physics_core::ErrCode::outside_domain;
+        return bike::physics_core::Status::invalid_argument;
+    }
+
+    const float fork_qpos_m = (idx.fork_travel_qpos >= 0) ? qpos_w[idx.fork_travel_qpos] : 0.0f;
+    const float shock_qpos_m = (idx.shock_stroke_qpos >= 0) ? qpos_w[idx.shock_stroke_qpos] : 0.0f;
+
+    const GpuSuspensionParams susp_p = cfg->suspension;
+    const bike::physics_core::Status fa_st = detail::gpu_sp3_eval_fork_air_energy_j(
+        &susp_p.params.air_spring, fork_qpos_m, out_u_susp_fork_j, err);
+    if (fa_st != bike::physics_core::Status::ok) {
+        return fa_st;
+    }
+
+    bike::physics_core::SuspensionResult<float> susp_res{};
+    const bike::physics_core::Status su_st =
+        bike::physics_core::eval_suspension<float, bike::physics_core::GpuToolkit>(
+            &susp_p.params, fork_qpos_m, 0.0f, shock_qpos_m, 0.0f, susp_res, err);
+    if (su_st != bike::physics_core::Status::ok) {
+        return su_st;
+    }
+    out_u_susp_shock_j =
+        susp_res.coil_energy + susp_res.bumper_energy +
+        susp_res.top_out_energy + susp_res.upper_energy;
+
+    if (cfg->rider.rider_enabled != 0) {
+        float env_sum = 0.0f;
+        const int count = (cfg->rider.envelope.count > bike::physics_core::kMaxEnvelopeJoints)
+            ? bike::physics_core::kMaxEnvelopeJoints
+            : cfg->rider.envelope.count;
+        if (cfg->rider.envelope.count == kNumRiderJoints) {
+            for (int j = 0; j < kNumRiderJoints; ++j) {
+                const int qp = idx.rider_qpos[j];
+                const int dof = idx.rider_dof[j];
+                if (qp < 0 || qp >= idx.nq || dof < 0 || dof >= idx.nv) {
+                    continue;
+                }
+                bike::physics_core::SoftEdgeResult<float> row{};
+                const bike::physics_core::Status se_st =
+                    bike::physics_core::soft_edge_scalar<float, bike::physics_core::GpuToolkit>(
+                        qpos_w[qp],
+                        cfg->rider.envelope.lower[j],
+                        cfg->rider.envelope.upper[j],
+                        cfg->rider.envelope.stiffness_nm_rad,
+                        cfg->rider.envelope.margin_rad,
+                        row,
+                        err);
+                if (se_st != bike::physics_core::Status::ok) {
+                    return se_st;
+                }
+                env_sum += row.stored_j;
+            }
+        } else {
+            for (int j = 0; j < count; ++j) {
+                const int qp = cfg->rider.envelope.qpos_adrs[j];
+                if (qp < 0 || qp >= idx.nq) {
+                    continue;
+                }
+                bike::physics_core::SoftEdgeResult<float> row{};
+                const bike::physics_core::Status se_st =
+                    bike::physics_core::soft_edge_scalar<float, bike::physics_core::GpuToolkit>(
+                        qpos_w[qp],
+                        cfg->rider.envelope.lower[j],
+                        cfg->rider.envelope.upper[j],
+                        cfg->rider.envelope.stiffness_nm_rad,
+                        cfg->rider.envelope.margin_rad,
+                        row,
+                        err);
+                if (se_st != bike::physics_core::Status::ok) {
+                    return se_st;
+                }
+                env_sum += row.stored_j;
+            }
+        }
+        out_u_rider_envelope_j = env_sum;
+    }
+    return bike::physics_core::Status::ok;
+}
+
+template <class QvelPtr, class PtrType, class PtrJ, class PtrForce>
+BIKE_HD bike::physics_core::Status gpu_sp3_scan_efc_constraint_work(
+    float dt_s,
+    const BIKE_THREAD GpuModelIndices &idx,
+    QvelPtr qvel_w,
+    int nefc_w,
+    int efc_J_row_stride,
+    PtrType efc_type_w,
+    PtrJ efc_J_w,
+    PtrForce efc_force_w,
+    BIKE_THREAD float &out_w_constraint_signed_j,
+    BIKE_THREAD float &out_w_constraint_abs_j,
+    BIKE_THREAD float &out_w_closure_signed_j,
+    BIKE_THREAD float &out_w_closure_abs_j,
+    BIKE_THREAD float &out_d_rider_end_stop_j,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    out_w_constraint_signed_j = 0.0f;
+    out_w_constraint_abs_j = 0.0f;
+    out_w_closure_signed_j = 0.0f;
+    out_w_closure_abs_j = 0.0f;
+    out_d_rider_end_stop_j = 0.0f;
+    if (nefc_w <= 0 || qvel_w == nullptr || efc_type_w == nullptr ||
+        efc_J_w == nullptr || efc_force_w == nullptr || efc_J_row_stride <= 0) {
+        return bike::physics_core::Status::ok;
+    }
+    const int kCnstrLimitJoint = 3;
+    const int cols = (idx.nv < efc_J_row_stride) ? idx.nv : efc_J_row_stride;
+    for (int r = 0; r < nefc_w; ++r) {
+        const bike::physics_core::i32 t = efc_type_w[r];
+        const bool is_closure =
+            (t == bike::physics_core::kCnstrEquality) ||
+            (t == bike::physics_core::kCnstrLimitTendon);
+        const bool is_joint_limit = (t == kCnstrLimitJoint);
+        if (!is_closure && !is_joint_limit) {
+            continue;
+        }
+        float j_dot_v = 0.0f;
+        const int base = r * efc_J_row_stride;
+        for (int c = 0; c < cols; ++c) {
+            j_dot_v += efc_J_w[base + c] * qvel_w[c];
+        }
+        const float work_j = efc_force_w[r] * j_dot_v * dt_s;
+        if (is_closure) {
+            out_w_closure_signed_j += work_j;
+            out_w_closure_abs_j += gpu_abs(work_j);
+        } else {
+            bool is_rider_limit = false;
+            for (int j = 0; j < kNumRiderJoints; ++j) {
+                const int dof = idx.rider_dof[j];
+                if (dof >= 0 && dof < cols && efc_J_w[base + dof] != 0.0f) {
+                    is_rider_limit = true;
+                    break;
+                }
+            }
+            if (is_rider_limit) {
+                out_d_rider_end_stop_j += gpu_max(0.0f, -work_j);
+            } else {
+                out_w_constraint_signed_j += work_j;
+                out_w_constraint_abs_j += gpu_abs(work_j);
+            }
+        }
+    }
+    return bike::physics_core::Status::ok;
+}
+
+template <
+    class CfgPtr,
+    class Sp3StatePtr,
+    class PtrRowAdr,
+    class PtrRowNnz,
+    class PtrColInd,
+    class PtrM,
+    class QposPtr,
+    class QvelPtr,
+    class PtrMass,
+    class PtrXipos,
+    class PtrGrav>
+BIKE_HD bike::physics_core::Status gpu_sp3_init_energy_ledger_world(
+    const BIKE_THREAD GpuModelIndices &idx,
+    CfgPtr cfg,
+    Sp3StatePtr sp3_st,
+    PtrRowAdr M_rowadr,
+    PtrRowNnz M_rownnz,
+    PtrColInd M_colind,
+    PtrM M,
+    QposPtr qpos_w,
+    QvelPtr qvel_w,
+    PtrMass body_mass,
+    PtrXipos xipos_or_com_w,
+    PtrGrav gravity,
+    bike::physics_core::ElasticEnergyBreakdown<float> extra_elastic =
+        bike::physics_core::ElasticEnergyBreakdown<float>{},
+    float e_scale_min_j = 1.0f
+) noexcept {
+    if (cfg == nullptr || sp3_st == nullptr || !gpu_validate_model_indices(idx)) {
+        return bike::physics_core::Status::invalid_argument;
+    }
+    bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+    bike::physics_core::ElasticEnergyBreakdown<float> elastic = extra_elastic;
+    const bike::physics_core::Status el_st = gpu_sp3_eval_suspension_and_envelope_energy(
+        cfg, idx, qpos_w,
+        elastic.u_susp_fork, elastic.u_susp_shock, elastic.u_rider_envelope, err);
+    if (el_st != bike::physics_core::Status::ok) {
+        return el_st;
+    }
+    bike::physics_core::MechanicalEnergyBreakdown<float> mech{};
+    const bike::physics_core::Status me_st =
+        bike::physics_core::compute_mechanical_energy<float, bike::physics_core::GpuToolkit>(
+            idx.nv, idx.nbody, M_rowadr, M_rownnz, M_colind, M,
+            qvel_w, body_mass, xipos_or_com_w, gravity, elastic, mech, err);
+    if (me_st != bike::physics_core::Status::ok) {
+        return me_st;
+    }
+    return bike::physics_core::energy_ledger_init<float, bike::physics_core::GpuToolkit>(
+        &sp3_st->energy_ledger, mech, e_scale_min_j, err);
+}
+
+template <
+    class CfgPtr,
+    class Sp3StatePtr,
+    class PtrRowAdr,
+    class PtrRowNnz,
+    class PtrColInd,
+    class PtrM,
+    class QposPtr,
+    class QvelPtr,
+    class PtrMass,
+    class PtrXipos,
+    class PtrGrav,
+    class PtrType = const bike::physics_core::i32 *,
+    class PtrJ = const float *,
+    class PtrForce = const float *>
+BIKE_HD bike::physics_core::Status gpu_sp3_step_energy_ledger_world(
+    float dt_s,
+    const BIKE_THREAD GpuModelIndices &idx,
+    CfgPtr cfg,
+    Sp3StatePtr sp3_st,
+    PtrRowAdr M_rowadr,
+    PtrRowNnz M_rownnz,
+    PtrColInd M_colind,
+    PtrM M,
+    QposPtr qpos_w,
+    QvelPtr qvel_w,
+    PtrMass body_mass,
+    PtrXipos xipos_or_com_w,
+    PtrGrav gravity,
+    float w_muscle_signed_j,
+    float w_muscle_pos_j,
+    float w_external_signed_j = 0.0f,
+    bike::physics_core::ElasticEnergyBreakdown<float> extra_elastic =
+        bike::physics_core::ElasticEnergyBreakdown<float>{},
+    int nefc_w = 0,
+    int efc_J_row_stride = 0,
+    PtrType efc_type_w = static_cast<const bike::physics_core::i32 *>(nullptr),
+    PtrJ efc_J_w = static_cast<const float *>(nullptr),
+    PtrForce efc_force_w = static_cast<const float *>(nullptr),
+    float extra_d_tyre_radial_j = 0.0f
+) noexcept {
+    if (cfg == nullptr || sp3_st == nullptr || !gpu_validate_model_indices(idx)) {
+        return bike::physics_core::Status::invalid_argument;
+    }
+    if (cfg->track_energy_ledger == 0) {
+        return bike::physics_core::Status::ok;
+    }
+    if (sp3_st->frozen != 0 && cfg->freeze_on_crash != 0) {
+        return bike::physics_core::Status::ok;
+    }
+
+    bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+    bike::physics_core::ElasticEnergyBreakdown<float> elastic = extra_elastic;
+    const bike::physics_core::Status el_st = gpu_sp3_eval_suspension_and_envelope_energy(
+        cfg, idx, qpos_w,
+        elastic.u_susp_fork, elastic.u_susp_shock, elastic.u_rider_envelope, err);
+    if (el_st != bike::physics_core::Status::ok) {
+        return el_st;
+    }
+
+    bike::physics_core::MechanicalEnergyBreakdown<float> mech{};
+    const bike::physics_core::Status me_st =
+        bike::physics_core::compute_mechanical_energy<float, bike::physics_core::GpuToolkit>(
+            idx.nv, idx.nbody, M_rowadr, M_rownnz, M_colind, M,
+            qvel_w, body_mass, xipos_or_com_w, gravity, elastic, mech, err);
+    if (me_st != bike::physics_core::Status::ok) {
+        return me_st;
+    }
+
+    const float fw_omega =
+        (idx.front_wheel_spin_dof >= 0) ? qvel_w[idx.front_wheel_spin_dof] : 0.0f;
+    const float rw_omega =
+        (idx.rear_wheel_spin_dof >= 0) ? qvel_w[idx.rear_wheel_spin_dof] : 0.0f;
+    const float ds_omega =
+        (idx.drive_shaft_spin_dof >= 0) ? qvel_w[idx.drive_shaft_spin_dof] : 0.0f;
+    const float crank_omega =
+        (idx.crank_spin_dof >= 0) ? qvel_w[idx.crank_spin_dof] : 0.0f;
+
+    float d_brake_hold_j = 0.0f;
+    float d_brake_friction_j = 0.0f;
+    const bike::physics_core::Status brk_st =
+        bike::physics_core::energy_brake_dissipation_step<float, bike::physics_core::GpuToolkit>(
+            sp3_st->last_front_hold_nm,
+            sp3_st->last_rear_hold_nm,
+            sp3_st->last_front_frictionloss_nm,
+            sp3_st->last_rear_frictionloss_nm,
+            fw_omega,
+            rw_omega,
+            dt_s,
+            d_brake_hold_j,
+            d_brake_friction_j,
+            err);
+    if (brk_st != bike::physics_core::Status::ok) {
+        return brk_st;
+    }
+
+    float w_cnstr_s = 0.0f;
+    float w_cnstr_a = 0.0f;
+    float w_clos_s = 0.0f;
+    float w_clos_a = 0.0f;
+    float d_end_stop = 0.0f;
+    const bike::physics_core::Status efc_st = gpu_sp3_scan_efc_constraint_work(
+        dt_s, idx, qvel_w, nefc_w, efc_J_row_stride,
+        efc_type_w, efc_J_w, efc_force_w,
+        w_cnstr_s, w_cnstr_a, w_clos_s, w_clos_a, d_end_stop, err);
+    if (efc_st != bike::physics_core::Status::ok) {
+        return efc_st;
+    }
+
+    const float motor_omega =
+        (idx.drive_shaft_spin_dof >= 0) ? ds_omega : crank_omega;
+    const float w_motor_signed_j = sp3_st->last_motor_torque_nm * motor_omega * dt_s;
+    const float w_cruise_signed_j = sp3_st->last_cruise_torque_nm * rw_omega * dt_s;
+
+    bike::physics_core::GpuStepEnergyInputs<float> in{};
+    in.E_mech = mech.total_j;
+    in.w_muscle_signed_j = w_muscle_signed_j;
+    in.w_muscle_pos_j = gpu_max(0.0f, w_muscle_pos_j);
+    in.w_motor_signed_j = w_motor_signed_j;
+    in.w_motor_pos_j = gpu_max(0.0f, w_motor_signed_j);
+    in.w_cruise_signed_j = w_cruise_signed_j;
+    in.w_external_signed_j = w_external_signed_j;
+    in.d_tyre_radial_j =
+        gpu_max(0.0f, sp3_st->last_step_d_tyre_radial_j) + gpu_max(0.0f, extra_d_tyre_radial_j);
+    in.d_tyre_brush_roll_j = gpu_max(0.0f, sp3_st->last_step_d_tyre_brush_roll_j);
+    in.d_suspension_j = gpu_max(0.0f, sp3_st->last_step_d_susp_j);
+    in.d_resistance_j = gpu_max(0.0f, sp3_st->last_step_d_res_j);
+    in.d_brake_hold_j = d_brake_hold_j;
+    in.d_brake_friction_j = d_brake_friction_j;
+    in.d_rider_end_stop_j = d_end_stop;
+    in.w_constraint_signed_j = w_cnstr_s;
+    in.w_constraint_abs_j = w_cnstr_a;
+    in.w_closure_signed_j = w_clos_s;
+    in.w_closure_abs_j = w_clos_a;
+
+    if (sp3_st->energy_ledger.initialized == 0) {
+        return bike::physics_core::energy_ledger_init<float, bike::physics_core::GpuToolkit>(
+            &sp3_st->energy_ledger, mech, 1.0f, err);
+    }
+    return bike::physics_core::energy_ledger_step<float, bike::physics_core::GpuToolkit>(
+        &sp3_st->energy_ledger, in, err);
 }
 
 } // namespace bike::gpu

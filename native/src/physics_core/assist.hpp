@@ -70,45 +70,63 @@ struct AssistTickOutput {
     u8 pad[2]{};
 };
 
-template <class Real>
-BIKE_HD Real assist_flush_subnormal(Real x) noexcept {
-    if constexpr (sizeof(Real) == 4) {
-        const u32 bits = pf_f32_to_u32(static_cast<float>(x));
-        if ((bits & 0x7f800000u) == 0u) {
-            return static_cast<Real>(pf_u32_to_f32(bits & 0x80000000u));
-        }
+namespace detail {
+
+BIKE_HD float assist_flush_subnormal_impl(float x) noexcept {
+    const u32 bits = pf_f32_to_u32(x);
+    if ((bits & 0x7f800000u) == 0u) {
+        return pf_u32_to_f32(bits & 0x80000000u);
     }
     return x;
 }
 
+#if !defined(__METAL_VERSION__)
+BIKE_HD double assist_flush_subnormal_impl(double x) noexcept {
+    return x;
+}
+#endif
+
+template <class TK>
+BIKE_HD float assist_expm1_impl(float xf) noexcept {
+    if (xf < -103.97207708399179f) {
+        return -1.0f;
+    }
+    if (pf_abs(xf) <= 0.34657359f) {
+        return expm1f_small_portable(xf);
+    }
+    return expf_portable(xf) - 1.0f;
+}
+
+#if !defined(__METAL_VERSION__)
+template <class TK>
+BIKE_HD double assist_expm1_impl(double x) noexcept {
+    if (TK::abs(x) <= 1e-4) {
+        const double c4 = 1.0 / 24.0;
+        const double c3 = 1.0 / 6.0;
+        const double c2 = 0.5;
+        return x * (1.0 + x * (c2 + x * (c3 + x * c4)));
+    }
+    const double u = TK::exp(x);
+    if (u == 1.0) {
+        return x;
+    }
+    if (u == 0.0) {
+        return -1.0;
+    }
+    return (u - 1.0) * x / TK::log(u);
+}
+#endif
+
+} // namespace detail
+
+template <class Real>
+BIKE_HD Real assist_flush_subnormal(Real x) noexcept {
+    return detail::assist_flush_subnormal_impl(x);
+}
+
 template <class Real, class TK>
 BIKE_HD Real assist_expm1(Real x) noexcept {
-    if constexpr (sizeof(Real) == 4) {
-        const float xf = static_cast<float>(x);
-        if (xf < -103.97207708399179f) {
-            return static_cast<Real>(-1.0f);
-        }
-        if (pf_abs(xf) <= 0.34657359f) {
-            return static_cast<Real>(expm1f_small_portable(xf));
-        }
-        return static_cast<Real>(expf_portable(xf) - 1.0f);
-    } else {
-        if (TK::abs(x) <= BIKE_REAL(Real, 1e-4)) {
-            const Real c4 = BIKE_REAL(Real, 1.0 / 24.0);
-            const Real c3 = BIKE_REAL(Real, 1.0 / 6.0);
-            const Real c2 = BIKE_REAL(Real, 0.5);
-            return x * (BIKE_REAL(Real, 1.0) +
-                        x * (c2 + x * (c3 + x * c4)));
-        }
-        const Real u = TK::exp(x);
-        if (u == BIKE_REAL(Real, 1.0)) {
-            return x;
-        }
-        if (u == BIKE_REAL(Real, 0.0)) {
-            return BIKE_REAL(Real, -1.0);
-        }
-        return (u - BIKE_REAL(Real, 1.0)) * x / TK::log(u);
-    }
+    return detail::assist_expm1_impl<TK>(x);
 }
 
 template <class Real, class TK, class ParamsPtr>
@@ -211,16 +229,13 @@ BIKE_HD Status assist_validate_state_invariants(
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
-    // C3 relational invariants:
-    //   release_hold_left > 0 => hold_power > 0 && hold_torque > 0
-    //   hold_power > 0 <=> hold_torque > 0
-    const bool has_hold_power = state->hold_power_w > BIKE_REAL(Real, 0.0);
-    const bool has_hold_torque = state->hold_torque_nm > BIKE_REAL(Real, 0.0);
-    if (has_hold_power != has_hold_torque) {
-        err = ErrCode::outside_domain;
-        return Status::invalid_argument;
-    }
-    if (state->release_hold_ticks > 0 && !has_hold_power) {
+    // C3 / motor.cpp:28-34 relational invariant:
+    // Positive torque times positive omega may underflow to zero, so an armed
+    // or spent hold need not have positive stored power, whereas an active hold
+    // window or positive hold power requires positive hold_torque_nm.
+    if ((state->release_hold_ticks > 0 ||
+         state->hold_power_w > BIKE_REAL(Real, 0.0)) &&
+        state->hold_torque_nm <= BIKE_REAL(Real, 0.0)) {
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
@@ -404,11 +419,9 @@ BIKE_HD Status assist_step(
                 err = ErrCode::overflow_nonfinite;
                 return Status::overflow;
             }
-            if (hold_power > BIKE_REAL(Real, 0.0)) {
-                next.hold_power_w = hold_power;
-                next.hold_torque_nm = next.torque;
-                next.release_hold_ticks = params->release_hold_ticks;
-            }
+            next.hold_power_w = hold_power;
+            next.hold_torque_nm = next.torque;
+            next.release_hold_ticks = params->release_hold_ticks;
         }
     } else {
         next.hold_power_w = BIKE_REAL(Real, 0.0);

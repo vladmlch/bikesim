@@ -603,6 +603,355 @@ struct GpuDistCenterJacFn {
     }
 };
 
+#if defined(__METAL_VERSION__)
+#define BIKE_TYRE_NOINLINE_HD inline
+#elif defined(__CUDACC__)
+#define BIKE_TYRE_NOINLINE_HD __host__ __device__ __noinline__
+#elif defined(__clang__) || defined(__GNUC__)
+#define BIKE_TYRE_NOINLINE_HD __attribute__((noinline)) inline
+#else
+#define BIKE_TYRE_NOINLINE_HD inline
+#endif
+
+template <
+    class XposPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class QvelPtr,
+    class QfrcPtr,
+    class CompliantStatePtr>
+BIKE_TYRE_NOINLINE_HD Status gpu_step_compliant_both_wheels(
+    BIKE_DEVICE const GpuTyreModel *model,
+    BIKE_CREF(GpuTerrainTableDesc) terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    BIKE_DEVICE const i32 *terrain_i32,
+    float tire_stiff_scale,
+    float dt_s,
+    XposPtr xpos_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    QvelPtr qvel_w,
+    CompliantStatePtr compliant_states_w,
+    QfrcPtr out_qfrc_w,
+    BIKE_REF(GpuTyreStepOutput) out_summary,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    if (compliant_states_w == nullptr) {
+        err = ErrCode::invalid_prev_seg;
+        return Status::invalid_argument;
+    }
+
+    const ScaledTyreModel scaled = make_scaled_tyre_model(model, tire_stiff_scale);
+    GpuWheelSummaryIo io{};
+    io.nominal_radius[0] = scaled.wheels[0].radius_m;
+    io.nominal_radius[1] = scaled.wheels[1].radius_m;
+
+    GpuCompliantTerrainFn terrain_fn{};
+    terrain_fn.pl = make_polyline_view(terrain_desc, terrain_f32, terrain_i32);
+
+    GpuCompliantJacFn<XposPtr, XanchorPtr, XaxisPtr> jac_fn{};
+    jac_fn.chains[0] = model->wheels[0].chain;
+    jac_fn.chains[1] = model->wheels[1].chain;
+    jac_fn.nv = scaled.nv;
+    jac_fn.xpos_w = xpos_w;
+    jac_fn.xanchor_w = xanchor_w;
+    jac_fn.xaxis_w = xaxis_w;
+
+    GpuCompliantQfrcAccumFn accum_fn{jac_fn.jp_point, scaled.nv};
+
+    CompliantWheelStatePod<float> next_st[2]{};
+    float qfrc_delta[kMaxNv]{};
+
+    for (i32 side = 0; side < 2; ++side) {
+        const i32 bid = jac_fn.chains[side].wheel_body_id;
+        const float center[3] = {
+            xpos_w[3 * bid + 0],
+            xpos_w[3 * bid + 1],
+            xpos_w[3 * bid + 2]
+        };
+        io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
+        CompliantWheelStatePod<float> prev_st = compliant_states_w[side];
+        const Status st = step_compliant_wheel<float, GpuToolkit>(
+            &scaled,
+            side,
+            dt_s,
+            center,
+            qvel_w,
+            &prev_st,
+            &next_st[side],
+            qfrc_delta,
+            terrain_fn,
+            jac_fn,
+            accum_fn,
+            io,
+            err);
+        if (st != Status::ok) {
+            return st;
+        }
+    }
+
+    compliant_states_w[0] = next_st[0];
+    compliant_states_w[1] = next_st[1];
+    for (i32 i = 0; i < scaled.nv; ++i) {
+        out_qfrc_w[i] += qfrc_delta[i];
+    }
+    out_summary = io.summary;
+    return Status::ok;
+}
+
+using GpuDistWorkspace = GpuDistributedWorkspace<float, kMaxGpuTyreStations, kMaxNv>;
+
+template <
+    class XposPtr,
+    class XmatPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class QvelPtr,
+    class DistStatePtr>
+BIKE_TYRE_NOINLINE_HD Status gpu_invoke_step_distributed_wheel(
+    const BIKE_THREAD ScaledTyreModel *scaled,
+    i32 side,
+    float dt_s,
+    const BIKE_THREAD float center[3],
+    XmatPtr xmat_w,
+    QvelPtr qvel_w,
+    BIKE_DEVICE const float *local_xyz,
+    DistStatePtr prev_states_w,
+    BIKE_THREAD StationStatePod<float> *next_states_stage,
+    BIKE_THREAD float *qfrc_delta,
+    BIKE_REF(GpuDistWorkspace) ws,
+    const BIKE_THREAD SignedProfileView<float> &sp,
+    const BIKE_THREAD GpuWheelChain &side_chain,
+    XposPtr xpos_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    BIKE_REF(GpuWheelSummaryIo) io,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    BIKE_DEVICE const float *no_weights = nullptr;
+    GpuDistProfileHeightFn height_fn{sp};
+    GpuDistSignedQueryFn query_fn{sp};
+    GpuDistCenterJacFn<XposPtr, XanchorPtr, XaxisPtr> cjac_fn{
+        side_chain, scaled->nv, xpos_w, xanchor_w, xaxis_w};
+    return step_distributed_wheel<float, GpuToolkit>(
+        scaled,
+        side,
+        dt_s,
+        center,
+        xmat_w,
+        qvel_w,
+        local_xyz,
+        no_weights,
+        prev_states_w,
+        next_states_stage,
+        qfrc_delta,
+        ws,
+        height_fn,
+        query_fn,
+        cjac_fn,
+        io,
+        err);
+}
+
+template <
+    class XposPtr,
+    class XmatPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class QvelPtr,
+    class DistStatePtr>
+BIKE_TYRE_NOINLINE_HD Status gpu_step_distributed_one_wheel(
+    const BIKE_THREAD ScaledTyreModel *scaled,
+    i32 side,
+    const BIKE_THREAD GpuWheelChain &side_chain,
+    BIKE_DEVICE const float *local_xyz,
+    const BIKE_THREAD SignedProfileView<float> &sp,
+    float dt_s,
+    XposPtr xpos_w,
+    XmatPtr xmat_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    QvelPtr qvel_w,
+    DistStatePtr prev_states_w,
+    BIKE_THREAD StationStatePod<float> *next_states_stage,
+    BIKE_THREAD float *qfrc_delta,
+    BIKE_REF(GpuWheelSummaryIo) io,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    GpuDistributedWorkspace<float, kMaxGpuTyreStations, kMaxNv> ws{};
+    const i32 bid = side_chain.wheel_body_id;
+    const float center[3] = {
+        xpos_w[3 * bid + 0],
+        xpos_w[3 * bid + 1],
+        xpos_w[3 * bid + 2]
+    };
+    io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
+    return gpu_invoke_step_distributed_wheel(
+        scaled,
+        side,
+        dt_s,
+        center,
+        xmat_w + 9 * bid,
+        qvel_w,
+        local_xyz,
+        prev_states_w,
+        next_states_stage,
+        qfrc_delta,
+        ws,
+        sp,
+        side_chain,
+        xpos_w,
+        xanchor_w,
+        xaxis_w,
+        io,
+        err);
+}
+
+template <
+    class XposPtr,
+    class XmatPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class QvelPtr,
+    class QfrcPtr,
+    class DistStatePtr>
+BIKE_TYRE_NOINLINE_HD Status gpu_step_distributed_side1(
+    BIKE_DEVICE const GpuTyreModel *model,
+    const BIKE_THREAD ScaledTyreModel *scaled,
+    const BIKE_THREAD SignedProfileView<float> &sp,
+    float dt_s,
+    XposPtr xpos_w,
+    XmatPtr xmat_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    QvelPtr qvel_w,
+    DistStatePtr dist_states_w,
+    const BIKE_THREAD float *qfrc_delta0,
+    QfrcPtr out_qfrc_w,
+    BIKE_REF(GpuWheelSummaryIo) io,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    StationStatePod<float> next1[kMaxGpuTyreStations]{};
+    float qfrc_delta1[kMaxNv]{};
+    const GpuWheelChain side_chain = model->wheels[1].chain;
+    const Status st = gpu_step_distributed_one_wheel(
+        scaled,
+        1,
+        side_chain,
+        model->wheels[1].local_xyz,
+        sp,
+        dt_s,
+        xpos_w,
+        xmat_w,
+        xanchor_w,
+        xaxis_w,
+        qvel_w,
+        dist_states_w + static_cast<long>(kMaxGpuTyreStations),
+        next1,
+        qfrc_delta1,
+        io,
+        err);
+    if (st != Status::ok) {
+        return st;
+    }
+
+    const i32 scnt = scaled->station_count;
+    for (i32 i = 0; i < scnt; ++i) {
+        dist_states_w[static_cast<long>(kMaxGpuTyreStations) + i] = next1[i];
+    }
+    const i32 nv = scaled->nv;
+    for (i32 i = 0; i < nv; ++i) {
+        out_qfrc_w[i] = (out_qfrc_w[i] + qfrc_delta0[i]) + qfrc_delta1[i];
+    }
+    return Status::ok;
+}
+
+template <
+    class XposPtr,
+    class XmatPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class QvelPtr,
+    class QfrcPtr,
+    class DistStatePtr>
+BIKE_TYRE_NOINLINE_HD Status gpu_step_distributed_both_wheels(
+    BIKE_DEVICE const GpuTyreModel *model,
+    const BIKE_THREAD ScaledTyreModel *scaled,
+    BIKE_CREF(GpuTerrainTableDesc) terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    float dt_s,
+    XposPtr xpos_w,
+    XmatPtr xmat_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    QvelPtr qvel_w,
+    DistStatePtr dist_states_w,
+    QfrcPtr out_qfrc_w,
+    BIKE_REF(GpuTyreStepOutput) out_summary,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    if (xmat_w == nullptr || dist_states_w == nullptr) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::invalid_argument;
+    }
+
+    GpuWheelSummaryIo io{};
+    io.nominal_radius[0] = scaled->wheels[0].radius_m;
+    io.nominal_radius[1] = scaled->wheels[1].radius_m;
+
+    const SignedProfileView<float> sp = make_signed_profile_view(terrain_desc, terrain_f32);
+    StationStatePod<float> next0[kMaxGpuTyreStations]{};
+    float qfrc_delta0[kMaxNv]{};
+    const GpuWheelChain side0_chain = model->wheels[0].chain;
+
+    Status st = gpu_step_distributed_one_wheel(
+        scaled,
+        0,
+        side0_chain,
+        model->wheels[0].local_xyz,
+        sp,
+        dt_s,
+        xpos_w,
+        xmat_w,
+        xanchor_w,
+        xaxis_w,
+        qvel_w,
+        dist_states_w,
+        next0,
+        qfrc_delta0,
+        io,
+        err);
+    if (st != Status::ok) {
+        return st;
+    }
+
+    st = gpu_step_distributed_side1(
+        model,
+        scaled,
+        sp,
+        dt_s,
+        xpos_w,
+        xmat_w,
+        xanchor_w,
+        xaxis_w,
+        qvel_w,
+        dist_states_w,
+        qfrc_delta0,
+        out_qfrc_w,
+        io,
+        err);
+    if (st != Status::ok) {
+        return st;
+    }
+
+    const i32 scnt = scaled->station_count;
+    for (i32 i = 0; i < scnt; ++i) {
+        dist_states_w[i] = next0[i];
+    }
+    out_summary = io.summary;
+    return Status::ok;
+}
+
 template <
     class XposPtr,
     class XmatPtr,
@@ -654,109 +1003,40 @@ BIKE_HD Status gpu_step_both_wheels_tyre(
         return st;
     }
 
-    const ScaledTyreModel scaled = make_scaled_tyre_model(model, tire_stiff_scale);
-    GpuWheelSummaryIo io{};
-    io.nominal_radius[0] = scaled.wheels[0].radius_m;
-    io.nominal_radius[1] = scaled.wheels[1].radius_m;
-
     if (model->backend == TyreBackendKind::compliant_2d) {
-        if (compliant_states_w == nullptr) {
-            err = ErrCode::invalid_prev_seg;
-            return Status::invalid_argument;
-        }
-        GpuCompliantTerrainFn terrain_fn{};
-        terrain_fn.pl = make_polyline_view(terrain_desc, terrain_f32, terrain_i32);
-
-        GpuCompliantJacFn<XposPtr, XanchorPtr, XaxisPtr> jac_fn{};
-        jac_fn.chains[0] = model->wheels[0].chain;
-        jac_fn.chains[1] = model->wheels[1].chain;
-        jac_fn.nv = scaled.nv;
-        jac_fn.xpos_w = xpos_w;
-        jac_fn.xanchor_w = xanchor_w;
-        jac_fn.xaxis_w = xaxis_w;
-
-        GpuCompliantQfrcAccumFn accum_fn{jac_fn.jp_point, scaled.nv};
-
-        for (i32 side = 0; side < 2; ++side) {
-            const i32 bid = jac_fn.chains[side].wheel_body_id;
-            const float center[3] = {
-                xpos_w[3 * bid + 0],
-                xpos_w[3 * bid + 1],
-                xpos_w[3 * bid + 2]
-            };
-            io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
-            CompliantWheelStatePod<float> prev_st = compliant_states_w[side];
-            CompliantWheelStatePod<float> next_st{};
-            st = step_compliant_wheel<float, GpuToolkit>(
-                &scaled,
-                side,
-                dt_s,
-                center,
-                qvel_w,
-                &prev_st,
-                &next_st,
-                out_qfrc_w,
-                terrain_fn,
-                jac_fn,
-                accum_fn,
-                io,
-                err);
-            if (st != Status::ok) {
-                return st;
-            }
-            compliant_states_w[side] = next_st;
-        }
-        out_summary = io.summary;
-        return Status::ok;
-    }
-
-    if (xmat_w == nullptr || dist_states_w == nullptr) {
-        err = ErrCode::out_of_bounds_chain;
-        return Status::invalid_argument;
-    }
-
-    const SignedProfileView<float> sp = make_signed_profile_view(terrain_desc, terrain_f32);
-    GpuDistProfileHeightFn height_fn{sp};
-    GpuDistSignedQueryFn query_fn{sp};
-    GpuDistributedWorkspace<float, kMaxGpuTyreStations, kMaxNv> ws{};
-    BIKE_DEVICE const float *no_weights = nullptr;
-
-    for (i32 side = 0; side < 2; ++side) {
-        const GpuWheelChain side_chain = model->wheels[side].chain;
-        const i32 bid = side_chain.wheel_body_id;
-        const float center[3] = {
-            xpos_w[3 * bid + 0],
-            xpos_w[3 * bid + 1],
-            xpos_w[3 * bid + 2]
-        };
-        io.wheel_center[side] = TyreVec3<float>{.x = center[0], .y = center[1], .z = center[2]};
-        GpuDistCenterJacFn<XposPtr, XanchorPtr, XaxisPtr> cjac_fn{
-            side_chain, scaled.nv, xpos_w, xanchor_w, xaxis_w};
-        st = step_distributed_wheel<float, GpuToolkit>(
-            &scaled,
-            side,
+        return gpu_step_compliant_both_wheels(
+            model,
+            terrain_desc,
+            terrain_f32,
+            terrain_i32,
+            tire_stiff_scale,
             dt_s,
-            center,
-            xmat_w + 9 * bid,
+            xpos_w,
+            xanchor_w,
+            xaxis_w,
             qvel_w,
-            model->wheels[side].local_xyz,
-            no_weights,
-            dist_states_w + static_cast<long>(side) * static_cast<long>(kMaxGpuTyreStations),
-            dist_states_w + static_cast<long>(side) * static_cast<long>(kMaxGpuTyreStations),
+            compliant_states_w,
             out_qfrc_w,
-            ws,
-            height_fn,
-            query_fn,
-            cjac_fn,
-            io,
+            out_summary,
             err);
-        if (st != Status::ok) {
-            return st;
-        }
     }
 
-    out_summary = io.summary;
-    return Status::ok;
+    const ScaledTyreModel scaled = make_scaled_tyre_model(model, tire_stiff_scale);
+    return gpu_step_distributed_both_wheels(
+        model,
+        &scaled,
+        terrain_desc,
+        terrain_f32,
+        dt_s,
+        xpos_w,
+        xmat_w,
+        xanchor_w,
+        xaxis_w,
+        qvel_w,
+        dist_states_w,
+        out_qfrc_w,
+        out_summary,
+        err);
 }
 
 } // namespace bike::physics_core

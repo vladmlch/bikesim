@@ -100,26 +100,22 @@ std::vector<double> StaticBrake::hold_qfrc(
     double angle_front = has_front ? *latch_front_ : 0.;
     bool has_rear = latch_rear_.has_value();
     double angle_rear = has_rear ? *latch_rear_ : 0.;
-    for (const auto &[dof, demand, has_latch, latch_theta] :
-         {std::tuple{front_, front, &has_front, &angle_front},
-          std::tuple{rear_, rear, &has_rear, &angle_rear}}) {
+    for (const auto &[dof, demand, has_latch, latch_theta, committed_latch] :
+         {std::tuple{front_, front, &has_front, &angle_front, &latch_front_},
+          std::tuple{rear_, rear, &has_rear, &angle_rear, &latch_rear_}}) {
         const std::size_t di = static_cast<std::size_t>(dof);
         const double theta = qpos[static_cast<std::size_t>(
             jnt_qposadr[static_cast<std::size_t>(dof_jntid[di])])];
         const double omega = qvel[di];
         double out_torque = 0.;
-        auto err = bike::physics_core::ErrCode::none;
-        const auto st = bike::physics_core::eval_brake_hold_wheel<
+        bike::physics_core::eval_brake_hold_wheel_core<
             double, bike::physics_core::CpuExactToolkit>(
             &hold_params, ceiling_nm_, demand, theta, omega, advance, reseat,
-            *has_latch, *latch_theta, out_torque, err);
-        if (st != bike::physics_core::Status::ok)
-            throw std::invalid_argument("invalid brake hold state or input");
+            *has_latch, *latch_theta, out_torque);
+        *committed_latch = *has_latch ? std::optional<double>(*latch_theta) : std::nullopt;
         if (*has_latch)
             out[di] = out_torque;
     }
-    latch_front_ = has_front ? std::optional<double>(angle_front) : std::nullopt;
-    latch_rear_ = has_rear ? std::optional<double>(angle_rear) : std::nullopt;
     return out;
 }
 

@@ -34,11 +34,20 @@ SurfaceSpecPod<float> pack_surface_spec(const nativecfg::SurfaceSpec &s, i32 sur
     if (s.mu_slide > s.mu_peak) {
         throw std::invalid_argument("surface mu_slide exceeds mu_peak");
     }
+    if (!std::isfinite(s.crr_delta) || s.crr_delta < 0.0) {
+        throw std::invalid_argument("surface crr_delta must be finite and nonnegative");
+    }
+    if (!std::isfinite(s.load_sensitivity) ||
+        s.load_sensitivity < 0.0 || s.load_sensitivity > 0.5) {
+        throw std::invalid_argument("surface load_sensitivity must lie in [0, 0.5]");
+    }
     return SurfaceSpecPod<float>{
         .mu_peak = static_cast<float>(s.mu_peak),
         .mu_slide = static_cast<float>(s.mu_slide),
         .slip_stiffness_per_load = static_cast<float>(s.slip_stiffness_per_load),
         .stribeck_speed_mps = static_cast<float>(s.stribeck_speed_mps),
+        .crr_delta = static_cast<float>(s.crr_delta),
+        .load_sensitivity = static_cast<float>(s.load_sensitivity),
         .surface_id = surface_id,
     };
 }
@@ -65,7 +74,7 @@ void populate_surface_map(
     }
 
     std::vector<nativecfg::SurfaceSection> sorted = src.sections;
-    std::ranges::sort(sorted, {}, [](const nativecfg::SurfaceSection &sec) {
+    std::ranges::stable_sort(sorted, {}, [](const nativecfg::SurfaceSection &sec) {
         return sec.start_m;
     });
 
@@ -78,13 +87,55 @@ void populate_surface_map(
         if (!std::isfinite(sec.start_m) || !std::isfinite(sec.end_m) || sec.start_m >= sec.end_m) {
             throw std::invalid_argument("surface_map section bounds must be finite with start_m < end_m");
         }
-        if (i > 0 && sec.start_m < sorted[i - 1].end_m) {
-            throw std::invalid_argument("surface_map sections must not overlap");
+        if (!std::isfinite(sec.blend_m) || sec.blend_m < 0.0) {
+            throw std::invalid_argument("surface_map section blend_m must be finite and nonnegative");
         }
+        double b_left = 0.0;
+        if (i == 0) {
+            if (sec.start_m > 0.0) {
+                b_left = sec.blend_m;
+                if (sec.start_m < 0.5 * b_left) {
+                    throw std::invalid_argument("surface_map transition extends before x = 0");
+                }
+            }
+        } else {
+            const nativecfg::SurfaceSection &prev = sorted[i - 1];
+            if (sec.start_m < prev.end_m) {
+                throw std::invalid_argument("surface_map sections must not overlap");
+            }
+            if (sec.start_m == prev.end_m) {
+                if (prev.blend_m != sec.blend_m) {
+                    throw std::invalid_argument("surface_map adjacent sections must have equal blend_m");
+                }
+                b_left = sec.blend_m;
+            } else {
+                if (sec.start_m - prev.end_m < 0.5 * prev.blend_m + 0.5 * sec.blend_m) {
+                    throw std::invalid_argument("surface_map transition windows overlap across gap");
+                }
+                b_left = sec.blend_m;
+            }
+        }
+        if (sec.end_m - sec.start_m < 0.5 * b_left + 0.5 * sec.blend_m) {
+            throw std::invalid_argument("surface_map section shorter than transition half-widths");
+        }
+
+        i32 sid = static_cast<i32>(i + 1);
+        if (sec.surface.name == src.surface.name) {
+            sid = 0;
+        } else {
+            for (std::size_t k = 0; k < i; ++k) {
+                if (sec.surface.name == sorted[k].surface.name) {
+                    sid = dst_sections[k].surface.surface_id;
+                    break;
+                }
+            }
+        }
+
         dst_sections[i] = SurfaceSectionView<float>{
             .start_m = static_cast<float>(sec.start_m),
             .end_m = static_cast<float>(sec.end_m),
-            .surface = pack_surface_spec(sec.surface, static_cast<i32>(i + 1)),
+            .surface = pack_surface_spec(sec.surface, sid),
+            .blend_m = static_cast<float>(sec.blend_m),
         };
     }
 }

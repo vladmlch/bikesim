@@ -54,6 +54,8 @@ struct GpuWheelSummary {
     float normal_load_n = 0.0f;
     float effective_radius_m = 0.0f;
     float slip_mps = 0.0f;
+    float couple_world_nm = 0.0f;
+    float rolling_dissipation_j = 0.0f;
 };
 
 struct GpuTyreStepOutput {
@@ -464,6 +466,8 @@ struct GpuWheelSummaryIo {
                 0.0f, sum_unweighted_drop[side] / static_cast<float>(rec.active_count));
             summary.wheels[side].slip_mps = 0.0f;
         }
+        summary.wheels[side].couple_world_nm = rec.couple_world_nm;
+        summary.wheels[side].rolling_dissipation_j = rec.rolling_dissipation_j;
         return Status::ok;
     }
 };

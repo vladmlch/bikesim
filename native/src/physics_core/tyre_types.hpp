@@ -115,6 +115,8 @@ struct SurfaceSpecPod {
     Real mu_slide = static_cast<Real>(0);
     Real slip_stiffness_per_load = static_cast<Real>(0);
     Real stribeck_speed_mps = static_cast<Real>(0);
+    Real crr_delta = static_cast<Real>(0);
+    Real load_sensitivity = static_cast<Real>(0);
     i32 surface_id = 0;
 };
 
@@ -123,6 +125,7 @@ struct SurfaceSectionView {
     Real start_m = static_cast<Real>(0);
     Real end_m = static_cast<Real>(0);
     SurfaceSpecPod<Real> surface{};
+    Real blend_m = static_cast<Real>(0);
 };
 
 template <class Real>

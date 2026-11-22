@@ -45,6 +45,8 @@ BIKE_HD Status apply_static_brake(
     Real ceiling_nm,
     Real front_demand,
     Real rear_demand,
+    Real front_hold_nm,
+    Real rear_hold_nm,
     i32 front_dof,
     i32 rear_dof,
     i32 nv,
@@ -55,7 +57,8 @@ BIKE_HD Status apply_static_brake(
     err = ErrCode::none;
     out_changed = false;
     if (!TK::isfinite(ceiling_nm) || ceiling_nm < BIKE_REAL(Real, 0.0) ||
-        !TK::isfinite(front_demand) || !TK::isfinite(rear_demand)) {
+        !TK::isfinite(front_demand) || !TK::isfinite(rear_demand) ||
+        !TK::isfinite(front_hold_nm) || !TK::isfinite(rear_hold_nm)) {
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
@@ -65,10 +68,14 @@ BIKE_HD Status apply_static_brake(
         return Status::out_of_bounds;
     }
 
-    const Real front_loss =
-        ceiling_nm * TK::clamp(front_demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0));
-    const Real rear_loss =
-        ceiling_nm * TK::clamp(rear_demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0));
+    const Real front_loss = TK::max(
+        BIKE_REAL(Real, 0.0),
+        ceiling_nm * TK::clamp(front_demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0)) -
+            TK::abs(front_hold_nm));
+    const Real rear_loss = TK::max(
+        BIKE_REAL(Real, 0.0),
+        ceiling_nm * TK::clamp(rear_demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0)) -
+            TK::abs(rear_hold_nm));
     out_changed = (dof_frictionloss[front_dof] != front_loss) ||
                   (dof_frictionloss[rear_dof] != rear_loss);
     dof_frictionloss[front_dof] = front_loss;
@@ -76,9 +83,36 @@ BIKE_HD Status apply_static_brake(
     return Status::ok;
 }
 
+template <class Real, class TK, class PtrFrictionLoss>
+BIKE_HD Status apply_static_brake(
+    Real ceiling_nm,
+    Real front_demand,
+    Real rear_demand,
+    i32 front_dof,
+    i32 rear_dof,
+    i32 nv,
+    PtrFrictionLoss dof_frictionloss,
+    BIKE_THREAD bool &out_changed,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    return apply_static_brake<Real, TK>(
+        ceiling_nm,
+        front_demand,
+        rear_demand,
+        BIKE_REAL(Real, 0.0),
+        BIKE_REAL(Real, 0.0),
+        front_dof,
+        rear_dof,
+        nv,
+        dof_frictionloss,
+        out_changed,
+        err);
+}
+
 template <class Real, class TK, class SpecPtr>
 BIKE_HD Status eval_brake_hold_wheel(
     SpecPtr spec,
+    Real ceiling_nm,
     Real demand,
     Real theta,
     Real omega,
@@ -91,13 +125,15 @@ BIKE_HD Status eval_brake_hold_wheel(
 ) noexcept {
     err = ErrCode::none;
     out_torque = BIKE_REAL(Real, 0.0);
-    if (!TK::isfinite(demand) || !TK::isfinite(theta) || !TK::isfinite(omega) ||
+    if (!TK::isfinite(ceiling_nm) || ceiling_nm < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(demand) || !TK::isfinite(theta) || !TK::isfinite(omega) ||
         (has_latch && !TK::isfinite(latch_theta))) {
         err = ErrCode::outside_domain;
         return Status::invalid_argument;
     }
 
     const Real u = TK::clamp(demand, BIKE_REAL(Real, 0.0), BIKE_REAL(Real, 1.0));
+    const Real cap = TK::min(spec->torque_nm, ceiling_nm) * u;
     bool latched = has_latch;
     Real anchor = latch_theta;
     if (advance) {
@@ -116,7 +152,7 @@ BIKE_HD Status eval_brake_hold_wheel(
             has_latch = false;
         } else if (reseat && TK::abs(omega) <= spec->engage_radps &&
                    TK::abs(-spec->stiffness_nm_rad * (theta - anchor) -
-                           spec->damping_nms_rad * omega) > spec->torque_nm * u) {
+                           spec->damping_nms_rad * omega) > cap) {
             anchor = theta;
             latch_theta = anchor;
         }
@@ -124,11 +160,37 @@ BIKE_HD Status eval_brake_hold_wheel(
     if (!latched) {
         return Status::ok;
     }
-    const Real cap = spec->torque_nm * u;
     out_torque = TK::clamp(
         -spec->stiffness_nm_rad * (theta - anchor) - spec->damping_nms_rad * omega,
         -cap, cap);
     return Status::ok;
+}
+
+template <class Real, class TK, class SpecPtr>
+BIKE_HD Status eval_brake_hold_wheel(
+    SpecPtr spec,
+    Real demand,
+    Real theta,
+    Real omega,
+    bool advance,
+    bool reseat,
+    BIKE_THREAD bool &has_latch,
+    BIKE_THREAD Real &latch_theta,
+    BIKE_THREAD Real &out_torque,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    return eval_brake_hold_wheel<Real, TK>(
+        spec,
+        spec->torque_nm,
+        demand,
+        theta,
+        omega,
+        advance,
+        reseat,
+        has_latch,
+        latch_theta,
+        out_torque,
+        err);
 }
 
 } // namespace bike::physics_core

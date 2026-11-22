@@ -84,6 +84,7 @@ template <
 struct GpuDistributedWorkspace {
     Real points[3u * MaxStations]{};
     i32 active_ids[MaxStations]{};
+    Real loads[MaxStations]{};
     Real jac_center[3u * MaxNv]{};
     Real jr[3u * MaxNv]{};
     Real jac_station[3u * MaxNv]{};
@@ -111,7 +112,139 @@ struct DistributedWheelRecord {
     Real losses = BIKE_REAL(Real, 0.0);
     Real shear_energy = BIKE_REAL(Real, 0.0);
     Real radial_power = BIKE_REAL(Real, 0.0);
+    Real couple_world_nm = BIKE_REAL(Real, 0.0);
+    Real rolling_dissipation_j = BIKE_REAL(Real, 0.0);
 };
+
+template <class Real, class TK, class PtrAxis, class PtrWorldAxis, class PtrRow>
+BIKE_HD Status chain_axis_rotational_row(
+    BIKE_CREF(GpuWheelChain) chain,
+    PtrAxis jnt_xaxis,
+    i32 body_id,
+    i32 nv,
+    i32 njnt,
+    PtrWorldAxis axis,
+    PtrRow out_row,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    err = ErrCode::none;
+    if (chain.joint_count < 0 || chain.joint_count > kMaxChainJoints ||
+        nv <= 0 || nv > kMaxNv || njnt <= 0 || njnt > kMaxNjnt ||
+        body_id <= 0) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::out_of_bounds;
+    }
+    if (chain.wheel_body_id >= 0 && chain.wheel_body_id != body_id) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::invalid_argument;
+    }
+    if (jnt_xaxis == nullptr || axis == nullptr || out_row == nullptr) {
+        err = ErrCode::out_of_bounds_chain;
+        return Status::invalid_argument;
+    }
+    for (i32 c = 0; c < nv; ++c) {
+        out_row[c] = BIKE_REAL(Real, 0.0);
+    }
+    for (i32 k = 0; k < chain.joint_count; ++k) {
+        const GpuChainJoint j = chain.joints[k];
+        if (j.joint_id < 0 || j.joint_id >= njnt ||
+            j.dof_adr < 0 || j.dof_adr >= nv) {
+            err = ErrCode::out_of_bounds_chain;
+            return Status::out_of_bounds;
+        }
+        if (j.joint_type != kJntHinge && j.joint_type != kJntSlide) {
+            err = ErrCode::out_of_bounds_chain;
+            return Status::invalid_argument;
+        }
+        if (j.joint_type == kJntHinge) {
+            const i32 a3 = 3 * j.joint_id;
+            const i32 d = j.dof_adr;
+            out_row[d] =
+                (jnt_xaxis[a3 + 0] * axis[0] + jnt_xaxis[a3 + 1] * axis[1]) +
+                jnt_xaxis[a3 + 2] * axis[2];
+        }
+    }
+    return Status::ok;
+}
+
+template <class Real, class TK>
+BIKE_HD Status step_energy_scaled_station_brush(
+    Real xi_transported,
+    Real slip,
+    Real v_roll,
+    Real load,
+    Real k_station,
+    Real r_k,
+    Real mu,
+    Real relax_len,
+    Real dt,
+    BIKE_REF(Real) out_xi_stored,
+    BIKE_REF(Real) out_tangent_force,
+    BIKE_REF(Real) out_brush_loss,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    const bool unit_rk = (r_k == BIKE_REAL(Real, 1.0));
+    const Real sqrt_rk = unit_rk ? BIKE_REAL(Real, 1.0) : TK::sqrt(r_k);
+    const Real xi_in =
+        unit_rk ? xi_transported : TK::div(xi_transported, sqrt_rk);
+    const Real k_eff = k_station * r_k;
+    Real xi_out = BIKE_REAL(Real, 0.0);
+    const Status st = brush_step<Real, TK>(
+        xi_in, slip, v_roll, load, k_eff, mu, relax_len, dt,
+        xi_out, out_tangent_force, out_brush_loss, err);
+    if (st != Status::ok) {
+        return st;
+    }
+    out_xi_stored = unit_rk ? xi_out : (xi_out * sqrt_rk);
+    return Status::ok;
+}
+
+template <
+    class Real,
+    class TK,
+    class JrPtr,
+    class AxisPtr,
+    class QvelPtr,
+    class TmpPtr,
+    class QfrcPtr>
+BIKE_HD Status apply_world_rolling_moment(
+    i32 nv,
+    JrPtr jr,
+    AxisPtr axis,
+    QvelPtr qvel,
+    Real crr_bar,
+    Real normal_total,
+    Real r_eff,
+    Real dt,
+    TmpPtr tmp_row,
+    QfrcPtr out_qfrc,
+    BIKE_REF(Real) out_m_roll,
+    BIKE_REF(Real) out_rolling_loss,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    err = ErrCode::none;
+    out_m_roll = BIKE_REAL(Real, 0.0);
+    out_rolling_loss = BIKE_REAL(Real, 0.0);
+    TK::gemv_t3(nv, jr, axis, tmp_row);
+    const Real omega_world = TK::dot(nv, tmp_row, qvel);
+    const Real kRollingTaper = BIKE_REAL(Real, 0.2);
+    const Real m_roll =
+        -crr_bar * normal_total * r_eff *
+        TK::tanh(TK::div(omega_world, kRollingTaper));
+    const Real rolling_loss =
+        TK::max(BIKE_REAL(Real, 0.0), -m_roll * omega_world) * dt;
+    if (!TK::isfinite(crr_bar) || !TK::isfinite(omega_world) ||
+        !TK::isfinite(m_roll) || !TK::isfinite(rolling_loss)) {
+        err = ErrCode::overflow_nonfinite;
+        return Status::overflow;
+    }
+    for (i32 i = 0; i < nv; ++i) {
+        out_qfrc[i] += m_roll * tmp_row[i];
+    }
+    out_m_roll = m_roll;
+    out_rolling_loss = rolling_loss;
+    return Status::ok;
+}
 
 template <class Real, class Io>
 struct DistributedIoTraits {
@@ -252,7 +385,11 @@ BIKE_HD Status step_distributed_wheel(
     Real losses = BIKE_REAL(Real, 0.0);
     Real shear_energy = BIKE_REAL(Real, 0.0);
     Real radial_power = BIKE_REAL(Real, 0.0);
+    Real normal_total = BIKE_REAL(Real, 0.0);
+    Real sum_weighted_drop = BIKE_REAL(Real, 0.0);
+    Real sum_unweighted_drop = BIKE_REAL(Real, 0.0);
 
+    // Pass 1 — radial normal contact, penetration depths, and wheel normal_total.
     for (i32 j = 0; j < count; ++j) {
         const i32 sid = ws.active_ids[j];
         const Real point[3] = {
@@ -272,7 +409,6 @@ BIKE_HD Status step_distributed_wheel(
             BIKE_REAL(Real, 0.0),
             geometry.normal[1]
         };
-        const Real tangent[3] = {normal[2], BIKE_REAL(Real, 0.0), -normal[0]};
         const Real arm[3] = {
             point[0] - center[0],
             point[1] - center[1],
@@ -316,6 +452,82 @@ BIKE_HD Status step_distributed_wheel(
         radial_power += TK::max(
             BIKE_REAL(Real, 0.0), (load - w_sid * elastic_density) * rate);
 
+        ws.loads[j] = load;
+        normal_total += load;
+        const Real drop = -TK::dot3(arm, normal);
+        sum_weighted_drop += load * drop;
+        sum_unweighted_drop += drop;
+    }
+
+    Real r_eff = BIKE_REAL(Real, 0.0);
+    if (count > 0) {
+        if (normal_total > BIKE_REAL(Real, 0.0)) {
+            r_eff = TK::max(
+                BIKE_REAL(Real, 0.0),
+                TK::div(sum_weighted_drop, normal_total));
+        } else {
+            r_eff = TK::max(
+                BIKE_REAL(Real, 0.0),
+                TK::div(sum_unweighted_drop, static_cast<Real>(count)));
+        }
+    }
+
+    // Pass 2 — Stage A surface friction, energy-scaled bristle, and qfrc.
+    Real crr_weighted_sum = BIKE_REAL(Real, 0.0);
+    const Real kRefSlipStiff = BIKE_REAL(Real, 15.0);
+    const bool has_surface = (model->surface_map.has_surface_map != 0);
+    for (i32 j = 0; j < count; ++j) {
+        const i32 sid = ws.active_ids[j];
+        const Real point[3] = {
+            ws.points[3 * sid],
+            ws.points[3 * sid + 1],
+            ws.points[3 * sid + 2]
+        };
+        PointDistanceResult<Real> geometry{};
+        const TyreXZ<Real> query_xz{point[0], point[2]};
+        st = signed_query_fn(query_xz, geometry, local_err);
+        if (st != Status::ok) {
+            err = local_err;
+            return st;
+        }
+        const Real normal[3] = {
+            geometry.normal[0],
+            BIKE_REAL(Real, 0.0),
+            geometry.normal[1]
+        };
+        const Real tangent[3] = {normal[2], BIKE_REAL(Real, 0.0), -normal[0]};
+        const Real arm[3] = {
+            point[0] - center[0],
+            point[1] - center[1],
+            point[2] - center[2]
+        };
+        for (i32 k = 0; k < 3; ++k) {
+            const i32 a = (k + 1) % 3;
+            const i32 b = (k + 2) % 3;
+            for (i32 i = 0; i < nv; ++i) {
+                ws.jac_station[k * nv + i] =
+                    ws.jac_center[k * nv + i] +
+                    (ws.jr[a * nv + i] * arm[b] - ws.jr[b * nv + i] * arm[a]);
+            }
+        }
+        Real velocity[3]{};
+        TK::gemv_n3(nv, ws.jac_station, qvel, velocity);
+        const Real penetration = -geometry.distance;
+        const Real w_sid =
+            weights != nullptr ? weights[sid] : uniform_weight;
+        const Real load = ws.loads[j];
+
+        Real elastic_density = BIKE_REAL(Real, 0.0);
+        Real density_energy = BIKE_REAL(Real, 0.0);
+        st = station_density<Real, TK>(
+            penetration, density, elastic_density, density_energy,
+            local_err);
+        if (st != Status::ok) {
+            err = local_err;
+            return st;
+        }
+        const Real elastic_energy = w_sid * density_energy;
+
         Real xi = prev_states[sid].active != 0
             ? prev_states[sid].xi
             : BIKE_REAL(Real, 0.0);
@@ -337,41 +549,51 @@ BIKE_HD Status step_distributed_wheel(
         }
 
         const Real slip = TK::dot3(velocity, tangent);
-        Real mu = BIKE_REAL(Real, 0.0);
-        i32 section_idx = -1;
+        Real mu = tire_mu;
+        Real r_k = BIKE_REAL(Real, 1.0);
         Status fric_status = Status::ok;
         const FrictionQuery<Real> fquery{tire_mu, geometry.point[0], slip};
         FrictionResult<Real> fresult{};
-        if (!DistributedIoTraits<Real, Io>::custom_friction(
+        if (DistributedIoTraits<Real, Io>::custom_friction(
                 io, fquery, fresult, fric_status, local_err)) {
-            st = effective_friction<Real, TK>(
-                tire_mu, &model->surface_map, geometry.point[0], slip,
-                mu, section_idx, local_err);
+            if (fric_status != Status::ok) {
+                err = local_err;
+                return fric_status;
+            }
+            mu = fresult.mu;
+        } else if (has_surface) {
+            SurfaceSamplePod<Real> sample{};
+            st = eval_surface<Real, TK>(
+                &model->surface_map, geometry.point[0], sample, local_err);
             if (st != Status::ok) {
                 err = local_err;
                 return st;
             }
-        } else if (fric_status != Status::ok) {
-            err = local_err;
-            return fric_status;
-        } else {
-            mu = fresult.mu;
-            section_idx = fresult.section_idx;
+            Real surf_mu = BIKE_REAL(Real, 0.0);
+            st = sample_mu<Real, TK>(
+                sample, slip, normal_total, surf_mu, local_err);
+            if (st != Status::ok) {
+                err = local_err;
+                return st;
+            }
+            mu = TK::min(tire_mu, surf_mu);
+            r_k = TK::div(sample.slip_stiffness_per_load, kRefSlipStiff);
+            crr_weighted_sum += load * sample.crr_delta;
         }
 
         const Real v_roll = TK::dot3(center_velocity, tangent);
-        Real xi_new = BIKE_REAL(Real, 0.0);
+        Real xi_stored = BIKE_REAL(Real, 0.0);
         Real tangent_force = BIKE_REAL(Real, 0.0);
         Real brush_loss = BIKE_REAL(Real, 0.0);
-        st = brush_step<Real, TK>(
-            xi, slip, v_roll, load, k_station, mu, relax_len, dt,
-            xi_new, tangent_force, brush_loss, local_err);
+        st = step_energy_scaled_station_brush<Real, TK>(
+            xi, slip, v_roll, load, k_station, r_k, mu, relax_len, dt,
+            xi_stored, tangent_force, brush_loss, local_err);
         if (st != Status::ok) {
             err = local_err;
             return st;
         }
         losses += brush_loss;
-        shear_energy += BIKE_REAL(Real, 0.5) * k_station * TK::pow2(xi_new);
+        shear_energy += BIKE_REAL(Real, 0.5) * k_station * TK::pow2(xi_stored);
 
         const Real force_world[3] = {
             load * normal[0] + tangent_force * tangent[0],
@@ -403,7 +625,7 @@ BIKE_HD Status step_distributed_wheel(
         }
 
         next_states[sid].active = 1;
-        next_states[sid].xi = xi_new;
+        next_states[sid].xi = xi_stored;
         next_states[sid].tangent[0] = tangent[0];
         next_states[sid].tangent[1] = tangent[1];
         next_states[sid].tangent[2] = tangent[2];
@@ -429,12 +651,31 @@ BIKE_HD Status step_distributed_wheel(
         next_states[i].has_tangent = 0;
     }
 
+    Real couple_world_nm = BIKE_REAL(Real, 0.0);
+    Real rolling_dissipation_j = BIKE_REAL(Real, 0.0);
+    if (normal_total > BIKE_REAL(Real, 0.0) &&
+        r_eff > BIKE_REAL(Real, 0.0) &&
+        crr_weighted_sum > BIKE_REAL(Real, 0.0)) {
+        const Real crr_bar = TK::div(crr_weighted_sum, normal_total);
+        const Real axis[3] = {wheel_xmat[1], wheel_xmat[4], wheel_xmat[7]};
+        st = apply_world_rolling_moment<Real, TK>(
+            nv, ws.jr, axis, qvel, crr_bar, normal_total, r_eff, dt,
+            ws.tmp, out_qfrc, couple_world_nm, rolling_dissipation_j, local_err);
+        if (st != Status::ok) {
+            err = local_err;
+            return st;
+        }
+        losses += rolling_dissipation_j;
+    }
+
     const DistributedWheelRecord<Real> wrec{
         center_vec,
         count,
         losses,
         shear_energy,
-        radial_power
+        radial_power,
+        couple_world_nm,
+        rolling_dissipation_j
     };
     st = DistributedIoTraits<Real, Io>::record_wheel(
         io, side, wrec, local_err);

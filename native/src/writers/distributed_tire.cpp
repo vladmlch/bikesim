@@ -21,6 +21,8 @@
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_distributed.hpp"
 #include "../tyre/profile.hpp"
 #include "pyfloat.hpp"
 
@@ -787,15 +789,19 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
                 xi = transported;
             }
             // sqrt(r_k) scaling keeps 0.5*k_station*xi^2; r_k==1.0 stays bitwise.
-            const double sqrt_rk = (r_k == 1.0) ? 1.0 : std::sqrt(r_k);
-            const double xi_in = (r_k == 1.0) ? xi : (xi / sqrt_rk);
-            const auto [xi_out, tangent_force, brush_loss] =
-                    tirecommon::brush_step(
-                            xi_in, slip, dot3(center_velocity, tangent),
-                            load, k_station * r_k, mu,
-                            pcfg.relaxation_length_m, dt);
-            const double xi_stored =
-                    (r_k == 1.0) ? xi_out : (xi_out * sqrt_rk);
+            double xi_stored = 0.0;
+            double tangent_force = 0.0;
+            double brush_loss = 0.0;
+            auto brush_err = bike::physics_core::ErrCode::none;
+            const auto brush_st =
+                    bike::physics_core::step_energy_scaled_station_brush<
+                            double, bike::physics_core::CpuExactToolkit>(
+                            xi, slip, dot3(center_velocity, tangent),
+                            load, k_station, r_k, mu,
+                            pcfg.relaxation_length_m, dt,
+                            xi_stored, tangent_force, brush_loss, brush_err);
+            if (brush_st != bike::physics_core::Status::ok)
+                contactlaw::finite_fail();
             losses += brush_loss;
             shear_energy += .5 * k_station * pyfloat::pow(xi_stored, 2.0);
             // :183-184 — force = load*normal + tangent_force*tangent
@@ -915,23 +921,22 @@ void DistributedTireWriter::accumulate_validated(const mjData *d,
         // Couple reacts to ground only (no caliper moment); planar spin axis is Y.
         if (normal_total > 0.0 && snap.effective_radius_m > 0.0 &&
             crr_weighted_sum > 0.0) {
+            contactlaw::finite_result({crr_weighted_sum});
             const double crr_bar = crr_weighted_sum / normal_total;
             const std::size_t b9 = 9 * static_cast<std::size_t>(body);
             const Vec3 axis = {xmat[b9 + 1], xmat[b9 + 4], xmat[b9 + 7]};
-            blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
-                        model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
-                        axis.data(), 1, 0.0, tmp_.data(), 1);
-            const double omega_world =
-                    blas::ddot(nv_, tmp_.data(), 1, qvel.data(), 1);
-            const double m_roll =
-                    -crr_bar * normal_total * snap.effective_radius_m *
-                    std::tanh(omega_world /
-                              tirecommon::kWheelRollingTaperRadps);
-            const double rolling_loss = std::max(0.0, -m_roll * omega_world) * dt;
-            contactlaw::finite_result(
-                    {crr_weighted_sum, crr_bar, omega_world, m_roll, rolling_loss});
-            for (std::size_t i = 0; i < nv; ++i)
-                out[i] += m_roll * tmp_[i];
+            double m_roll = 0.0;
+            double rolling_loss = 0.0;
+            auto roll_err = bike::physics_core::ErrCode::none;
+            const auto roll_st =
+                    bike::physics_core::apply_world_rolling_moment<
+                            double, bike::physics_core::CpuExactToolkit>(
+                            nv_, jr_.data(), axis.data(), qvel.data(),
+                            crr_bar, normal_total, snap.effective_radius_m, dt,
+                            tmp_.data(), out.data(), m_roll, rolling_loss,
+                            roll_err);
+            if (roll_st != bike::physics_core::Status::ok)
+                contactlaw::finite_fail();
             for (std::size_t j = 0; j < count; ++j) {
                 const double w = loads_[j] / normal_total;
                 const Vec3 couple = {axis[0] * m_roll * w,

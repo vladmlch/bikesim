@@ -650,8 +650,8 @@ void test_pneumatic_brush_and_stage_a() {
     biketyre::DiscretisedBrush cpu_brush(kN);
     double kp64 = 0.0;
     float kp32 = 0.0f;
-    std::array<double, kN> br64{}, upd64{}, fbuf64{}, kbuf64{}, mbuf64{};
-    std::array<float, kN> br32{}, upd32{}, fbuf32{}, kbuf32{}, mbuf32{};
+    std::array<double, kN> br64{}, upd64{}, kbuf64{}, mbuf64{};
+    std::array<float, kN> br32{}, upd32{}, kbuf32{}, mbuf32{};
     for (int step = 0; step < 5; ++step) {
         const auto ref = cpu_brush.step_heterogeneous(
             loads64, 0.04, 4.0, -0.35, 0.06, cpu_samples, 448.0, 720.0, 0.00025);
@@ -660,13 +660,13 @@ void test_pneumatic_brush_and_stage_a() {
         require(bike::physics_core::discretised_brush_step_heterogeneous<double, CpuExactToolkit>(
                     kN, loads64.data(), 0.04, 4.0, -0.35, 0.06,
                     pod_samples64.data(), 448.0, 720.0, 0.00025,
-                    kp64, br64.data(), upd64.data(), fbuf64.data(), kbuf64.data(),
+                    kp64, br64.data(), upd64.data(), kbuf64.data(),
                     mbuf64.data(), res64, err) == Status::ok,
                 "discretised_brush_step_heterogeneous fp64");
         require(bike::physics_core::discretised_brush_step_heterogeneous<float, GpuToolkit>(
                     kN, loads32.data(), 0.04f, 4.0f, -0.35f, 0.06f,
                     pod_samples32.data(), 448.0f, 720.0f, 0.00025f,
-                    kp32, br32.data(), upd32.data(), fbuf32.data(), kbuf32.data(),
+                    kp32, br32.data(), upd32.data(), kbuf32.data(),
                     mbuf32.data(), res32, err) == Status::ok,
                 "discretised_brush_step_heterogeneous fp32");
         require_near(res64.force_n, ref.force_n, 1e-12, "hetero brush force fp64");
@@ -879,6 +879,134 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     std::cout << "[test_tyre_pneumatic_core] step_pneumatic_wheel Wrench + Energy PASS\n";
 }
 
+void test_surface_null_uniform_and_polyline_contracts() {
+    static_assert(sizeof(GpuPneumaticStepScratch<float>) <= 24576,
+                  "GpuPneumaticStepScratch<float> must stay compact (< 24 KB)");
+
+    ErrCode err = ErrCode::none;
+
+    // 1) Null surface_map rejection in brush + model + step entrypoints
+    PneumaticSurfaceSample<double> s_null{};
+    i32 sid_null = -1;
+    require(bike::physics_core::eval_surface_sample<double, CpuExactToolkit>(
+                static_cast<const PneumaticSurfaceMap<double> *>(nullptr),
+                0.5, s_null, sid_null, err) == Status::invalid_argument,
+            "eval_surface_sample rejects null map");
+    i32 sec_null = 0;
+    bool is_uni_null = true;
+    require(bike::physics_core::pneumatic_uniform_surface_for_span<double, CpuExactToolkit>(
+                static_cast<const PneumaticSurfaceMap<double> *>(nullptr),
+                0.0, 1.0, sec_null, is_uni_null, err) == Status::invalid_argument,
+            "pneumatic_uniform_surface_for_span rejects null map");
+
+    auto spec64 = std::make_unique<PneumaticWheelSpec<double>>();
+    spec64->tyre = make_front_tyre_pod<double>();
+    spec64->discretised_brush = 1;
+    spec64->nv = 3;
+    spec64->njnt = 3;
+    spec64->wheel_body_id = 1;
+    spec64->chain.wheel_body_id = 1;
+    spec64->chain.njnt = 3;
+    spec64->chain.joint_count = 3;
+    const std::span chain_joints{spec64->chain.joints};
+    chain_joints[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
+    chain_joints[1] = GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1};
+    chain_joints[2] = GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2};
+    require(bike::physics_core::init_pneumatic_ray_ring<double, CpuExactToolkit>(
+                64, 75.0 * (std::numbers::pi / 180.0), spec64->ring, err) ==
+                Status::ok,
+            "contract ring64");
+
+    std::vector<double> px(100), pz(100, 0.0);
+    for (std::size_t i = 0; i < px.size(); ++i) {
+        px[i] = 0.02 * static_cast<double>(i);
+    }
+    auto st_in = std::make_unique<GpuPneumaticWheelState<double>>();
+    auto st_out = std::make_unique<GpuPneumaticWheelState<double>>();
+    bike::physics_core::init_pneumatic_wheel_state<double>(64, st_in.get());
+    auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
+    const std::array<double, 3> hub_air{0.55, 0.0, 0.80};
+    const std::array<double, 3> vel_zero{0.0, 0.0, 0.0};
+    GpuPneumaticWheelOutput<double> out{};
+    require(bike::physics_core::evaluate_pneumatic_wheel<double, CpuExactToolkit>(
+                spec64.get(),
+                static_cast<const PneumaticSurfaceMap<double> *>(nullptr),
+                hub_air.data(), vel_zero.data(), 0.0,
+                px.data(), pz.data(), 100, 0.0, 0.02, true, 0.0005,
+                st_in.get(), st_out.get(), out, scr64.get(), err) ==
+                Status::invalid_argument,
+            "evaluate_pneumatic_wheel rejects null surface_map");
+
+    const std::array<double, 6> xpos = {0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
+    const std::array<double, 18> xmat = {
+        1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
+        1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
+    };
+    const std::array<double, 9> xanchor = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
+    const std::array<double, 9> xaxis = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+    const std::array<double, 3> qvel = {4.0, -0.05, 10.5};
+    std::array<double, 3> qfrc = {0.0, 0.0, 0.0};
+    require(bike::physics_core::step_pneumatic_wheel<double, CpuExactToolkit>(
+                spec64.get(),
+                static_cast<const PneumaticSurfaceMap<double> *>(nullptr),
+                0.0005, px.data(), pz.data(), 100, 0.0, 0.02, true,
+                xpos.data(), xmat.data(), xanchor.data(), xaxis.data(),
+                qvel.data(), st_in.get(), st_out.get(), qfrc.data(),
+                out, scr64.get(), err) == Status::invalid_argument,
+            "step_pneumatic_wheel rejects null surface_map");
+
+    // 2) Uniform surface mode (has_surface_map == 0) returns default_surface
+    PneumaticSurfaceMap<double> uni_map{};
+    uni_map.has_surface_map = 0;
+    uni_map.section_count = 0;
+    uni_map.default_surface_id = 7;
+    uni_map.default_surface = to_pod_surface<double>(make_asphalt_cfg());
+    PneumaticSurfaceSample<double> s_uni{};
+    i32 sid_uni = -1;
+    require(bike::physics_core::eval_surface_sample<double, CpuExactToolkit>(
+                &uni_map, 0.5, s_uni, sid_uni, err) == Status::ok,
+            "eval_surface_sample uniform ok");
+    require(sid_uni == 7, "eval_surface_sample uniform returns default_surface_id");
+    require_bitwise_eq(s_uni.mu_peak, uni_map.default_surface.mu_peak,
+                       "eval_surface_sample uniform returns default mu_peak");
+    require(bike::physics_core::evaluate_pneumatic_wheel<double, CpuExactToolkit>(
+                spec64.get(), &uni_map, hub_air.data(), vel_zero.data(), 0.0,
+                px.data(), pz.data(), 100, 0.0, 0.02, true, 0.0005,
+                st_in.get(), st_out.get(), out, scr64.get(), err) == Status::ok,
+            "evaluate_pneumatic_wheel airborne uniform ok");
+    require(out.airborne == 1, "airborne flag set");
+    require_bitwise_eq(out.friction_coefficient, uni_map.default_surface.mu_peak,
+                       "airborne uniform wheel uses default_surface mu_peak");
+    require(out.dominant_surface_id == 7,
+            "airborne uniform wheel uses default_surface_id");
+
+    // 3) Polyline road (road_is_uniform_grid = false) matches uniform grid
+    const std::array<double, 3> hub_loaded{0.55, 0.0, 0.355};
+    const std::array<double, 3> vel_loaded{4.0, 0.0, -0.05};
+    auto st_grid = std::make_unique<GpuPneumaticWheelState<double>>();
+    auto st_poly = std::make_unique<GpuPneumaticWheelState<double>>();
+    bike::physics_core::init_pneumatic_wheel_state<double>(64, st_grid.get());
+    bike::physics_core::init_pneumatic_wheel_state<double>(64, st_poly.get());
+    GpuPneumaticWheelOutput<double> out_grid{}, out_poly{};
+    require(bike::physics_core::evaluate_pneumatic_wheel<double, CpuExactToolkit>(
+                spec64.get(), &uni_map, hub_loaded.data(), vel_loaded.data(), 10.5,
+                px.data(), pz.data(), 100, 0.0, 0.02, true, 0.0005,
+                st_in.get(), st_grid.get(), out_grid, scr64.get(), err) == Status::ok,
+            "uniform grid eval ok");
+    require(bike::physics_core::evaluate_pneumatic_wheel<double, CpuExactToolkit>(
+                spec64.get(), &uni_map, hub_loaded.data(), vel_loaded.data(), 10.5,
+                px.data(), pz.data(), 100, 0.0, 0.02, false, 0.0005,
+                st_in.get(), st_poly.get(), out_poly, scr64.get(), err) == Status::ok,
+            "polyline eval ok");
+    require_near(out_poly.normal_load_n, out_grid.normal_load_n, 1e-12,
+                 "polyline vs uniform grid normal_load");
+    require_near(std::span{out_poly.force_world_n}[0],
+                 std::span{out_grid.force_world_n}[0], 1e-12,
+                 "polyline vs uniform grid fx");
+
+    std::cout << "[test_tyre_pneumatic_core] Null/Uniform/Polyline Contracts PASS\n";
+}
+
 } // namespace
 
 int main() {
@@ -888,6 +1016,7 @@ int main() {
     test_whole_wheel_model_parity(false, 64, 0.0005);
     test_whole_wheel_model_parity(true, 256, 0.00025);
     test_step_pneumatic_wheel_wrench_and_energy();
+    test_surface_null_uniform_and_polyline_contracts();
     std::cout << "ALL test_tyre_pneumatic_core CHECKS PASSED\n";
     return 0;
 }

@@ -88,12 +88,9 @@ struct GpuPneumaticStepScratch {
     PneumaticCarcassScratch<Real> carcass{};
     PneumaticSurfaceSample<Real> ray_samples[kMaxPneumaticRays]{};
     Real brush_updated[kMaxPneumaticRays]{};
-    Real brush_force_n[kMaxPneumaticRays]{};
     Real brush_stiffness[kMaxPneumaticRays]{};
     Real brush_mu[kMaxPneumaticRays]{};
     Real scratch_bristles[kMaxPneumaticRays]{};
-    Real loss_scratch[kMaxPneumaticRays]{};
-    Real energy_scratch[kMaxPneumaticRays]{};
     Real jp[3 * kMaxNv]{};
     Real jr[3 * kMaxNv]{};
     Real tmp_nv[kMaxNv]{};
@@ -270,14 +267,12 @@ template <
     class TK,
     class RingPtr,
     class StatePtr,
-    class PtrDelta,
-    class PtrScratch>
+    class PtrDelta>
 BIKE_HD void pneumatic_compute_radial_energies(
     PneumaticTyreSpecPod<Real> tyre,
     RingPtr ring,
     StatePtr state,
     PtrDelta delta_m,
-    PtrScratch energy_scratch,
     BIKE_REF(Real) out_radial_j,
     BIKE_REF(Real) out_maxwell_j,
     BIKE_REF(Real) out_rim_j
@@ -290,30 +285,33 @@ BIKE_HD void pneumatic_compute_radial_energies(
     const Real rim_m =
         tyre.rim_strike_deflection_mm() * BIKE_REAL(Real, 0.001);
 
+    Real rad_acc = static_cast<Real>(0);
     for (i32 i = 0; i < n; ++i) {
-        energy_scratch[i] = ray_elastic_energy_j<Real, TK>(delta_m[i], tyre, ds_m);
+        rad_acc += ray_elastic_energy_j<Real, TK>(delta_m[i], tyre, ds_m);
     }
-    out_radial_j = pneumatic_detail::array_sum<Real, TK>(n, energy_scratch);
+    out_radial_j = rad_acc;
 
     if (state->carcass.initialized != 0 && tyre.rate_stiffening > static_cast<Real>(0)) {
+        Real max_acc = static_cast<Real>(0);
         for (i32 i = 0; i < n; ++i) {
-            energy_scratch[i] = ray_maxwell_energy_j<Real, TK>(
+            max_acc += ray_maxwell_energy_j<Real, TK>(
                 delta_m[i],
                 state->carcass.elastic_prev_n[i],
                 state->carcass.maxwell_force_n[i],
                 tyre,
                 ds_m);
         }
-        out_maxwell_j = pneumatic_detail::array_sum<Real, TK>(n, energy_scratch);
+        out_maxwell_j = max_acc;
     } else {
         out_maxwell_j = static_cast<Real>(0);
     }
 
+    Real rim_acc = static_cast<Real>(0);
     for (i32 i = 0; i < n; ++i) {
         const Real overlap = TK::max(delta_m[i] - rim_m, static_cast<Real>(0));
-        energy_scratch[i] = BIKE_REAL(Real, 0.5) * k_rim * overlap * overlap * ds_m;
+        rim_acc += BIKE_REAL(Real, 0.5) * k_rim * overlap * overlap * ds_m;
     }
-    out_rim_j = pneumatic_detail::array_sum<Real, TK>(n, energy_scratch);
+    out_rim_j = rim_acc;
 }
 
 template <
@@ -348,8 +346,9 @@ BIKE_HD Status evaluate_pneumatic_wheel(
     BIKE_REF(ErrCode) err
 ) noexcept {
     out = GpuPneumaticWheelOutput<Real>{};
-    if (spec == nullptr || hub_pos == nullptr || hub_vel == nullptr ||
-        prev_state == nullptr || next_state == nullptr || scratch == nullptr) {
+    if (spec == nullptr || surface_map == nullptr || hub_pos == nullptr ||
+        hub_vel == nullptr || prev_state == nullptr || next_state == nullptr ||
+        scratch == nullptr) {
         err = ErrCode::out_of_bounds_station;
         return Status::invalid_argument;
     }
@@ -378,13 +377,10 @@ BIKE_HD Status evaluate_pneumatic_wheel(
             return ist;
         }
     } else {
-        PolylineView<Real> pl{};
-        pl.px = road_px;
-        pl.pz = road_pz;
-        pl.num_vertices = road_num_vertices;
-        const Status ist = pneumatic_intersect_polyline<Real, TK>(
+        const Status ist = pneumatic_intersect_polyline_arrays<Real, TK>(
             &spec->ring,
-            hub_pos[0], hub_pos[2], outer_radius_m, pl,
+            hub_pos[0], hub_pos[2], outer_radius_m,
+            road_px, road_pz, road_num_vertices,
             scratch->r_m, scratch->delta_m, scratch->road_x_m, scratch->road_z_m,
             coverage_event, airborne, err);
         if (ist != Status::ok) {
@@ -540,7 +536,7 @@ BIKE_HD Status evaluate_pneumatic_wheel(
         Real rim_j = static_cast<Real>(0);
         pneumatic_compute_radial_energies<Real, TK>(
             spec->tyre, &spec->ring, next_state, scratch->delta_m,
-            scratch->energy_scratch, rad_j, max_j, rim_j);
+            rad_j, max_j, rim_j);
 
         out.airborne = airborne;
         out.coverage_event = coverage_event;
@@ -791,7 +787,6 @@ BIKE_HD Status evaluate_pneumatic_wheel(
                     detailed_kp,
                     next_state->bristle_deflection_m + start_i,
                     scratch->brush_updated,
-                    scratch->brush_force_n,
                     brush_result, err);
                 if (bst != Status::ok) {
                     return bst;
@@ -806,7 +801,6 @@ BIKE_HD Status evaluate_pneumatic_wheel(
                     detailed_kp,
                     next_state->bristle_deflection_m + start_i,
                     scratch->brush_updated,
-                    scratch->brush_force_n,
                     scratch->brush_stiffness,
                     scratch->brush_mu,
                     brush_result, err);
@@ -858,15 +852,14 @@ BIKE_HD Status evaluate_pneumatic_wheel(
                 BIKE_REAL(Real, 2.0) * half_length_m, static_cast<Real>(w));
             const Real common = TK::div(
                 weight_sum, BIKE_REAL(Real, 2.0) * TK::pow2(half_length_m));
+            Real sum = static_cast<Real>(0);
             for (i32 i = 0; i < w; ++i) {
                 const Real u = next_state->bristle_deflection_m[start_i + i];
-                scratch->loss_scratch[i] = is_uniform
+                sum += is_uniform
                     ? (u * u)
                     : (scratch->ray_samples[i].slip_stiffness_per_load *
                        common * dx * u * u);
             }
-            const Real sum = pneumatic_detail::array_sum<Real, TK>(
-                w, scratch->loss_scratch);
             shear_energy = is_uniform
                 ? (BIKE_REAL(Real, 0.5) *
                    patch_surface.slip_stiffness_per_load *
@@ -948,7 +941,7 @@ BIKE_HD Status evaluate_pneumatic_wheel(
     Real rim_j = static_cast<Real>(0);
     pneumatic_compute_radial_energies<Real, TK>(
         spec->tyre, &spec->ring, next_state, scratch->delta_m,
-        scratch->energy_scratch, rad_j, max_j, rim_j);
+        rad_j, max_j, rim_j);
 
     Real effective_radius_out = static_cast<Real>(0);
     if (emitted_patches > 0) {
@@ -1044,10 +1037,10 @@ BIKE_HD Status step_pneumatic_wheel(
     BIKE_REF(ErrCode) err
 ) noexcept {
     out_summary = GpuPneumaticWheelOutput<Real>{};
-    if (spec == nullptr || body_xpos == nullptr || body_xmat == nullptr ||
-        jnt_xanchor == nullptr || jnt_xaxis == nullptr || qvel == nullptr ||
-        prev_state == nullptr || next_state == nullptr ||
-        out_qfrc == nullptr || scratch == nullptr) {
+    if (spec == nullptr || surface_map == nullptr || body_xpos == nullptr ||
+        body_xmat == nullptr || jnt_xanchor == nullptr ||
+        jnt_xaxis == nullptr || qvel == nullptr || prev_state == nullptr ||
+        next_state == nullptr || out_qfrc == nullptr || scratch == nullptr) {
         err = ErrCode::out_of_bounds_chain;
         return Status::invalid_argument;
     }
@@ -1205,12 +1198,9 @@ BIKE_HD Status pneumatic_stored_energy(
             return st;
         }
     } else {
-        PolylineView<Real> pl{};
-        pl.px = road_px;
-        pl.pz = road_pz;
-        pl.num_vertices = road_num_vertices;
-        const Status st = pneumatic_intersect_polyline<Real, TK>(
-            &spec->ring, hub_x_m, hub_z_m, outer_radius_m, pl,
+        const Status st = pneumatic_intersect_polyline_arrays<Real, TK>(
+            &spec->ring, hub_x_m, hub_z_m, outer_radius_m,
+            road_px, road_pz, road_num_vertices,
             scratch->r_m, scratch->delta_m, scratch->road_x_m, scratch->road_z_m,
             cov, air, err);
         if (st != Status::ok) {
@@ -1222,7 +1212,7 @@ BIKE_HD Status pneumatic_stored_energy(
     Real rim_j = static_cast<Real>(0);
     pneumatic_compute_radial_energies<Real, TK>(
         spec->tyre, &spec->ring, state, scratch->delta_m,
-        scratch->energy_scratch, rad_j, max_j, rim_j);
+        rad_j, max_j, rim_j);
     out_total_energy_j = rad_j + max_j + rim_j + committed_shear_energy_j;
     err = ErrCode::none;
     return Status::ok;

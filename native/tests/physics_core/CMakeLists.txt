@@ -256,3 +256,47 @@ endif()
 
 add_test(NAME test_sp4_spindle_m2k2 COMMAND test_sp4_spindle_m2k2)
 set_tests_properties(test_sp4_spindle_m2k2 PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_tyre_pneumatic_core
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_pneumatic_core.cpp")
+bike_apply_native_policy(test_tyre_pneumatic_core)
+target_compile_options(test_tyre_pneumatic_core PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_tyre_pneumatic_core PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_tyre_pneumatic_core SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_tyre_pneumatic_core PRIVATE
+  bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_tyre_pneumatic_core "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_tyre_pneumatic_core COMMAND test_tyre_pneumatic_core)
+set_tests_properties(test_tyre_pneumatic_core PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_controllers_and_energy
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_controllers_and_energy.cpp")
+bike_apply_native_policy(test_controllers_and_energy)
+target_compile_options(test_controllers_and_energy PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_controllers_and_energy PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_controllers_and_energy SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_controllers_and_energy PRIVATE
+  bike_test_fixtures bike_model bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_controllers_and_energy "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_controllers_and_energy COMMAND test_controllers_and_energy)
+set_tests_properties(test_controllers_and_energy PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_sp4_spindle_m0
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp4_spindle_m0.cpp")
+bike_apply_native_policy(test_sp4_spindle_m0)
+target_compile_options(test_sp4_spindle_m0 PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp4_spindle_m0 SYSTEM PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src"
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp4_spindle_m0 PRIVATE
+  bike_test_fixtures bike_app bike_validation bike_spindle_upload)
+bike_rewrite_mujoco_load_name(test_sp4_spindle_m0 "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_sp4_spindle_m0 COMMAND test_sp4_spindle_m0)
+set_tests_properties(test_sp4_spindle_m0 PROPERTIES LABELS "gpu;unit")

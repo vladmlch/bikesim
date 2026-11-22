@@ -1,5 +1,6 @@
 #include "config_types.hpp"
 #include "contact/tabulated_radial.hpp"
+#include "model_access.hpp"
 #include "physics_core/common.hpp"
 #include "physics_core/cpu_exact_toolkit.hpp"
 #include "physics_core/gpu_toolkit.hpp"
@@ -217,12 +218,13 @@ PneumaticSurfaceMap<Real> make_mixed_surface_map_pod(Real blend_m) {
     map.default_surface = to_pod_surface<Real>(cfg.surface);
     map.default_surface_id = 0;
     map.section_count = static_cast<i32>(cfg.sections.size());
+    const std::span map_secs{map.sections};
     for (std::size_t i = 0; i < cfg.sections.size(); ++i) {
-        map.sections[i].start_m = static_cast<Real>(cfg.sections[i].start_m);
-        map.sections[i].end_m = static_cast<Real>(cfg.sections[i].end_m);
-        map.sections[i].surface = to_pod_surface<Real>(cfg.sections[i].surface);
-        map.sections[i].blend_m = static_cast<Real>(cfg.sections[i].blend_m);
-        map.sections[i].surface_id = static_cast<i32>(i + 1);
+        map_secs[i].start_m = static_cast<Real>(cfg.sections[i].start_m);
+        map_secs[i].end_m = static_cast<Real>(cfg.sections[i].end_m);
+        map_secs[i].surface = to_pod_surface<Real>(cfg.sections[i].surface);
+        map_secs[i].blend_m = static_cast<Real>(cfg.sections[i].blend_m);
+        map_secs[i].surface_id = static_cast<i32>(i + 1);
     }
     return map;
 }
@@ -354,25 +356,26 @@ void test_tabulated_radial() {
     m64->wheels[0].compliant.loss_factor = 0.08;
     m64->wheels[0].compliant.hysteresis_rate_eps_mps = 0.015;
     m64->wheels[0].compliant.has_tabulated_radial = 1;
-    const double center[3] = {0.5, 0.0, 0.34};
-    const double qvel[3] = {2.0, -0.02, 5.5};
-    double qfrc[3] = {0.0, 0.0, 0.0};
+    const std::array<double, 3> center = {0.5, 0.0, 0.34};
+    const std::array<double, 3> qvel = {2.0, -0.02, 5.5};
+    std::array<double, 3> qfrc = {0.0, 0.0, 0.0};
     CompliantWheelStatePod<double> prev_st{}, next_st{};
     auto terrain_fn = [](double cx, double cz, double r, bool, i32,
                          bike::physics_core::PolylineContactResult<double> &out,
                          ErrCode &e) noexcept -> Status {
-        out.point[0] = cx;
-        out.point[1] = 0.0;
-        out.normal[0] = 0.0;
-        out.normal[1] = 1.0;
+        std::span{out.point}[0] = cx;
+        std::span{out.point}[1] = 0.0;
+        std::span{out.normal}[0] = 0.0;
+        std::span{out.normal}[1] = 1.0;
         out.delta = r - cz;
         out.segment_id = 0;
         e = ErrCode::none;
         return Status::ok;
     };
     auto jac_fn = [](i32, const bike::physics_core::CompliantJacInput<double> &in,
-                     const double *qv, bike::physics_core::CompliantJacOutput<double> &out,
+                     const double *qv_ptr, bike::physics_core::CompliantJacOutput<double> &out,
                      ErrCode &e) noexcept -> Status {
+        const auto qv = model_access::readonly_buffer(qv_ptr, 3, "qv");
         out.velocity = {qv[0] + (in.point.z - in.center.z) * qv[2], 0.0,
                         qv[1] - (in.point.x - in.center.x) * qv[2]};
         out.center_velocity = {qv[0], 0.0, qv[1]};
@@ -380,14 +383,15 @@ void test_tabulated_radial() {
         return Status::ok;
     };
     auto accum_fn = [](i32, const TyreVec3<double> &, const TyreVec3<double> &fw,
-                       double *qf, ErrCode &e) noexcept -> Status {
+                       double *qf_ptr, ErrCode &e) noexcept -> Status {
+        const auto qf = model_access::mutable_buffer(qf_ptr, 3, "qf");
         qf[0] += fw.x;
         qf[2] += fw.z;
         e = ErrCode::none;
         return Status::ok;
     };
     require(bike::physics_core::step_compliant_wheel<double, CpuExactToolkit>(
-                m64.get(), 0, 0.00125, center, qvel, &prev_st, &next_st, qfrc,
+                m64.get(), 0, 0.00125, center.data(), qvel.data(), &prev_st, &next_st, qfrc.data(),
                 terrain_fn, jac_fn, accum_fn, io, err) == Status::ok,
             "step_compliant_wheel with TabulatedRadialIo");
     require(qfrc[2] > 0.0, "step_compliant_wheel tabulated produced positive normal force");
@@ -418,10 +422,10 @@ void test_pneumatic_geometry_and_carcass() {
             "init ring 64 fp32");
 
     for (std::size_t i = 0; i < 64; ++i) {
-        require_bitwise_eq(ring64->theta_rad[i], cpu_ring64.theta_rad()[i], "ring64 theta");
-        require_bitwise_eq(ring64->ux[i], cpu_ring64.ux()[i], "ring64 ux");
-        require_bitwise_eq(ring64->uz[i], cpu_ring64.uz()[i], "ring64 uz");
-        require_near(static_cast<double>(ring32->ux[i]), cpu_ring64.ux()[i], 1e-6, "ring32 ux");
+        require_bitwise_eq(std::span{ring64->theta_rad}[i], cpu_ring64.theta_rad()[i], "ring64 theta");
+        require_bitwise_eq(std::span{ring64->ux}[i], cpu_ring64.ux()[i], "ring64 ux");
+        require_bitwise_eq(std::span{ring64->uz}[i], cpu_ring64.uz()[i], "ring64 uz");
+        require_near(static_cast<double>(std::span{ring32->ux}[i]), cpu_ring64.ux()[i], 1e-6, "ring32 ux");
     }
 
     // Road profile & intersect parity (bumpy road + airborne)
@@ -448,9 +452,9 @@ void test_pneumatic_geometry_and_carcass() {
     require((cov != 0) == hits_cpu.coverage_event && (air != 0) == hits_cpu.airborne,
             "intersect flags match");
     for (std::size_t i = 0; i < 256; ++i) {
-        require_bitwise_eq(scr64->delta_m[i], hits_cpu.delta_m[i], "intersect256 delta");
-        require_bitwise_eq(scr64->road_x_m[i], hits_cpu.road_x_m[i], "intersect256 road_x");
-        require_bitwise_eq(scr64->road_z_m[i], hits_cpu.road_z_m[i], "intersect256 road_z");
+        require_bitwise_eq(std::span{scr64->delta_m}[i], hits_cpu.delta_m[i], "intersect256 delta");
+        require_bitwise_eq(std::span{scr64->road_x_m}[i], hits_cpu.road_x_m[i], "intersect256 road_x");
+        require_bitwise_eq(std::span{scr64->road_z_m}[i], hits_cpu.road_z_m[i], "intersect256 road_z");
     }
 
     // Also verify PolylineView intersection matches uniform grid
@@ -754,9 +758,9 @@ void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
                     st32.get(), st32.get(), out32, scr32.get(), err) == Status::ok,
                 "evaluate_pneumatic_wheel fp32");
 
-        require_near(out64.force_world_n[0], cpu_out.force_world_n[0], 1e-12,
+        require_near(std::span{out64.force_world_n}[0], cpu_out.force_world_n[0], 1e-12,
                      "whole wheel fx fp64");
-        require_near(out64.force_world_n[2], cpu_out.force_world_n[2], 1e-12,
+        require_near(std::span{out64.force_world_n}[2], cpu_out.force_world_n[2], 1e-12,
                      "whole wheel fz fp64");
         require_near(out64.normal_load_n, cpu_out.normal_load_n, 1e-12,
                      "whole wheel normal_load fp64");
@@ -776,9 +780,9 @@ void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
                      "whole wheel shear_energy_j fp64");
 
         // FP32 parity against CPU FP64
-        require_near(static_cast<double>(out32.force_world_n[0]),
+        require_near(static_cast<double>(std::span{out32.force_world_n}[0]),
                      cpu_out.force_world_n[0], 1e-3, "whole wheel fx fp32");
-        require_near(static_cast<double>(out32.force_world_n[2]),
+        require_near(static_cast<double>(std::span{out32.force_world_n}[2]),
                      cpu_out.force_world_n[2], 1e-4, "whole wheel fz fp32");
         require_near(static_cast<double>(out32.rolling_crr),
                      cpu_out.rolling_crr, 1e-4, "whole wheel crr fp32");
@@ -813,9 +817,10 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     spec64->chain.wheel_body_id = 1;
     spec64->chain.njnt = 3;
     spec64->chain.joint_count = 3;
-    spec64->chain.joints[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
-    spec64->chain.joints[1] = GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1};
-    spec64->chain.joints[2] = GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2};
+    const std::span chain_joints{spec64->chain.joints};
+    chain_joints[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
+    chain_joints[1] = GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1};
+    chain_joints[2] = GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2};
     require(bike::physics_core::init_pneumatic_ray_ring<double, CpuExactToolkit>(
                 256, 75.0 * (std::numbers::pi / 180.0), spec64->ring, err) ==
                 Status::ok,
@@ -833,22 +838,22 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     bike::physics_core::init_pneumatic_wheel_state<double>(256, st64.get());
     auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
 
-    const double xpos[6] = {0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
-    const double xmat[18] = {
+    const std::array<double, 6> xpos = {0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
+    const std::array<double, 18> xmat = {
         1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
         1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0
     };
-    const double xanchor[9] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
-    const double xaxis[9] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0};
-    const double qvel[3] = {4.0, -0.05, 10.5};
-    double qfrc[3] = {0.0, 0.0, 0.0};
+    const std::array<double, 9> xanchor = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
+    const std::array<double, 9> xaxis = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0};
+    const std::array<double, 3> qvel = {4.0, -0.05, 10.5};
+    std::array<double, 3> qfrc = {0.0, 0.0, 0.0};
     GpuPneumaticWheelOutput<double> out{};
 
     require(bike::physics_core::step_pneumatic_wheel<double, CpuExactToolkit>(
                 spec64.get(), &map64, 0.00025,
                 px.data(), z.data(), 200, x0, dx, true,
-                xpos, xmat, xanchor, xaxis, qvel,
-                st64.get(), st64.get(), qfrc, out, scr64.get(), err) == Status::ok,
+                xpos.data(), xmat.data(), xanchor.data(), xaxis.data(), qvel.data(),
+                st64.get(), st64.get(), qfrc.data(), out, scr64.get(), err) == Status::ok,
             "step_pneumatic_wheel flat");
 
     require(out.normal_load_n > 0.0, "positive normal load");
@@ -863,11 +868,11 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     // Verify qfrc matches centroid force + axial rolling moment:
     // qfrc[0] = F_world_x, qfrc[1] = F_world_z,
     // qfrc[2] = (centroid - hub) x F_world |_y + M_roll
-    require_near(qfrc[0], out.force_world_n[0], 1e-12, "qfrc[0] == fx");
-    require_near(qfrc[1], out.force_world_n[2], 1e-12, "qfrc[1] == fz");
+    require_near(qfrc[0], std::span{out.force_world_n}[0], 1e-12, "qfrc[0] == fx");
+    require_near(qfrc[1], std::span{out.force_world_n}[2], 1e-12, "qfrc[1] == fz");
     const double expected_tau =
-        ((scr64->patch_centroids[2] - xpos[5]) * scr64->patch_forces[0] -
-         (scr64->patch_centroids[0] - xpos[3]) * scr64->patch_forces[2]) +
+        ((std::span{scr64->patch_centroids}[2] - xpos[5]) * std::span{scr64->patch_forces}[0] -
+         (std::span{scr64->patch_centroids}[0] - xpos[3]) * std::span{scr64->patch_forces}[2]) +
         out.rolling_moment_nm;
     require_near(qfrc[2], expected_tau, 1e-12, "qfrc[2] == patch moment + M_roll");
 

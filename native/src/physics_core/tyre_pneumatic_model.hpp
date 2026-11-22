@@ -690,7 +690,7 @@ BIKE_HD Status evaluate_pneumatic_wheel(
         }
         i32 uniform_sec_idx = -1;
         bool is_uniform = false;
-        const Status u_st = uniform_surface_for_span<Real, TK>(
+        const Status u_st = pneumatic_uniform_surface_for_span<Real, TK>(
             surface_map, min_x, max_x, uniform_sec_idx, is_uniform, err);
         if (u_st != Status::ok) {
             return u_st;

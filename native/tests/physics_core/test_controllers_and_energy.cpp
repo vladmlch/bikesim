@@ -10,9 +10,11 @@
 
 #include "drivetrain/motor.hpp"
 #include "drivetrain/pedaling.hpp"
+#include "model_access.hpp"
 #include "support/model_fixture.hpp"
 #include "writers/cruise.hpp"
 
+#include <array>
 #include <bit>
 #include <cmath>
 #include <cstddef>
@@ -181,7 +183,7 @@ void test_cruise_0bit_parity_and_validation() {
         bool do_reset = false;
     };
 
-    const StepCase cases[] = {
+    const std::array<StepCase, 10> cases{{
         {0.0, false, false, std::nullopt, 0.00125, std::nullopt, std::nullopt, false},
         {3.0, false, false, true, 0.00125, std::nullopt, std::nullopt, false},
         {5.0, true, false, false, 0.00125, std::nullopt, std::nullopt, false},
@@ -192,10 +194,9 @@ void test_cruise_0bit_parity_and_validation() {
         {12.0, true, false, std::nullopt, 0.005, std::nullopt, std::nullopt, false},
         {8.0, true, false, std::nullopt, 0.00125, std::nullopt, std::nullopt, true},
         {8.5, true, false, true, 0.00125, std::nullopt, std::nullopt, false},
-    };
+    }};
 
-    for (std::size_t i = 0; i < std::size(cases); ++i) {
-        const auto &tc = cases[i];
+    for (const auto &tc : cases) {
         if (tc.do_reset) {
             writer.reset();
             cruise_reset<double>(&pod_state);
@@ -217,7 +218,7 @@ void test_cruise_0bit_parity_and_validation() {
             require_bits_f64(pod_scale, cpu_scale, "assist compensation scale");
         }
         fixture.model->opt.timestep = static_cast<mjtNum>(tc.dt_s);
-        fixture.data->qvel[static_cast<std::size_t>(root_dof)] =
+        model_access::mutable_buffer(fixture.data->qvel, fixture.model->nv, "qvel")[static_cast<std::size_t>(root_dof)] =
             static_cast<mjtNum>(tc.speed_mps);
         const double cpu_tq = writer.compute(
             fixture.data.get(), tc.rear_in_contact, tc.traction_limited,

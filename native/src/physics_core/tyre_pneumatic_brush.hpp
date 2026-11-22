@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common.hpp"
+#include "tyre_contact.hpp"
 #include "tyre_pneumatic_geometry.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel header: MSL has no std::span/std::array and device buffers are address-space-qualified raw pointers. Register: docs/TESTING.md GPU kernel row.
@@ -102,33 +103,6 @@ BIKE_HD PneumaticSurfaceSample<Real> blend_surface_samples(
 }
 
 } // namespace pneumatic_brush_detail
-
-template <class Real, class TK>
-BIKE_HD Real load_sensitivity_factor(
-    Real wheel_normal_load_n,
-    Real k_z
-) noexcept {
-    const Real ref_load = BIKE_REAL(Real, 500.0);
-    const Real smooth_delta = BIKE_REAL(Real, 0.1);
-    if (wheel_normal_load_n <= ref_load || k_z <= static_cast<Real>(0)) {
-        return static_cast<Real>(1);
-    }
-    const Real u = TK::div(wheel_normal_load_n, ref_load) - static_cast<Real>(1);
-    if (u <= static_cast<Real>(0)) {
-        return static_cast<Real>(1);
-    }
-#if defined(__METAL_VERSION__)
-    const Real u_thresh = BIKE_REAL(Real, 1e15);
-#else
-    const Real u_thresh = (sizeof(Real) == 4)
-        ? BIKE_REAL(Real, 1e15)
-        : BIKE_REAL(Real, 1e150);
-#endif
-    const Real g = (u > u_thresh)
-        ? u
-        : TK::div(u * u, u + smooth_delta);
-    return TK::div(static_cast<Real>(1), static_cast<Real>(1) + k_z * g);
-}
 
 template <class Real, class TK, class MapPtr>
 BIKE_HD Status eval_surface_sample(
@@ -234,7 +208,7 @@ BIKE_HD Status eval_surface_sample(
 }
 
 template <class Real, class TK, class MapPtr>
-BIKE_HD Status uniform_surface_for_span(
+BIKE_HD Status pneumatic_uniform_surface_for_span(
     MapPtr map,
     Real x_min_m,
     Real x_max_m,

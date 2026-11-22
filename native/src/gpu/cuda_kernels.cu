@@ -4,6 +4,11 @@
 #include "batch_step.hpp"
 #include "sp3_autonomous_step.hpp"
 #include "sp4_closed_loop_step.hpp"
+#include "../physics_core/tyre_pneumatic_model.hpp"
+#include "../physics_core/cruise.hpp"
+#include "../physics_core/ride_program.hpp"
+#include "../physics_core/energy_ledger.hpp"
+#include "../physics_core/spindle_m0.hpp"
 #include "cuda_kernels_abi.hpp"
 
 #include <cmath>

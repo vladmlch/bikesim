@@ -58,6 +58,7 @@ std::string build_msl_source(
         "gpu_toolkit.hpp",
         "tyre_types.hpp",
         "tyre_contact.hpp",
+        "tyre_tabulated.hpp",
         "tyre_compliant.hpp"
     };
     if (include_distributed) {

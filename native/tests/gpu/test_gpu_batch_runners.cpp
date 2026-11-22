@@ -553,6 +553,86 @@ void test_metal_shader_and_buffer_reuse() {
         m_welded, welded_idx, make_default_distributed_tire_config(64), "distributed_2d_reference");
 }
 
+[[gnu::noinline]] void test_metal_hybrid_sweep_bounds_checks(
+    const bike::gpu::GpuWorldConfig &cfg
+) {
+    using namespace bike::gpu;
+    using namespace bike::physics_core;
+
+    const fs::path welded_xml = find_repo_file(kRelWeldedPath);
+    require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
+    const ModelPtr m_welded = load_xml(welded_xml);
+    seed_flat_welded_road(m_welded.get());
+    const TempWeldedAssetDir tmp(welded_xml, m_welded.get(), "mtl_bounds");
+    const std::string xml_str = tmp.xml_copy.string();
+    const GpuModelIndices w_idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
+
+    std::vector<double> qp0, qv0;
+    DataPtr d_w{nullptr, &mj_deleteData};
+    build_welded_initial_state(m_welded.get(), w_idx, qp0, qv0, d_w);
+    const int f_geom = find_wheel_contact_geom(m_welded.get(), w_idx.front_wheel_body, "front_contact", "geom_front_contact");
+    const int r_geom = find_wheel_contact_geom(m_welded.get(), w_idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
+    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
+        f_geom, r_geom, w_idx.front_wheel_body, w_idx.rear_wheel_body));
+    const HostPackedTerrain w_terrain = pack_upload_bundle_terrain(*bundle);
+
+    std::vector<float> out_fork(2, 0.0f);
+    std::vector<float> out_shock(2, 0.0f);
+    std::vector<float> out_rx(2, 0.0f);
+    int all_fin = 0;
+    double elapsed = 0.0;
+
+    require(bike_metal_run_hybrid_sweep(
+                xml_str.c_str(), 0, 2, 1, &w_idx, nullptr, nullptr, nullptr, nullptr,
+                &cfg, 0, qp0.data(), qv0.data(),
+                out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+            "metal hybrid sweep rejects nworld <= 0");
+    {
+        GpuModelIndices bad_idx = w_idx;
+        bad_idx.nq = w_idx.nq - 1;
+        require(bike_metal_run_hybrid_sweep(
+                    xml_str.c_str(), 1, 2, 1, &bad_idx, nullptr, nullptr, nullptr, nullptr,
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "metal hybrid sweep rejects idx.nq != m->nq");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        const std::span bw(bad_tm->wheels);
+        const std::span bj(bw[0].chain.joints);
+        bj[0].joint_id = bad_tm->njnt;
+        require(bike_metal_run_hybrid_sweep(
+                    xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
+                    w_terrain.f32.data(), w_terrain.i32.data(),
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "metal hybrid sweep rejects joint_id >= njnt");
+    }
+    {
+        const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
+        bad_tm->backend = TyreBackendKind::distributed_2d_reference;
+        bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
+        require(bike_metal_run_hybrid_sweep(
+                    xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
+                    w_terrain.f32.data(), w_terrain.i32.data(),
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "metal hybrid sweep rejects station_count > 128");
+    }
+    {
+        auto bad_f32 = w_terrain.f32;
+        bad_f32[to_index(w_terrain.desc.px_offset + 5)] =
+            bad_f32[to_index(w_terrain.desc.px_offset + 4)];
+        require(bike_metal_run_hybrid_sweep(
+                    xml_str.c_str(), 1, 2, 1, &w_idx, &bundle->gpu_model, &w_terrain.desc,
+                    bad_f32.data(), w_terrain.i32.data(),
+                    &cfg, 0, qp0.data(), qv0.data(),
+                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
+                "metal hybrid sweep rejects non-monotonic px");
+    }
+}
+
 void test_metal_launch_argument_validation() {
     using namespace bike::gpu;
     using namespace bike::physics_core;
@@ -689,80 +769,7 @@ void test_metal_launch_argument_validation() {
     }
 
     // bike_metal_run_hybrid_sweep negative bounds checks on welded.xml
-    {
-        const fs::path welded_xml = find_repo_file(kRelWeldedPath);
-        require(!welded_xml.empty(), "located tests/fixtures/model/welded.xml");
-        const ModelPtr m_welded = load_xml(welded_xml);
-        seed_flat_welded_road(m_welded.get());
-        const TempWeldedAssetDir tmp(welded_xml, m_welded.get(), "mtl_bounds");
-        const std::string xml_str = tmp.xml_copy.string();
-        const GpuModelIndices w_idx = bike::gpu::assets::resolve_gpu_model_indices(m_welded.get());
-
-        std::vector<double> qp0, qv0;
-        DataPtr d_w{nullptr, &mj_deleteData};
-        build_welded_initial_state(m_welded.get(), w_idx, qp0, qv0, d_w);
-        const int f_geom = find_wheel_contact_geom(m_welded.get(), w_idx.front_wheel_body, "front_contact", "geom_front_contact");
-        const int r_geom = find_wheel_contact_geom(m_welded.get(), w_idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
-        const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
-            m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
-            f_geom, r_geom, w_idx.front_wheel_body, w_idx.rear_wheel_body));
-        const HostPackedTerrain w_terrain = pack_upload_bundle_terrain(*bundle);
-
-        std::vector<float> out_fork(2, 0.0f);
-        std::vector<float> out_shock(2, 0.0f);
-        std::vector<float> out_rx(2, 0.0f);
-        int all_fin = 0;
-        double elapsed = 0.0;
-
-        require(bike_metal_run_hybrid_sweep(
-                    xml_str.c_str(), 0, 2, 1, &w_idx, nullptr, nullptr, nullptr, nullptr,
-                    &cfg, 0, qp0.data(), qv0.data(),
-                    out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
-                "metal hybrid sweep rejects nworld <= 0");
-        {
-            GpuModelIndices bad_idx = w_idx;
-            bad_idx.nq = w_idx.nq - 1;
-            require(bike_metal_run_hybrid_sweep(
-                        xml_str.c_str(), 1, 2, 1, &bad_idx, nullptr, nullptr, nullptr, nullptr,
-                        &cfg, 0, qp0.data(), qv0.data(),
-                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
-                    "metal hybrid sweep rejects idx.nq != m->nq");
-        }
-        {
-            const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
-            const std::span bw(bad_tm->wheels);
-            const std::span bj(bw[0].chain.joints);
-            bj[0].joint_id = bad_tm->njnt;
-            require(bike_metal_run_hybrid_sweep(
-                        xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
-                        w_terrain.f32.data(), w_terrain.i32.data(),
-                        &cfg, 0, qp0.data(), qv0.data(),
-                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
-                    "metal hybrid sweep rejects joint_id >= njnt");
-        }
-        {
-            const auto bad_tm = std::make_unique<GpuTyreModel>(bundle->gpu_model);
-            bad_tm->backend = TyreBackendKind::distributed_2d_reference;
-            bad_tm->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
-            require(bike_metal_run_hybrid_sweep(
-                        xml_str.c_str(), 1, 2, 1, &w_idx, bad_tm.get(), &w_terrain.desc,
-                        w_terrain.f32.data(), w_terrain.i32.data(),
-                        &cfg, 0, qp0.data(), qv0.data(),
-                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
-                    "metal hybrid sweep rejects station_count > 128");
-        }
-        {
-            auto bad_f32 = w_terrain.f32;
-            bad_f32[to_index(w_terrain.desc.px_offset + 5)] =
-                bad_f32[to_index(w_terrain.desc.px_offset + 4)];
-            require(bike_metal_run_hybrid_sweep(
-                        xml_str.c_str(), 1, 2, 1, &w_idx, &bundle->gpu_model, &w_terrain.desc,
-                        bad_f32.data(), w_terrain.i32.data(),
-                        &cfg, 0, qp0.data(), qv0.data(),
-                        out_fork.data(), out_shock.data(), out_rx.data(), &all_fin, &elapsed) != 0,
-                    "metal hybrid sweep rejects non-monotonic px");
-        }
-    }
+    test_metal_hybrid_sweep_bounds_checks(cfg);
 }
 void test_metal_single_world_stride0_dual_tendon() {
     using namespace bike::gpu;

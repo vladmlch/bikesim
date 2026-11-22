@@ -1800,13 +1800,10 @@ template <class Real, class TK, class Trig = SpindlePortableTrig,
           class ParamsPtr, class StatePtr, class ScratchPtr,
           class PtrQpos, class PtrQvel, class PtrBias,
           class PtrXmat, class PtrPos, class PtrAnchor, class PtrAxis,
-          class PtrSitePos, class PtrSubtreeCom, class PtrSubtreeMass,
-          class PtrRowAdr, class PtrRowNnz, class PtrColInd, class PtrM,
-          class PtrCtrl>
-BIKE_HD void spindle_m2k2_pass0_init_and_base(
+          class PtrSitePos, class PtrSubtreeCom, class PtrSubtreeMass>
+BIKE_HD void spindle_populate_step_scratch_invariants(
     ParamsPtr params,
     SpindleCommand<Real> cmd,
-    i32 step_index,
     PtrQpos qpos,
     PtrQvel qvel,
     PtrBias qfrc_bias,
@@ -1817,61 +1814,9 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
     PtrSitePos site_xpos,
     PtrSubtreeCom subtree_com,
     PtrSubtreeMass body_subtreemass,
-    i32 qM_row_stride,
-    PtrRowAdr M_rowadr,
-    PtrRowNnz M_rownnz,
-    PtrColInd M_colind,
-    PtrM d_M_or_qM,
     StatePtr state,
-    ScratchPtr scratch,
-    PtrCtrl ctrl
+    ScratchPtr scratch
 ) noexcept {
-    (void)step_index;
-    scratch->active_newton = 0;
-    scratch->converged = 1;
-    scratch->perturbed0 = 0;
-    scratch->perturbed1 = 0;
-    scratch->adaptive_mode = 0;
-    if (!validate_spindle_m2k2_params(params)) {
-        return;
-    }
-    const u8 cmd_en = (cmd.enabled != 0 && state->enabled != 0) ? 1u : 0u;
-    state->command_enabled = cmd_en;
-    scratch->command_enabled = cmd_en;
-    scratch->advance = cmd.advance;
-    scratch->steady_state = cmd.steady_state;
-
-    if (cmd_en == 0) {
-        if (cmd.advance != 0) {
-            state->coast_hold_nm = BIKE_REAL(Real, 0.0);
-            for (i32 i = 0; i < kNumSpindleJoints; ++i) {
-                state->held_torques[i] = BIKE_REAL(Real, 0.0);
-            }
-            state->has_held_torques = 1;
-            state->has_prev_ps = 0;
-            state->prev_ps = PressStateCore<Real>{};
-        }
-        for (i32 i = 0; i < kNumSpindleJoints; ++i) {
-            const i32 aid = params->joint_actuator_id[i];
-            if (aid >= 0) {
-                ctrl[aid] = BIKE_REAL(Real, 0.0);
-            }
-        }
-        return;
-    }
-
-    const i32 period = (params->control_period_steps > 0) ? params->control_period_steps : 1;
-    const u8 is_control_tick =
-        (cmd.advance == 0 || cmd.steady_state != 0 || state->has_held_torques == 0 ||
-         (step_index % period == 0))
-            ? 1u
-            : 0u;
-    if (is_control_tick == 0) {
-        spindle_m2k2_write_held_ctrl<Real, TK, Trig>(
-            params, state, qpos, qvel, cmd_en, ctrl);
-        return;
-    }
-
     // Populate step scratch invariants from current state
     const i32 fb9 = params->frame_body * 9;
     const i32 pb9 = params->pelvis_body * 9;
@@ -2085,6 +2030,88 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
     scratch->weld_crank_torque_nm = cmd.weld_crank_torque_nm;
     scratch->has_weld_crank_torque = cmd.has_weld_crank_torque;
     scratch->crank_reposition = cmd.crank_reposition;
+}
+
+template <class Real, class TK, class Trig = SpindlePortableTrig,
+          class ParamsPtr, class StatePtr, class ScratchPtr,
+          class PtrQpos, class PtrQvel, class PtrBias,
+          class PtrXmat, class PtrPos, class PtrAnchor, class PtrAxis,
+          class PtrSitePos, class PtrSubtreeCom, class PtrSubtreeMass,
+          class PtrRowAdr, class PtrRowNnz, class PtrColInd, class PtrM,
+          class PtrCtrl>
+BIKE_HD void spindle_m2k2_pass0_init_and_base(
+    ParamsPtr params,
+    SpindleCommand<Real> cmd,
+    i32 step_index,
+    PtrQpos qpos,
+    PtrQvel qvel,
+    PtrBias qfrc_bias,
+    PtrXmat body_xmat,
+    PtrPos body_xpos,
+    PtrAnchor jnt_xanchor,
+    PtrAxis jnt_xaxis,
+    PtrSitePos site_xpos,
+    PtrSubtreeCom subtree_com,
+    PtrSubtreeMass body_subtreemass,
+    i32 qM_row_stride,
+    PtrRowAdr M_rowadr,
+    PtrRowNnz M_rownnz,
+    PtrColInd M_colind,
+    PtrM d_M_or_qM,
+    StatePtr state,
+    ScratchPtr scratch,
+    PtrCtrl ctrl
+) noexcept {
+    (void)step_index;
+    scratch->active_newton = 0;
+    scratch->converged = 1;
+    scratch->perturbed0 = 0;
+    scratch->perturbed1 = 0;
+    scratch->adaptive_mode = 0;
+    if (!validate_spindle_m2k2_params(params)) {
+        return;
+    }
+    const u8 cmd_en = (cmd.enabled != 0 && state->enabled != 0) ? 1u : 0u;
+    state->command_enabled = cmd_en;
+    scratch->command_enabled = cmd_en;
+    scratch->advance = cmd.advance;
+    scratch->steady_state = cmd.steady_state;
+
+    if (cmd_en == 0) {
+        if (cmd.advance != 0) {
+            state->coast_hold_nm = BIKE_REAL(Real, 0.0);
+            for (i32 i = 0; i < kNumSpindleJoints; ++i) {
+                state->held_torques[i] = BIKE_REAL(Real, 0.0);
+            }
+            state->has_held_torques = 1;
+            state->has_prev_ps = 0;
+            state->prev_ps = PressStateCore<Real>{};
+        }
+        for (i32 i = 0; i < kNumSpindleJoints; ++i) {
+            const i32 aid = params->joint_actuator_id[i];
+            if (aid >= 0) {
+                ctrl[aid] = BIKE_REAL(Real, 0.0);
+            }
+        }
+        return;
+    }
+
+    const i32 period = (params->control_period_steps > 0) ? params->control_period_steps : 1;
+    const u8 is_control_tick =
+        (cmd.advance == 0 || cmd.steady_state != 0 || state->has_held_torques == 0 ||
+         (step_index % period == 0))
+            ? 1u
+            : 0u;
+    if (is_control_tick == 0) {
+        spindle_m2k2_write_held_ctrl<Real, TK, Trig>(
+            params, state, qpos, qvel, cmd_en, ctrl);
+        return;
+    }
+
+    spindle_populate_step_scratch_invariants<Real, TK, Trig>(
+        params, cmd, qpos, qvel, qfrc_bias,
+        body_xmat, body_xpos, jnt_xanchor, jnt_xaxis,
+        site_xpos, subtree_com, body_subtreemass, state, scratch);
 
     const PressStateCore<Real> ps0 =
         (state->has_prev_ps != 0 && cmd.steady_state == 0 && state->enabled != 0)

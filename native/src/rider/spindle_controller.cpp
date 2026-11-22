@@ -23,6 +23,9 @@
 #include "../model_access.hpp"
 #include "../numeric_sincos.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/spindle_m2k2.hpp"
+#include "../physics_core/spindle_m2k2_rider_bridge.hpp"
 #include "spindle_linalg.hpp"
 
 namespace rider {
@@ -248,7 +251,39 @@ void validate_planar_support(const mjModel *m, const mjData *d,
     return id;
 }
 
+struct SpindleCpuExactTrig {
+    static double flush_subnorm(double x) noexcept { return x; }
+    template <class Real, class TK>
+    static Real sin_val(Real x) noexcept {
+        return static_cast<Real>(std::sin(static_cast<double>(x)));
+    }
+    template <class Real, class TK>
+    static Real cos_val(Real x) noexcept {
+        return static_cast<Real>(std::cos(static_cast<double>(x)));
+    }
+    template <class Real, class TK>
+    static Real atan_val(Real x) noexcept {
+        return static_cast<Real>(std::atan(static_cast<double>(x)));
+    }
+    template <class Real, class TK>
+    static Real atan2_val(Real y, Real x) noexcept {
+        return static_cast<Real>(
+            std::atan2(static_cast<double>(y), static_cast<double>(x)));
+    }
+    template <class Real, class TK>
+    static Real acos_val(Real x) noexcept {
+        return static_cast<Real>(
+            std::acos(std::clamp(static_cast<double>(x), -1.0, 1.0)));
+    }
+};
+
 } // namespace
+
+struct SpindleController::M2K2SolverContext {
+    bike::physics_core::SpindleM2K2Params<double> params{};
+    bike::physics_core::SpindleM2K2State<double> state{};
+    bike::physics_core::SpindleM2K2StepScratch<double> scratch{};
+};
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror lean_limit.py
 double lean_limit_rad(
@@ -624,6 +659,31 @@ void SpindleController::resolve_model_layout(
 
 SpindleController::~SpindleController() = default;
 
+void SpindleController::ensure_m2k2_context() {
+    if (legacy_)
+        return;
+    if (!m2k2_) {
+        auto ctx = std::make_unique<M2K2SolverContext>();
+        ctx->params =
+            bike::physics_core::build_spindle_m2k2_params_from_spindle_config<
+                double>(model_, pose_, config_,
+                        bike::physics_core::SpindleUploadTiming{
+                            .crank_length_m = crank_length_m_,
+                            .control_period_steps = 1,
+                        });
+        ctx->state.enabled = enabled_ ? 1u : 0u;
+        ctx->state.command_enabled = command_enabled_ ? 1u : 0u;
+        ctx->state.coast_hold_nm = coast_hold_nm_;
+        m2k2_ = std::move(ctx);
+    }
+}
+
+void SpindleController::set_solver_mode(SpindleSolverMode mode) {
+    if (mode == SpindleSolverMode::m2k2)
+        ensure_m2k2_context();
+    solver_mode_ = mode;
+}
+
 void SpindleController::reset_activation() {
     allocation_memory_ = {};
     coast_hold_nm_ = 0.;
@@ -631,6 +691,12 @@ void SpindleController::reset_activation() {
     sole_goal_diagnostics_.clear();
     pedal_recovery_ = {{"front", PedalRecoveryState{}},
                        {"rear", PedalRecoveryState{}}};
+    if (m2k2_) {
+        m2k2_->state.coast_hold_nm = 0.;
+        m2k2_->state.has_held_torques = 0;
+        m2k2_->state.has_prev_ps = 0;
+        m2k2_->state.prev_ps = {};
+    }
 }
 
 spindle::Vec2 SpindleController::leg_targets(const mjData *data,
@@ -1289,6 +1355,10 @@ SpindleController::compute(mjData *data, const RiderCommand &command,
             commit_state(std::move(previous));
             throw;
         }
+    }
+    if (solver_mode_ == SpindleSolverMode::m2k2) {
+        return compute_m2k2(data, command, advance, steady_state,
+                            weld_crank_torque_nm);
     }
     const std::size_t n = joints_.size();
     command_enabled_ = command.enabled && enabled_;
@@ -2186,6 +2256,161 @@ void SpindleController::commit_state(State &&state) noexcept {
     support_diagnostics_ = std::move(state.support_diagnostics);
     sole_goal_diagnostics_ = std::move(state.sole_goal_diagnostics);
     allocation_memory_ = state.allocation_memory ? std::move(*state.allocation_memory) : bike::rider::AllocationMemory{};
+    if (m2k2_) {
+        m2k2_->state.enabled = enabled_ ? 1u : 0u;
+        m2k2_->state.command_enabled = command_enabled_ ? 1u : 0u;
+        m2k2_->state.coast_hold_nm = coast_hold_nm_;
+        m2k2_->state.has_held_torques = 0;
+        m2k2_->state.has_prev_ps = 0;
+        m2k2_->state.prev_ps = {};
+    }
+}
+
+NamedEntries<double> SpindleController::compute_m2k2(
+    mjData *data, const RiderCommand &command, bool advance,
+    bool steady_state, std::optional<double> weld_crank_torque_nm) {
+    namespace pc = bike::physics_core;
+    ensure_m2k2_context();
+    const std::size_t n = joints_.size();
+    command_enabled_ = command.enabled && enabled_;
+    saturated_ik_.clear();
+    if (!command_enabled_ && advance)
+        reset_activation();
+
+    m2k2_->state.enabled = enabled_ ? 1u : 0u;
+    m2k2_->state.coast_hold_nm = coast_hold_nm_;
+    m2k2_->scratch = pc::SpindleM2K2StepScratch<double>{};
+
+    pc::SpindleCommand<double> cmd{};
+    cmd.mean_crank_torque_nm = command.mean_crank_torque_nm;
+    cmd.torso_lean_rad = command.posture.torso_lean_rad;
+    cmd.crank_target_rate_rad_s = command.crank_target_rate_rad_s;
+    cmd.weld_crank_torque_nm = weld_crank_torque_nm.value_or(0.0);
+    cmd.has_weld_crank_torque = weld_crank_torque_nm.has_value() ? 1u : 0u;
+    cmd.enabled = command.enabled ? 1u : 0u;
+    cmd.crank_reposition = command.crank_reposition ? 1u : 0u;
+    cmd.steady_state = steady_state ? 1u : 0u;
+    cmd.advance = advance ? 1u : 0u;
+
+    mj_copyData(target_data_.get(), model_, data);
+    const auto ctrl_ro = model_access::readonly_buffer(
+        target_data_->ctrl, model_->nu, "ctrl");
+    std::vector<double> ctrl_buf(ctrl_ro.begin(), ctrl_ro.end());
+
+    const auto write_target_ctrl = [&]() {
+        const auto dst = model_access::mutable_buffer(
+            target_data_->ctrl, model_->nu, "ctrl");
+        for (std::size_t a = 0; a < ctrl_buf.size(); ++a)
+            dst[a] = ctrl_buf[a];
+    };
+
+    pc::spindle_m2k2_pass0_init_and_base<double, pc::CpuExactToolkit,
+                                         SpindleCpuExactTrig>(
+        &m2k2_->params, cmd, /*step_index=*/0, target_data_->qpos,
+        target_data_->qvel, target_data_->qfrc_bias, target_data_->xmat,
+        target_data_->xpos, target_data_->xanchor, target_data_->xaxis,
+        target_data_->site_xpos, target_data_->subtree_com,
+        model_->body_subtreemass, model_->M_rowadr, model_->M_rownnz,
+        model_->M_colind, target_data_->M, &m2k2_->state, &m2k2_->scratch,
+        ctrl_buf.data());
+
+    if (m2k2_->scratch.active_newton != 0) {
+        write_target_ctrl();
+        if (target_data_->nefc > 0)
+            mj_forwardSkip(model_, target_data_.get(), mjSTAGE_VEL, 1);
+        else
+            engine::forward(model_, target_data_.get());
+
+        pc::spindle_m2k2_pass1_perturb0<double, pc::CpuExactToolkit,
+                                        SpindleCpuExactTrig>(
+            &m2k2_->params, target_data_->qpos, target_data_->qvel,
+            target_data_->qfrc_bias, target_data_->qacc, model_->M_rowadr,
+            model_->M_rownnz, model_->M_colind, target_data_->M,
+            &m2k2_->state, &m2k2_->scratch, ctrl_buf.data());
+        write_target_ctrl();
+        mj_forwardSkip(model_, target_data_.get(), mjSTAGE_VEL, 1);
+
+        pc::spindle_m2k2_pass2_perturb1<double, pc::CpuExactToolkit,
+                                        SpindleCpuExactTrig>(
+            &m2k2_->params, target_data_->qpos, target_data_->qvel,
+            target_data_->qfrc_bias, target_data_->qacc, model_->M_rowadr,
+            model_->M_rownnz, model_->M_colind, target_data_->M,
+            &m2k2_->state, &m2k2_->scratch, ctrl_buf.data());
+        write_target_ctrl();
+        mj_forwardSkip(model_, target_data_.get(), mjSTAGE_VEL, 1);
+
+        pc::spindle_m2k2_pass3_commit<double, pc::CpuExactToolkit,
+                                      SpindleCpuExactTrig>(
+            &m2k2_->params, target_data_->qpos, target_data_->qvel,
+            target_data_->qfrc_bias, target_data_->qacc, model_->M_rowadr,
+            model_->M_rownnz, model_->M_colind, target_data_->M,
+            &m2k2_->state, &m2k2_->scratch, ctrl_buf.data());
+    }
+
+    command_enabled_ = (m2k2_->state.command_enabled != 0);
+    if (advance)
+        coast_hold_nm_ = m2k2_->state.coast_hold_nm;
+
+    support_diagnostics_ = {
+        .present = true,
+        .stance_front = command_enabled_ && (m2k2_->scratch.shares[0] >= 0.5),
+        .stance_rear = command_enabled_ && (m2k2_->scratch.shares[1] >= 0.5)};
+
+    std::vector<double> excitation(n, 0.);
+    for (std::size_t i = 0; i < n; ++i) {
+        const int aid = joints_[i].actuator_id;
+        if (aid >= 0 && static_cast<std::size_t>(aid) < ctrl_buf.size())
+            excitation[i] = ctrl_buf[static_cast<std::size_t>(aid)];
+    }
+
+    const auto qvel = model_access::readonly_buffer(
+        data->qvel, model_->nv, "qvel");
+    std::vector<double> positive_terms(n, 0.);
+    last_terms_.clear();
+    effort_diagnostics_ = {};
+    effort_diagnostics_.present = true;
+    joint_torques_nm_.clear();
+    joint_capacity_nm_.clear();
+    NamedEntries<double> out;
+    for (std::size_t i = 0; i < n; ++i) {
+        const auto &name = joints_[i].name;
+        const bool upper_joint = !name.starts_with("rider_hip_") &&
+                                 !name.starts_with("rider_knee_");
+        const double val = excitation[i];
+        const double speed = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
+        positive_terms[i] = std::max(val * speed, 0.);
+
+        JointTerms terms;
+        terms.requested_nm = val;
+        terms.command_nm = val;
+        terms.posture_nm = upper_joint ? val : 0.;
+        terms.pedaling_nm = upper_joint ? 0. : val;
+        terms.saturated = false;
+        terms.active_request_nm = val;
+        terms.active_delivered_nm = val;
+        last_terms_.emplace_back(name, terms);
+
+        effort_diagnostics_.active_request_nm.emplace_back(name, val);
+        effort_diagnostics_.active_delivered_nm.emplace_back(name, val);
+        joint_torques_nm_.emplace_back(name, val);
+        joint_capacity_nm_.emplace_back(
+            name, directional_limit(name, data, val >= 0. ? 1. : -1.));
+        out.emplace_back(name, val);
+    }
+    effort_diagnostics_.positive_power_w = numeric::numpy_sum(positive_terms);
+    effort_diagnostics_.activation_saturated = false;
+    effort_diagnostics_.budget_exceeded = false;
+    effort_diagnostics_.positive_power_limit_w =
+        config_.delivered_positive_budget_w();
+    effort_diagnostics_.observation = "incoming_request";
+
+    allocation_diagnostics_ = {.present = true,
+                               .invalid_controller = false,
+                               .crank_task_nm = 0.,
+                               .crank_task_shortfall_nm = 0.,
+                               .solution_excitation_nm = excitation,
+                               .legacy = std::nullopt};
+    return out;
 }
 
 } // namespace rider

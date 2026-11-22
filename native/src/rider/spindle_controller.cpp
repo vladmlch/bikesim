@@ -2350,19 +2350,39 @@ NamedEntries<double> SpindleController::compute_m2k2(
     command_enabled_ = (m2k2_->state.command_enabled != 0);
     if (advance)
         coast_hold_nm_ = m2k2_->state.coast_hold_nm;
+    if (command_enabled_) {
+        named_set(saturated_ik_, "torso",
+                  m2k2_->scratch.torso_saturated != 0);
+        named_set(saturated_ik_, "arms",
+                  m2k2_->scratch.arms_saturated != 0);
+    }
 
     support_diagnostics_ = {
         .present = true,
         .stance_front = command_enabled_ && (m2k2_->scratch.shares[0] >= 0.5),
         .stance_rear = command_enabled_ && (m2k2_->scratch.shares[1] >= 0.5)};
 
+    std::vector<double> requested(n, 0.);
     std::vector<double> excitation(n, 0.);
+    std::vector<double> delivered(n, 0.);
+    const std::span param_aids{m2k2_->params.joint_actuator_id};
+    const std::span scratch_req{m2k2_->scratch.last_req};
+    const std::span scratch_exc{m2k2_->scratch.last_exc};
     for (std::size_t i = 0; i < n; ++i) {
         const int aid = joints_[i].actuator_id;
         if (aid >= 0 && static_cast<std::size_t>(aid) < ctrl_buf.size())
-            excitation[i] = ctrl_buf[static_cast<std::size_t>(aid)];
+            delivered[i] = ctrl_buf[static_cast<std::size_t>(aid)];
+        for (std::size_t k = 0; k < param_aids.size(); ++k) {
+            if (param_aids[k] == aid) {
+                requested[i] = scratch_req[k];
+                excitation[i] = scratch_exc[k];
+                break;
+            }
+        }
     }
 
+    const auto qpos = model_access::readonly_buffer(
+        data->qpos, model_->nq, "qpos");
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model_->nv, "qvel");
     std::vector<double> positive_terms(n, 0.);
@@ -2376,38 +2396,64 @@ NamedEntries<double> SpindleController::compute_m2k2(
         const auto &name = joints_[i].name;
         const bool upper_joint = !name.starts_with("rider_hip_") &&
                                  !name.starts_with("rider_knee_");
-        const double val = excitation[i];
+        const double req_val = requested[i];
+        const double exc_val = excitation[i];
+        const double del_val = delivered[i];
         const double speed = qvel[static_cast<std::size_t>(joints_[i].dof_adr)];
-        positive_terms[i] = std::max(val * speed, 0.);
+        positive_terms[i] = std::max(del_val * speed, 0.);
 
         JointTerms terms;
-        terms.requested_nm = val;
-        terms.command_nm = val;
-        terms.posture_nm = upper_joint ? val : 0.;
-        terms.pedaling_nm = upper_joint ? 0. : val;
-        terms.saturated = false;
-        terms.active_request_nm = val;
-        terms.active_delivered_nm = val;
+        terms.requested_nm = req_val;
+        terms.command_nm = del_val;
+        terms.posture_nm = upper_joint ? req_val : 0.;
+        terms.pedaling_nm = upper_joint ? 0. : req_val;
+        terms.saturated = !isclose(exc_val, req_val, 1e-9, 1e-9);
+        terms.active_request_nm = exc_val;
+        terms.active_delivered_nm = del_val;
         last_terms_.emplace_back(name, terms);
 
-        effort_diagnostics_.active_request_nm.emplace_back(name, val);
-        effort_diagnostics_.active_delivered_nm.emplace_back(name, val);
-        joint_torques_nm_.emplace_back(name, val);
+        effort_diagnostics_.active_request_nm.emplace_back(name, exc_val);
+        effort_diagnostics_.active_delivered_nm.emplace_back(name, del_val);
+        joint_torques_nm_.emplace_back(name, del_val);
         joint_capacity_nm_.emplace_back(
-            name, directional_limit(name, data, val >= 0. ? 1. : -1.));
-        out.emplace_back(name, val);
+            name, directional_limit(name, data, del_val >= 0. ? 1. : -1.));
+        out.emplace_back(name, del_val);
     }
+    std::vector<std::string> limited_names;
+    if (config_.active_positive_power_limit_w.has_value() || config_.has_strength)
+        limited_names = strength_limited(excitation, qpos, qvel).second;
+    bool activation_saturated = false;
+    for (std::size_t i = 0; i < n && !activation_saturated; ++i)
+        activation_saturated = !isclose(delivered[i], excitation[i], 1e-10, 1e-10);
     effort_diagnostics_.positive_power_w = numeric::numpy_sum(positive_terms);
-    effort_diagnostics_.activation_saturated = false;
+    effort_diagnostics_.activation_saturated = activation_saturated;
+    effort_diagnostics_.strength_limited = std::move(limited_names);
     effort_diagnostics_.budget_exceeded = false;
     effort_diagnostics_.positive_power_limit_w =
         config_.delivered_positive_budget_w();
     effort_diagnostics_.observation = "incoming_request";
 
+    numeric::PythonSum projected_acc;
+    const std::span has_jac{m2k2_->scratch.has_jacobian};
+    const std::span jacs{m2k2_->scratch.jacobians};
+    for (const auto side : kSides) {
+        const auto s = side_index(side);
+        if (has_jac[s] == 0)
+            continue;
+        const std::span jac_s{jacs[s]};
+        projected_acc.add(
+            excitation[leg_joint_index_[s][0]] * jac_s[0]);
+        projected_acc.add(
+            excitation[leg_joint_index_[s][1]] * jac_s[1]);
+    }
+    const double projected = projected_acc.total();
+    const double crank_task_nm =
+        command_enabled_ ? m2k2_->scratch.crank_task_nm : 0.;
     allocation_diagnostics_ = {.present = true,
                                .invalid_controller = false,
-                               .crank_task_nm = 0.,
-                               .crank_task_shortfall_nm = 0.,
+                               .crank_task_nm = crank_task_nm,
+                               .crank_task_shortfall_nm =
+                                   crank_task_nm - projected,
                                .solution_excitation_nm = excitation,
                                .legacy = std::nullopt};
     return out;

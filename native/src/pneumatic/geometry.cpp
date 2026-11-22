@@ -48,45 +48,8 @@
 #include <stdexcept>
 
 #include "../numeric_sincos.hpp"
-
-namespace {
-    constexpr double kInf = std::numeric_limits<double>::infinity();
-
-    // _cross (geometry.py:143-144): ax*bz - az*bx — one multiply, one
-    // multiply, one subtract per element under -ffp-contract=off.
-    constexpr double cross2(double ax, double az, double bx, double bz) {
-        return ax * bz - az * bx;
-    }
-
-    // np.searchsorted(phi, v, side='right') (geometry.py:187) over the
-    // lazily-evaluated window angles — the first index j in [0, count)
-    // with phi[j] > v, where phi[j] = atan2(px[j] - cx, cz - pz[j]) at
-    // global profile index base + j. The window is monotone-increasing
-    // here — the caller only reaches this after verifying all(diff > 0) —
-    // so the partition point is unique and well-defined.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the oracle's slices
-    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the oracle's slices
-    std::size_t phi_upper_bound(std::span<const double> xs,
-                                std::span<const double> zs,
-                                std::size_t base, std::size_t count,
-                                double cx, double cz, double v) {
-        // NOLINTEND(bugprone-easily-swappable-parameters)
-        std::size_t first = 0, len = count;
-        while (len > 0) {
-            const std::size_t step = len / 2;
-            const std::size_t mid = first + step;
-            const double phi_mid =
-                    std::atan2(xs[base + mid] - cx, cz - zs[base + mid]);
-            if (v < phi_mid) {
-                len = step;
-            } else {
-                first = mid + 1;
-                len -= step + 1;
-            }
-        }
-        return first;
-    }
-} // namespace
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_pneumatic_geometry.hpp"
 
 namespace biketyre {
 
@@ -138,151 +101,38 @@ namespace biketyre {
         const std::span<const double> ux = ring.ux();
         const std::span<const double> uz = ring.uz();
 
-        bool coverage = false;
-        bool airborne = false;
-
         // :163 — index_range(centre_x - R, centre_x + R): one subtract and
         // one add at this call's entry.
         const auto [lo, hi] = road.index_range(centre_x_m - radius_m,
                                                centre_x_m + radius_m);
-        if (hi - lo < 2) {
-            // :164-165 — narrow-window early-out: all rays inf, airborne.
-            std::ranges::fill(out.r_m, kInf);
-            airborne = true;
-        } else {
-            const std::size_t glo = static_cast<std::size_t>(lo);
-            const std::size_t w = static_cast<std::size_t>(hi - lo);
-            const double r2 = radius_m * radius_m;
-            // :169-173 — the inside-circle mask over the window; the
-            // oracle's flatnonzero reduces to the first/last inside
-            // indices, which is all the window slice needs.
-            std::size_t first = w, last = 0;
-            for (std::size_t k = 0; k < w; ++k) {
-                const std::size_t g = glo + k;
-                const double dxs = xs[g] - centre_x_m;
-                const double dzs = centre_z_m - zs[g];
-                if (dxs * dxs + dzs * dzs < r2) {
-                    if (first == w)
-                        first = k;
-                    last = k;
-                }
-            }
-            if (first == w) {
-                // :172-173 — no sample inside the circle: airborne.
-                std::ranges::fill(out.r_m, kInf);
-                airborne = true;
-            } else {
-                // :176-179 — the window padded one sample either side and
-                // its polar angles from the hub. `a`/`b` are relative to
-                // the window start `lo` exactly like the oracle's slice.
-                const std::size_t a = first > 0 ? first - 1 : 0;
-                const std::size_t b = std::min(last + 2, w);
-                const std::size_t base = glo + a;
-                const std::size_t win = b - a;
-                // :181-184 — coverage: an inside sample outside the ray
-                // coverage by more than the slack, or at/above the hub.
-                const double cov_limit =
-                        ring.half_angle_rad() + kCoverageSlackRad;
-                bool monotone = true;
-                double prev_phi = 0.0;
-                for (std::size_t j = 0; j < win; ++j) {
-                    const std::size_t g = base + j;
-                    const double px = xs[g], pz = zs[g];
-                    const double phi = std::atan2(px - centre_x_m,
-                                                  centre_z_m - pz);
-                    const double dxs = px - centre_x_m;
-                    const double dzs = centre_z_m - pz;
-                    if (dxs * dxs + dzs * dzs < r2) {
-                        if (std::fabs(phi) > cov_limit)
-                            coverage = true;
-                        if (pz >= centre_z_m)
-                            coverage = true;
-                    }
-                    // :186 — np.all(np.diff(phi) > 0.0) as a streaming
-                    // adjacent-difference check over the window.
-                    if (j > 0 && !(phi - prev_phi > 0.0))
-                        monotone = false;
-                    prev_phi = phi;
-                }
-                if (win >= 2 && monotone) {
-                    // :187-192 — the monotonic fast path: each ray's
-                    // bracketing segment comes from searchsorted 'right',
-                    // then the exact line intersection distance.
-                    for (std::size_t i = 0; i < n; ++i) {
-                        const std::size_t ub = phi_upper_bound(
-                            xs, zs, base, win, centre_x_m, centre_z_m,
-                            ring.theta_rad()[i]);
-                        const std::ptrdiff_t j =
-                            static_cast<std::ptrdiff_t>(ub) - 1;
-                        const bool valid =
-                            j >= 0 &&
-                            j < static_cast<std::ptrdiff_t>(win) - 1;
-                        // np.clip(j, 0, px.size - 2): valid rows read the
-                        // bracket, invalid rows are masked afterwards —
-                        // the clipped segment still gets evaluated like
-                        // the oracle's vectorized _segment_distance.
-                        const std::size_t jj = static_cast<std::size_t>(
-                            std::clamp(j, std::ptrdiff_t{0},
-                                       static_cast<std::ptrdiff_t>(win) -
-                                           2));
-                        const std::size_t g = base + jj;
-                        const double x1 = xs[g], z1 = zs[g];
-                        const double dx = xs[g + 1] - x1;
-                        const double dz = zs[g + 1] - z1;
-                        const double denom = cross2(ux[i], uz[i], dx, dz);
-                        const double s =
-                            cross2(x1 - centre_x_m, z1 - centre_z_m, dx,
-                                   dz) /
-                            denom;
-                        // where(|denom| > 1e-15, s, inf) composed with
-                        // where(valid & s > 0, s, inf): a degenerate pair
-                        // contributes inf either way.
-                        out.r_m[i] =
-                            valid && std::fabs(denom) > 1e-15 && s > 0.0
-                                ? s
-                                : kInf;
-                    }
-                } else {
-                    // :194 → _brute_force (:208-220): the exact first
-                    // crossing of every ray with every window segment.
-                    const std::size_t segs = win - 1;
-                    for (std::size_t i = 0; i < n; ++i) {
-                        double best = kInf;
-                        for (std::size_t k = 0; k < segs; ++k) {
-                            const std::size_t g = base + k;
-                            const double x1 = xs[g], z1 = zs[g];
-                            const double dx = xs[g + 1] - x1;
-                            const double dz = zs[g + 1] - z1;
-                            const double denom =
-                                cross2(ux[i], uz[i], dx, dz);
-                            const double wx = x1 - centre_x_m;
-                            const double wz = z1 - centre_z_m;
-                            const double s =
-                                cross2(wx, wz, dx, dz) / denom;
-                            const double t =
-                                cross2(wx, wz, ux[i], uz[i]) / denom;
-                            // ok = |denom|>1e-15 & s>0 & 0<=t<=1; the
-                            // masked s.min(axis=1) is order-free.
-                            if (std::fabs(denom) > 1e-15 && s > 0.0 &&
-                                t >= 0.0 && t <= 1.0 && s < best)
-                                best = s;
-                        }
-                        out.r_m[i] = best;
-                    }
-                }
-            }
-        }
-        // _hits (:223-234) — elementwise deflection and ray reach; the
-        // hub + R.u road point for unloaded rays.
-        for (std::size_t i = 0; i < n; ++i) {
-            const double r = out.r_m[i];
-            const double reach = std::min(r, radius_m);
-            out.delta_m[i] = std::max(radius_m - r, 0.0);
-            out.road_x_m[i] = centre_x_m + reach * ux[i];
-            out.road_z_m[i] = centre_z_m + reach * uz[i];
-        }
-        out.coverage_event = coverage;
-        out.airborne = airborne;
+        bike::physics_core::u8 coverage = 0;
+        bike::physics_core::u8 airborne = 0;
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::pneumatic_intersect_window_arrays<
+            double, bike::physics_core::CpuExactToolkit>(
+                static_cast<bike::physics_core::i32>(n),
+                ring.half_angle_rad(),
+                ring.theta_rad().data(),
+                ux.data(),
+                uz.data(),
+                centre_x_m,
+                centre_z_m,
+                radius_m,
+                xs.data(),
+                zs.data(),
+                static_cast<bike::physics_core::i32>(lo),
+                static_cast<bike::physics_core::i32>(hi),
+                out.r_m.data(),
+                out.delta_m.data(),
+                out.road_x_m.data(),
+                out.road_z_m.data(),
+                coverage,
+                airborne,
+                err);
+        if (st != bike::physics_core::Status::ok)
+            throw std::invalid_argument("pneumatic intersect invalid input");
+        out.coverage_event = coverage != 0;
+        out.airborne = airborne != 0;
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror geometry.py:147

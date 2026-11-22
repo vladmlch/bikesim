@@ -336,14 +336,18 @@ lumped brush; the full-ride convergence test checks both tiers on `flat` and `si
 - **Wheelspin** is the rear patch fully sliding with drive torque applied. **Lock-up** is a
   patch fully sliding under brake torque. Both are logged.
 - **Rolling resistance** in `pneumatic` is the hysteresis moment of §3.1, plus the tread-loss
-  term. `RollingResistance` (`Crr·N·r`) is not applied.
+  term and Maxwell relaxation; Stage A also adds the surface's `crr_delta` to the patch
+  rolling coefficient. The shipped pneumatic profile sets external `crr = 0`, so
+  `RollingResistance` (`Crr·N·r`) does not duplicate those tyre losses. A custom profile
+  can still explicitly request a nonzero external coefficient.
 - The traction limit is no longer a fixed `μN`. On `asphalt` at a static rear load of
   610.9 N it peaks near `1.05 · 610.9` ≈ 641 N, or ≈ 224 N·m at the rear wheel's `R_e`, and
   falls to `μ_slide` once the tyre slides. On `loose` (≈ 117 N·m) and `wet` (≈ 107 N·m)
   full drive spins the rear wheel on flat ground. That is intended physics, and it is
   logged, not suppressed (plan D12).
 
-**Aerodynamic drag is not modelled.** At 25 km/h this omits roughly 13 N, about 90 W.
+**Aerodynamic drag is not part of the isolated tyre calibration.** The bicycle runtime
+models it separately via `ResistanceWriter`; it is not a tyre loss.
 
 ---
 

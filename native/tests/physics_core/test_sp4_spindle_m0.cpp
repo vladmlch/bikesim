@@ -845,7 +845,7 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
     static_assert(pc::SpindleM0Options<float>{}.det_eps == 1e-12f);
     static_assert(pc::SpindleM0Options<double>{}.newton_eps == 1e-3);
     static_assert(pc::SpindleM0Options<double>{}.conv_tol == 1e-6);
-    static_assert(pc::SpindleM0Options<double>{}.det_eps == 1e-18);
+    static_assert(pc::SpindleM0Options<double>{}.det_eps == 1e-12);
 
     const auto run_batched_fp32 = [&](std::optional<pc::SpindleM0Options<float>> opts_opt,
                                       std::string_view label) {

@@ -45,7 +45,7 @@ template <class Real>
 struct SpindleM0Options {
     Real newton_eps = BIKE_REAL(Real, 1e-3);
     Real conv_tol = BIKE_REAL(Real, 1e-6);
-    Real det_eps = BIKE_REAL(Real, 1e-18);
+    Real det_eps = BIKE_REAL(Real, 1e-12);
 };
 
 template <>

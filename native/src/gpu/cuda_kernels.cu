@@ -95,6 +95,10 @@ BIKE_GLOBAL void bike_gpu_writers_kernel(
     if (d_terrain_desc == nullptr || d_tyre_model == nullptr) {
         return;
     }
+    if (d_tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic &&
+        d_pneum_scratch == nullptr) {
+        return;
+    }
     const int max_active_tendon_idx = gpu_max_active_tendon_idx(idx);
     if (d_tendon_range != nullptr && max_active_tendon_idx >= 0 &&
         tendon_range_world_stride > 0 &&
@@ -203,6 +207,10 @@ BIKE_GLOBAL void bike_gpu_sp3_pre_solve_kernel(
     const GpuModelIndices idx = (d_idx != nullptr) ? *d_idx : GpuModelIndices{};
     if (!gpu_validate_model_indices(idx, ntendon) ||
         d_terrain_desc == nullptr || d_tyre_model == nullptr || d_world_states == nullptr) {
+        return;
+    }
+    if (d_tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic &&
+        d_pneum_scratch == nullptr) {
         return;
     }
     const long w64 = static_cast<long>(w);
@@ -456,6 +464,10 @@ BIKE_GLOBAL void bike_gpu_sp4_pre_solve_and_pass0_kernel(
     const GpuModelIndices idx = (d_idx != nullptr) ? *d_idx : GpuModelIndices{};
     if (!gpu_validate_model_indices(idx, ntendon) || d_tyre_model == nullptr ||
         d_spindle_params == nullptr) {
+        return;
+    }
+    if (d_tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic &&
+        d_pneum_scratch == nullptr) {
         return;
     }
     const bike::physics_core::GpuTerrainTableDesc terrain_desc = *d_terrain_desc;
@@ -782,6 +794,10 @@ BIKE_GLOBAL void bike_gpu_sp4_m0_pre_solve_and_begin_kernel(
         d_spindle_params == nullptr || d_m0_scratch == nullptr) {
         return;
     }
+    if (d_tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic &&
+        d_pneum_scratch == nullptr) {
+        return;
+    }
     const bike::physics_core::GpuTerrainTableDesc terrain_desc = *d_terrain_desc;
     const GpuSp3Config *cfg_w = &d_sp3_configs[per_world_config ? w : 0];
     const long w64 = static_cast<long>(w);
@@ -1063,6 +1079,7 @@ BIKE_GLOBAL void bike_gpu_sp4_energy_post_step_kernel(
     const float *d_M_or_qM,
     const float *d_qpos,
     const float *d_qvel,
+    const float *d_xpos,
     const float *d_ctrl,
     const float *d_body_mass,
     const float *d_xipos,
@@ -1082,6 +1099,11 @@ BIKE_GLOBAL void bike_gpu_sp4_energy_post_step_kernel(
     if (!gpu_validate_model_indices(idx)) {
         return;
     }
+    if (d_tyre_model != nullptr &&
+        d_tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic &&
+        d_pneum_scratch == nullptr) {
+        return;
+    }
     const bike::physics_core::GpuTerrainTableDesc terrain_desc = *d_terrain_desc;
     const GpuSp3Config *cfg_w = &d_sp3_configs[per_world_config ? w : 0];
     const long w64 = static_cast<long>(w);
@@ -1099,7 +1121,9 @@ BIKE_GLOBAL void bike_gpu_sp4_energy_post_step_kernel(
                       ? (d_efc_J + w64 * static_cast<long>(njmax) * efc_J_row_stride)
                       : nullptr;
     }
+    const float *xpos_w = d_xpos + w64 * idx.nbody * 3;
     const float *xipos_w = d_xipos + w64 * idx.nbody * 3;
+    const float *ctrl_w = (d_ctrl != nullptr) ? (d_ctrl + w64 * idx.nu) : nullptr;
     bike::physics_core::GpuPneumaticStepScratch<float> *pneum_w =
         (d_pneum_scratch != nullptr) ? &d_pneum_scratch[w] : nullptr;
 
@@ -1122,8 +1146,8 @@ BIKE_GLOBAL void bike_gpu_sp4_energy_post_step_kernel(
         d_M_or_qM + w64 * M_world_stride,
         d_qpos + w64 * idx.nq,
         d_qvel + w64 * idx.nv,
-        xipos_w,
-        d_ctrl + w64 * idx.nu,
+        xpos_w,
+        ctrl_w,
         d_body_mass,
         xipos_w,
         d_gravity,
@@ -1228,7 +1252,8 @@ inline int validate_writers_scalars_and_ptrs(
 inline bike::physics_core::GpuPneumaticStepScratch<float> *get_cuda_pneum_scratch(
     int nworld,
     bool is_pneumatic,
-    bool allow_alloc
+    bool allow_alloc,
+    cudaStream_t stream
 ) {
     if (!is_pneumatic || nworld <= 0) {
         return nullptr;
@@ -1242,6 +1267,7 @@ inline bike::physics_core::GpuPneumaticStepScratch<float> *get_cuda_pneum_scratc
             return nullptr;
         }
         if (s_pool != nullptr) {
+            (void)cudaDeviceSynchronize();
             cudaFree(s_pool);
             s_pool = nullptr;
             s_cap = 0;
@@ -1254,23 +1280,35 @@ inline bike::physics_core::GpuPneumaticStepScratch<float> *get_cuda_pneum_scratc
             s_cap = 0;
             return nullptr;
         }
-        (void)cudaMemset(s_pool, 0, bytes);
+        if (cudaMemsetAsync(s_pool, 0, bytes, stream) != cudaSuccess) {
+            cudaFree(s_pool);
+            s_pool = nullptr;
+            s_cap = 0;
+            return nullptr;
+        }
         s_cap = nworld;
     }
     return s_pool;
 }
 
 inline int *ensure_cuda_any_needs_solve() {
-    static std::mutex s_mu;
-    static int *s_flag = nullptr;
-    std::lock_guard<std::mutex> lock(s_mu);
-    if (s_flag == nullptr) {
-        if (cudaMalloc(&s_flag, sizeof(int)) != cudaSuccess) {
-            s_flag = nullptr;
+    struct CudaAnyFlag {
+        int *ptr = nullptr;
+        ~CudaAnyFlag() {
+            if (ptr != nullptr) {
+                cudaFree(ptr);
+                ptr = nullptr;
+            }
+        }
+    };
+    thread_local CudaAnyFlag tl_flag;
+    if (tl_flag.ptr == nullptr) {
+        if (cudaMalloc(&tl_flag.ptr, sizeof(int)) != cudaSuccess) {
+            tl_flag.ptr = nullptr;
             return nullptr;
         }
     }
-    return s_flag;
+    return tl_flag.ptr;
 }
 #else
 inline bike::physics_core::GpuPneumaticStepScratch<float> *ensure_host_pneum_scratch(
@@ -1583,7 +1621,7 @@ int bike_gpu_launch_writers(
     }
     if (capture_status == cudaStreamCaptureStatusActive) {
         bike::physics_core::GpuPneumaticStepScratch<float> *d_pneum =
-            bike::gpu::get_cuda_pneum_scratch(nworld, true, false);
+            bike::gpu::get_cuda_pneum_scratch(nworld, true, false, stream);
         bike::gpu::bike_gpu_writers_kernel<<<grid_size, kBlockSize, 0, stream>>>(
             nworld,
             dt_s,
@@ -1643,7 +1681,8 @@ int bike_gpu_launch_writers(
         bike::gpu::get_cuda_pneum_scratch(
             nworld,
             host_tyre_model.backend == bike::physics_core::TyreBackendKind::pneumatic,
-            true);
+            true,
+            stream);
     if (host_tyre_model.backend == bike::physics_core::TyreBackendKind::pneumatic &&
         d_pneum == nullptr) {
         return -7;
@@ -1977,13 +2016,13 @@ int bike_gpu_launch_sp3_pre_solve(
             return terr_rc;
         }
         if (host_tm.backend == bike::physics_core::TyreBackendKind::pneumatic) {
-            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true);
+            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true, stream);
             if (d_pneum == nullptr) {
                 return -7;
             }
         }
     } else {
-        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false);
+        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false, stream);
     }
     bike::gpu::bike_gpu_sp3_pre_solve_kernel<<<grid_size, kBlockSize, 0, stream>>>(
         nworld, dt_s, d_idx, d_tyre_model, d_terrain_desc, d_terrain_f32, d_terrain_i32,
@@ -2437,13 +2476,13 @@ int bike_gpu_launch_sp4_pre_solve_and_pass0(
             return terr_rc;
         }
         if (host_tm.backend == bike::physics_core::TyreBackendKind::pneumatic) {
-            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true);
+            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true, stream);
             if (d_pneum == nullptr) {
                 return -7;
             }
         }
     } else {
-        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false);
+        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false, stream);
     }
     bike::gpu::bike_gpu_sp4_pre_solve_and_pass0_kernel<<<grid_size, kBlockSize, 0, stream>>>(
         nworld, dt_s, d_idx, d_tyre_model, d_terrain_desc, d_terrain_f32, d_terrain_i32,
@@ -3071,7 +3110,7 @@ int bike_gpu_launch_sp4_m0_pre_solve_and_begin(
     }
     bike::physics_core::GpuPneumaticStepScratch<float> *d_pneum = nullptr;
     if (host_tm.backend == bike::physics_core::TyreBackendKind::pneumatic) {
-        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true);
+        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true, stream);
         if (d_pneum == nullptr) {
             return -7;
         }
@@ -3474,6 +3513,7 @@ int bike_gpu_launch_sp4_energy_post_step(
     const float *d_M_or_qM,
     const float *d_qpos,
     const float *d_qvel,
+    const float *d_xpos,
     const float *d_ctrl,
     const float *d_body_mass,
     const float *d_xipos,
@@ -3489,7 +3529,7 @@ int bike_gpu_launch_sp4_energy_post_step(
         d_idx == nullptr || d_tyre_model == nullptr || d_terrain_desc == nullptr ||
         d_sp3_configs == nullptr || d_spindle_params == nullptr ||
         d_sp3_states == nullptr || d_sp4_states == nullptr || d_world_states == nullptr ||
-        d_M_or_qM == nullptr || d_qpos == nullptr || d_qvel == nullptr ||
+        d_M_or_qM == nullptr || d_qpos == nullptr || d_qvel == nullptr || d_xpos == nullptr ||
         d_body_mass == nullptr || d_xipos == nullptr || d_gravity == nullptr ||
         M_world_stride <= 0 || njmax < 0 || efc_J_row_stride < 0) {
         return -1;
@@ -3533,13 +3573,13 @@ int bike_gpu_launch_sp4_energy_post_step(
             return -5;
         }
         if (host_tm.backend == bike::physics_core::TyreBackendKind::pneumatic) {
-            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true);
+            d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, true, stream);
             if (d_pneum == nullptr) {
                 return -7;
             }
         }
     } else {
-        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false);
+        d_pneum = bike::gpu::get_cuda_pneum_scratch(nworld, true, false, stream);
     }
     constexpr int kBlockSize = 64;
     const int grid_size = (nworld + kBlockSize - 1) / kBlockSize;
@@ -3548,7 +3588,7 @@ int bike_gpu_launch_sp4_energy_post_step(
         d_sp3_configs, per_world_config, d_spindle_params,
         d_sp3_states, d_sp4_states, d_world_states, d_pneum,
         qM_row_stride, M_world_stride, d_M_rowadr, d_M_rownnz, d_M_colind, d_M_or_qM,
-        d_qpos, d_qvel, d_ctrl, d_body_mass, d_xipos, d_gravity,
+        d_qpos, d_qvel, d_xpos, d_ctrl, d_body_mass, d_xipos, d_gravity,
         d_nefc, njmax, efc_J_row_stride, d_efc_type, d_efc_J, d_efc_force);
     if (capture_status == cudaStreamCaptureStatusActive) {
         return 0;
@@ -3591,6 +3631,7 @@ int bike_gpu_launch_sp4_energy_post_step(
                           ? (d_efc_J + w64 * static_cast<long>(njmax) * efc_J_row_stride)
                           : nullptr;
         }
+        const float *xpos_w = d_xpos + w64 * host_idx.nbody * 3;
         const float *xipos_w = d_xipos + w64 * host_idx.nbody * 3;
         const float *ctrl_w = (d_ctrl != nullptr) ? (d_ctrl + w64 * host_idx.nu) : nullptr;
         bike::physics_core::GpuPneumaticStepScratch<float> *pneum_w =
@@ -3602,7 +3643,7 @@ int bike_gpu_launch_sp4_energy_post_step(
                 qM_row_stride, d_M_rowadr, d_M_rownnz, d_M_colind,
                 d_M_or_qM + w64 * M_world_stride,
                 d_qpos + w64 * host_idx.nq, d_qvel + w64 * host_idx.nv,
-                xipos_w, ctrl_w, d_body_mass, xipos_w, d_gravity,
+                xpos_w, ctrl_w, d_body_mass, xipos_w, d_gravity,
                 nefc_w, efc_J_row_stride, efc_type_w, efc_J_w, efc_force_w) !=
             bike::physics_core::Status::ok) {
             return -8;

@@ -548,6 +548,8 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
             for (int k = 0; k < bike::physics_core::kMaxGpuTyreStations; ++k) {
                 tyre_world_st->distributed_wheels[s][k] = bike::physics_core::GpuStationState{};
             }
+            bike::physics_core::init_pneumatic_wheel_state<float>(
+                0, &tyre_world_st->pneumatic_wheels[s]);
         }
     }
 

@@ -37,11 +37,10 @@ foreach(_realtime_gate_track IN ITEMS rough_uphill_savage rough_uphill_extreme)
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:reference.realtime_gate>")
 endforeach()
 bike_add_reference_test(playback_clock ENGINE
-  SOURCES test_playback_clock.cpp LIBRARIES bike_app bike_viewer
+  SOURCES test_playback_clock.cpp LIBRARIES bike_viewer
   LABELS t52 runtime)
 bike_add_reference_test(control_clock ENGINE
-  SOURCES test_control_clock.cpp LIBRARIES bike_app
-  bike_test_initial_state_record LABELS t52 runtime)
+  SOURCES test_control_clock.cpp LIBRARIES bike_test_initial_state_record LABELS t52 runtime)
 bike_add_reference_test(native_static_brake ENGINE
   SOURCES test_native_static_brake.cpp LIBRARIES bike_app LABELS t52 runtime golden)
 # 3.20 T52 batch — brakes, cruise, suspension, clocks. Golden consumers
@@ -50,13 +49,13 @@ bike_add_reference_test(native_static_brake ENGINE
 # The native_suspension/legacy_env bundle left with the legacy damper
 # curve (2026-11-04) — the wire rejects it at decode now.
 bike_add_reference_test(native_cruise ENGINE
-  SOURCES test_native_cruise.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_cruise.cpp LIBRARIES bike_app
   LABELS t52 runtime golden)
 bike_add_reference_test(native_brake_resistance ENGINE
-  SOURCES test_native_brake_resistance.cpp LIBRARIES bike_app bike_golden
+  SOURCES test_native_brake_resistance.cpp LIBRARIES bike_golden
   LABELS t52 runtime golden slow)
 bike_add_reference_test(native_suspension ENGINE
-  SOURCES test_native_suspension.cpp LIBRARIES bike_app bike_golden
+  SOURCES test_native_suspension.cpp LIBRARIES bike_golden
   LABELS t52 runtime golden slow)
 bike_add_reference_test(native_stepper ENGINE
   SOURCES test_native_stepper.cpp LIBRARIES bike_app LABELS t52 runtime golden)
@@ -92,7 +91,7 @@ bike_add_reference_test(native_pneumatic_carcass ENGINE
   SOURCES test_native_pneumatic_carcass.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_brush ENGINE
-  SOURCES test_native_pneumatic_brush.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_pneumatic_brush.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 # 3.12b pneumatic remainder — the direct model API, the wire/projection
 # layer and the writer end-to-end episodes, all on frozen two-platform
@@ -101,12 +100,12 @@ bike_add_reference_test(native_pneumatic_brush ENGINE
 # replays).
 bike_add_reference_test(native_pneumatic_model ENGINE
   SOURCES test_native_pneumatic_model.cpp LIBRARIES bike_app
-  bike_random LABELS t52 tyre golden)
+  LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_wire ENGINE
-  SOURCES test_native_pneumatic_wire.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_pneumatic_wire.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_pneumatic_tire ENGINE
-  SOURCES test_native_pneumatic_tire.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_pneumatic_tire.cpp LIBRARIES
   bike_golden bike_test_initial_state_record LABELS t52 tyre golden slow)
 # 3.13 T52 terrain/tyre batch — the frozen-file surface asserts, the
 # placement-refactor hash pins, the wheel-stand rigs and the portable
@@ -122,17 +121,15 @@ bike_add_reference_test(tyre_road_profile ENGINE
   SOURCES test_tyre_road_profile.cpp LIBRARIES bike_app
   LABELS t52 tyre golden)
 bike_add_reference_test(native_distributed_stands ENGINE
-  SOURCES test_native_distributed_stands.cpp LIBRARIES bike_app
-  bike_validation LABELS t52 tyre slow)
+  SOURCES test_native_distributed_stands.cpp LIBRARIES bike_validation LABELS t52 tyre slow)
 bike_add_reference_test(distributed_tire_reference ENGINE
-  SOURCES test_distributed_tire_reference.cpp LIBRARIES bike_app
-  bike_validation LABELS t52 tyre golden slow)
+  SOURCES test_distributed_tire_reference.cpp LIBRARIES bike_validation LABELS t52 tyre golden slow)
 bike_add_reference_test(alpine_track ENGINE
-  SOURCES test_alpine_track.cpp LIBRARIES bike_app bike_cli
+  SOURCES test_alpine_track.cpp LIBRARIES bike_cli
   LABELS t52 terrain slow)
 bike_add_reference_test(native_tire ENGINE
-  SOURCES test_native_tire.cpp LIBRARIES bike_app bike_random
-  bike_golden LABELS t52 tyre golden slow)
+  SOURCES test_native_tire.cpp LIBRARIES bike_golden
+  LABELS t52 tyre golden slow)
 bike_add_reference_test(native_distributed_tire ENGINE
   # bike_app and bike_random arrive transitively (bike_golden -> bike_app
   # -> bike_random and bike_test_initial_state_record -> bike_app).
@@ -142,25 +139,25 @@ bike_add_reference_test(native_distributed_tire ENGINE
   bike_test_initial_state_record bike_golden
   LABELS t52 tyre golden slow)
 bike_add_reference_test(native_clock_contracts ENGINE
-  SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)
+  SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app LABELS t52 runtime golden)
 foreach(_drive_port IN ITEMS motor_profile cadence_shifter pedal_waveform pedaling_policy)
   bike_add_reference_test(${_drive_port} ENGINE
     SOURCES "test_${_drive_port}.cpp" LIBRARIES bike_app LABELS t52 drive)
 endforeach()
 bike_add_reference_test(assist_controller ENGINE
-  SOURCES test_assist_controller.cpp LIBRARIES bike_app bike_cli LABELS t52 drive)
+  SOURCES test_assist_controller.cpp LIBRARIES bike_cli LABELS t52 drive)
 # Momentum is registered once the validation library is declared in the root
 # graph; a missing implementation must be a configure error, never a skip.
 bike_add_reference_test(system_momentum_drive ENGINE
   SOURCES test_system_momentum_drive.cpp LIBRARIES bike_validation LABELS t52 drive slow)
 bike_add_reference_test(native_drive_policies ENGINE
-  SOURCES test_native_drive_policies.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_drive_policies.cpp LIBRARIES bike_app
   LABELS t52 drive golden)
 bike_add_reference_test(native_drivetrain ENGINE
-  SOURCES test_native_drivetrain.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_drivetrain.cpp LIBRARIES bike_app
   LABELS t52 drive golden slow)
 bike_add_reference_test(native_atomicity ENGINE
-  SOURCES test_native_atomicity.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_atomicity.cpp LIBRARIES bike_app
   LABELS t52 contracts)
 bike_add_reference_test(native_input_contracts ENGINE
   SOURCES test_native_input_contracts.cpp LIBRARIES bike_app
@@ -174,7 +171,7 @@ bike_add_reference_test(motor_clutch_topology ENGINE
 # power phase (R3) inside the clutch topology (R5) and the weld envelope
 # (S3).
 bike_add_reference_test(crank_reposition ENGINE
-  SOURCES test_crank_reposition.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_crank_reposition.cpp LIBRARIES bike_validation
   LABELS t52 drive rider slow)
 bike_add_reference_test(golden_episode_regressions ENGINE
   SOURCES test_golden_episode_regressions.cpp LIBRARIES bike_golden
@@ -183,10 +180,9 @@ bike_add_reference_test(golden_episode_regressions ENGINE
 bike_add_reference_test(recorder_columns ENGINE
   SOURCES test_recorder_columns.cpp LIBRARIES bike_app LABELS t52 recording slow)
 bike_add_reference_test(hud_columns ENGINE
-  SOURCES test_hud_columns.cpp LIBRARIES bike_app bike_viewer LABELS t52 recording)
+  SOURCES test_hud_columns.cpp LIBRARIES bike_viewer LABELS t52 recording)
 bike_add_reference_test(period_buffer ENGINE
-  SOURCES test_period_buffer.cpp LIBRARIES bike_app
-  bike_test_initial_state_record LABELS t52 recording golden slow)
+  SOURCES test_period_buffer.cpp LIBRARIES bike_test_initial_state_record LABELS t52 recording golden slow)
 # 3.22a encode columns — the columnar encoder + physical source against the
 # frozen column_bits identity; the staged bootstrap replays the recorded
 # ride on both qualified platforms.
@@ -298,14 +294,14 @@ bike_add_reference_test(native_spindle_controller ENGINE
 # surfaces, the seated-climb/pedaling/posture programs and the held-weld
 # integration episodes.
 bike_add_reference_test(seated_climb_surge ENGINE
-  SOURCES test_seated_climb_surge.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_seated_climb_surge.cpp LIBRARIES bike_validation
   LABELS t52 rider)
 # Launch part 1, task 2 — the RiderSenses fold, SurfaceLabels map and
 # strict codecs plus the senses channel's welded-ride transport (the
 # shared launch_ride_support.hpp harness links bike_validation for the
 # inspect seam).
 bike_add_reference_test(rider_senses ENGINE
-  SOURCES test_rider_senses.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_rider_senses.cpp LIBRARIES bike_validation
   LABELS launch rider)
 # Launch part 1, task 3 — the delayed, periodic senses adapter
 # (Perception) and its restorable state codec: a pure component/codec
@@ -318,20 +314,20 @@ bike_add_reference_test(rider_perception ENGINE
 # AssistController::step, the rider_commands recording channel and the
 # research/replay command journal.
 bike_add_reference_test(rider_brake_channel ENGINE
-  SOURCES test_rider_brake_channel.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_rider_brake_channel.cpp LIBRARIES bike_validation
   LABELS launch rider)
 # Launch part 1, task 6 — the static-brake latch in the step state: a
 # committed bite rides the runtime.brake_latch document, and the
 # component-level serialize -> codec -> restore continuation holds
 # bitwise through advancing hold/release/reseat inputs (review P9).
 bike_add_reference_test(static_brake_latch ENGINE
-  SOURCES test_static_brake_latch.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_static_brake_latch.cpp LIBRARIES bike_validation
   LABELS launch rider)
 # Launch part 2 — the rider's launch table and the start preparation:
 # the pure table rules, the cog/pedal angle the setup computes from it and
 # the lean the settle and the intent reset hold (tasks 1-3).
 bike_add_reference_test(launch_preparation ENGINE
-  SOURCES test_launch_preparation.cpp LIBRARIES bike_app bike_validation bike_cli
+  SOURCES test_launch_preparation.cpp LIBRARIES bike_validation bike_cli
   LABELS launch rider)
 # Launch part 3a, task 1 — the shift cut after a rider-limited effort
 # ceiling (review I4): ordinary and rider-limited target construction.
@@ -356,28 +352,28 @@ bike_add_reference_test(launch_intent ENGINE
 # Launch part 4 — the launch rides against the approved thresholds, one
 # executable per rider type (about 26 rides of 20 s each).
 bike_add_reference_test(rider_launch_rides_normal ENGINE
-  SOURCES test_rider_launch_rides_normal.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_rider_launch_rides_normal.cpp LIBRARIES bike_validation
   LABELS launch rider slow)
 bike_add_reference_test(rider_launch_rides_careful ENGINE
-  SOURCES test_rider_launch_rides_careful.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_rider_launch_rides_careful.cpp LIBRARIES bike_validation
   LABELS launch rider slow)
 bike_add_reference_test(rider_launch_rides_aggressive ENGINE
-  SOURCES test_rider_launch_rides_aggressive.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_rider_launch_rides_aggressive.cpp LIBRARIES bike_validation
   LABELS launch rider slow)
 bike_add_reference_test(seated_pedaling_cycle ENGINE
-  SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_seated_pedaling_cycle.cpp LIBRARIES bike_validation
   LABELS t52 rider slow)
 bike_add_reference_test(seated_posture_program ENGINE
-  SOURCES test_seated_posture_program.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_seated_posture_program.cpp LIBRARIES bike_validation
   LABELS t52 rider slow)
 bike_add_reference_test(seated_topology ENGINE
-  SOURCES test_seated_topology.cpp LIBRARIES bike_app bike_validation
+  SOURCES test_seated_topology.cpp LIBRARIES bike_validation
   LABELS t52 rider slow)
 bike_add_reference_test(pinned_topology ENGINE
   SOURCES test_pinned_topology.cpp LIBRARIES bike_app
   LABELS t52 rider slow)
 bike_add_reference_test(rider_welds ENGINE
-  SOURCES ../integration/test_rider_welds.cpp LIBRARIES bike_app bike_validation
+  SOURCES ../integration/test_rider_welds.cpp LIBRARIES bike_validation
   LABELS t52 rider slow)
 bike_add_reference_test(welded_profile_config ENGINE
   SOURCES test_welded_profile_config.cpp LIBRARIES bike_app
@@ -412,12 +408,12 @@ target_include_directories(reference.ride_backend_cli PRIVATE
 bike_add_reference_test(reference_monitor ENGINE
   SOURCES test_reference_monitor.cpp LIBRARIES bike_app LABELS t52 physics)
 bike_add_reference_test(balance_monitor ENGINE
-  SOURCES test_balance_monitor.cpp LIBRARIES bike_app bike_cli
+  SOURCES test_balance_monitor.cpp LIBRARIES bike_cli
   LABELS t52 physics)
 bike_add_reference_test(monitor_strictness ENGINE
   SOURCES test_monitor_strictness.cpp LIBRARIES bike_app LABELS t52 physics)
 bike_add_reference_test(sensor_noise ENGINE
-  SOURCES test_sensor_noise.cpp LIBRARIES bike_app bike_random
+  SOURCES test_sensor_noise.cpp LIBRARIES bike_app
   LABELS t52 physics golden)
 bike_add_reference_test(acceptance_interval_capture ENGINE
   SOURCES test_acceptance_interval_capture.cpp LIBRARIES bike_app
@@ -427,8 +423,7 @@ bike_add_reference_test(lean_limit ENGINE
 bike_add_reference_test(energy_ledger ENGINE
   SOURCES test_energy_ledger.cpp LIBRARIES bike_app LABELS t52 physics)
 bike_add_reference_test(realistic_pedelec_acceptance ENGINE
-  SOURCES test_realistic_pedelec_acceptance.cpp LIBRARIES bike_app
-  bike_validation LABELS t52 physics slow)
+  SOURCES test_realistic_pedelec_acceptance.cpp LIBRARIES bike_validation LABELS t52 physics slow)
 
 # 3.25 T53 runtime batch — NativeRideRuntime construction/bootstrap,
 # the bounded-advance command contract, sample acknowledgement and
@@ -470,7 +465,7 @@ bike_add_reference_test(native_runtime_rollout ENGINE
   LABELS t53 runtime)
 bike_add_reference_test(native_runtime_performance_contract ENGINE
   SOURCES test_native_runtime_performance_contract.cpp
-  LIBRARIES bike_app bike_realtime_measurement
+  LIBRARIES bike_realtime_measurement
   LABELS t53 runtime)
 
 # 3.27 T53 state batch — BIKEST02 bundle reader/resolver contracts, the
@@ -478,10 +473,10 @@ bike_add_reference_test(native_runtime_performance_contract ENGINE
 # surfaces, deterministic seeded property fuzzing of the restore parsers,
 bike_add_reference_test(native_state_restore ENGINE
   SOURCES test_native_state_restore.cpp
-  LIBRARIES bike_app bike_random bike_golden
+  LIBRARIES bike_golden
   LABELS t53 state)
 bike_add_reference_test(native_state_fuzz ENGINE
-  SOURCES test_native_state_fuzz.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_state_fuzz.cpp LIBRARIES bike_app
   LABELS t53 state)
 bike_add_reference_test(equilibrium_state_file ENGINE
   SOURCES test_equilibrium_state_file.cpp LIBRARIES bike_app
@@ -497,11 +492,11 @@ bike_add_reference_test(equilibrium_state_file ENGINE
 # 67 records ported; 7 Python-only records stay `drop` in the ledger.
 bike_add_reference_test(native_recording_lifecycle ENGINE
   SOURCES test_native_recording_lifecycle.cpp
-  LIBRARIES bike_recording bike_cli
+  LIBRARIES bike_cli bike_recording
   LABELS t53 recording)
 bike_add_reference_test(native_recording_retention ENGINE
   SOURCES test_native_recording_retention.cpp
-  LIBRARIES bike_recording bike_cli
+  LIBRARIES bike_cli bike_recording
   LABELS t53 recording slow)
 bike_add_reference_test(recording_capture ENGINE
   SOURCES test_recording_capture.cpp
@@ -526,7 +521,7 @@ bike_add_reference_test(recording_catalog ENGINE
   LABELS t53 recording)
 bike_add_reference_test(recording_cli ENGINE
   SOURCES test_recording_cli.cpp
-  LIBRARIES bike_recording bike_cli
+  LIBRARIES bike_cli bike_recording
   LABELS t53 recording)
 bike_add_reference_test(recording_report ENGINE
   SOURCES test_recording_report.cpp
@@ -567,7 +562,7 @@ bike_add_reference_test(native_replay_session ENGINE
   SOURCES test_native_replay_session.cpp LIBRARIES bike_replay bike_recording
   LABELS t53 replay)
 bike_add_reference_test(pedelec_replay_contract ENGINE
-  SOURCES test_pedelec_replay_contract.cpp LIBRARIES bike_replay bike_recording bike_validation bike_cli
+  SOURCES test_pedelec_replay_contract.cpp LIBRARIES bike_validation bike_cli bike_replay bike_recording
   LABELS t53 replay)
 add_dependencies(reference.pedelec_replay_contract bike-validate)
 bike_add_reference_test(native_view_contracts ENGINE
@@ -629,10 +624,10 @@ bike_add_reference_test(native_research_programs ENGINE
 bike_add_reference_test(native_research_recording ENGINE
   SOURCES test_native_research_recording.cpp
     $<TARGET_OBJECTS:bike_test_research_reference>
-  LIBRARIES bike_app bike_replay bike_recording
+  LIBRARIES bike_replay bike_recording
   LABELS t53 research)
 bike_add_reference_test(native_research_sensors ENGINE
-  SOURCES test_native_research_sensors.cpp LIBRARIES bike_app bike_random
+  SOURCES test_native_research_sensors.cpp LIBRARIES bike_app
   LABELS t53 research golden)
 
 # 3.33b T53 research batch — capture-mode parity, sealed-evidence ownership,
@@ -646,7 +641,7 @@ bike_add_reference_test(native_research_sensors ENGINE
 bike_add_reference_test(native_research_capture_contracts ENGINE
   SOURCES test_research_capture.cpp
     $<TARGET_OBJECTS:bike_test_research_reference>
-  LIBRARIES bike_app bike_cli
+  LIBRARIES bike_cli
   LABELS t53 research)
 bike_add_reference_test(native_research_frontend_contracts ENGINE
   SOURCES test_research_frontend.cpp
@@ -656,11 +651,11 @@ bike_add_reference_test(native_research_frontend_contracts ENGINE
 bike_add_reference_test(native_research_recording_lifecycle ENGINE
   SOURCES test_research_recording_lifecycle.cpp
     $<TARGET_OBJECTS:bike_test_research_reference>
-  LIBRARIES bike_app bike_cli bike_platform
+  LIBRARIES bike_cli
   LABELS t53 research)
 bike_add_reference_test(native_research_sweep ENGINE
   SOURCES test_research_sweep.cpp
-  LIBRARIES bike_batch bike_cli bike_platform
+  LIBRARIES bike_cli bike_batch
   LABELS t53 research)
 add_dependencies(reference.native_research_sweep bike-research-sweep)
 
@@ -668,7 +663,7 @@ add_dependencies(reference.native_research_sweep bike-research-sweep)
 # spec expansion, reserved/validated flags, CPU policy and the real
 # serial/pool episode equivalence through the bike-batch CLI artifact.
 bike_add_reference_test(batch ENGINE
-  SOURCES ../integration/test_batch.cpp LIBRARIES bike_app bike_cli
+  SOURCES ../integration/test_batch.cpp LIBRARIES bike_cli
   LABELS t53 frontend slow)
 add_dependencies(reference.batch bike-batch bike-research)
 bike_add_reference_test(async_close ENGINE
@@ -678,12 +673,12 @@ bike_add_reference_test(async_close ENGINE
 # frontend_windows ports the fake-window key/pacer/preview/viewer-gate
 # contracts; the two GUI/import-only nodes stay `drop` in the ledger.
 bike_add_reference_test(frontend_windows ENGINE
-  SOURCES test_frontend_windows.cpp LIBRARIES bike_app bike_viewer
+  SOURCES test_frontend_windows.cpp LIBRARIES bike_viewer
   LABELS t53 frontend)
 # physical_view ports RenderOwner apply/ownership/reject-before-mutate plus
 # the live frame's HUD schema.
 bike_add_reference_test(physical_view ENGINE
-  SOURCES test_physical_view.cpp LIBRARIES bike_app bike_viewer
+  SOURCES test_physical_view.cpp LIBRARIES bike_viewer
   LABELS t53 frontend)
 # pinned_measurement ports EqualityReactions force/torque, the closure-row
 # mask and the RiderContactWriter settle/sample face on the pinned plant.
@@ -700,19 +695,19 @@ bike_add_reference_test(realtime_deferred_checks ENGINE
 # (advance/reason/export/summary) plus per-generation seal dedupe/conflict
 # through RunCapture and the physical_assets name set.
 bike_add_reference_test(native_ride_frontend ENGINE
-  SOURCES test_native_ride_frontend.cpp LIBRARIES bike_app bike_cli bike_recording bike_realtime_measurement
+  SOURCES test_native_ride_frontend.cpp LIBRARIES bike_realtime_measurement bike_cli bike_recording
   LABELS t53 frontend slow)
 # runtime_single_path ports the accounted HUD real-time factor /
 # first-failure marker and the configured-dt measurement driver; the
 # adapter-only records stay `drop`.
 bike_add_reference_test(runtime_single_path ENGINE
-  SOURCES test_runtime_single_path.cpp LIBRARIES bike_app bike_viewer bike_cli bike_realtime_measurement
+  SOURCES test_runtime_single_path.cpp LIBRARIES bike_realtime_measurement bike_cli bike_viewer
   LABELS t53 frontend slow)
 # pneumatic_physical_runtime ports the end-to-end pneumatic ride record on
 # the repository pneumatic profile; the two codec records stay `contract`
 # (reference.pneumatic_tire_forces + reference.equilibrium_state_file).
 bike_add_reference_test(pneumatic_physical_runtime ENGINE
-  SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_app bike_cli
+  SOURCES test_pneumatic_physical_runtime.cpp LIBRARIES bike_cli
   LABELS t53 frontend slow)
 
 # 3.35 platform batch — tests/test_execution_identity.py port: the data-only
@@ -749,7 +744,7 @@ bike_add_reference_test(async_recovery ENGINE
 # contract (viewer-pump records are covered by the lifecycle twins).
 bike_add_reference_test(native_platform_recording ENGINE
   SOURCES test_native_platform_recording.cpp
-  LIBRARIES bike_app bike_recording bike_cli
+  LIBRARIES bike_cli bike_recording
   LABELS t53 platform recording slow)
 # tests/reference/test_native_linux_headless.py port: the real bike-ride
 # executable under a scrubbed display environment keeps its stepping and
@@ -758,7 +753,7 @@ bike_add_reference_test(native_platform_recording ENGINE
 # or display dependency exists to make the behavior Linux-only.
 bike_add_reference_test(native_linux_headless ENGINE
   SOURCES test_native_linux_headless.cpp
-  LIBRARIES bike_platform bike_io bike_cli
+  LIBRARIES bike_cli
   LABELS t53 platform slow)
 # The ported subprocess probe drives the real bike-ride executable.
 add_dependencies(reference.native_linux_headless bike-ride)
@@ -770,7 +765,7 @@ add_dependencies(reference.native_linux_headless bike-ride)
 # Python-extension drop.
 bike_add_reference_test(native_platform_linkage ENGINE
   SOURCES test_native_platform_linkage.cpp
-  LIBRARIES bike_platform bike_cli
+  LIBRARIES bike_cli
   LABELS t53 platform)
 # The link-table probe enumerates the published bin/ artifacts.
 add_dependencies(reference.native_platform_linkage

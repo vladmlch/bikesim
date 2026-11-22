@@ -221,8 +221,12 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     // :87-90 — SurfaceMap.uniform(pneumatic.surface) when a configured
     // surface shipped, else the track map; both must produce a map.
     if (pneu.surface.has_value()) {
+        // Uniform configured surface: drop every interval overlay — a
+        // stale micro_spans list would leak obstacle-local materials into
+        // what must evaluate as one pure material everywhere.
         surface_map_.surface = *pneu.surface;
         surface_map_.sections.clear();
+        surface_map_.micro_spans.clear();
     } else if (cfg_.surface_map.has_value()) {
         // SurfaceMap.__init__ (surface.py:160-206) sorts sections by
         // start_m; spec/overlap checks are nativecfg::validate()'s.

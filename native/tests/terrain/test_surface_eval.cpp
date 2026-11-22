@@ -14,6 +14,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string_view>
+#include <vector>
 
 namespace {
 
@@ -773,6 +774,226 @@ void test_obstacle_micro_surface_spans() {
                 "start_m=2\nhole_length_m=0.5\ndepth_m=0.1\n"
                 "surface='dry_dirt'\n"));
     });
+    // An authored-but-empty surface name is a TrackFileError, not an
+    // unmarked obstacle — surface.empty() is the "no surface" marker.
+    bt::invalid([&] {
+        (void)t::track_from_dict(t::parse_track_toml(
+                "name='empty'\nlength_m=10\n[[obstacles]]\ntype='bump'\n"
+                "start_m=2\nheight_m=0.05\nbump_length_m=0.4\nsurface=''\n"));
+    });
+}
+
+void test_rock_garden_crest_micro_spans() {
+    namespace t = bike::terrain;
+    // Spec §3.2: a marked RockGarden emits one span per run of consecutive
+    // node segments whose both ends rise above the datum — the exposed
+    // rock crests; troughs keep the base material.
+    t::Obstacle garden{.shape = t::RockGarden{
+                           .start_m = 50., .section_length_m = 8.,
+                           .amplitude_m = .06, .correlation_length_m = .25,
+                           .seed = "7"},
+                       .surface = "wet_rock", .surface_blend_m = .02};
+    const auto nodes = std::get<t::RockGarden>(garden.shape).nodes();
+    const auto &nx = nodes.first;
+    const auto &nz = nodes.second;
+    // Independent crest-run expectation straight from the node table:
+    // (open segment index, closing node index) per run.
+    struct Run {
+        std::size_t open_seg, close_node;
+    };
+    std::vector<Run> want;
+    {
+        bool open = false;
+        std::size_t open_seg = 0;
+        for (std::size_t i = 0; i + 1 < nx.size(); ++i) {
+            const bool crest = nz[i] > 0. && nz[i + 1] > 0.;
+            if (crest && !open) {
+                open_seg = i;
+                open = true;
+            }
+            if (!crest && open) {
+                want.push_back(Run{.open_seg = open_seg, .close_node = i});
+                open = false;
+            }
+        }
+        if (open)
+            want.push_back(
+                    Run{.open_seg = open_seg, .close_node = nx.size() - 1});
+    }
+    bt::require(want.size() >= 2,
+                "seeded garden produces multiple crest runs");
+    const auto spans = garden.micro_surface_spans();
+    bt::require(spans.size() == want.size(),
+                "one micro span per crest run");
+    for (std::size_t i = 0; i < spans.size(); ++i) {
+        const Run &run = want[i];
+        bt::require(spans[i].start_m == 50. + nx[run.open_seg] &&
+                        spans[i].end_m == 50. + nx[run.close_node] &&
+                        spans[i].blend_m == .02 &&
+                        spans[i].surface == "wet_rock",
+                    "crest span endpoints match the node-table run");
+        bt::require(nz[run.open_seg] > 0. && nz[run.open_seg + 1] > 0.,
+                    "span opens on an above-datum segment");
+        bt::require(run.close_node + 1 == nx.size() ||
+                            nz[run.close_node] <= 0. ||
+                            nz[run.close_node + 1] <= 0.,
+                    "span closes on the first non-crest node");
+        bt::require(spans[i].end_m > spans[i].start_m &&
+                        spans[i].start_m >= 50. && spans[i].end_m <= 58.,
+                    "crest spans are positive-width inside the obstacle");
+        if (i != 0)
+            bt::require(spans[i].start_m > spans[i - 1].end_m,
+                        "non-crest gaps keep the base surface between runs");
+    }
+    // polished_rock resolves on the same shape through the ten-name
+    // obstacle domain.
+    const t::Obstacle slick{.shape = garden.shape, .surface = "polished_rock"};
+    slick.validate();
+    const auto slick_spans = slick.micro_surface_spans();
+    bt::require(slick_spans.size() == spans.size() &&
+                    slick_spans.front().surface == "polished_rock",
+                "polished_rock crest spans carry their own material");
+}
+
+void test_micro_surface_degenerate_geometry() {
+    namespace t = bike::terrain;
+    // Zero-width MicroSpans are never emitted: a marked obstacle whose
+    // geometry cannot produce a positive-width span is rejected by
+    // Obstacle::validate — the same start_m < end_m domain
+    // nativecfg::validate(SurfaceMap) enforces downstream.
+    const std::vector<t::Obstacle> degenerate{{
+        {.shape = t::Roots{.start_m = 5., .n_bumps = 3, .height_m = .05,
+                           .width_m = 0., .section_length_m = 4.,
+                           .jitter = .1, .seed = "3"},
+         .surface = "wet_wood"},
+        {.shape = t::Roots{.start_m = 5., .n_bumps = 3, .height_m = .05,
+                           .width_m = .2, .section_length_m = 0.,
+                           .jitter = .1, .seed = "3"},
+         .surface = "wet_wood"},
+        {.shape = t::Pothole{.start_m = 5., .depth_m = .1, .hole_length_m = 0.},
+         .surface = "mud_lens"},
+        {.shape = t::GOut{.start_m = 5., .depth_m = .2, .dip_length_m = 0.},
+         .surface = "wet_rock"},
+        {.shape = t::RockGarden{.start_m = 5., .section_length_m = 0.,
+                                .amplitude_m = .05, .correlation_length_m = .2,
+                                .seed = "3"},
+         .surface = "polished_rock"},
+        {.shape = t::Bump{.start_m = 5., .height_m = .05, .bump_length_m = 0.},
+         .surface = "dry_wood"},
+    }};
+    for (const auto &o : degenerate) {
+        bt::invalid([&] { o.validate(); });
+        bt::invalid([&] { (void)o.micro_surface_spans(); });
+    }
+    // Unmarked degenerate geometry stays legal — the span requirement is
+    // scoped to obstacles carrying a surface.
+    for (const auto &o : degenerate) {
+        t::Obstacle plain = o;
+        plain.surface.clear();
+        plain.surface_blend_m = 0.;
+        plain.validate();
+        bt::require(plain.micro_surface_spans().empty(),
+                    "unmarked degenerate obstacle emits no spans");
+    }
+    // Track-level: the rejection propagates through TrackSpec::validate.
+    t::TrackSpec track = t::flat(30.);
+    track.obstacles.push_back(degenerate.front());
+    bt::invalid([&] { track.validate(); });
+    // TOML-level: track_from_dict wraps the same rejection.
+    bt::invalid([&] {
+        (void)t::track_from_dict(t::parse_track_toml(
+                "name='degenerate'\nlength_m=20\n[[obstacles]]\n"
+                "type='pothole'\nstart_m=2\nhole_length_m=0\ndepth_m=0.1\n"
+                "surface='wet_rock'\n"));
+    });
+}
+
+void test_eval_surface_micro_span_boundary_parity() {
+    const nativecfg::SurfaceSpec asphalt = cfg_surface("asphalt");
+    const nativecfg::SurfaceSpec scree = cfg_surface("scree");
+    const nativecfg::SurfaceSpec wood = cfg_obstacle_surface("wet_wood");
+    const nativecfg::SurfaceSpec dry = cfg_obstacle_surface("dry_wood");
+    const nativecfg::SurfaceSpec lens = cfg_obstacle_surface("mud_lens");
+
+    // Review witness coordinates: 2 cm collars on non-dyadic bounds.
+    // asphalt.crr_delta == 0.0 exposes any Hermite residue a boundary
+    // blend would leave where uniform_surface_for_span reports pure.
+    const nativecfg::SurfaceMap map{
+        .surface = asphalt,
+        .sections = {
+            {.start_m = 30.0, .end_m = 40.0, .surface = scree, .blend_m = 0.5},
+        },
+        .micro_spans = {
+            {.start_m = 12.1, .end_m = 12.3, .blend_m = 0.02, .surface = wood},
+            {.start_m = 20.0, .end_m = 21.0, .blend_m = 0.0, .surface = dry},
+            {.start_m = 25.0, .end_m = 25.5, .blend_m = 0.5, .surface = lens},
+        },
+    };
+
+    // Parity invariant: wherever uniform_surface_for_span certifies a
+    // degenerate pure range, eval_surface must return that spec's sample
+    // bitwise — the collar-edge predicates are the same inequalities.
+    const auto check_pure = [&](double x) {
+        const nativecfg::SurfaceSpec *pure =
+                tirecommon::uniform_surface_for_span(map, x, x);
+        if (pure == nullptr) return;
+        bt::require(sample_bits_eq(tirecommon::eval_surface(map, x),
+                                   tirecommon::sample_from_spec(*pure)),
+                    "eval_surface is bitwise pure wherever the range query is");
+    };
+    // Dense sweep across every collar, gap, section and transition —
+    // integer-indexed so the probe grid stays clear of float counters.
+    constexpr double sweep_lo = -1.0, sweep_dx = 0.00061;
+    const int sweep_n =
+            static_cast<int>((41.0 - sweep_lo) / sweep_dx);
+    for (int i = 0; i <= sweep_n; ++i)
+        check_pure(sweep_lo + i * sweep_dx);
+    // Exact and ULP-neighbourhood probes on span edges and the
+    // blend == length degenerate core point.
+    for (const double e : {12.1, 12.3, 20.0, 21.0, 25.25}) {
+        check_pure(e);
+        check_pure(std::nextafter(e, -std::numeric_limits<double>::infinity()));
+        check_pure(std::nextafter(e, std::numeric_limits<double>::infinity()));
+    }
+    // Explicit collar-edge coordinates of the 2 cm span, computed with
+    // the same half = 0.5 * blend_m arithmetic the evaluator uses.
+    const double half = 0.5 * 0.02;
+    for (const double x : {12.1 - half, 12.1 + half, 12.3 - half, 12.3 + half,
+                           12.29, 12.290000000000001, 12.1, 12.3})
+        check_pure(x);
+
+    const auto wood_sample = tirecommon::sample_from_spec(wood);
+    const auto asphalt_sample = tirecommon::sample_from_spec(asphalt);
+    const auto lens_sample = tirecommon::sample_from_spec(lens);
+    const auto dry_sample = tirecommon::sample_from_spec(dry);
+    // Pure-core collar edges return the span spec bitwise — including the
+    // right edge, which previously fell through to the collar blend.
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 12.1 + half),
+                               wood_sample),
+                "left pure-core edge returns the micro spec bitwise");
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 12.3 - half),
+                               wood_sample),
+                "right pure-core edge returns the micro spec bitwise");
+    // Outer collar edges return the exact base spec, no Hermite residue.
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 12.1 - half),
+                               asphalt_sample),
+                "left outer collar edge returns the base spec bitwise");
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 12.3 + half),
+                               asphalt_sample),
+                "right outer collar edge returns the base spec bitwise");
+    // blend_m == length collapses the core to the single point 25.25:
+    // uniform_surface_for_span reports it pure, so eval must too (the old
+    // strict '<' routed it through a 50/50 collar blend).
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 25.25),
+                               lens_sample),
+                "degenerate single-point core returns the span spec bitwise");
+    // Half-open zero-blend span keeps [start, end) semantics.
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 20.0),
+                               dry_sample),
+                "zero-blend span start evaluates the micro spec");
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 21.0),
+                               asphalt_sample),
+                "zero-blend span end evaluates the base spec");
 }
 
 void test_eval_surface_micro_span_collars() {
@@ -914,6 +1135,9 @@ int main() {
         test_load_sensitivity_factor_and_sample_mu();
         test_micro_surface_registry_and_obstacle_lookup();
         test_obstacle_micro_surface_spans();
+        test_rock_garden_crest_micro_spans();
+        test_micro_surface_degenerate_geometry();
         test_eval_surface_micro_span_collars();
+        test_eval_surface_micro_span_boundary_parity();
     });
 }

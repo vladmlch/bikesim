@@ -329,7 +329,15 @@ Obstacle obstacle_from_dict(const Value& entry,std::size_t index){
         seen.push_back(target);bool known=false;
         // Stage C obstacle-local micro-surface keys live on Obstacle itself,
         // not on the shape variant, so they are read before the visit.
-        if(target=="surface"){result.surface=bike::io::as_string(value,std::format("{}.surface",where));known=true;}
+        if(target=="surface"){
+            result.surface=bike::io::as_string(value,std::format("{}.surface",where));
+            // An authored-but-empty name is a configuration error, not an
+            // unmarked obstacle: surface.empty() is the "no surface" marker,
+            // so accepting "" would silently drop the author's intent (and
+            // any companion surface_blend_m would then fail validation).
+            if(result.surface.empty())throw TrackFileError(std::format("{}.surface: must be non-empty",where));
+            known=true;
+        }
         if(target=="surface_blend_m"){result.surface_blend_m=float_value(value,std::format("{}.surface_blend_m",where));known=true;}
         std::visit([&](auto& s){
 #define READ(name) if constexpr(requires{s.name;}){if(target==#name){detail::read_field(s.name,value,std::format("{}.{}",where,target));known=true;}}
@@ -400,10 +408,16 @@ std::vector<Obstacle> carve_roughness(std::vector<Obstacle> obstacles){
         for(const auto& p:pieces)if(p.b-p.a>=.5){
             double length=rounded(p.b-p.a,6);bool integer_length=p.integer_a&&p.integer_b;
             while(p.a+length>p.b){length=rounded(length-1e-6,6);integer_length=false;}
-            Obstacle part{.shape=RoadRoughness{.start_m=p.a,.section_length_m=length,.amplitude_m=seg.amplitude_m,.correlation_length_m=seg.correlation_length_m,.seed=p.seed,.spectrum=seg.spectrum,.waviness=seg.waviness}};
+            // Stage C (Spec §3.2): carved pieces keep the authored obstacle
+            // micro-surface — dropping it here would silently unmark the
+            // track whenever any other obstacle forces a carve. Pieces
+            // narrower than surface_blend_m (or with collars reaching an
+            // adjacent marked obstacle) are rejected by track.validate()
+            // below instead of losing the surface.
+            Obstacle part{.shape=RoadRoughness{.start_m=p.a,.section_length_m=length,.amplitude_m=seg.amplitude_m,.correlation_length_m=seg.correlation_length_m,.seed=p.seed,.spectrum=seg.spectrum,.waviness=seg.waviness},.surface=base.surface,.surface_blend_m=base.surface_blend_m};
             if(p.integer_a)part.integer_scalar_fields.emplace_back("start_m");
             if(integer_length)part.integer_scalar_fields.emplace_back("section_length_m");
-            for(auto name:{"amplitude_m","correlation_length_m","waviness"})if(integer_field(base,name))part.integer_scalar_fields.emplace_back(name);
+            for(auto name:{"amplitude_m","correlation_length_m","waviness","surface_blend_m"})if(integer_field(base,name))part.integer_scalar_fields.emplace_back(name);
             carved.push_back(std::move(part));
         }
     }

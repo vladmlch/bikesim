@@ -69,6 +69,13 @@ void TrackSpec::validate() const {
     double collar_hi=-std::numeric_limits<double>::max();
     for(const auto& o:ordered) {
         for(const auto& span:o.micro_surface_spans()) {
+            // Zero-width spans are never emittable on a validated track
+            // (Obstacle::validate rejects the degenerate geometry), but a
+            // start_m == end_m span with blend_m == 0 would slip past the
+            // blend-width check below — reject it explicitly so terrain
+            // validation agrees with nativecfg::validate(SurfaceMap).
+            if(!(span.end_m>span.start_m))
+                throw std::invalid_argument("track '"+name+"': "+o.label()+" micro span must have positive width");
             if(span.end_m-span.start_m<span.blend_m)
                 throw std::invalid_argument("track '"+name+"': "+o.label()+" micro span narrower than surface_blend_m");
             const double lo=span.start_m-.5*span.blend_m;

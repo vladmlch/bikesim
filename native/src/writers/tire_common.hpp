@@ -160,7 +160,8 @@ namespace tirecommon {
     [[nodiscard]] SurfaceSample
     sample_from_spec(const nativecfg::SurfaceSpec &s) noexcept;
 
-    // Precondition: map passed nativecfg::validate and sections are start_m-sorted (writer constructors guarantee both).
+    // Precondition: map passed nativecfg::validate and sections and
+    // micro_spans are start_m-sorted (writer constructors guarantee both).
     [[nodiscard]] SurfaceSample
     eval_surface(const nativecfg::SurfaceMap &map, double x_m);
 

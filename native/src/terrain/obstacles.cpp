@@ -198,6 +198,15 @@ void Obstacle::validate() const {
         detail::finite(surface_blend_m,"Obstacle.surface_blend_m");
         detail::nonnegative(surface_blend_m,"Obstacle.surface_blend_m");
         (void)get_obstacle_surface(surface);
+        // Spec §3.2: a marked obstacle must be able to emit at least one
+        // positive-width span. Zero-length geometry (a root with width_m
+        // <= 0, a hole/dip/crest section of length 0, any other
+        // zero-length kind) would otherwise produce start_m == end_m
+        // spans that nativecfg::validate(SurfaceMap) rejects downstream —
+        // reject them here, consistently, at the terrain boundary.
+        detail::positive(length_m(),"Obstacle.length_m");
+        if(std::holds_alternative<Roots>(shape))
+            detail::positive(std::get<Roots>(shape).width_m,"Roots.width_m");
     } else if(surface_blend_m!=0.) {
         throw std::invalid_argument("Obstacle.surface_blend_m requires Obstacle.surface");
     }

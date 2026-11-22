@@ -238,19 +238,22 @@ namespace tirecommon {
             return base;
         const nativecfg::MicroSurfaceSpan &span = it[-1];
         const double half = 0.5 * span.blend_m;
-        if (x_m >= span.end_m + half)
+        // Collar-edge parity with uniform_surface_for_span (Spec §3.3):
+        // the pure micro core is the closed [start+half, end-half] and
+        // both outer edges return the base spec bitwise. Routing an edge
+        // point through blend_samples leaves IEEE-754 residue — e.g. an
+        // asphalt overlay's crr_delta == 0.0 comes back as ~1e-31 — where
+        // the range query reports the pure span spec.
+        if (x_m >= span.end_m + half ||
+            (half > 0.0 && x_m <= span.start_m - half))
             return base;
-        // x_m lies inside the expanded interval [start-half, end+half):
-        // left collar blends base->micro about start_m, the pure core
-        // [start+half, end-half) is the micro material itself, and the
-        // right collar blends micro->base about end_m. blend_m == 0 makes
-        // every collar a zero-width boundary: the guards below then route
-        // [start, end) to the pure core without dividing by zero.
         const SurfaceSample micro = sample_from_spec(span.surface);
         if (x_m < span.start_m + half)
             return blend_samples(base, micro, span.start_m, span.blend_m,
                                  x_m);
-        if (x_m < span.end_m - half)
+        // x_m >= span.end_m already returned base above, so half == 0.0
+        // cannot reach a blend_samples call with width_m == 0.
+        if (x_m <= span.end_m - half)
             return micro;
         return blend_samples(micro, base, span.end_m, span.blend_m, x_m);
     }

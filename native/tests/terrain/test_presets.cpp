@@ -60,6 +60,25 @@ void carving_and_placement(){
     const auto& left=std::get<t::RoadRoughness>(pieces[0].shape);const auto& right=std::get<t::RoadRoughness>(pieces[2].shape);
     bt::require(left.start_m==1.&&left.section_length_m==3.&&right.start_m==5.&&right.section_length_m==4.0,"split geometry preserves exact neighbors");
     bt::require(right.seed=="100000000000000001000002","split seed addition is arbitrary precision");
+    // Stage C (Spec §3.2): a marked roughness keeps surface and
+    // surface_blend_m on every carved piece — carving must not silently
+    // unmark the track when a defect forces the split.
+    const auto marked=t::carve_roughness({{.shape=t::RoadRoughness{.start_m=1.0,.section_length_m=8.0,.amplitude_m=0.01,.correlation_length_m=0.2,.seed="11"},.surface="wet_rock",.surface_blend_m=0.02},{.shape=t::SquareEdge{.start_m=4.0,.height_m=0.1,.ledge_length_m=1.}}});
+    bt::require(marked.size()==3,"marked roughness splits into the same three pieces");
+    for(const auto& o:marked){
+        if(!std::holds_alternative<t::RoadRoughness>(o.shape))continue;
+        bt::require(o.surface=="wet_rock"&&o.surface_blend_m==0.02,"carved piece keeps the authored micro-surface");
+        const auto spans=o.micro_surface_spans();
+        bt::require(spans.size()==1&&spans.front().end_m-spans.front().start_m>=spans.front().blend_m,"carved piece emits a blend-width-valid span");
+    }
+    // End-to-end through TOML: the marked track validates and round-trips.
+    const auto marked_track=t::track_from_dict(toml("name='marked carve'\nlength_m=20\n[[obstacles]]\ntype='roughness'\nstart_m=2\nsection_length_m=10\namplitude_m=0.03\ncorrelation_length_m=0.2\nseed=7\nsurface='wet_rock'\nsurface_blend_m=0.02\n[[obstacles]]\ntype='square_edge'\nstart_m=11\nheight_m=0.1\nledge_length_m=0.5\n"));
+    std::size_t rough_count=0;for(const auto& o:marked_track.obstacles)if(std::holds_alternative<t::RoadRoughness>(o.shape)){++rough_count;bt::require(o.surface=="wet_rock"&&o.surface_blend_m==0.02,"TOML-carved piece keeps surface fields");}
+    bt::require(rough_count==2,"marked TOML roughness carves into two pieces");
+    bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(marked_track))))==t::dump_track(marked_track),"marked carved track round trips through TOML");
+    // A carved piece narrower than surface_blend_m is rejected by
+    // track.validate() instead of emitting an invalid micro span.
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='thin carve'\nlength_m=20\n[[obstacles]]\ntype='roughness'\nstart_m=2\nsection_length_m=10\namplitude_m=0.03\ncorrelation_length_m=0.2\nseed=7\nsurface='wet_rock'\nsurface_blend_m=0.6\n[[obstacles]]\ntype='square_edge'\nstart_m=11\nheight_m=0.1\nledge_length_m=0.5\n"));});
     // An iso8608 roughness section carves around a defect like any other;
     // the spectral fields propagate to the pieces and the sub-metre tail
     // piece stays bounded under the analytic normalization.

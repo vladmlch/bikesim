@@ -157,9 +157,18 @@ BIKE_HD void shifting_reset(ParamsPtr params, StatePtr state) noexcept {
     *state = fresh;
 }
 
+template <class Real>
+BIKE_HD constexpr bool shift_cut_active(Real cut_remaining_s) noexcept {
+    return cut_remaining_s > BIKE_REAL(Real, 1e-12);
+}
+
+BIKE_HD constexpr bool shift_cut_active_ticks(i32 cut_remaining_ticks) noexcept {
+    return cut_remaining_ticks > 0;
+}
+
 template <class Real, class ParamsPtr, class StatePtr>
 BIKE_HD Real shift_torque_factor(ParamsPtr params, StatePtr state) noexcept {
-    if (state->cut_remaining_ticks <= 0) {
+    if (!shift_cut_active_ticks(state->cut_remaining_ticks)) {
         return BIKE_REAL(Real, 1.0);
     }
     if (state->direction == ShiftDirection::down) {
@@ -175,6 +184,36 @@ template <class Real, class ParamsPtr, class StatePtr>
 BIKE_HD Real shifting_gear_ratio(ParamsPtr params, StatePtr state) noexcept {
     return static_cast<Real>(params->front_teeth) /
            static_cast<Real>(state->rear_teeth);
+}
+
+template <class Real, class TK>
+BIKE_HD Real shifting_interpolated_gear_ratio(
+    Real applied_ratio,
+    Real target_ratio,
+    Real cut_remaining_s,
+    Real dt_s
+) noexcept {
+    if (shift_cut_active<Real>(cut_remaining_s) &&
+        TK::isfinite(dt_s) && dt_s > BIKE_REAL(Real, 0.0)) {
+        const Real remaining = cut_remaining_s + dt_s;
+        return applied_ratio + (target_ratio - applied_ratio) * dt_s / remaining;
+    }
+    return target_ratio;
+}
+
+template <class Real, class TK, class ParamsPtr, class StatePtr>
+BIKE_HD Real shifting_interpolated_gear_ratio(
+    ParamsPtr params,
+    StatePtr state,
+    Real applied_ratio
+) noexcept {
+    const Real target_ratio = shifting_gear_ratio<Real>(params, state);
+    if (shift_cut_active_ticks(state->cut_remaining_ticks)) {
+        const Real remaining_ticks =
+            static_cast<Real>(state->cut_remaining_ticks + 1);
+        return applied_ratio + (target_ratio - applied_ratio) / remaining_ticks;
+    }
+    return target_ratio;
 }
 
 template <class Real, class TK, class ParamsPtr, class StatePtr>
@@ -258,7 +297,7 @@ BIKE_HD Status shifting_update(
     if (next.cooldown_ticks > 0) {
         --next.cooldown_ticks;
     }
-    if (next.cut_remaining_ticks > 0) {
+    if (shift_cut_active_ticks(next.cut_remaining_ticks)) {
         --next.cut_remaining_ticks;
     }
 
@@ -293,7 +332,7 @@ BIKE_HD Status shifting_update(
                 *state = next;
                 return Status::ok;
             }
-            if (next.cut_remaining_ticks > 0) {
+            if (shift_cut_active_ticks(next.cut_remaining_ticks)) {
                 next.rider_response = ShiftResponse::deferred;
                 *state = next;
                 return Status::ok;
@@ -327,7 +366,7 @@ BIKE_HD Status shifting_update(
             *state = next;
             return Status::ok;
         }
-        if (!admitted || next.cut_remaining_ticks > 0) {
+        if (!admitted || shift_cut_active_ticks(next.cut_remaining_ticks)) {
             next.rider_response = ShiftResponse::deferred;
             *state = next;
             return Status::ok;

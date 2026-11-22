@@ -1,9 +1,9 @@
 #include "cruise.hpp"
 #include "../config_validation.hpp"
 #include "../model_topology.hpp"
-#include "../validation.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/cruise.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <ranges>
 #include <span>
@@ -16,15 +16,36 @@ namespace {
             throw std::invalid_argument(std::string(name) + " must be finite");
     }
 
-    void positive(double value, const char *name) {
-        finite(value, name);
-        if (value <= 0.0)
-            throw std::invalid_argument(std::string(name) + " must be positive");
+    bike::physics_core::CruiseConfigPod<double>
+    to_pod(const nativecfg::CruiseConfig &cfg) noexcept {
+        return {
+            .target_speed_kmh = cfg.target_speed_kmh,
+            .kp_nm_per_mps = cfg.kp_nm_per_mps,
+            .ki_nm_per_mps_s = cfg.ki_nm_per_mps_s,
+            .torque_ceiling_nm = cfg.torque_ceiling_nm,
+        };
     }
 
-    double clamp(double value, double limit) {
-        // Python keeps the first argument on ties (including signed zero).
-        return std::max(-limit, std::min(limit, value));
+    bike::physics_core::CruiseStatePod<double>
+    to_pod(const CruiseState &s) noexcept {
+        return {
+            .target_speed_mps = s.target_speed_mps,
+            .integral_mps_s = s.integral_mps_s,
+            .torque_nm = s.torque_nm,
+            .gain_scale = s.gain_scale,
+            .engaged = s.engaged ? bike::physics_core::u8{1}
+                                 : bike::physics_core::u8{0},
+        };
+    }
+
+    CruiseState from_pod(const bike::physics_core::CruiseStatePod<double> &s) noexcept {
+        return {
+            .target_speed_mps = s.target_speed_mps,
+            .integral_mps_s = s.integral_mps_s,
+            .torque_nm = s.torque_nm,
+            .engaged = s.engaged != 0,
+            .gain_scale = s.gain_scale,
+        };
     }
 } // namespace
 
@@ -48,76 +69,106 @@ CruiseWriter::CruiseWriter(const mjModel *model, nativecfg::CruiseConfig config)
 double CruiseWriter::compute(const mjData *data, bool rear_in_contact,
                              bool traction_limited,
                              std::optional<bool> controller_grounded) {
-    auto next = state_;
-    // cruise.py compute: preserve every operation and branch in source order.
-    next.engaged = controller_grounded.value_or(rear_in_contact);
+    const auto cfg_pod = to_pod(cfg_);
+    auto state_pod = to_pod(state_);
     const std::span<const mjtNum> qvel = std::views::counted(data->qvel, nv_);
-    const double error = next.target_speed_mps -
-                         qvel[static_cast<std::size_t>(root_dof_)];
-    if (!next.engaged) {
-        next.torque_nm = 0.0;
-        state_ = next;
-        return next.torque_nm;
+    const double speed_mps =
+            static_cast<double>(qvel[static_cast<std::size_t>(root_dof_)]);
+    const double timestep = static_cast<double>(model_->opt.timestep);
+    double out_torque_nm = 0.0;
+    auto err = bike::physics_core::ErrCode::none;
+    const auto st = bike::physics_core::cruise_step<
+        double, bike::physics_core::CpuExactToolkit>(
+        &cfg_pod,
+        &state_pod,
+        speed_mps,
+        timestep,
+        rear_in_contact,
+        traction_limited,
+        controller_grounded.has_value(),
+        controller_grounded.value_or(false),
+        out_torque_nm,
+        err);
+    if (st == bike::physics_core::Status::overflow) {
+        throw std::overflow_error("CruiseWriter arithmetic overflow");
     }
-    const double kp = validation::derived(cfg_.kp_nm_per_mps * next.gain_scale, "CruiseWriter.kp");
-    const double ki = validation::derived(cfg_.ki_nm_per_mps_s * next.gain_scale, "CruiseWriter.ki");
-    positive(ki, "CruiseWriter.ki");
-    const double proportional = validation::derived(kp * error, "CruiseWriter.proportional_torque");
-    double demand = validation::derived(proportional + ki * next.integral_mps_s, "CruiseWriter.demand");
-    const bool pushing_further =
-            std::abs(demand) >= cfg_.torque_ceiling_nm &&
-            (demand > 0.0) == (error > 0.0);
-    if (!pushing_further && !traction_limited) {
-        // cruise.py:202 reads model.opt.timestep live inside the integral
-        // update — the integrator follows a timestep change between calls,
-        // and an invalid value is rejected when the branch actually runs.
-        const double timestep =
-                static_cast<double>(model_->opt.timestep);
-        positive(timestep, "CruiseWriter.timestep");
-        next.integral_mps_s = clamp(validation::derived(next.integral_mps_s + validation::derived(error * timestep, "CruiseWriter.integral_delta"), "CruiseWriter.integral"),
-                                      cfg_.torque_ceiling_nm / ki);
-        demand = validation::derived(proportional + ki * next.integral_mps_s, "CruiseWriter.demand");
+    if (st != bike::physics_core::Status::ok) {
+        if (err == bike::physics_core::ErrCode::bad_dt) {
+            throw std::invalid_argument("CruiseWriter.timestep must be positive");
+        }
+        throw std::invalid_argument("CruiseWriter.ki must be positive");
     }
-    next.torque_nm = clamp(demand, cfg_.torque_ceiling_nm);
-    state_ = next;
-    return next.torque_nm;
+    state_ = from_pod(state_pod);
+    return out_torque_nm;
 }
 
 void CruiseWriter::reset() {
-    state_.integral_mps_s = 0.0;
-    state_.torque_nm = 0.0;
-    state_.engaged = false;
+    auto state_pod = to_pod(state_);
+    bike::physics_core::cruise_reset<double>(&state_pod);
+    state_ = from_pod(state_pod);
 }
 
 void CruiseWriter::set_target_speed(double value_kmh) {
     finite(value_kmh, "target_speed_kmh");
-    if (value_kmh < 15.0 || value_kmh > 45.0)
+    auto state_pod = to_pod(state_);
+    auto err = bike::physics_core::ErrCode::none;
+    if (bike::physics_core::cruise_set_target_speed_kmh<
+            double, bike::physics_core::CpuExactToolkit>(
+            &state_pod, value_kmh, err) != bike::physics_core::Status::ok) {
         throw std::invalid_argument("target_speed_kmh must be in [15, 45]");
-    state_.target_speed_mps = value_kmh / 3.6;
+    }
+    state_ = from_pod(state_pod);
 }
 
 void CruiseWriter::validate_scale(double scale) const {
-    positive(scale, "gain_scale");
-    const double ki = cfg_.ki_nm_per_mps_s * scale;
-    if (!std::isfinite(ki) || ki == 0.0)
+    finite(scale, "gain_scale");
+    if (scale <= 0.0)
+        throw std::invalid_argument("gain_scale must be positive");
+    const auto cfg_pod = to_pod(cfg_);
+    auto err = bike::physics_core::ErrCode::none;
+    if (bike::physics_core::cruise_validate_scale<
+            double, bike::physics_core::CpuExactToolkit>(
+            &cfg_pod, scale, err) != bike::physics_core::Status::ok) {
         throw std::invalid_argument("gain_scale produces zero or nonfinite scaled ki");
+    }
 }
 
 double CruiseWriter::set_assist_compensation(double support_factor) {
     finite(support_factor, "support_factor");
-    const double scale = 1.0 / (1.0 + std::max(0.0, support_factor));
-    validate_scale(scale);
-    state_.gain_scale = scale;
+    const auto cfg_pod = to_pod(cfg_);
+    auto state_pod = to_pod(state_);
+    double scale = 1.0;
+    auto err = bike::physics_core::ErrCode::none;
+    if (bike::physics_core::cruise_set_assist_compensation<
+            double, bike::physics_core::CpuExactToolkit>(
+            &cfg_pod, &state_pod, support_factor, scale, err) !=
+        bike::physics_core::Status::ok) {
+        throw std::invalid_argument("gain_scale produces zero or nonfinite scaled ki");
+    }
+    state_ = from_pod(state_pod);
     return scale;
 }
 
-void CruiseWriter::set_state(const CruiseState &state) {
-    finite(state.target_speed_mps, "target_speed_mps");
-    finite(state.integral_mps_s, "integral_mps_s");
-    finite(state.torque_nm, "torque_nm");
-    if (state.target_speed_mps < 15.0 / 3.6 ||
-        state.target_speed_mps > 45.0 / 3.6)
-        throw std::invalid_argument("target_speed_mps must be in [15/3.6, 45/3.6]");
-    validate_scale(state.gain_scale);
-    state_ = state;
+void CruiseWriter::set_state(const CruiseState &next_state) {
+    finite(next_state.target_speed_mps, "target_speed_mps");
+    finite(next_state.integral_mps_s, "integral_mps_s");
+    finite(next_state.torque_nm, "torque_nm");
+    finite(next_state.gain_scale, "gain_scale");
+    const auto cfg_pod = to_pod(cfg_);
+    const auto src_pod = to_pod(next_state);
+    auto dst_pod = to_pod(state_);
+    auto err = bike::physics_core::ErrCode::none;
+    if (bike::physics_core::cruise_restore_state<
+            double, bike::physics_core::CpuExactToolkit>(
+            &cfg_pod, &dst_pod, &src_pod, err) !=
+        bike::physics_core::Status::ok) {
+        if (next_state.target_speed_mps < 15.0 / 3.6 ||
+            next_state.target_speed_mps > 45.0 / 3.6) {
+            throw std::invalid_argument(
+                "target_speed_mps must be in [15/3.6, 45/3.6]");
+        }
+        validate_scale(next_state.gain_scale);
+        throw std::invalid_argument("invalid CruiseState");
+    }
+    state_ = from_pod(dst_pod);
 }

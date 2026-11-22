@@ -63,6 +63,38 @@ struct RepositionState {
 };
 
 template <class Real>
+struct StallRepositionConfigPod {
+    Real min_effort_nm = BIKE_REAL(Real, 20.0);
+    Real stall_window_s = BIKE_REAL(Real, 1.0);
+    Real stall_progress_rad = BIKE_REAL(Real, 0.5);
+    Real cooldown_s = BIKE_REAL(Real, 1.0);
+    Real back_rate_rad_s = BIKE_REAL(Real, 3.0);
+    Real timeout_s = BIKE_REAL(Real, 3.0);
+    Real phase_tolerance_rad = BIKE_REAL(Real, 0.05);
+    Real noop_rad = BIKE_REAL(Real, 0.12);
+    u8 reposition_on_stall = 0;
+    u8 motor_clutch_present = 1;
+    u8 spindle_pedal_attachment = 1;
+    u8 pad = 0;
+};
+
+template <class Real>
+struct StallRepositionStatePod {
+    Real crank_rad = BIKE_REAL(Real, 0.0);
+    Real wheel_rad = BIKE_REAL(Real, 0.0);
+    Real stall_elapsed_s = BIKE_REAL(Real, 0.0);
+    Real goal_rad = BIKE_REAL(Real, 0.0);
+    Real elapsed_s = BIKE_REAL(Real, 0.0);
+    Real cooldown_s = BIKE_REAL(Real, 0.0);
+    u8 active = 0;
+    u8 armed = 1;
+    u8 reason = 0;
+    u8 has_stall_elapsed = 0;
+    u8 has_goal = 0;
+    u8 pad[3]{};
+};
+
+template <class Real>
 struct PedalingState {
     Real target_phase_rad = BIKE_REAL(Real, 0.0);
     Real target_rate_rad_s = BIKE_REAL(Real, 0.0);
@@ -238,6 +270,164 @@ BIKE_HD Status pedaling_validate_params(
     return Status::ok;
 }
 
+template <class Real, class TK, class ReposCfgPtr>
+BIKE_HD Status pedaling_validate_reposition_config(
+    ReposCfgPtr cfg,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    if (cfg == nullptr) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    // P01b: reposition_on_stall requires motor freewheel clutch (and spindle pedal attachment)
+    // so automatic crank backpedaling cannot drive a rigidly coupled motor rotor backward.
+    if (cfg->reposition_on_stall != 0 &&
+        (cfg->motor_clutch_present == 0 || cfg->spindle_pedal_attachment == 0)) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const Real kPi = BIKE_REAL(Real, 3.14159265358979323846);
+    if (!TK::isfinite(cfg->min_effort_nm) ||
+        !TK::isfinite(cfg->stall_window_s) ||
+        !TK::isfinite(cfg->stall_progress_rad) ||
+        !TK::isfinite(cfg->cooldown_s) ||
+        !TK::isfinite(cfg->back_rate_rad_s) ||
+        !TK::isfinite(cfg->timeout_s) ||
+        !TK::isfinite(cfg->phase_tolerance_rad) ||
+        !TK::isfinite(cfg->noop_rad) ||
+        cfg->min_effort_nm < BIKE_REAL(Real, 0.0) ||
+        cfg->stall_window_s <= BIKE_REAL(Real, 0.0) ||
+        cfg->stall_progress_rad <= BIKE_REAL(Real, 0.0) ||
+        cfg->stall_progress_rad >= kPi ||
+        cfg->cooldown_s < BIKE_REAL(Real, 0.0) ||
+        cfg->back_rate_rad_s <= BIKE_REAL(Real, 0.0) ||
+        cfg->timeout_s <= BIKE_REAL(Real, 0.0) ||
+        cfg->phase_tolerance_rad <= BIKE_REAL(Real, 0.0) ||
+        cfg->noop_rad < BIKE_REAL(Real, 0.0) ||
+        cfg->noop_rad >= BIKE_REAL(Real, 0.5) * kPi) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    return Status::ok;
+}
+
+template <class Real, class TK, class StatePtr>
+BIKE_HD Status pedaling_validate_state_invariants(
+    StatePtr s,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    if (s == nullptr) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if ((s->has_target_phase != 0 && !TK::isfinite(s->target_phase_rad)) ||
+        (s->has_cadence_ema != 0 && !TK::isfinite(s->cadence_ema)) ||
+        !TK::isfinite(s->target_rate_rad_s) ||
+        !TK::isfinite(s->deceleration_rad_s2) ||
+        s->deceleration_rad_s2 < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(s->effort) ||
+        s->effort < BIKE_REAL(Real, 0.0)) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (s->coasting != 0 &&
+        (s->has_target_phase == 0 || s->effort != BIKE_REAL(Real, 0.0))) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (s->reposition.active != 0) {
+        const RepositionState<Real> r = s->reposition;
+        if (!TK::isfinite(r.crank_rad) || !TK::isfinite(r.wheel_rad) ||
+            (r.has_goal != 0 && !TK::isfinite(r.goal_rad)) ||
+            r.elapsed_ticks < 0 || r.cooldown_ticks < 0 || r.reason > u8{2}) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        // C2 relational invariants
+        if (r.stall_elapsed_ticks < 0 &&
+            (r.crank_rad != BIKE_REAL(Real, 0.0) ||
+             r.wheel_rad != BIKE_REAL(Real, 0.0))) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        const bool reason_active = (r.reason == u8{1} || r.reason == u8{2});
+        if ((r.has_goal != 0) != reason_active) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        if (r.has_goal != 0 &&
+            (r.cooldown_ticks != 0 || s->coasting != 0 ||
+             s->effort != BIKE_REAL(Real, 0.0))) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+    }
+    return Status::ok;
+}
+
+template <class Real, class TK, class StatePtr, class ReposStatePtr>
+BIKE_HD Status pedaling_validate_state_invariants(
+    StatePtr s,
+    ReposStatePtr r,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    if (s == nullptr) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if ((s->has_target_phase != 0 && !TK::isfinite(s->target_phase_rad)) ||
+        (s->has_cadence_ema != 0 && !TK::isfinite(s->cadence_ema)) ||
+        !TK::isfinite(s->target_rate_rad_s) ||
+        !TK::isfinite(s->deceleration_rad_s2) ||
+        s->deceleration_rad_s2 < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(s->effort) ||
+        s->effort < BIKE_REAL(Real, 0.0)) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (s->coasting != 0 &&
+        (s->has_target_phase == 0 || s->effort != BIKE_REAL(Real, 0.0))) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (r != nullptr && r->active != 0) {
+        if (!TK::isfinite(r->crank_rad) || !TK::isfinite(r->wheel_rad) ||
+            (r->has_stall_elapsed != 0 &&
+             (!TK::isfinite(r->stall_elapsed_s) ||
+              r->stall_elapsed_s < BIKE_REAL(Real, 0.0))) ||
+            (r->has_goal != 0 && !TK::isfinite(r->goal_rad)) ||
+            !TK::isfinite(r->elapsed_s) || r->elapsed_s < BIKE_REAL(Real, 0.0) ||
+            !TK::isfinite(r->cooldown_s) || r->cooldown_s < BIKE_REAL(Real, 0.0) ||
+            r->reason > u8{2}) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        // C2 relational invariants (matching drivetrain/pedaling.cpp)
+        if (r->has_stall_elapsed == 0 &&
+            (r->crank_rad != BIKE_REAL(Real, 0.0) ||
+             r->wheel_rad != BIKE_REAL(Real, 0.0))) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        const bool reason_active = (r->reason == u8{1} || r->reason == u8{2});
+        if ((r->has_goal != 0) != reason_active) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+        if (r->has_goal != 0 &&
+            (r->cooldown_s != BIKE_REAL(Real, 0.0) || s->coasting != 0 ||
+             s->effort != BIKE_REAL(Real, 0.0))) {
+            err = ErrCode::outside_domain;
+            return Status::invalid_argument;
+        }
+    }
+    return Status::ok;
+}
+
 template <class Real, class StatePtr>
 BIKE_HD void pedaling_reset(StatePtr state) noexcept {
     *state = PedalingState<Real>{};
@@ -261,6 +451,63 @@ BIKE_HD void rebase_pedaling_2pi(
     if (state.reposition.active != 0 && state.reposition.has_goal != 0) {
         state.reposition.goal_rad -= dq_crank_rad;
     }
+}
+
+template <class Real>
+BIKE_HD void rebase_pedaling_2pi(
+    BIKE_REF(PedalingState<Real>) state,
+    BIKE_REF(StallRepositionStatePod<Real>) repos,
+    Real dq_crank_rad,
+    Real dq_wheel_rad
+) noexcept {
+    rebase_pedaling_2pi<Real>(state, dq_crank_rad, dq_wheel_rad);
+    if (repos.active != 0 && repos.has_goal != 0) {
+        repos.goal_rad -= dq_crank_rad;
+    }
+}
+
+template <class Real>
+BIKE_HD bool pedaling_stall_update_seconds(
+    BIKE_THREAD StallRepositionStatePod<Real> &r,
+    Real window_s,
+    Real progress_rad,
+    Real crank_rad_s,
+    Real wheel_rad_s,
+    Real dt,
+    bool loaded
+) noexcept {
+    if (!loaded) {
+        r.crank_rad = BIKE_REAL(Real, 0.0);
+        r.wheel_rad = BIKE_REAL(Real, 0.0);
+        r.stall_elapsed_s = BIKE_REAL(Real, 0.0);
+        r.has_stall_elapsed = 0;
+        return false;
+    }
+    if (r.has_stall_elapsed == 0) {
+        r.crank_rad = BIKE_REAL(Real, 0.0);
+        r.wheel_rad = BIKE_REAL(Real, 0.0);
+        r.stall_elapsed_s = BIKE_REAL(Real, 0.0);
+        r.has_stall_elapsed = 1;
+        return false;
+    }
+    r.crank_rad += crank_rad_s * dt;
+    r.wheel_rad += wheel_rad_s * dt;
+    if (r.crank_rad > progress_rad || r.wheel_rad > progress_rad) {
+        r.crank_rad = BIKE_REAL(Real, 0.0);
+        r.wheel_rad = BIKE_REAL(Real, 0.0);
+        r.stall_elapsed_s = BIKE_REAL(Real, 0.0);
+        r.has_stall_elapsed = 1;
+        return false;
+    }
+    r.stall_elapsed_s += dt;
+    if (r.stall_elapsed_s >= window_s) {
+        r.crank_rad = BIKE_REAL(Real, 0.0);
+        r.wheel_rad = BIKE_REAL(Real, 0.0);
+        r.stall_elapsed_s = BIKE_REAL(Real, 0.0);
+        r.has_stall_elapsed = 0;
+        return true;
+    }
+    return false;
 }
 
 template <class Real>
@@ -302,6 +549,143 @@ BIKE_HD bool pedaling_stall_update(
     }
     return false;
 }
+
+namespace detail {
+
+template <class Real, class TK, class ParamsPtr, class StatePtr>
+BIKE_HD Status pedaling_finish_step(
+    ParamsPtr params,
+    StatePtr state,
+    BIKE_THREAD PedalingState<Real> &next,
+    Real phase_rad,
+    Real rate_rad_s,
+    Real required_cadence_rpm,
+    Real effort_nm,
+    Real dt,
+    bool braking,
+    bool has_shaft_rad_s,
+    Real shaft_rad_s,
+    bool has_ceiling_nm,
+    Real ceiling_nm,
+    Real torque_factor,
+    bool cut_after_ceiling,
+    BIKE_THREAD PedalingOutput<Real> &out
+) noexcept {
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const Real kTwoPi = BIKE_REAL(Real, 6.28318530717958647692);
+    const Real clamped_required =
+        TK::max(required_cadence_rpm, BIKE_REAL(Real, 0.0));
+    const Real actual =
+        TK::abs(rate_rad_s) * BIKE_REAL(Real, 60.0) / kTwoPi;
+    const Real cadence = TK::max(actual, clamped_required);
+    if (params->coast_cadence_tau_s > BIKE_REAL(Real, 0.0) &&
+        next.has_cadence_ema != 0) {
+        const Real alpha =
+            TK::min(BIKE_REAL(Real, 1.0), dt / params->coast_cadence_tau_s);
+        next.cadence_ema = pedaling_flush_subnormal(
+            next.cadence_ema + alpha * (actual - next.cadence_ema));
+    } else {
+        next.cadence_ema = actual;
+        next.has_cadence_ema = 1;
+    }
+
+    const Real threshold = (next.coasting != 0)
+        ? params->resume_below_rpm
+        : params->coast_above_rpm;
+    const bool excessive =
+        (params->enabled != 0) && (next.cadence_ema >= threshold);
+    const CoastReason reason =
+        braking ? CoastReason::braking :
+        (effort_nm == BIKE_REAL(Real, 0.0) ? CoastReason::no_effort :
+        (excessive ? CoastReason::cadence : CoastReason::none));
+
+    if (reason == CoastReason::none) {
+        const Real previous_effort = next.effort;
+        const Real ema = next.cadence_ema;
+        const u8 has_ema = next.has_cadence_ema;
+        const RepositionState<Real> repos = next.reposition;
+
+        next = PedalingState<Real>{};
+        next.cadence_ema = ema;
+        next.has_cadence_ema = has_ema;
+        next.reposition = repos;
+
+        Real target = effort_nm;
+        if (params->mash_torque_nm > target &&
+            cadence < params->mash_cadence_rpm) {
+            target = effort_nm +
+                     (params->mash_torque_nm - effort_nm) *
+                         (BIKE_REAL(Real, 1.0) -
+                          cadence / params->mash_cadence_rpm);
+        }
+        if (cut_after_ceiling) {
+            if (has_ceiling_nm) {
+                target = TK::min(target, ceiling_nm);
+            }
+            target = target * torque_factor;
+        } else {
+            target = target * torque_factor;
+            if (has_ceiling_nm) {
+                target = TK::min(target, ceiling_nm);
+            }
+        }
+        const Real slew = params->effort_slew_nm_s;
+        Real final_effort = target;
+        if (slew > BIKE_REAL(Real, 0.0)) {
+            const Real delta = slew * dt;
+            final_effort = TK::max(
+                previous_effort - delta,
+                TK::min(previous_effort + delta, target));
+        }
+        next.effort = pedaling_flush_subnormal(final_effort);
+        Real wish = TK::max(
+            TK::min(clamped_required, next.cadence_ema) * kTwoPi /
+                BIKE_REAL(Real, 60.0),
+            BIKE_REAL(Real, 0.0));
+        const Real shaft = has_shaft_rad_s ? shaft_rad_s : rate_rad_s;
+        if (shaft > rate_rad_s) {
+            wish = TK::max(wish, shaft);
+        }
+        *state = next;
+        out.mode = PedalMode::pedaling;
+        out.reason = CoastReason::none;
+        out.effort_nm = next.effort;
+        out.required_cadence_rpm = clamped_required;
+        out.target_phase_rad = BIKE_REAL(Real, 0.0);
+        out.has_target_phase = 0;
+        out.target_rate_rad_s = wish;
+        return Status::ok;
+    }
+
+    if (next.coasting == 0) {
+        next.deceleration_rad_s2 = TK::abs(rate_rad_s) / params->stop_time_s;
+        next.target_phase_rad = phase_rad;
+        next.has_target_phase = 1;
+        next.target_rate_rad_s = rate_rad_s;
+    }
+    next.coasting = 1;
+    const Real prev_rate = next.target_rate_rad_s;
+    const Real next_mag = TK::max(
+        BIKE_REAL(Real, 0.0),
+        TK::abs(prev_rate) - next.deceleration_rad_s2 * dt);
+    next.target_rate_rad_s = pedaling_copysign(next_mag, prev_rate);
+    next.target_phase_rad =
+        next.target_phase_rad +
+        BIKE_REAL(Real, 0.5) * (prev_rate + next.target_rate_rad_s) * dt;
+    next.effort = BIKE_REAL(Real, 0.0);
+    *state = next;
+
+    out.mode = PedalMode::coasting;
+    out.reason = reason;
+    out.effort_nm = BIKE_REAL(Real, 0.0);
+    out.required_cadence_rpm = clamped_required;
+    out.target_phase_rad = next.target_phase_rad;
+    out.has_target_phase = 1;
+    out.target_rate_rad_s = next.target_rate_rad_s;
+    return Status::ok;
+}
+
+} // namespace detail
 
 template <class Real, class TK, class ParamsPtr, class StatePtr>
 BIKE_HD Status pedaling_update(
@@ -463,116 +847,191 @@ BIKE_HD Status pedaling_update(
         }
     }
 
-    const Real clamped_required =
-        TK::max(required_cadence_rpm, BIKE_REAL(Real, 0.0));
-    const Real actual =
-        TK::abs(rate_rad_s) * BIKE_REAL(Real, 60.0) / kTwoPi;
-    const Real cadence = TK::max(actual, clamped_required);
-    if (params->coast_cadence_tau_s > BIKE_REAL(Real, 0.0) &&
-        next.has_cadence_ema != 0) {
-        const Real alpha =
-            TK::min(BIKE_REAL(Real, 1.0), dt / params->coast_cadence_tau_s);
-        next.cadence_ema = pedaling_flush_subnormal(
-            next.cadence_ema + alpha * (actual - next.cadence_ema));
-    } else {
-        next.cadence_ema = actual;
-        next.has_cadence_ema = 1;
+    return detail::pedaling_finish_step<Real, TK>(
+        params, state, next, phase_rad, rate_rad_s, required_cadence_rpm,
+        effort_nm, dt, braking, has_shaft_rad_s, shaft_rad_s, has_ceiling_nm,
+        ceiling_nm, torque_factor, cut_after_ceiling, out);
+}
+
+template <class Real, class TK, class ParamsPtr, class StatePtr,
+          class ReposCfgPtr, class ReposStatePtr>
+BIKE_HD Status pedaling_step_with_reposition(
+    ParamsPtr params,
+    StatePtr state,
+    ReposCfgPtr repos_cfg,
+    ReposStatePtr repos_state,
+    Real phase_rad,
+    Real rate_rad_s,
+    Real required_cadence_rpm,
+    Real effort_nm,
+    Real dt,
+    bool braking,
+    bool reposition_request,
+    bool has_shaft_rad_s,
+    Real shaft_rad_s,
+    bool has_ceiling_nm,
+    Real ceiling_nm,
+    Real torque_factor,
+    bool cut_after_ceiling,
+    BIKE_THREAD PedalingOutput<Real> &out,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    out = PedalingOutput<Real>{};
+    if (state == nullptr || repos_state == nullptr) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    const Status p_st = pedaling_validate_params<Real, TK>(params, err);
+    if (p_st != Status::ok) {
+        return p_st;
+    }
+    const Status rc_st =
+        pedaling_validate_reposition_config<Real, TK>(repos_cfg, err);
+    if (rc_st != Status::ok) {
+        return rc_st;
+    }
+    const Status inv_st =
+        pedaling_validate_state_invariants<Real, TK>(state, repos_state, err);
+    if (inv_st != Status::ok) {
+        return inv_st;
+    }
+    if (!TK::isfinite(phase_rad) || !TK::isfinite(rate_rad_s) ||
+        !TK::isfinite(required_cadence_rpm) ||
+        (has_shaft_rad_s && !TK::isfinite(shaft_rad_s)) ||
+        (has_ceiling_nm &&
+         (!TK::isfinite(ceiling_nm) || ceiling_nm < BIKE_REAL(Real, 0.0))) ||
+        !TK::isfinite(torque_factor) || torque_factor < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(effort_nm) || effort_nm < BIKE_REAL(Real, 0.0) ||
+        !TK::isfinite(dt) || dt <= BIKE_REAL(Real, 0.0)) {
+        err = (!TK::isfinite(dt) || dt <= BIKE_REAL(Real, 0.0))
+            ? ErrCode::bad_dt
+            : ErrCode::outside_domain;
+        return Status::invalid_argument;
     }
 
-    const Real threshold = (next.coasting != 0)
-        ? params->resume_below_rpm
-        : params->coast_above_rpm;
-    const bool excessive =
-        (params->enabled != 0) && (next.cadence_ema >= threshold);
-    const CoastReason reason =
-        braking ? CoastReason::braking :
-        (effort_nm == BIKE_REAL(Real, 0.0) ? CoastReason::no_effort :
-        (excessive ? CoastReason::cadence : CoastReason::none));
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const Real kPi = BIKE_REAL(Real, 3.14159265358979323846);
+    // NOLINTNEXTLINE(modernize-use-std-numbers) MSL has no <numbers>
+    const Real kTwoPi = BIKE_REAL(Real, 6.28318530717958647692);
+    const Real wheel_rad_s = required_cadence_rpm * kTwoPi / BIKE_REAL(Real, 60.0);
 
-    if (reason == CoastReason::none) {
-        const Real previous_effort = next.effort;
-        const Real ema = next.cadence_ema;
-        const u8 has_ema = next.has_cadence_ema;
-        const RepositionState<Real> repos = next.reposition;
-
-        next = PedalingState<Real>{};
-        next.cadence_ema = ema;
-        next.has_cadence_ema = has_ema;
-        next.reposition = repos;
-
-        Real target = effort_nm;
-        if (params->mash_torque_nm > target &&
-            cadence < params->mash_cadence_rpm) {
-            target = effort_nm +
-                     (params->mash_torque_nm - effort_nm) *
-                         (BIKE_REAL(Real, 1.0) -
-                          cadence / params->mash_cadence_rpm);
+    if (params->enabled == 0) {
+        pedaling_reset<Real>(state);
+        *repos_state = StallRepositionStatePod<Real>{};
+        if (reposition_request) {
+            repos_state->active = 1;
+            repos_state->armed = 0;
         }
-        if (cut_after_ceiling) {
-            if (has_ceiling_nm) {
-                target = TK::min(target, ceiling_nm);
-            }
-            target = target * torque_factor;
-        } else {
-            target = target * torque_factor;
-            if (has_ceiling_nm) {
-                target = TK::min(target, ceiling_nm);
-            }
-        }
-        const Real slew = params->effort_slew_nm_s;
-        Real final_effort = target;
-        if (slew > BIKE_REAL(Real, 0.0)) {
-            const Real delta = slew * dt;
-            final_effort = TK::max(
-                previous_effort - delta,
-                TK::min(previous_effort + delta, target));
-        }
-        next.effort = pedaling_flush_subnormal(final_effort);
-        Real wish = TK::max(
-            TK::min(clamped_required, next.cadence_ema) * kTwoPi /
-                BIKE_REAL(Real, 60.0),
-            BIKE_REAL(Real, 0.0));
-        const Real shaft = has_shaft_rad_s ? shaft_rad_s : rate_rad_s;
-        if (shaft > rate_rad_s) {
-            wish = TK::max(wish, shaft);
-        }
-        *state = next;
-        out.mode = PedalMode::pedaling;
-        out.reason = CoastReason::none;
-        out.effort_nm = next.effort;
-        out.required_cadence_rpm = clamped_required;
-        out.target_phase_rad = BIKE_REAL(Real, 0.0);
+        out.mode = PedalMode::disabled;
+        out.reason = CoastReason::disabled;
+        out.effort_nm = BIKE_REAL(Real, 0.0);
+        out.required_cadence_rpm = TK::max(required_cadence_rpm, BIKE_REAL(Real, 0.0));
         out.has_target_phase = 0;
-        out.target_rate_rad_s = wish;
+        out.target_phase_rad = BIKE_REAL(Real, 0.0);
+        out.target_rate_rad_s = BIKE_REAL(Real, 0.0);
         return Status::ok;
     }
 
-    if (next.coasting == 0) {
-        next.deceleration_rad_s2 = TK::abs(rate_rad_s) / params->stop_time_s;
-        next.target_phase_rad = phase_rad;
-        next.has_target_phase = 1;
-        next.target_rate_rad_s = rate_rad_s;
+    PedalingState<Real> next = *state;
+    StallRepositionStatePod<Real> r = *repos_state;
+    const bool tracked =
+        (repos_cfg->reposition_on_stall != 0) || reposition_request ||
+        (r.active != 0 &&
+         (r.has_goal != 0 || r.cooldown_s > BIKE_REAL(Real, 0.0)));
+    if (tracked && r.active == 0) {
+        r = StallRepositionStatePod<Real>{};
+        r.active = 1;
+        r.armed = 1;
     }
-    next.coasting = 1;
-    const Real prev_rate = next.target_rate_rad_s;
-    const Real next_mag = TK::max(
-        BIKE_REAL(Real, 0.0),
-        TK::abs(prev_rate) - next.deceleration_rad_s2 * dt);
-    next.target_rate_rad_s = pedaling_copysign(next_mag, prev_rate);
-    next.target_phase_rad =
-        next.target_phase_rad +
-        BIKE_REAL(Real, 0.5) * (prev_rate + next.target_rate_rad_s) * dt;
-    next.effort = BIKE_REAL(Real, 0.0);
-    *state = next;
+    if (r.active != 0) {
+        r.cooldown_s = TK::max(BIKE_REAL(Real, 0.0), r.cooldown_s - dt);
+        if (braking) {
+            r.has_goal = 0;
+            r.goal_rad = BIKE_REAL(Real, 0.0);
+            r.reason = 0;
+            r.cooldown_s = repos_cfg->cooldown_s;
+        }
+        bool request_edge = false;
+        if (reposition_request) {
+            request_edge = (r.armed != 0);
+            r.armed = 0;
+        } else {
+            r.armed = 1;
+        }
+        const bool loaded =
+            (repos_cfg->reposition_on_stall != 0) && !braking &&
+            (r.has_goal == 0) && (r.cooldown_s <= BIKE_REAL(Real, 0.0)) &&
+            (effort_nm >= repos_cfg->min_effort_nm);
+        const bool reflex_edge = pedaling_stall_update_seconds<Real>(
+            r, repos_cfg->stall_window_s, repos_cfg->stall_progress_rad,
+            rate_rad_s, wheel_rad_s, dt, loaded);
+        for (i32 pass = 0; pass < 2; ++pass) {
+            const bool edge = (pass == 0) ? request_edge : reflex_edge;
+            const u8 why = (pass == 0) ? u8{1} : u8{2};
+            if (braking || !edge || r.has_goal != 0 ||
+                r.cooldown_s > BIKE_REAL(Real, 0.0)) {
+                continue;
+            }
+            Real turn = phase_rad - TK::floor(phase_rad / kPi) * kPi;
+            if (turn < BIKE_REAL(Real, 0.0)) {
+                turn += kPi;
+            }
+            if (turn >= kPi) {
+                turn -= kPi;
+            }
+            if (TK::min(turn, kPi - turn) <= repos_cfg->noop_rad) {
+                continue;
+            }
+            r.goal_rad = phase_rad - turn;
+            r.has_goal = 1;
+            r.reason = why;
+            r.elapsed_s = BIKE_REAL(Real, 0.0);
+            next.effort = BIKE_REAL(Real, 0.0);
+            next.coasting = 0;
+            break;
+        }
+        if (r.has_goal != 0) {
+            const Real remaining = phase_rad - r.goal_rad;
+            r.elapsed_s += dt;
+            if (remaining <= repos_cfg->phase_tolerance_rad ||
+                r.elapsed_s > repos_cfg->timeout_s) {
+                r.has_goal = 0;
+                r.goal_rad = BIKE_REAL(Real, 0.0);
+                r.reason = 0;
+                r.cooldown_s = repos_cfg->cooldown_s;
+            } else {
+                const Real kApproachTauS = BIKE_REAL(Real, 0.05);
+                const Real target_rate = -TK::min(
+                    repos_cfg->back_rate_rad_s, remaining / kApproachTauS);
+                *state = next;
+                *repos_state = r;
+                out.mode = PedalMode::coasting;
+                out.reason = (r.reason == 1)
+                    ? CoastReason::reposition_requested
+                    : CoastReason::reposition_stall;
+                out.effort_nm = BIKE_REAL(Real, 0.0);
+                out.required_cadence_rpm =
+                    TK::max(required_cadence_rpm, BIKE_REAL(Real, 0.0));
+                out.target_phase_rad = phase_rad + target_rate * dt;
+                out.has_target_phase = 1;
+                out.target_rate_rad_s = target_rate;
+                return Status::ok;
+            }
+        }
+        if (repos_cfg->reposition_on_stall == 0 && r.has_goal == 0 &&
+            r.cooldown_s <= BIKE_REAL(Real, 0.0) && r.armed != 0) {
+            r = StallRepositionStatePod<Real>{};
+            r.active = 0;
+            r.armed = 1;
+        }
+    }
 
-    out.mode = PedalMode::coasting;
-    out.reason = reason;
-    out.effort_nm = BIKE_REAL(Real, 0.0);
-    out.required_cadence_rpm = clamped_required;
-    out.target_phase_rad = next.target_phase_rad;
-    out.has_target_phase = 1;
-    out.target_rate_rad_s = next.target_rate_rad_s;
-    return Status::ok;
+    *repos_state = r;
+    return detail::pedaling_finish_step<Real, TK>(
+        params, state, next, phase_rad, rate_rad_s, required_cadence_rpm,
+        effort_nm, dt, braking, has_shaft_rad_s, shaft_rad_s, has_ceiling_nm,
+        ceiling_nm, torque_factor, cut_after_ceiling, out);
 }
 
 } // namespace bike::physics_core

@@ -97,7 +97,7 @@ BIKE_HD float ceil_val_of(float x) noexcept {
 #elif defined(__CUDACC__)
     return ::ceilf(x);
 #else
-    return std::ceilf(x);
+    return std::ceil(x);
 #endif
 }
 

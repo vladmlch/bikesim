@@ -61,6 +61,16 @@ struct AssistState {
 };
 
 template <class Real>
+struct AssistTickOutput {
+    Real request_nm = BIKE_REAL(Real, 0.0);
+    Real safety_nm = BIKE_REAL(Real, 0.0);
+    Real delivered_nm = BIKE_REAL(Real, 0.0);
+    u8 enabled = 0;
+    u8 safety_limited = 0;
+    u8 pad[2]{};
+};
+
+template <class Real>
 BIKE_HD Real assist_flush_subnormal(Real x) noexcept {
     if constexpr (sizeof(Real) == 4) {
         const u32 bits = pf_f32_to_u32(static_cast<float>(x));
@@ -179,6 +189,42 @@ BIKE_HD Status assist_validate_params(
 template <class Real, class StatePtr>
 BIKE_HD void assist_reset(StatePtr state) noexcept {
     *state = AssistState<Real>{};
+}
+
+template <class Real, class TK, class StatePtr>
+BIKE_HD Status assist_validate_state_invariants(
+    StatePtr state,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    if (state == nullptr) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (!TK::isfinite(state->torque) || !TK::isfinite(state->last_gain) ||
+        !TK::isfinite(state->hold_power_w) || !TK::isfinite(state->hold_torque_nm) ||
+        state->torque < BIKE_REAL(Real, 0.0) ||
+        state->last_gain < BIKE_REAL(Real, 0.0) ||
+        state->hold_power_w < BIKE_REAL(Real, 0.0) ||
+        state->hold_torque_nm < BIKE_REAL(Real, 0.0) ||
+        state->release_hold_ticks < 0) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    // C3 relational invariants:
+    //   release_hold_left > 0 => hold_power > 0 && hold_torque > 0
+    //   hold_power > 0 <=> hold_torque > 0
+    const bool has_hold_power = state->hold_power_w > BIKE_REAL(Real, 0.0);
+    const bool has_hold_torque = state->hold_torque_nm > BIKE_REAL(Real, 0.0);
+    if (has_hold_power != has_hold_torque) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (state->release_hold_ticks > 0 && !has_hold_power) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    return Status::ok;
 }
 
 template <class Real, class TK>
@@ -316,13 +362,9 @@ BIKE_HD Status assist_step(
             : ErrCode::outside_domain;
         return Status::invalid_argument;
     }
-    if (state->torque < BIKE_REAL(Real, 0.0) ||
-        state->last_gain < BIKE_REAL(Real, 0.0) ||
-        state->hold_power_w < BIKE_REAL(Real, 0.0) ||
-        state->hold_torque_nm < BIKE_REAL(Real, 0.0) ||
-        state->release_hold_ticks < 0) {
-        err = ErrCode::outside_domain;
-        return Status::invalid_argument;
+    const Status s_st = assist_validate_state_invariants<Real, TK>(state, err);
+    if (s_st != Status::ok) {
+        return s_st;
     }
 
     if (braking) {
@@ -357,9 +399,16 @@ BIKE_HD Status assist_step(
     if (target < next.torque) {
         if (next.hold_power_w <= BIKE_REAL(Real, 0.0) &&
             omega > BIKE_REAL(Real, 0.0)) {
-            next.hold_power_w = next.torque * omega;
-            next.hold_torque_nm = next.torque;
-            next.release_hold_ticks = params->release_hold_ticks;
+            const Real hold_power = next.torque * omega;
+            if (!TK::isfinite(hold_power)) {
+                err = ErrCode::overflow_nonfinite;
+                return Status::overflow;
+            }
+            if (hold_power > BIKE_REAL(Real, 0.0)) {
+                next.hold_power_w = hold_power;
+                next.hold_torque_nm = next.torque;
+                next.release_hold_ticks = params->release_hold_ticks;
+            }
         }
     } else {
         next.hold_power_w = BIKE_REAL(Real, 0.0);
@@ -402,6 +451,120 @@ BIKE_HD Status assist_step(
     *state = next;
     out_torque = torque;
     return Status::ok;
+}
+
+template <class Real, class TK, class ParamsPtr, class StatePtr>
+BIKE_HD Status assist_step_with_limit(
+    ParamsPtr params,
+    StatePtr state,
+    Real human_nm,
+    Real cadence_rpm,
+    Real speed_mps,
+    bool braking,
+    Real dt,
+    bool has_torque_request,
+    Real torque_request_nm,
+    bool has_motor_limit,
+    Real motor_limit_nm,
+    bool has_shaft_rpm,
+    Real shaft_rpm,
+    bool active,
+    BIKE_THREAD AssistTickOutput<Real> &out,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    out = AssistTickOutput<Real>{};
+    if (has_motor_limit &&
+        (!TK::isfinite(motor_limit_nm) ||
+         motor_limit_nm < BIKE_REAL(Real, 0.0))) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+
+    // Exact drivetrain.cpp:862-895 ordering:
+    // 1) assist_step runs WITHOUT motor_limit_nm (only external motor_torque_nm).
+    // 2) safety = has_motor_limit ? min(request, motor_limit_nm) : request.
+    // 3) enabled = active && safety > 0 && !braking; delivered = enabled ? safety : 0.
+    // 4) state->torque = delivered (only when active, matching `if (effort_) bank.assist.torque = m.delivered`).
+    Real request = BIKE_REAL(Real, 0.0);
+    if (active) {
+        const Status st = assist_step<Real, TK>(
+            params, state, human_nm, cadence_rpm, speed_mps, braking, dt,
+            has_torque_request, torque_request_nm, has_shaft_rpm, shaft_rpm,
+            request, err);
+        if (st != Status::ok) {
+            return st;
+        }
+    }
+    const Real safety =
+        has_motor_limit ? TK::min(request, motor_limit_nm) : request;
+    const bool enabled = active && (safety > BIKE_REAL(Real, 0.0)) && !braking;
+    const Real delivered = enabled ? safety : BIKE_REAL(Real, 0.0);
+    if (active && state != nullptr) {
+        state->torque = assist_flush_subnormal(
+            TK::max(BIKE_REAL(Real, 0.0), delivered));
+    }
+    out.request_nm = request;
+    out.safety_nm = safety;
+    out.delivered_nm = delivered;
+    out.enabled = enabled ? u8{1} : u8{0};
+    out.safety_limited = (safety < request) ? u8{1} : u8{0};
+    return Status::ok;
+}
+
+template <class Real, class TK, class StatePtr>
+BIKE_HD Status assist_post_solve_settle(
+    StatePtr state,
+    Real requested_torque_nm,
+    Real solved_actuator_torque_nm,
+    Real neg_tol,
+    Real pos_tol,
+    BIKE_THREAD Real &out_settled_torque_nm,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    err = ErrCode::none;
+    out_settled_torque_nm = BIKE_REAL(Real, 0.0);
+    const Status s_st = assist_validate_state_invariants<Real, TK>(state, err);
+    if (s_st != Status::ok) {
+        return s_st;
+    }
+    if (!TK::isfinite(requested_torque_nm) ||
+        !TK::isfinite(solved_actuator_torque_nm) ||
+        !TK::isfinite(neg_tol) || !TK::isfinite(pos_tol) ||
+        requested_torque_nm < BIKE_REAL(Real, 0.0) ||
+        neg_tol < BIKE_REAL(Real, 0.0) || pos_tol < BIKE_REAL(Real, 0.0)) {
+        err = ErrCode::outside_domain;
+        return Status::invalid_argument;
+    }
+    if (solved_actuator_torque_nm < -neg_tol ||
+        solved_actuator_torque_nm > requested_torque_nm + pos_tol) {
+        err = ErrCode::outside_domain;
+        return Status::logic_error;
+    }
+    const Real settled = assist_flush_subnormal(
+        TK::max(BIKE_REAL(Real, 0.0), solved_actuator_torque_nm));
+    state->torque = settled;
+    out_settled_torque_nm = settled;
+    return Status::ok;
+}
+
+template <class Real, class TK, class StatePtr>
+BIKE_HD Status assist_post_solve_settle(
+    StatePtr state,
+    Real requested_torque_nm,
+    Real solved_actuator_torque_nm,
+    BIKE_THREAD Real &out_settled_torque_nm,
+    BIKE_THREAD ErrCode &err
+) noexcept {
+    const Real neg_tol = (sizeof(Real) == 4)
+        ? BIKE_REAL(Real, 1e-6)
+        : BIKE_REAL(Real, 1e-10);
+    const Real pos_tol = (sizeof(Real) == 4)
+        ? BIKE_REAL(Real, 1e-5)
+        : BIKE_REAL(Real, 1e-8);
+    return assist_post_solve_settle<Real, TK>(
+        state, requested_torque_nm, solved_actuator_torque_nm,
+        neg_tol, pos_tol, out_settled_torque_nm, err);
 }
 
 } // namespace bike::physics_core

@@ -4,6 +4,9 @@
 #include "tyre_upload.hpp"
 
 #include "../model_access.hpp"
+#include "gpu_toolkit.hpp"
+#include "tyre_pneumatic_geometry.hpp"
+#include "tyre_tabulated.hpp"
 
 #include <algorithm>
 #include <array>
@@ -57,12 +60,25 @@ void populate_surface_map(
     SurfaceMapView<float> &out_map
 ) {
     out_map = SurfaceMapView<float>{};
-    if (cfg.surface_mode == "configured") {
+    if (cfg.backend == "pneumatic") {
+        if (!cfg.pneumatic.has_value()) {
+            throw std::invalid_argument("pneumatic backend requires pneumatic config");
+        }
+        if (cfg.pneumatic->surface.has_value()) {
+            out_map.has_surface_map = 1;
+            out_map.default_surface = pack_surface_spec(*cfg.pneumatic->surface, 0);
+            out_map.section_count = 0;
+            return;
+        }
+        if (!cfg.surface_map.has_value()) {
+            throw std::invalid_argument(
+                "pneumatic tires need a track surface map or a configured surface");
+        }
+    } else if (cfg.surface_mode == "configured") {
         out_map.has_surface_map = 0;
         out_map.section_count = 0;
         return;
-    }
-    if (cfg.surface_mode != "track") {
+    } else if (cfg.surface_mode != "track") {
         throw std::invalid_argument("unsupported tire surface_mode '" + cfg.surface_mode + "'");
     }
     if (!cfg.surface_map.has_value()) {
@@ -202,12 +218,6 @@ void validate_and_pack_compliant_side(
         throw std::invalid_argument("compliant_2d tire params missing material");
     }
     const nativecfg::TireMaterial &mat = *params.material;
-    if (mat.table.has_value()) {
-        throw std::invalid_argument("GPU tyre upload rejects TabulatedRadial material");
-    }
-    if (!std::isfinite(mat.radial_k_n_m) || mat.radial_k_n_m <= 0.0) {
-        throw std::invalid_argument("compliant_2d radial_k_n_m must be finite and positive");
-    }
     if (!std::isfinite(mat.loss_factor) || mat.loss_factor < 0.0 || mat.loss_factor >= 1.0) {
         throw std::invalid_argument("compliant_2d loss_factor must lie in [0, 1)");
     }
@@ -220,6 +230,82 @@ void validate_and_pack_compliant_side(
         throw std::invalid_argument("compliant_2d valid_load_range_n invalid");
     }
 
+    if (mat.table.has_value()) {
+        const nativecfg::TireTable &tbl = *mat.table;
+        if (tbl.deflection_m.size() < 2 || tbl.deflection_m.size() != tbl.force_n.size()) {
+            throw std::invalid_argument("compliant_2d TabulatedRadial table shape invalid");
+        }
+        if (tbl.deflection_m.size() > static_cast<std::size_t>(kMaxGpuRadialTableKnots)) {
+            throw std::invalid_argument("compliant_2d TabulatedRadial knot count exceeds kMaxGpuRadialTableKnots");
+        }
+        for (std::size_t i = 0; i < tbl.deflection_m.size(); ++i) {
+            if (!std::isfinite(tbl.deflection_m[i]) || !std::isfinite(tbl.force_n[i])) {
+                throw std::invalid_argument("compliant_2d TabulatedRadial entries must be finite");
+            }
+            if (i > 0 && (tbl.deflection_m[i] <= tbl.deflection_m[i - 1] || tbl.force_n[i] < tbl.force_n[i - 1])) {
+                throw std::invalid_argument("compliant_2d TabulatedRadial deflections must increase and forces must not decrease");
+            }
+        }
+        if (tbl.deflection_m.front() != 0.0 || tbl.force_n.front() != 0.0) {
+            throw std::invalid_argument("compliant_2d TabulatedRadial table must start at (0, 0)");
+        }
+        if (!(tbl.force_n.back() > 0.0) || load_hi > tbl.force_n.back()) {
+            throw std::invalid_argument("compliant_2d TabulatedRadial valid_load_range_n exceeds table");
+        }
+
+        std::array<float, kMaxGpuRadialTableKnots> defl_f{};
+        std::array<float, kMaxGpuRadialTableKnots> force_f{};
+        for (std::size_t i = 0; i < tbl.deflection_m.size(); ++i) {
+            defl_f[i] = static_cast<float>(tbl.deflection_m[i]);
+            force_f[i] = static_cast<float>(tbl.force_n[i]);
+        }
+        TabulatedRadialParams<float> tab_params{};
+        ErrCode tab_err = ErrCode::none;
+        if (init_tabulated_radial_params<float, GpuToolkit>(
+                static_cast<i32>(tbl.deflection_m.size()),
+                defl_f.data(),
+                force_f.data(),
+                tab_params,
+                tab_err) != Status::ok) {
+            throw std::invalid_argument("compliant_2d TabulatedRadial initialization failed");
+        }
+
+        CompliantMaterialView<float> view{};
+        view.radial_k_n_m = (std::isfinite(mat.radial_k_n_m) && mat.radial_k_n_m > 0.0)
+            ? static_cast<float>(mat.radial_k_n_m)
+            : 0.0f;
+        view.loss_factor = static_cast<float>(mat.loss_factor);
+        view.hysteresis_rate_eps_mps = static_cast<float>(mat.hysteresis_rate_eps_mps);
+        view.valid_load_min_n = static_cast<float>(load_lo);
+        view.valid_load_max_n = static_cast<float>(load_hi);
+        view.has_tabulated_radial = 1;
+        view.use_tabulated = 1;
+        view.knot_count = tab_params.knot_count;
+        const std::size_t n = static_cast<std::size_t>(tab_params.knot_count);
+        const std::span<float, kMaxGpuRadialTableKnots> dst_defl(view.deflection_m);
+        const std::span<float, kMaxGpuRadialTableKnots> dst_force(view.force_n);
+        const std::span<float, kMaxGpuRadialTableKnots> dst_integ(view.integral);
+        const std::span<float, kMaxGpuRadialTableKnots - 1> dst_slopes(view.slopes);
+        const std::span<const float, kMaxRadialTableKnots> src_defl(tab_params.deflection_m);
+        const std::span<const float, kMaxRadialTableKnots> src_force(tab_params.force_n);
+        const std::span<const float, kMaxRadialTableKnots> src_integ(tab_params.integral);
+        const std::span<const float, kMaxRadialTableKnots - 1> src_slopes(tab_params.slopes);
+        for (std::size_t i = 0; i < n; ++i) {
+            dst_defl[i] = src_defl[i];
+            dst_force[i] = src_force[i];
+            dst_integ[i] = src_integ[i];
+        }
+        for (std::size_t i = 0; i + 1 < n; ++i) {
+            dst_slopes[i] = src_slopes[i];
+        }
+        out_spec.compliant = view;
+        return;
+    }
+
+    if (!std::isfinite(mat.radial_k_n_m) || mat.radial_k_n_m <= 0.0) {
+        throw std::invalid_argument("compliant_2d radial_k_n_m must be finite and positive");
+    }
+
     out_spec.compliant = CompliantMaterialView<float>{
         .radial_k_n_m = static_cast<float>(mat.radial_k_n_m),
         .loss_factor = static_cast<float>(mat.loss_factor),
@@ -227,7 +313,120 @@ void validate_and_pack_compliant_side(
         .valid_load_min_n = static_cast<float>(load_lo),
         .valid_load_max_n = static_cast<float>(load_hi),
         .has_tabulated_radial = 0,
+        .use_tabulated = 0,
     };
+}
+
+void validate_and_pack_pneumatic_side(
+    const nativecfg::PneumaticConfig &pneu,
+    const nativecfg::PneumaticTyreSpec &pspec,
+    TyreWheelSpec<float> &out_spec
+) {
+    if (pneu.tier != "fast" && pneu.tier != "detailed") {
+        throw std::invalid_argument("pneumatic tier must be 'fast' or 'detailed'");
+    }
+    const bool fast = (pneu.tier == "fast");
+    if (pneu.n_rays != (fast ? 64 : 256)) {
+        throw std::invalid_argument("pneumatic n_rays must match tier (64 for fast, 256 for detailed)");
+    }
+    if (pneu.discretised_brush == fast) {
+        throw std::invalid_argument("pneumatic discretised_brush must match tier");
+    }
+    if (!std::isfinite(pneu.half_angle_deg) || pneu.half_angle_deg <= 0.0 || pneu.half_angle_deg >= 90.0) {
+        throw std::invalid_argument("pneumatic half_angle_deg must lie in (0, 90)");
+    }
+    auto check_pos = [](double v, const char *msg) {
+        if (!std::isfinite(v) || v <= 0.0) {
+            throw std::invalid_argument(msg);
+        }
+    };
+    auto check_nonneg = [](double v, const char *msg) {
+        if (!std::isfinite(v) || v < 0.0) {
+            throw std::invalid_argument(msg);
+        }
+    };
+    check_pos(pspec.outer_radius_mm, "pneumatic outer_radius_mm must be positive");
+    check_pos(pspec.rim_radius_mm, "pneumatic rim_radius_mm must be positive");
+    check_pos(pspec.section_height_mm, "pneumatic section_height_mm must be positive");
+    check_pos(pspec.pressure_bar, "pneumatic pressure_bar must be positive");
+    check_pos(pspec.crr_reference, "pneumatic crr_reference must be positive");
+    check_pos(pspec.casing_width_mm, "pneumatic casing_width_mm must be positive");
+    check_pos(pspec.compressed_casing_mm, "pneumatic compressed_casing_mm must be positive");
+    check_pos(pspec.area_factor, "pneumatic area_factor must be positive");
+    check_pos(pspec.contact_length_factor, "pneumatic contact_length_factor must be positive");
+    check_pos(pspec.rate_relaxation_s, "pneumatic rate_relaxation_s must be positive");
+    check_pos(pspec.hysteresis_rate_eps_mps, "pneumatic hysteresis_rate_eps_mps must be positive");
+    check_pos(pspec.relaxation_length_mm, "pneumatic relaxation_length_mm must be positive");
+    check_pos(pspec.rim_stiffness_n_mm2, "pneumatic rim_stiffness_n_mm2 must be positive");
+    check_nonneg(pspec.carcass_stiffness_n_mm2, "pneumatic carcass_stiffness_n_mm2 must be nonnegative");
+    check_nonneg(pspec.rate_stiffening, "pneumatic rate_stiffening must be nonnegative");
+    check_nonneg(pspec.loss_factor, "pneumatic loss_factor must be nonnegative");
+    check_nonneg(pspec.tread_loss_crr, "pneumatic tread_loss_crr must be nonnegative");
+    if (!(pspec.rim_radius_mm < pspec.outer_radius_mm)) {
+        throw std::invalid_argument("pneumatic rim_radius_mm must be smaller than outer_radius_mm");
+    }
+    if (!(pspec.rim_strike_deflection_mm() > 0.0)) {
+        throw std::invalid_argument("pneumatic rim_strike_deflection_mm must be positive");
+    }
+    if (pspec.area_factor > 1.0 || pspec.contact_length_factor > 1.0 || pspec.loss_factor >= 1.0) {
+        throw std::invalid_argument("pneumatic area_factor/contact_length_factor/loss_factor out of bounds");
+    }
+    const double expected_radius_m = pspec.outer_radius_mm / 1000.0;
+    if (!(std::abs(static_cast<double>(out_spec.radius_m) - expected_radius_m) <= 1e-6)) {
+        throw std::invalid_argument("pneumatic contact geom radius does not match outer_radius_mm");
+    }
+
+    struct HostDoubleTk {
+        static double div(double a, double b) noexcept { return a / b; }
+        static bool isfinite(double x) noexcept { return std::isfinite(x); }
+    };
+
+    PneumaticRayRing<double> ring_d{};
+    ErrCode ring_err = ErrCode::none;
+    const double half_angle_rad = pneu.half_angle_deg * (std::numbers::pi / 180.0);
+    if (init_pneumatic_ray_ring<double, HostDoubleTk>(
+            static_cast<i32>(pneu.n_rays),
+            half_angle_rad,
+            ring_d,
+            ring_err) != Status::ok) {
+        throw std::invalid_argument("pneumatic ray ring initialization failed");
+    }
+
+    PneumaticMaterialView<float> dst{};
+    dst.outer_radius_mm = static_cast<float>(pspec.outer_radius_mm);
+    dst.rim_radius_mm = static_cast<float>(pspec.rim_radius_mm);
+    dst.section_height_mm = static_cast<float>(pspec.section_height_mm);
+    dst.pressure_bar = static_cast<float>(pspec.pressure_bar);
+    dst.crr_reference = static_cast<float>(pspec.crr_reference);
+    dst.casing_width_mm = static_cast<float>(pspec.casing_width_mm);
+    dst.compressed_casing_mm = static_cast<float>(pspec.compressed_casing_mm);
+    dst.area_factor = static_cast<float>(pspec.area_factor);
+    dst.carcass_stiffness_n_mm2 = static_cast<float>(pspec.carcass_stiffness_n_mm2);
+    dst.contact_length_factor = static_cast<float>(pspec.contact_length_factor);
+    dst.rate_stiffening = static_cast<float>(pspec.rate_stiffening);
+    dst.rate_relaxation_s = static_cast<float>(pspec.rate_relaxation_s);
+    dst.loss_factor = static_cast<float>(pspec.loss_factor);
+    dst.hysteresis_rate_eps_mps = static_cast<float>(pspec.hysteresis_rate_eps_mps);
+    dst.relaxation_length_mm = static_cast<float>(pspec.relaxation_length_mm);
+    dst.rim_stiffness_n_mm2 = static_cast<float>(pspec.rim_stiffness_n_mm2);
+    dst.tread_loss_crr = static_cast<float>(pspec.tread_loss_crr);
+    dst.n_rays = ring_d.n_rays;
+    dst.discretised_brush = pneu.discretised_brush ? 1 : 0;
+    dst.half_angle_rad = static_cast<float>(ring_d.half_angle_rad);
+    dst.dtheta_rad = static_cast<float>(ring_d.dtheta_rad);
+    const std::span<float, kMaxGpuPneumaticRays> dst_theta(dst.theta_rad);
+    const std::span<float, kMaxGpuPneumaticRays> dst_ux(dst.ux);
+    const std::span<float, kMaxGpuPneumaticRays> dst_uz(dst.uz);
+    const std::span<const double, kMaxPneumaticRays> src_theta(ring_d.theta_rad);
+    const std::span<const double, kMaxPneumaticRays> src_ux(ring_d.ux);
+    const std::span<const double, kMaxPneumaticRays> src_uz(ring_d.uz);
+    for (i32 i = 0; i < ring_d.n_rays; ++i) {
+        const std::size_t idx = static_cast<std::size_t>(i);
+        dst_theta[idx] = static_cast<float>(src_theta[idx]);
+        dst_ux[idx] = static_cast<float>(src_ux[idx]);
+        dst_uz[idx] = static_cast<float>(src_uz[idx]);
+    }
+    out_spec.pneumatic = dst;
 }
 
 void validate_and_pack_distributed_side(
@@ -296,108 +495,149 @@ void populate_terrain_views(
     const nativecfg::TireConfig &cfg,
     HostTyreUploadBundle &bundle
 ) {
-    const int terrain_geom = mj_name2id(m, mjOBJ_GEOM, "terrain");
-    if (terrain_geom < 0) {
-        throw std::invalid_argument("model has no 'terrain'");
-    }
-    model_access::require_id(terrain_geom, m->ngeom, "terrain geom");
+    std::vector<double> px_d;
+    std::vector<double> pz_d;
+    std::size_t cs = 0;
 
-    const std::span<const int> geom_type =
-        model_access::readonly_buffer(m->geom_type, m->ngeom, "geom_type");
-    const std::span<const int> geom_dataid =
-        model_access::readonly_buffer(m->geom_dataid, m->ngeom, "geom_dataid");
-    if (geom_type[to_idx(terrain_geom)] != mjGEOM_HFIELD) {
-        throw std::invalid_argument("GPU tyre upload requires compiled terrain heightfield");
-    }
-    const int hfield = geom_dataid[to_idx(terrain_geom)];
-    model_access::require_id(hfield, m->nhfield, "terrain heightfield ID");
+    if (bundle.gpu_model.backend == TyreBackendKind::pneumatic &&
+        cfg.pneumatic.has_value() &&
+        cfg.pneumatic->profile.z_m.size() >= 2) {
+        const nativecfg::PneumaticProfile &prof = cfg.pneumatic->profile;
+        if (!std::isfinite(prof.x0_m) || !std::isfinite(prof.dx_m) || !(prof.dx_m > 0.0)) {
+            throw std::invalid_argument("pneumatic profile needs finite x0_m and positive dx_m");
+        }
+        cs = prof.z_m.size();
+        px_d.resize(cs);
+        pz_d.resize(cs);
+        for (std::size_t i = 0; i < cs; ++i) {
+            if (!std::isfinite(prof.z_m[i])) {
+                throw std::invalid_argument("pneumatic profile height is non-finite");
+            }
+            px_d[i] = prof.x0_m + prof.dx_m * static_cast<double>(i);
+            pz_d[i] = prof.z_m[i];
+        }
+        bundle.gpu_model.road_x0_m = static_cast<float>(prof.x0_m);
+        bundle.gpu_model.road_dx_m = static_cast<float>(prof.dx_m);
+        bundle.gpu_model.road_is_uniform_grid = 1;
+    } else {
+        const int terrain_geom = mj_name2id(m, mjOBJ_GEOM, "terrain");
+        if (terrain_geom < 0) {
+            throw std::invalid_argument("model has no 'terrain'");
+        }
+        model_access::require_id(terrain_geom, m->ngeom, "terrain geom");
 
-    const std::span<const int> nrow =
-        model_access::readonly_buffer(m->hfield_nrow, m->nhfield, "hfield_nrow");
-    const std::span<const int> ncol =
-        model_access::readonly_buffer(m->hfield_ncol, m->nhfield, "hfield_ncol");
-    const std::span<const int> adr =
-        model_access::readonly_buffer(m->hfield_adr, m->nhfield, "hfield_adr");
-    const int rows = nrow[to_idx(hfield)];
-    const int cols = ncol[to_idx(hfield)];
-    const int start = adr[to_idx(hfield)];
-    if (cols < 2 || rows < 2 || start < 0) {
-        throw std::invalid_argument("invalid compiled heightfield raster");
-    }
+        const std::span<const int> geom_type =
+            model_access::readonly_buffer(m->geom_type, m->ngeom, "geom_type");
+        const std::span<const int> geom_dataid =
+            model_access::readonly_buffer(m->geom_dataid, m->ngeom, "geom_dataid");
+        if (geom_type[to_idx(terrain_geom)] != mjGEOM_HFIELD) {
+            throw std::invalid_argument("GPU tyre upload requires compiled terrain heightfield");
+        }
+        const int hfield = geom_dataid[to_idx(terrain_geom)];
+        model_access::require_id(hfield, m->nhfield, "terrain heightfield ID");
 
-    const std::span<const float> hfield_data =
-        model_access::readonly_buffer(m->hfield_data, m->nhfielddata, "hfield_data");
-    const std::size_t raster_count = model_access::checked_product(
-        to_idx(rows), to_idx(cols), hfield_data.size());
-    const std::size_t raster_end = model_access::checked_sum(
-        to_idx(start), raster_count, hfield_data.size());
-    const std::span<const float> raster = hfield_data.subspan(
-        to_idx(start), raster_end - to_idx(start));
-    for (const float v : raster) {
-        if (!std::isfinite(v)) {
+        const std::span<const int> nrow =
+            model_access::readonly_buffer(m->hfield_nrow, m->nhfield, "hfield_nrow");
+        const std::span<const int> ncol =
+            model_access::readonly_buffer(m->hfield_ncol, m->nhfield, "hfield_ncol");
+        const std::span<const int> adr =
+            model_access::readonly_buffer(m->hfield_adr, m->nhfield, "hfield_adr");
+        const int rows = nrow[to_idx(hfield)];
+        const int cols = ncol[to_idx(hfield)];
+        const int start = adr[to_idx(hfield)];
+        if (cols < 2 || rows < 2 || start < 0) {
             throw std::invalid_argument("invalid compiled heightfield raster");
         }
-    }
-    std::size_t cs = to_idx(cols);
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
-            if (std::abs(raster[to_idx(r) * cs + to_idx(c)] - raster[to_idx(c)]) > 1e-10f) {
-                throw std::invalid_argument("GPU tyre upload does not support lateral terrain variation");
+
+        const std::span<const float> hfield_data =
+            model_access::readonly_buffer(m->hfield_data, m->nhfielddata, "hfield_data");
+        const std::size_t raster_count = model_access::checked_product(
+            to_idx(rows), to_idx(cols), hfield_data.size());
+        const std::size_t raster_end = model_access::checked_sum(
+            to_idx(start), raster_count, hfield_data.size());
+        const std::span<const float> raster = hfield_data.subspan(
+            to_idx(start), raster_end - to_idx(start));
+        for (const float v : raster) {
+            if (!std::isfinite(v)) {
+                throw std::invalid_argument("invalid compiled heightfield raster");
             }
         }
-    }
-
-    const std::span<const mjtNum> hsize = model_access::readonly_buffer(
-        m->hfield_size, 4 * m->nhfield, "hfield_size");
-    const double sx = hsize[4 * to_idx(hfield)];
-    const double sz = hsize[4 * to_idx(hfield) + 2];
-
-    const std::span<const mjtNum> xmat = model_access::readonly_buffer(
-        d->geom_xmat, model_access::kRotationElements * m->ngeom, "geom_xmat");
-    const std::span<const mjtNum> xpos = model_access::readonly_buffer(
-        d->geom_xpos, model_access::kXYZ * m->ngeom, "geom_xpos");
-    const std::size_t gs = to_idx(terrain_geom);
-    const std::span<const mjtNum> rmat = xmat.subspan(
-        model_access::kRotationElements * gs, model_access::kRotationElements);
-    const std::span<const mjtNum> pos = xpos.subspan(
-        model_access::kXYZ * gs, model_access::kXYZ);
-
-    for (const mjtNum v : rmat) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument("invalid terrain transform: non-finite entry");
+        cs = to_idx(cols);
+        for (int r = 0; r < rows; ++r) {
+            for (int c = 0; c < cols; ++c) {
+                if (std::abs(raster[to_idx(r) * cs + to_idx(c)] - raster[to_idx(c)]) > 1e-10f) {
+                    throw std::invalid_argument("GPU tyre upload does not support lateral terrain variation");
+                }
+            }
         }
-    }
-    for (const mjtNum v : pos) {
-        if (!std::isfinite(v)) {
-            throw std::invalid_argument("invalid terrain transform: non-finite entry");
-        }
-    }
-    if (std::abs(rmat[1]) > 1e-10 || std::abs(rmat[4] - 1.0) > 1e-10 || std::abs(rmat[7]) > 1e-10) {
-        throw std::invalid_argument("terrain transform must preserve the planar Y axis");
-    }
 
-    const double step = (2.0 * sx) / static_cast<double>(cols - 1);
-    std::vector<double> px_d(cs);
-    std::vector<double> pz_d(cs);
-    for (std::size_t i = 0; i < cs; ++i) {
-        const double lx = (i + 1 == cs) ? sx : (static_cast<double>(i) * step - sx);
-        const double lz = static_cast<double>(raster[i]) * sz;
-        const double wx = lx * rmat[0] + lz * rmat[2] + pos[0];
-        const double wy = lx * rmat[3] + lz * rmat[5] + pos[1];
-        const double wz = lx * rmat[6] + lz * rmat[8] + pos[2];
-        if (!std::isfinite(wx) || !std::isfinite(wy) || !std::isfinite(wz)) {
-            throw std::invalid_argument("terrain profile vertex is non-finite");
-        }
-        if (std::abs(wy) > 1e-9) {
-            throw std::invalid_argument("working profile must lie in world Y=0");
-        }
-        px_d[i] = wx;
-        pz_d[i] = wz;
-    }
+        const std::span<const mjtNum> hsize = model_access::readonly_buffer(
+            m->hfield_size, 4 * m->nhfield, "hfield_size");
+        const double sx = hsize[4 * to_idx(hfield)];
+        const double sz = hsize[4 * to_idx(hfield) + 2];
 
-    for (std::size_t i = 0; i + 1 < cs; ++i) {
-        if (!(px_d[i + 1] - px_d[i] > 0.0)) {
-            throw std::invalid_argument("profile x must increase strictly");
+        const std::span<const mjtNum> xmat = model_access::readonly_buffer(
+            d->geom_xmat, model_access::kRotationElements * m->ngeom, "geom_xmat");
+        const std::span<const mjtNum> xpos = model_access::readonly_buffer(
+            d->geom_xpos, model_access::kXYZ * m->ngeom, "geom_xpos");
+        const std::size_t gs = to_idx(terrain_geom);
+        const std::span<const mjtNum> rmat = xmat.subspan(
+            model_access::kRotationElements * gs, model_access::kRotationElements);
+        const std::span<const mjtNum> pos = xpos.subspan(
+            model_access::kXYZ * gs, model_access::kXYZ);
+
+        for (const mjtNum v : rmat) {
+            if (!std::isfinite(v)) {
+                throw std::invalid_argument("invalid terrain transform: non-finite entry");
+            }
+        }
+        for (const mjtNum v : pos) {
+            if (!std::isfinite(v)) {
+                throw std::invalid_argument("invalid terrain transform: non-finite entry");
+            }
+        }
+        if (std::abs(rmat[1]) > 1e-10 || std::abs(rmat[4] - 1.0) > 1e-10 || std::abs(rmat[7]) > 1e-10) {
+            throw std::invalid_argument("terrain transform must preserve the planar Y axis");
+        }
+
+        const double step = (2.0 * sx) / static_cast<double>(cols - 1);
+        px_d.resize(cs);
+        pz_d.resize(cs);
+        for (std::size_t i = 0; i < cs; ++i) {
+            const double lx = (i + 1 == cs) ? sx : (static_cast<double>(i) * step - sx);
+            const double lz = static_cast<double>(raster[i]) * sz;
+            const double wx = lx * rmat[0] + lz * rmat[2] + pos[0];
+            const double wy = lx * rmat[3] + lz * rmat[5] + pos[1];
+            const double wz = lx * rmat[6] + lz * rmat[8] + pos[2];
+            if (!std::isfinite(wx) || !std::isfinite(wy) || !std::isfinite(wz)) {
+                throw std::invalid_argument("terrain profile vertex is non-finite");
+            }
+            if (std::abs(wy) > 1e-9) {
+                throw std::invalid_argument("working profile must lie in world Y=0");
+            }
+            px_d[i] = wx;
+            pz_d[i] = wz;
+        }
+
+        for (std::size_t i = 0; i + 1 < cs; ++i) {
+            if (!(px_d[i + 1] - px_d[i] > 0.0)) {
+                throw std::invalid_argument("profile x must increase strictly");
+            }
+        }
+
+        const bool unrotated =
+            std::abs(rmat[0] - 1.0) <= 1e-12 &&
+            std::abs(rmat[2]) <= 1e-12 &&
+            std::abs(rmat[6]) <= 1e-12 &&
+            std::abs(rmat[8] - 1.0) <= 1e-12;
+        if (unrotated && step > 0.0) {
+            bundle.gpu_model.road_x0_m = static_cast<float>(px_d[0]);
+            bundle.gpu_model.road_dx_m = static_cast<float>(step);
+            bundle.gpu_model.road_is_uniform_grid = 1;
+        } else {
+            bundle.gpu_model.road_x0_m = 0.0f;
+            bundle.gpu_model.road_dx_m = 0.0f;
+            bundle.gpu_model.road_is_uniform_grid = 0;
         }
     }
 
@@ -405,7 +645,8 @@ void populate_terrain_views(
     // runs (deviation <= 4 um over spans >= 0.25 m) so float32 raster
     // quantization does not inject high-frequency slope jitter on long ramps
     // and flats, while curved/rough profiles keep all sample vertices intact.
-    if (cs > 8) {
+    // Pneumatic keeps the exact uniform-grid or raster samples intact.
+    if (bundle.gpu_model.backend != TyreBackendKind::pneumatic && cs > 8) {
         constexpr double kCollinearTolM = 4.0e-6;
         constexpr double kMinStraightRunM = 0.05;
         std::vector<int> keep(cs, 0);
@@ -845,6 +1086,8 @@ HostTyreUploadBundle build_gpu_tyre_model(
         backend_kind = TyreBackendKind::compliant_2d;
     } else if (cfg.backend == "distributed_2d_reference") {
         backend_kind = TyreBackendKind::distributed_2d_reference;
+    } else if (cfg.backend == "pneumatic") {
+        backend_kind = TyreBackendKind::pneumatic;
     } else {
         throw std::invalid_argument(
             "GPU tyre upload does not support backend '" + cfg.backend + "'");
@@ -910,7 +1153,7 @@ HostTyreUploadBundle build_gpu_tyre_model(
         bundle.gpu_model.station_count = 0;
         validate_and_pack_compliant_side(cfg.front, wheels[0]);
         validate_and_pack_compliant_side(cfg.rear, wheels[1]);
-    } else {
+    } else if (backend_kind == TyreBackendKind::distributed_2d_reference) {
         if (!cfg.distributed.has_value()) {
             throw std::invalid_argument("distributed_2d_reference requires distributed config");
         }
@@ -922,6 +1165,13 @@ HostTyreUploadBundle build_gpu_tyre_model(
         bundle.gpu_model.station_count = station_count;
         validate_and_pack_distributed_side(cfg.distributed->front, station_count, wheels[0]);
         validate_and_pack_distributed_side(cfg.distributed->rear, station_count, wheels[1]);
+    } else {
+        if (!cfg.pneumatic.has_value()) {
+            throw std::invalid_argument("pneumatic backend requires pneumatic config");
+        }
+        bundle.gpu_model.station_count = 0;
+        validate_and_pack_pneumatic_side(*cfg.pneumatic, cfg.pneumatic->front, wheels[0]);
+        validate_and_pack_pneumatic_side(*cfg.pneumatic, cfg.pneumatic->rear, wheels[1]);
     }
 
     populate_surface_map(cfg, bundle.gpu_model.surface_map);

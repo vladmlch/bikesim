@@ -21,7 +21,7 @@ namespace bike::gpu {
 
 struct GpuSuspensionParams {
     bike::physics_core::SuspensionParams<float> params{};
-    float fork_sag_fraction = 0.20f;
+    float fork_sag_fraction = 0.30f;
     float shock_sag_fraction = 0.30f;
     float fork_preload_n = 0.0f;
     float shock_preload_n = 0.0f;
@@ -101,6 +101,7 @@ struct GpuWorldConfig {
 struct GpuWorldState {
     bike::physics_core::GpuCompliantWheelState compliant_wheels[2]{};
     bike::physics_core::GpuStationState distributed_wheels[2][bike::physics_core::kMaxGpuTyreStations]{};
+    bike::physics_core::GpuPneumaticWheelState<float> pneumatic_wheels[2]{};
     GpuDrivetrainState drivetrain{};
 };
 
@@ -135,7 +136,7 @@ BIKE_HD GpuSuspensionParams gpu_make_default_suspension_params() noexcept {
         .gamma = 1.40f,
         .atm_pressure_pa = 101325.0f,
         .num_tokens = 2,
-        .gauge_pressure_psi = 85.2f,
+        .gauge_pressure_psi = 97.0f,
     };
     out.params.fork_damper = {
         .core = {
@@ -186,7 +187,7 @@ BIKE_HD GpuSuspensionParams gpu_make_default_suspension_params() noexcept {
         .lockout_stiffness = 15000.0f,
     };
     out.params.coil = {
-        .rate_n_m = 114600.0f,
+        .rate_n_m = 81550.0f,
         .preload_mm = 0.0f,
         .stroke_mm = 65.0f,
         .bumper_length_mm = 10.0f,
@@ -196,8 +197,23 @@ BIKE_HD GpuSuspensionParams gpu_make_default_suspension_params() noexcept {
         .stiffness_n_m = 250000.0f,
         .damping_n_s_m = 2000.0f,
     };
-    out.fork_sag_fraction = 0.20f;
+    out.fork_sag_fraction = 0.30f;
     out.shock_sag_fraction = 0.30f;
+    gpu_init_suspension_preloads(out);
+    return out;
+}
+
+BIKE_HD GpuSuspensionParams gpu_make_backend_default_suspension_params(
+    bike::physics_core::TyreBackendKind backend
+) noexcept {
+    GpuSuspensionParams out = gpu_make_default_suspension_params();
+    if (backend == bike::physics_core::TyreBackendKind::distributed_2d_reference) {
+        out.params.air_spring.gauge_pressure_psi = 90.8f;
+        out.params.coil.rate_n_m = 84372.0f;
+    } else if (backend == bike::physics_core::TyreBackendKind::pneumatic) {
+        out.params.air_spring.gauge_pressure_psi = 113.8f;
+        out.params.coil.rate_n_m = 73557.0f;
+    }
     gpu_init_suspension_preloads(out);
     return out;
 }
@@ -216,7 +232,6 @@ BIKE_HD bike::physics_core::ResistanceParams<float> gpu_make_default_resistance_
 
 BIKE_HD GpuRiderParams gpu_make_default_rider_params() noexcept {
     GpuRiderParams rp{};
-    const GpuModelIndices default_idx{};
     const float lower_rad[kNumRiderJoints] = {
         -1.326989f, -1.108838f, -1.621450f, -1.420899f,
         -1.232562f, -1.773614f, -2.379773f, -1.773614f, -2.379773f
@@ -229,8 +244,8 @@ BIKE_HD GpuRiderParams gpu_make_default_rider_params() noexcept {
     rp.envelope.stiffness_nm_rad = 100.0f;
     rp.envelope.margin_rad = 0.1f;
     for (int j = 0; j < kNumRiderJoints; ++j) {
-        rp.envelope.qpos_adrs[j] = default_idx.rider_qpos[j];
-        rp.envelope.dof_adrs[j] = default_idx.rider_dof[j];
+        rp.envelope.qpos_adrs[j] = -1;
+        rp.envelope.dof_adrs[j] = -1;
         rp.envelope.lower[j] = lower_rad[j];
         rp.envelope.upper[j] = upper_rad[j];
     }
@@ -365,12 +380,65 @@ BIKE_HD bike::physics_core::Status gpu_init_world_state(
             slot = bike::physics_core::GpuStationState{};
         }
     }
+    bike::physics_core::init_pneumatic_wheel_state<float>(0, &st.pneumatic_wheels[0]);
+    bike::physics_core::init_pneumatic_wheel_state<float>(0, &st.pneumatic_wheels[1]);
     GpuDrivetrainState local_dt{};
     const bike::physics_core::Status dt_st = gpu_reset_drivetrain_state(
         dp, local_dt, crank_qpos_rad, rear_wheel_qpos_rad,
         drive_shaft_qpos_rad, has_drive_shaft);
     st.drivetrain = local_dt;
     return dt_st;
+}
+
+BIKE_HD float gpu_gas_chamber_energy_j(
+    float pressure_pa,
+    float initial_volume_m3,
+    float volume_m3,
+    float gamma
+) noexcept {
+    const float ratio_log =
+        bike::physics_core::GpuToolkit::log(volume_m3 / initial_volume_m3);
+    if (bike::physics_core::GpuToolkit::abs(gamma - 1.0f) < 1.0e-6f) {
+        return -pressure_pa * initial_volume_m3 * ratio_log;
+    }
+    const float u = (1.0f - gamma) * ratio_log;
+    const float em1 = (bike::physics_core::GpuToolkit::abs(u) <= 0.34657359f)
+        ? bike::physics_core::expm1f_small_portable(u)
+        : (bike::physics_core::GpuToolkit::exp(u) - 1.0f);
+    return pressure_pa * initial_volume_m3 * em1 / (gamma - 1.0f);
+}
+
+BIKE_HD float gpu_fork_air_energy_j(
+    const BIKE_THREAD bike::physics_core::AirSpringParams<float> &air,
+    float fork_qpos_m
+) noexcept {
+    const float limit_m = air.total_travel_mm / 1000.0f;
+    const float inside = bike::physics_core::GpuToolkit::min(
+        bike::physics_core::GpuToolkit::max(fork_qpos_m, 0.0f), limit_m);
+    const bike::physics_core::i32 tokens =
+        bike::physics_core::detail::clamp_i32(air.num_tokens, 0, air.max_tokens);
+    const float area =
+        bike::physics_core::detail::air_piston_area_m2<float, bike::physics_core::GpuToolkit>(&air);
+    const float vp0 = area * (air.pos_chamber_length_mm / 1000.0f) -
+                      static_cast<float>(tokens) * (air.token_volume_cm3 * 1.0e-6f);
+    const float vn0 = area * (air.neg_chamber_length_mm / 1000.0f);
+    const float disp = area * inside;
+    const float p0 = air.gauge_pressure_psi * 6894.757293168f + air.atm_pressure_pa;
+    float e = gpu_gas_chamber_energy_j(p0, vp0, vp0 - disp, air.gamma) +
+              gpu_gas_chamber_energy_j(p0, vn0, vn0 + disp, air.gamma);
+    if (fork_qpos_m > limit_m) {
+        float terminal_force = 0.0f;
+        float unused_vdisp = 0.0f;
+        float unused_vpos0 = 0.0f;
+        bike::physics_core::ErrCode aerr = bike::physics_core::ErrCode::none;
+        bike::physics_core::SuspDiagField adiag = bike::physics_core::SuspDiagField::none;
+        if (bike::physics_core::eval_air_axial_force<float, bike::physics_core::GpuToolkit>(
+                &air, air.total_travel_mm, terminal_force,
+                unused_vdisp, unused_vpos0, aerr, adiag) == bike::physics_core::Status::ok) {
+            e += terminal_force * (fork_qpos_m - limit_m);
+        }
+    }
+    return bike::physics_core::GpuToolkit::max(e, 0.0f);
 }
 
 // Evaluates suspension force laws via single-source physics_core::eval_suspension
@@ -381,7 +449,9 @@ BIKE_HD bike::physics_core::Status gpu_write_suspension_qfrc(
     const BIKE_THREAD float *qpos,
     const BIKE_THREAD float *qvel,
     BIKE_THREAD float *qfrc,
-    BIKE_THREAD bike::physics_core::SuspensionResult<float> *out_res = nullptr
+    BIKE_THREAD bike::physics_core::SuspensionResult<float> *out_res = nullptr,
+    BIKE_THREAD float *out_susp_energy_j = nullptr,
+    BIKE_THREAD float *out_susp_loss_w = nullptr
 ) noexcept {
     const float fork_qpos_m = (idx.fork_travel_qpos >= 0) ? qpos[idx.fork_travel_qpos] : 0.0f;
     const float fork_qvel_mps = (idx.fork_travel_dof >= 0) ? qvel[idx.fork_travel_dof] : 0.0f;
@@ -407,6 +477,35 @@ BIKE_HD bike::physics_core::Status gpu_write_suspension_qfrc(
     if (out_res != nullptr) {
         *out_res = res;
     }
+    if (out_susp_energy_j != nullptr) {
+        *out_susp_energy_j =
+            gpu_fork_air_energy_j(p.params.air_spring, fork_qpos_m) +
+            res.coil_energy + res.bumper_energy +
+            res.top_out_energy + res.upper_energy;
+    }
+    if (out_susp_loss_w != nullptr) {
+        const float fork_loss_w =
+            bike::physics_core::GpuToolkit::max(0.0f, res.fork_damper * fork_qvel_mps);
+        const float shock_base_damper_n = res.shock_damper - res.shock_hbo;
+        const float shock_damper_loss_w =
+            bike::physics_core::GpuToolkit::max(0.0f, shock_base_damper_n * shock_qvel_mps) +
+            bike::physics_core::GpuToolkit::max(0.0f, res.shock_hbo * shock_qvel_mps);
+        float end_stop_loss_w = 0.0f;
+        if (shock_qpos_m < 0.0f && res.shock_top_out < 0.0f) {
+            const float elastic_top_out_n = p.params.end_stops.stiffness_n_m * (-shock_qpos_m);
+            end_stop_loss_w += bike::physics_core::GpuToolkit::max(
+                0.0f, (res.shock_top_out + elastic_top_out_n) * shock_qvel_mps);
+        }
+        const float nominal_m = p.params.coil.stroke_mm / 1000.0f;
+        if (shock_qpos_m >= nominal_m && res.shock_upper_stop < 0.0f) {
+            const float over_m = shock_qpos_m - nominal_m;
+            const float elastic_upper_n =
+                p.params.coil.bumper_peak_n + p.params.end_stops.stiffness_n_m * over_m;
+            end_stop_loss_w += bike::physics_core::GpuToolkit::max(
+                0.0f, (res.shock_upper_stop + elastic_upper_n) * shock_qvel_mps);
+        }
+        *out_susp_loss_w = fork_loss_w + shock_damper_loss_w + end_stop_loss_w;
+    }
     return bike::physics_core::Status::ok;
 }
 
@@ -426,7 +525,8 @@ BIKE_HD bike::physics_core::Status gpu_write_resistance_qfrc(
     float rear_normal_load_n,
     float front_eff_radius_m,
     float rear_eff_radius_m,
-    BIKE_THREAD float *qfrc
+    BIKE_THREAD float *qfrc,
+    BIKE_THREAD float *out_res_loss_w = nullptr
 ) noexcept {
     if (tyre_model == nullptr || qvel == nullptr || qfrc == nullptr ||
         idx.nv <= 0 || idx.nv > bike::physics_core::kMaxNv) {
@@ -498,8 +598,14 @@ BIKE_HD bike::physics_core::Status gpu_write_resistance_qfrc(
         return st;
     }
 
+    float res_loss_w = 0.0f;
     for (int i = 0; i < idx.nv; ++i) {
-        qfrc[i] += rolling_out[i] + aero_out[i];
+        const float f_i = rolling_out[i] + aero_out[i];
+        qfrc[i] += f_i;
+        res_loss_w += -(f_i * qvel[i]);
+    }
+    if (out_res_loss_w != nullptr) {
+        *out_res_loss_w = bike::physics_core::GpuToolkit::max(0.0f, res_loss_w);
     }
     return bike::physics_core::Status::ok;
 }
@@ -735,8 +841,12 @@ BIKE_HD bike::physics_core::Status gpu_write_rider_envelope_qfrc(
     if (rp.envelope.count == kNumRiderJoints) {
         int env_out = 0;
         for (int j = 0; j < kNumRiderJoints; ++j) {
-            const int qp = idx.rider_qpos[j];
-            const int dof = idx.rider_dof[j];
+            const int qp = (rp.envelope.qpos_adrs[j] < 0)
+                ? idx.rider_qpos[j]
+                : rp.envelope.qpos_adrs[j];
+            const int dof = (rp.envelope.dof_adrs[j] < 0)
+                ? idx.rider_dof[j]
+                : rp.envelope.dof_adrs[j];
             if (qp < 0 || dof < 0) {
                 continue;
             }
@@ -836,7 +946,11 @@ template <
     class XaxisPtr,
     class CompliantStatePtr,
     class DistStatePtr,
-    class TendonRangePtr>
+    class TendonRangePtr,
+    class PneumaticStatePtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *,
+    class PneumaticScratchPtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>
 BIKE_HD bike::physics_core::Status gpu_step_world_writers_single(
     int w,
     float dt_s,
@@ -859,7 +973,11 @@ BIKE_HD bike::physics_core::Status gpu_step_world_writers_single(
     BIKE_THREAD float *ctrl_w,
     TendonRangePtr tendon_range_batch,
     int tendon_range_world_stride = 2,
-    bool check_monotonic_terrain = false
+    bool check_monotonic_terrain = false,
+    PneumaticStatePtr pneum_wheels_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *>(nullptr),
+    PneumaticScratchPtr pneum_scratch_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>(nullptr)
 ) noexcept {
     if (w < 0 || !gpu_validate_model_indices(idx) ||
         qpos_w == nullptr || qvel_w == nullptr ||
@@ -901,15 +1019,18 @@ BIKE_HD bike::physics_core::Status gpu_step_world_writers_single(
         qfrc_w,
         tyre_out,
         tyre_err,
-        check_monotonic_terrain);
+        check_monotonic_terrain,
+        pneum_wheels_w,
+        pneum_scratch_w);
     if (tyre_st != bike::physics_core::Status::ok) {
         return tyre_st;
     }
 
     // 3. Rolling resistance + planar X-Z aerodynamic drag via full body Jacobians.
-    // Ban #39: distributed_2d_reference radial hysteresis already carries rolling dissipation.
+    // Ban #39: distributed_2d_reference and pneumatic carry their own rolling dissipation.
     bike::physics_core::ResistanceParams<float> res_p = cfg.resistance;
-    if (tyre_model->backend == bike::physics_core::TyreBackendKind::distributed_2d_reference) {
+    if (tyre_model->backend == bike::physics_core::TyreBackendKind::distributed_2d_reference ||
+        tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic) {
         res_p.crr = 0.0f;
     }
     const bike::physics_core::Status res_st = gpu_write_resistance_qfrc(
@@ -993,7 +1114,8 @@ BIKE_HD bike::physics_core::Status gpu_step_world_writers(
     BIKE_THREAD float *ctrl_batch,
     BIKE_THREAD float *tendon_range_batch,
     int tendon_range_world_stride = 2,
-    bool check_monotonic_terrain = false
+    bool check_monotonic_terrain = false,
+    BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *pneum_scratch_w = nullptr
 ) noexcept {
     if (w < 0 || !gpu_validate_model_indices(idx) ||
         tyre_model == nullptr || configs == nullptr || states == nullptr ||
@@ -1042,7 +1164,9 @@ BIKE_HD bike::physics_core::Status gpu_step_world_writers(
         ctrl_w,
         tendon_range_batch,
         tendon_range_world_stride,
-        check_monotonic_terrain);
+        check_monotonic_terrain,
+        st.pneumatic_wheels,
+        pneum_scratch_w);
 }
 
 } // namespace bike::gpu

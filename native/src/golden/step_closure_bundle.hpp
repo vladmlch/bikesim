@@ -2,6 +2,7 @@
 
 #include "../configuration/model_config.hpp"
 #include "../configuration/physical_config.hpp"
+#include "../geometry/specs.hpp"
 #include "../io/value.hpp"
 #include "../terrain/types.hpp"
 
@@ -98,6 +99,8 @@ struct StepClosureBundle {
     io::Value physics_config_json;
     std::string physics_config_label;
     std::string track_label;
+    std::optional<geometry::BikeSpecs> resolved_bike;
+    std::optional<terrain::TrackSpec> track_spec;
     double dt_s = 0.;
     int nq = 0;
     int nv = 0;

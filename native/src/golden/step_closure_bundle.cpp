@@ -11,6 +11,7 @@
 #include "../io/json.hpp"
 #include "../io/npy.hpp"
 #include "../model/builder.hpp"
+#include "../model/export.hpp"
 #include "../model/rider_geometry.hpp"
 #include "../model_access.hpp"
 #include "../platform/files.hpp"
@@ -18,6 +19,7 @@
 #include "../runtime/runtime.hpp"
 #include "../runtime/samples.hpp"
 #include "../stepper.hpp"
+#include "../terrain/trackfile.hpp"
 #include "../validation/runtime_access.hpp"
 #include "../writers/drivetrain.hpp"
 
@@ -566,6 +568,8 @@ std::unique_ptr<StepClosureBundle> capture_step_closure_bundle(
     bundle->dt_s = dt;
     bundle->physics_config_json =
         configuration::detail::plain_document(configuration::to_value(*req->model.physics));
+    bundle->resolved_bike = req->model.bike;
+    bundle->track_spec = req->track;
     bundle->front_teeth = req->model.physics->drive.gearing.front_teeth;
     bundle->cassette = req->model.physics->drive.shifting.cassette;
     bundle->model_xml = model::generate_mjcf(req->model);
@@ -900,6 +904,20 @@ void write_step_closure_bundle(const StepClosureBundle &bundle,
         {"step_closure_sha256", io::Value{step_closure_digest}},
         {"layout", io::Value{std::move(layout_json)}},
     };
+    if (bundle.resolved_bike.has_value()) {
+        manifest.emplace_back(
+            "resolved_bike",
+            model::bike_specs_value(*bundle.resolved_bike));
+    }
+    if (bundle.track_spec.has_value()) {
+        io::Value track_val;
+        try {
+            track_val = terrain::track_to_dict(*bundle.track_spec);
+        } catch (const terrain::TrackFileError &) {
+            track_val = terrain::identity_value(*bundle.track_spec);
+        }
+        manifest.emplace_back("track_spec", std::move(track_val));
+    }
 
     const std::string manifest_text =
         io::canonical_json(io::Value{std::move(manifest)}) + "\n";
@@ -934,6 +952,63 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
         for (const auto &item : io::as_array(*v, "cassette")) {
             bundle->cassette.push_back(
                 static_cast<int>(io::as_int64(item, "cassette[]")));
+        }
+    }
+    if (const auto *v = io::find_member(mobj, "resolved_bike")) {
+        const auto &robj = io::as_object(*v, "resolved_bike");
+        geometry::BikeSpecs bike{};
+        const auto read_double = [&](std::string_view key, double &dst) {
+            if (const auto *m = io::find_member(robj, key)) {
+                dst = io::as_double(*m, key);
+            }
+        };
+        const auto read_int = [&](std::string_view key, int &dst) {
+            if (const auto *m = io::find_member(robj, key)) {
+                dst = static_cast<int>(io::as_int64(*m, key));
+            }
+        };
+        read_double("reach", bike.reach);
+        read_double("stack", bike.stack);
+        read_double("head_angle_deg", bike.head_angle_deg);
+        read_double("effective_seat_angle_deg", bike.effective_seat_angle_deg);
+        read_double("bb_drop", bike.bb_drop);
+        read_double("wheelbase", bike.wheelbase);
+        read_double("headtube_length", bike.headtube_length);
+        read_double("front_wheel_radius", bike.front_wheel_radius);
+        read_double("rear_wheel_radius", bike.rear_wheel_radius);
+        read_double("wheel_radius", bike.wheel_radius);
+        read_double("crank_length", bike.crank_length);
+        read_double("fork_travel", bike.fork_travel);
+        read_double("fork_offset", bike.fork_offset);
+        read_double("rear_wheel_travel", bike.rear_wheel_travel);
+        read_double("shock_eye_to_eye", bike.shock_eye_to_eye);
+        read_double("shock_stroke", bike.shock_stroke);
+        read_double("fork_stiffness", bike.fork_stiffness);
+        read_double("fork_damping", bike.fork_damping);
+        read_double("shock_stiffness", bike.shock_stiffness);
+        read_double("shock_damping", bike.shock_damping);
+        read_int("fork_hsc", bike.fork_hsc);
+        read_int("fork_lsc", bike.fork_lsc);
+        read_int("fork_rebound", bike.fork_rebound);
+        read_double("fork_initial_psi", bike.fork_initial_psi);
+        read_int("fork_air_tokens", bike.fork_air_tokens);
+        read_int("shock_hsc", bike.shock_hsc);
+        read_int("shock_lsc", bike.shock_lsc);
+        read_int("shock_rebound", bike.shock_rebound);
+        read_int("shock_hbo", bike.shock_hbo);
+        if (const auto *m = io::find_member(robj, "shock_lockout")) {
+            if (!std::holds_alternative<bool>(m->data)) {
+                throw std::invalid_argument(
+                    "resolved_bike.shock_lockout must be boolean");
+            }
+            bike.shock_lockout = std::get<bool>(m->data);
+        }
+        bundle->resolved_bike = std::move(bike);
+    }
+    if (const auto *v = io::find_member(mobj, "track_spec")) {
+        const auto &tobj = io::as_object(*v, "track_spec");
+        if (io::find_member(tobj, "native_track_identity_schema") == nullptr) {
+            bundle->track_spec = terrain::track_from_dict(*v);
         }
     }
     const auto model_mjb_path = bundle_dir / "model.mjb";

@@ -99,6 +99,10 @@ struct HingeDensityView {
     Real hysteresis_rate_eps_mps = BIKE_REAL(Real, 0.01);
 };
 
+BIKE_CONSTEXPR i32 kMaxGpuRadialTableKnots = 64;
+BIKE_CONSTEXPR i32 kMaxGpuPneumaticRays = 256;
+BIKE_CONSTEXPR i32 kMaxGpuPneumaticPatches = 16;
+
 template <class Real>
 struct CompliantMaterialView {
     Real radial_k_n_m = static_cast<Real>(0);
@@ -107,6 +111,42 @@ struct CompliantMaterialView {
     Real valid_load_min_n = static_cast<Real>(0);
     Real valid_load_max_n = static_cast<Real>(0);
     u8 has_tabulated_radial = 0;
+    u8 use_tabulated = 0;
+    u8 pad[2]{};
+    i32 knot_count = 0;
+    Real deflection_m[kMaxGpuRadialTableKnots]{};
+    Real force_n[kMaxGpuRadialTableKnots]{};
+    Real slopes[kMaxGpuRadialTableKnots - 1]{};
+    Real integral[kMaxGpuRadialTableKnots]{};
+};
+
+template <class Real>
+struct PneumaticMaterialView {
+    Real outer_radius_mm = static_cast<Real>(0);
+    Real rim_radius_mm = static_cast<Real>(0);
+    Real section_height_mm = static_cast<Real>(0);
+    Real pressure_bar = static_cast<Real>(0);
+    Real crr_reference = static_cast<Real>(0);
+    Real casing_width_mm = static_cast<Real>(0);
+    Real compressed_casing_mm = static_cast<Real>(0);
+    Real area_factor = static_cast<Real>(0);
+    Real carcass_stiffness_n_mm2 = static_cast<Real>(0);
+    Real contact_length_factor = static_cast<Real>(0);
+    Real rate_stiffening = static_cast<Real>(0);
+    Real rate_relaxation_s = static_cast<Real>(0);
+    Real loss_factor = static_cast<Real>(0);
+    Real hysteresis_rate_eps_mps = static_cast<Real>(0);
+    Real relaxation_length_mm = static_cast<Real>(0);
+    Real rim_stiffness_n_mm2 = static_cast<Real>(0);
+    Real tread_loss_crr = static_cast<Real>(0);
+    i32 n_rays = 0;
+    u8 discretised_brush = 0;
+    u8 pad[3]{};
+    Real half_angle_rad = static_cast<Real>(0);
+    Real dtheta_rad = static_cast<Real>(0);
+    Real theta_rad[kMaxGpuPneumaticRays]{};
+    Real ux[kMaxGpuPneumaticRays]{};
+    Real uz[kMaxGpuPneumaticRays]{};
 };
 
 template <class Real>
@@ -140,7 +180,8 @@ struct SurfaceMapView {
 // NOLINTNEXTLINE(performance-enum-size) enum width matches the reference/device ABI layout
 enum class TyreBackendKind : i32 {
     compliant_2d = 0,
-    distributed_2d_reference = 1
+    distributed_2d_reference = 1,
+    pneumatic = 2
 };
 
 template <class Real>
@@ -157,6 +198,7 @@ struct TyreWheelSpec {
     Real valid_deflection_max_m = static_cast<Real>(0);
     Real local_xyz[3 * kMaxGpuTyreStations]{};
     Real station_weight = static_cast<Real>(0);
+    PneumaticMaterialView<Real> pneumatic{};
 };
 
 template <class Real>
@@ -171,6 +213,10 @@ struct TyreModel {
     TyreWheelSpec<Real> wheels[2]{};
     GpuWheelChain frame_chain{};
     SurfaceMapView<Real> surface_map{};
+    Real road_x0_m = static_cast<Real>(0);
+    Real road_dx_m = static_cast<Real>(0);
+    u8 road_is_uniform_grid = 0;
+    u8 pad_road[3]{};
 };
 
 template <class Real>

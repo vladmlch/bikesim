@@ -99,23 +99,97 @@ inline nativecfg::SurfaceSpec make_surface_spec_from_label(int surface_label) {
     switch (surface_label) {
         case 0:
             return {.name = "asphalt", .mu_peak = 1.05, .mu_slide = 0.75,
-                    .slip_stiffness_per_load = 15.0, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 15.0, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0, .load_sensitivity = 0.06};
         case 1:
             return {.name = "hardpack", .mu_peak = 0.80, .mu_slide = 0.60,
-                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0025, .load_sensitivity = 0.08};
         case 2:
             return {.name = "loose", .mu_peak = 0.55, .mu_slide = 0.45,
-                    .slip_stiffness_per_load = 7.0, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 7.0, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0060, .load_sensitivity = 0.12};
         case 3:
             return {.name = "wet", .mu_peak = 0.50, .mu_slide = 0.40,
-                    .slip_stiffness_per_load = 10.0, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 10.0, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0035, .load_sensitivity = 0.12};
         case 4:
             return {.name = "scree", .mu_peak = 0.45, .mu_slide = 0.38,
-                    .slip_stiffness_per_load = 4.5, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 4.5, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0080, .load_sensitivity = 0.15};
         default:
             return {.name = "hardpack", .mu_peak = 0.80, .mu_slide = 0.60,
-                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5};
+                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5,
+                    .crr_delta = 0.0025, .load_sensitivity = 0.08};
     }
+}
+
+inline nativecfg::TireConfig make_default_pneumatic_tire_config(bool detailed = false) {
+    nativecfg::TireParams side{};
+    side.tangent_k_n_m = 60000.0;
+    side.mu = 1.1;
+    side.relaxation_length_m = 0.06;
+
+    nativecfg::PneumaticTyreSpec front{};
+    front.name = "Schwalbe Magic Mary 29x2.8";
+    front.outer_radius_mm = 379.0;
+    front.rim_radius_mm = 320.0;
+    front.section_height_mm = 68.0;
+    front.pressure_bar = 1.2;
+    front.crr_reference = 0.011;
+    front.casing_width_mm = 65.7;
+    front.compressed_casing_mm = 6.0;
+    front.area_factor = 0.509;
+    front.carcass_stiffness_n_mm2 = 0.136;
+    front.contact_length_factor = 0.851;
+    front.rate_stiffening = 0.22;
+    front.rate_relaxation_s = 0.2;
+    front.loss_factor = 0.055;
+    front.hysteresis_rate_eps_mps = 0.01;
+    front.relaxation_length_mm = 60.0;
+    front.rim_stiffness_n_mm2 = 28.0;
+    front.tread_loss_crr = 0.00586;
+
+    nativecfg::PneumaticTyreSpec rear{};
+    rear.name = "Schwalbe Hans Dampf 27.5x2.8";
+    rear.outer_radius_mm = 360.0;
+    rear.rim_radius_mm = 300.0;
+    rear.section_height_mm = 68.0;
+    rear.pressure_bar = 1.2;
+    rear.crr_reference = 0.0103;
+    rear.casing_width_mm = 65.7;
+    rear.compressed_casing_mm = 6.0;
+    rear.area_factor = 0.522;
+    rear.carcass_stiffness_n_mm2 = 0.140;
+    rear.contact_length_factor = 0.827;
+    rear.rate_stiffening = 0.22;
+    rear.rate_relaxation_s = 0.2;
+    rear.loss_factor = 0.055;
+    rear.hysteresis_rate_eps_mps = 0.01;
+    rear.relaxation_length_mm = 60.0;
+    rear.rim_stiffness_n_mm2 = 28.0;
+    rear.tread_loss_crr = 0.00481;
+
+    nativecfg::PneumaticConfig pneu{};
+    pneu.tier = detailed ? "detailed" : "fast";
+    pneu.n_rays = detailed ? 256 : 64;
+    pneu.half_angle_deg = 75.0;
+    pneu.discretised_brush = detailed;
+    pneu.timestep_s = detailed ? 0.00025 : 0.0005;
+    pneu.surface = make_surface_spec_from_label(1);
+    pneu.front = std::move(front);
+    pneu.rear = std::move(rear);
+
+    nativecfg::TireConfig cfg{};
+    cfg.backend = "pneumatic";
+    cfg.surface_mode = "configured";
+    cfg.front = side;
+    cfg.rear = std::move(side);
+    cfg.significant_delta_m = 0.0001;
+    cfg.significance_fraction = 0.05;
+    cfg.distinct_normal_deg = 20.0;
+    cfg.pneumatic = std::move(pneu);
+    return cfg;
 }
 
 struct ViewerWeldedTireOptions {
@@ -129,7 +203,16 @@ inline nativecfg::TireConfig make_viewer_welded_tire_config(
 ) {
     nativecfg::TireConfig cfg = (opts.backend_kind == 0)
         ? make_default_compliant_tire_config()
-        : make_default_distributed_tire_config(opts.station_count);
+        : ((opts.backend_kind == 2)
+               ? make_default_pneumatic_tire_config(opts.station_count >= 256)
+               : make_default_distributed_tire_config(opts.station_count));
+
+    if (opts.backend_kind == 2) {
+        if (opts.surface_label >= 0 && cfg.pneumatic.has_value()) {
+            cfg.pneumatic->surface = make_surface_spec_from_label(opts.surface_label);
+        }
+        return cfg;
+    }
 
     cfg.significant_delta_m = 0.0001;
     cfg.significance_fraction = 0.05;
@@ -313,7 +396,7 @@ inline int build_runner_tyre_and_terrain_buffers_for_surface(
         io_f32_count == nullptr || io_i32_count == nullptr) {
         return -1;
     }
-    if (backend_kind != 0 && backend_kind != 1) {
+    if (backend_kind != 0 && backend_kind != 1 && backend_kind != 2) {
         return -1;
     }
     if (backend_kind == 1 &&
@@ -371,7 +454,9 @@ inline int build_runner_tyre_and_terrain_buffers_for_surface(
               })
             : ((backend_kind == 0)
                    ? make_default_compliant_tire_config()
-                   : make_default_distributed_tire_config(station_count));
+                   : ((backend_kind == 2)
+                          ? make_default_pneumatic_tire_config(station_count >= 256)
+                          : make_default_distributed_tire_config(station_count)));
         const auto bundle = std::make_unique<bike::physics_core::HostTyreUploadBundle>(
             bike::physics_core::build_gpu_tyre_model(
                 m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body));

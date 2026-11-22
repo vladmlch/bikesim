@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
+#include <iostream>
 #include <limits>
 #include <memory>
 #include <ranges>
@@ -334,8 +335,13 @@ void coordinate_addresses() {
 } // namespace
 
 int main() {
-    return bt::run([] {
-        independent_projection(); model_identity_and_heightfield(); backend_projection();
-        mapping_and_virtual_work(); coordinate_addresses();
-    });
+    try {
+        return bt::run([] {
+            independent_projection(); model_identity_and_heightfield(); backend_projection();
+            mapping_and_virtual_work(); coordinate_addresses();
+        });
+    } catch (const std::exception& error) {
+        std::cerr << "FAIL " << error.what() << '\n';
+        return 1;
+    }
 }

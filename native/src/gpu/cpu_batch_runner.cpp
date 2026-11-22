@@ -397,6 +397,12 @@ int bike_cpu_run_batch_ex(
         const std::span<const mjtNum> base_tendon_range =
             boundary_span(m_base->tendon_range, 2 * to_index(ntendon));
 
+        std::unique_ptr<bike::physics_core::GpuPneumaticStepScratch<float>> pneum_scratch;
+        if (resolved_tyre.model.backend == bike::physics_core::TyreBackendKind::pneumatic) {
+            pneum_scratch =
+                std::make_unique<bike::physics_core::GpuPneumaticStepScratch<float>>();
+        }
+
         while (true) {
             const int w = next_world.fetch_add(1, std::memory_order_relaxed);
             if (w >= dims.nworld) {
@@ -507,7 +513,8 @@ int bike_cpu_run_batch_ex(
                     ctrl_f32.data(),
                     (local_idx.freehub_tendon >= 0 || local_idx.crank_clutch_tendon >= 0) ? tendon_f32.data() : nullptr,
                     4,
-                    false
+                    false,
+                    pneum_scratch.get()
                 );
                 if (st != bike::physics_core::Status::ok) {
                     writer_failed_flag.store(1, std::memory_order_relaxed);

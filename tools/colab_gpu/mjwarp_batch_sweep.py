@@ -36,6 +36,7 @@ try:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         GpuSp3ConfigStruct,
+        apply_physics_config_json_to_sp3_config,
         build_sp3_config_struct_from_mjmodel,
         build_sp3_sweep_configs_bytes,
         build_spindle_params_bytes,
@@ -59,6 +60,7 @@ except ImportError:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         GpuSp3ConfigStruct,
+        apply_physics_config_json_to_sp3_config,
         build_sp3_config_struct_from_mjmodel,
         build_sp3_sweep_configs_bytes,
         build_spindle_params_bytes,
@@ -153,6 +155,29 @@ def _ensure_newton_solver(m: Any) -> None:
     """Enforce Newton solver (CG is rejected on GPU sweeps per simulation-decisions.md)."""
     if mujoco is not None and hasattr(m, "opt") and hasattr(mujoco, "mjtSolver"):
         m.opt.solver = int(mujoco.mjtSolver.mjSOL_NEWTON)
+
+
+def _polyline_slope_from_desc_and_f32(
+    desc_bytes: bytes,
+    f32_np: np.ndarray,
+    x_m: float,
+) -> float:
+    """Evaluate terrain polyline slope ``dz/dx`` at ``x_m`` from packed ``(desc, f32)``."""
+    import struct
+
+    if len(desc_bytes) < 12 or f32_np.size < 4:
+        return 0.0
+    n_vert, px_off, pz_off = struct.unpack_from("<3i", desc_bytes, 0)
+    if n_vert < 2 or px_off < 0 or pz_off < 0:
+        return 0.0
+    if px_off + n_vert > f32_np.size or pz_off + n_vert > f32_np.size:
+        return 0.0
+    px = f32_np[px_off : px_off + n_vert]
+    pz = f32_np[pz_off : pz_off + n_vert]
+    idx = int(np.clip(int(np.searchsorted(px, float(x_m), side="right")) - 1, 0, n_vert - 2))
+    dx = float(px[idx + 1]) - float(px[idx])
+    dz = float(pz[idx + 1]) - float(pz[idx])
+    return (dz / dx) if abs(dx) > 1e-12 else 0.0
 
 
 def _upload_tyre_and_terrain_device(
@@ -607,12 +632,14 @@ def _mjwarp_sp4_clean_split_step(
     ops["crb"](m_wp, d_b)
     ops["tendon_armature"](m_wp, d_b)
     ops["factor_m"](m_wp, d_b)
-    if run_collision:
-        ops["collision"](m_wp, d_b)
     ops["transmission"](m_wp, d_b)
     ops["fwd_velocity"](m_wp, d_b)
     ops["sensor_vel"](m_wp, d_b)
+    # Restore true world (xpos, xanchor, site_xpos, subtree_com) BEFORE collision and pre_solve
+    # so static world geoms (terrain hfield, catch_plane) collide at true world coordinates.
     _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 2)
+    if run_collision:
+        ops["collision"](m_wp, d_b)
     launch_pre_solve_fn()
     _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 3)
     ops["make_constraint"](m_wp, d_b)
@@ -792,25 +819,22 @@ def _compute_steady90_v0(
         return 90.0 * 2.0 * math.pi / 60.0 * (float(ft) / float(rt)) * r_eff
 
 
-def _disable_contacts_for_sp4(m: Any, device: str) -> Any:
-    """Disable MuJoCo geom collisions & MULTICCD so GPU uses nconmax=0, njmax=48 safely."""
+def _configure_sp4_mjwarp_model(m: Any, device: str, *, disable_contacts: bool = False) -> Any:
+    """Configure `mujoco_warp` model solver tolerances (keeping crash geom contacts active by default)."""
     from mujoco_warp._src import types as mjw_types
 
-    m.geom_contype[:] = 0
-    m.geom_conaffinity[:] = 0
+    if disable_contacts:
+        m.geom_contype[:] = 0
+        m.geom_conaffinity[:] = 0
     m_wp = mjwarp.put_model(m)
-    m_wp.opt.disableflags |= int(mjw_types.DisableBit.MULTICCD) | int(
-        mjw_types.DisableBit.CONTACT
-    )
-    m_wp.opt.run_collision_detection = False
-    # Contacts are disabled above (nconmax=0, DisableBit.CONTACT); on CUDA, selecting
-    # ELLIPTIC disables incremental rank-k Hessian updates in mjwarp so M + J^T D J
-    # Cholesky is formed from exact constraints without accumulated FP32 rank-1 drift.
-    # On non-CUDA devices (e.g. Metal), JTCJ assumes naconmax > 0 in mjwarp 3.11, so
-    # keep PYRAMIDAL there.
-    cone_cls = getattr(mjw_types, "ConeType", None)
-    if cone_cls is not None and hasattr(cone_cls, "ELLIPTIC") and wp.get_device(device).is_cuda:
-        m_wp.opt.cone = int(cone_cls.ELLIPTIC.value)
+    m_wp.opt.disableflags |= int(mjw_types.DisableBit.MULTICCD)
+    if disable_contacts:
+        m_wp.opt.disableflags |= int(mjw_types.DisableBit.CONTACT)
+        m_wp.opt.run_collision_detection = False
+    else:
+        m_wp.opt.run_collision_detection = True
+    # Keep ConeType matching the MuJoCo XML (PYRAMIDAL) across both Metal and CUDA so
+    # contact monitor forces and solver Hessian assembly match CPU & Metal.
     # Tighten Newton line-search directional derivative tolerance from 1e-2 to 1e-3
     # while keeping opt.tolerance=1e-6 above the FP32 roundoff floor so stiff
     # closed-loop drivetrain/pedal constraints resolve cleanly across S1-S4.
@@ -830,6 +854,11 @@ def _disable_contacts_for_sp4(m: Any, device: str) -> Any:
     return m_wp
 
 
+def _disable_contacts_for_sp4(m: Any, device: str) -> Any:
+    """Compatibility alias forwarding to ``_configure_sp4_mjwarp_model`` with crash contacts enabled."""
+    return _configure_sp4_mjwarp_model(m, device=device, disable_contacts=False)
+
+
 def _build_sp4_config_bytes(
     lib: ctypes.CDLL,
     m_mj: Any,
@@ -842,7 +871,15 @@ def _build_sp4_config_bytes(
     rebound_scale: np.ndarray | None = None,
     shock_rate_scale: np.ndarray | None = None,
     tire_stiff_scale: np.ndarray | None = None,
+    physics_config_json: dict[str, Any] | Path | None = None,
 ) -> bytes:
+    phys_dict: dict[str, Any] | None = None
+    if isinstance(physics_config_json, Path):
+        if physics_config_json.is_file():
+            phys_dict = json.loads(physics_config_json.read_text(encoding="utf-8"))
+    elif isinstance(physics_config_json, dict):
+        phys_dict = physics_config_json
+
     if (
         fork_psi_scale is not None
         or rebound_scale is not None
@@ -860,8 +897,13 @@ def _build_sp4_config_bytes(
         )
         buf = ctypes.create_string_buffer(raw)
         arr = (GpuSp3ConfigStruct * int(nworld)).from_buffer(buf)
+        if phys_dict is not None:
+            for w in range(int(nworld)):
+                apply_physics_config_json_to_sp3_config(arr[w], phys_dict)
     else:
         base = build_sp3_config_struct_from_mjmodel(lib, m_mj)
+        if phys_dict is not None:
+            apply_physics_config_json_to_sp3_config(base, phys_dict)
         cfg_size = int(lib.bike_gpu_sizeof_sp3_config())
         buf = ctypes.create_string_buffer(int(nworld) * cfg_size)
         arr = (GpuSp3ConfigStruct * int(nworld)).from_buffer(buf)
@@ -1628,6 +1670,8 @@ def run_mjwarp_sp3_autonomous_sweep(
 
         m_wp = mjwarp.put_model(m)
         expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
+        init_tr_np = m_wp.tendon_range.numpy().copy()
+        init_fl_np = m_wp.dof_frictionloss.numpy().copy()
         eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
         eff_njmax = max(int(njmax), int(d0.nefc) + 64)
         d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
@@ -1639,25 +1683,60 @@ def run_mjwarp_sp3_autonomous_sweep(
         fl_ptr, fl_stride = _resolve_dof_frictionloss_binding(m_wp, nworld)
         post_b = _resolve_sp3_post_solve_bindings(d_b)
 
-        rc = int(
-            lib.bike_gpu_launch_sp3_init(
-                ctypes.c_void_p(cuda_stream),
-                int(nworld),
-                ctypes.c_void_p(d_idx.ptr),
-                ctypes.c_void_p(d_sp3_configs.ptr),
-                1,
-                ctypes.c_void_p(d_sp3_states.ptr),
-                ctypes.c_void_p(d_world_states.ptr),
-                ctypes.c_void_p(d_b.qpos.ptr),
-                ctypes.c_float(0.0),
-                int(m.ntendon),
-                ctypes.c_void_p(tr_ptr),
-                int(tr_stride),
+        def _init_sp3_states() -> None:
+            d_world_states.zero_()
+            d_sp3_states.zero_()
+            m_wp.tendon_range.assign(
+                wp.array(init_tr_np, dtype=m_wp.tendon_range.dtype, device=device)
             )
-        )
-        if rc != 0:
-            raise RuntimeError(f"bike_gpu_launch_sp3_init failed with code {rc}")
-        wp.synchronize()
+            m_wp.dof_frictionloss.assign(
+                wp.array(init_fl_np, dtype=m_wp.dof_frictionloss.dtype, device=device)
+            )
+            assert int(m_wp.tendon_range.ptr) == tr_ptr
+            assert int(m_wp.dof_frictionloss.ptr) == fl_ptr
+            d_b.qpos.assign(
+                wp.array(
+                    np.tile(d0.qpos.astype(np.float32)[None, :], (nworld, 1)),
+                    dtype=wp.float32,
+                    device=device,
+                )
+            )
+            d_b.qvel.assign(
+                wp.array(
+                    np.tile(d0.qvel.astype(np.float32)[None, :], (nworld, 1)),
+                    dtype=wp.float32,
+                    device=device,
+                )
+            )
+            d_b.qacc_warmstart.zero_()
+            d_b.ctrl.zero_()
+            d_b.qfrc_applied.zero_()
+            d_b.time.zero_()
+            if int(m.na) > 0:
+                d_b.act.zero_()
+            mjwarp.forward(m_wp, d_b)
+            wp.synchronize()
+            rc = int(
+                lib.bike_gpu_launch_sp3_init(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_sp3_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_sp3_states.ptr),
+                    ctypes.c_void_p(d_world_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_float(0.0),
+                    int(m.ntendon),
+                    ctypes.c_void_p(tr_ptr),
+                    int(tr_stride),
+                )
+            )
+            if rc != 0:
+                raise RuntimeError(f"bike_gpu_launch_sp3_init failed with code {rc}")
+            wp.synchronize()
+
+        _init_sp3_states()
 
         def _pre() -> None:
             r = int(
@@ -1729,6 +1808,7 @@ def run_mjwarp_sp3_autonomous_sweep(
         _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, _pre, _post)
         wp.synchronize()
 
+        _init_sp3_states()
         with wp.ScopedCapture() as capture:
             _mjwarp_sp3_clean_split_step(ops, m_wp, d_b, _pre, _post)
         graph = capture.graph
@@ -1736,6 +1816,7 @@ def run_mjwarp_sp3_autonomous_sweep(
             wp.capture_launch(graph)
         wp.synchronize()
 
+        _init_sp3_states()
         t0 = time.perf_counter()
         for _ in range(n_steps):
             wp.capture_launch(graph)
@@ -1829,8 +1910,10 @@ def _run_cuda_sp4_batch(
     station_count: int,
     control_period_steps: int,
     cfg_bytes: bytes,
-    njmax: int = 48,
+    nconmax: int = 32,
+    njmax: int = 64,
     device: str = "cuda:0",
+    init_grade: float | None = None,
 ) -> dict[str, Any]:
     m = load_model_with_assets(xml_path)
     _ensure_newton_solver(m)
@@ -1879,12 +1962,13 @@ def _run_cuda_sp4_batch(
         surface_label=surface_label,
     )
 
-    m_wp = _disable_contacts_for_sp4(m, device=device)
+    m_wp = _configure_sp4_mjwarp_model(m, device=device, disable_contacts=False)
     expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
     init_tr_np = m_wp.tendon_range.numpy().copy()
     init_fl_np = m_wp.dof_frictionloss.numpy().copy()
-    eff_njmax = max(int(njmax), int(d0.nefc) + 16)
-    d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=0, njmax=eff_njmax)
+    eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+    eff_njmax = max(int(njmax), int(d0.nefc) + 32)
+    d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
     mjwarp.forward(m_wp, d_b)
     if qacc_ws0 is not None and qacc_ws0.size == int(m.nv):
         ws_np = np.tile(qacc_ws0.astype(np.float32)[None, :], (nworld, 1))
@@ -1902,6 +1986,16 @@ def _run_cuda_sp4_batch(
     m_colind_ptr = int(m_wp.M_colind.ptr)
     m_world_stride = int(d_b.M.shape[1])
     xz_ctx = _build_sp4_xz_rebase_ctx(m, nworld, device)
+    cfg0 = GpuSp3ConfigStruct.from_buffer_copy(cfg_bytes)
+    resolved_init_grade = (
+        float(init_grade)
+        if init_grade is not None
+        else _polyline_slope_from_desc_and_f32(
+            d_terrain_desc.numpy().tobytes(),
+            _d_tf32.numpy(),
+            float(qpos0[int(idx_struct.root_x_qpos)]) + float(cfg0.road_lookahead_m),
+        )
+    )
 
     def _init_states() -> None:
         if xz_ctx is not None:
@@ -1951,7 +2045,7 @@ def _run_cuda_sp4_batch(
                 ctypes.c_void_p(d_sp4_states.ptr),
                 ctypes.c_void_p(d_world_states.ptr),
                 ctypes.c_void_p(d_b.qpos.ptr),
-                ctypes.c_float(0.0),
+                ctypes.c_float(resolved_init_grade),
                 int(m.ntendon),
                 ctypes.c_void_p(tr_ptr),
                 int(tr_stride),
@@ -2081,14 +2175,14 @@ def _run_cuda_sp4_batch(
 
     _init_states()
     _mjwarp_sp4_clean_split_step(
-        ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=False, xz_ctx=xz_ctx
+        ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
     )
     wp.synchronize()
 
     _init_states()
     with wp.ScopedCapture() as capture:
         _mjwarp_sp4_clean_split_step(
-            ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=False, xz_ctx=xz_ctx
+            ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
         )
     graph = capture.graph
     for _ in range(warmup_steps):
@@ -2113,6 +2207,11 @@ def _run_cuda_sp4_batch(
     world0_metrics = unpack_sp4_world_metrics(sp4_raw[:sizeof_sp4])
     sp3_buf0 = ctypes.create_string_buffer(sp3_raw[:sizeof_sp3], sizeof_sp3)
     has_failure0 = int(lib.bike_gpu_sp3_state_has_failure(ctypes.cast(sp3_buf0, ctypes.c_void_p)))
+    failure_flags0 = (
+        int(lib.bike_gpu_sp3_state_failure_flags(ctypes.cast(sp3_buf0, ctypes.c_void_p)))
+        if hasattr(lib, "bike_gpu_sp3_state_failure_flags")
+        else (1 if has_failure0 != 0 else 0)
+    )
     total_world_steps = int(nworld) * int(n_steps)
     sim_time_s = float(n_steps) * dt_s
     return {
@@ -2131,6 +2230,9 @@ def _run_cuda_sp4_batch(
         "forward_distance_root_x_m": _summarize_distribution(forward_distance_m),
         "world0_metrics": world0_metrics,
         "world0_first_failure": "violation" if has_failure0 != 0 else "none",
+        "world0_failure_flags": failure_flags0,
+        "world0_balance_lost": bool((failure_flags0 & 1) != 0),
+        "world0_crash_detected": bool((failure_flags0 & 6) != 0),
     }
 
 
@@ -2172,7 +2274,7 @@ def run_mjwarp_sp4_closed_loop_sweep(
     warmup_steps: int = 5,
     seed: int = 42,
     backend: str = "both",
-    station_count: int = 64,
+    station_count: int = 128,
     control_period_steps: int = 1,
     lib: ctypes.CDLL | None = None,
     host_lib: ctypes.CDLL | None = None,
@@ -2216,6 +2318,7 @@ def run_mjwarp_sp4_closed_loop_sweep(
             rebound_scale=scales["rebound_scale"],
             shock_rate_scale=scales["shock_rate_scale"],
             tire_stiff_scale=scales["tire_stiff_scale"],
+            physics_config_json=xml12.parent / "physics_config.json",
         )
         for bk in backends:
             res = _run_cuda_sp4_batch(
@@ -2280,6 +2383,7 @@ def run_mjwarp_sp4_s1s4_acceptance(
                 v0=sc["v0"],
                 human_torque_nm=sc["human_torque_nm"],
                 motor_torque_nm=sc["motor_torque_nm"],
+                physics_config_json=xml12.parent / "physics_config.json",
             )
             n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
             res = _run_cuda_sp4_batch(

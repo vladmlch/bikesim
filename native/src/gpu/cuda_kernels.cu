@@ -2268,6 +2268,23 @@ int bike_gpu_sp3_state_has_failure(const bike::gpu::GpuSp3WorldState *st) {
                : 0;
 }
 
+int bike_gpu_sp3_state_failure_flags(const bike::gpu::GpuSp3WorldState *st) {
+    if (st == nullptr) {
+        return -1;
+    }
+    unsigned int flags = 0U;
+    if (st->sp3.monitors.balance.triggered != 0) {
+        flags |= 1U;
+    }
+    if (st->sp3.monitors.crash.cause != bike::physics_core::CrashCause::none) {
+        flags |= 2U;
+    }
+    if (st->last_efc.contact_crash_cause != bike::physics_core::CrashCause::none) {
+        flags |= 4U;
+    }
+    return static_cast<int>(flags);
+}
+
 } // extern "C"
 
 BIKE_GPU_SHARED_CODE_END

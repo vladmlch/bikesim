@@ -55,25 +55,25 @@ inline nativecfg::TireConfig make_default_compliant_tire_config() {
     return cfg;
 }
 
-inline nativecfg::TireConfig make_default_distributed_tire_config(int station_count = 64) {
+inline nativecfg::TireConfig make_default_distributed_tire_config(int station_count = 128) {
     nativecfg::TireParams side{};
-    side.tangent_k_n_m = 60000.0;
+    side.tangent_k_n_m = 20000.0;
     side.mu = 1.1;
-    side.relaxation_length_m = 0.05;
+    side.relaxation_length_m = 0.2;
 
     nativecfg::HingeDensity hd{};
-    hd.knots_m = {0.0, 0.01, 0.03, 0.06};
-    hd.stiffness_n_m = {180000.0, 220000.0, 280000.0, 360000.0};
+    hd.knots_m = {0.0, 0.004, 0.012};
+    hd.stiffness_n_m = {300000.0, 0.0, 0.0};
     hd.damping_ns_m = 0.0;
     hd.loss_factor = 0.05;
     hd.hysteresis_rate_eps_mps = 0.01;
-    hd.provenance = "runner_default";
+    hd.provenance = "synthetic density; not fitted or measured";
 
     nativecfg::DistributedMaterial dmat{};
     dmat.density = hd;
-    dmat.fitting_dataset_id = "runner_default";
-    dmat.valid_load_range_n = {0.0, 4000.0};
-    dmat.valid_deflection_range_m = {0.0, 0.08};
+    dmat.fitting_dataset_id = "none-synthetic";
+    dmat.valid_load_range_n = {0.0, 2000.0};
+    dmat.valid_deflection_range_m = {0.0, 0.04};
     dmat.calibration_status = "experimental_unvalidated";
 
     nativecfg::DistributedConfig dcfg{};
@@ -88,9 +88,9 @@ inline nativecfg::TireConfig make_default_distributed_tire_config(int station_co
     cfg.front = side;
     cfg.rear = std::move(side);
     cfg.distributed = dcfg;
-    cfg.significant_delta_m = 0.002;
-    cfg.significance_fraction = 0.25;
-    cfg.distinct_normal_deg = 12.0;
+    cfg.significant_delta_m = 0.0001;
+    cfg.significance_fraction = 0.05;
+    cfg.distinct_normal_deg = 20.0;
     return cfg;
 }
 

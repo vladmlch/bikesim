@@ -582,8 +582,13 @@ void test_metal_tyre_compile() {
     }
     require(res.compiled && res.executed,
             "Metal tyre compliant + distributed compile + pipeline");
-    std::cout << "[test_tyre_core] Metal compliant + distributed compile PASS on "
-              << res.device_name << '\n';
+    require(std::isfinite(res.compliant_xi) && std::abs(res.compliant_qfrc0) > 0.0f,
+            "Metal compliant smoke kernel produced non-zero finite force");
+    require(std::isfinite(res.distributed_xi0) && std::abs(res.distributed_qfrc0) > 0.0f,
+            "Metal distributed smoke kernel produced non-zero finite force");
+    std::cout << "[test_tyre_core] Metal compliant + distributed dispatch PASS on "
+              << res.device_name << " (comp_qfrc0=" << res.compliant_qfrc0
+              << ", dist_qfrc0=" << res.distributed_qfrc0 << ")\n";
 }
 #endif
 

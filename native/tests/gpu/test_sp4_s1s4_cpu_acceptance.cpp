@@ -8,6 +8,7 @@
 #include "gpu/runner_tyre_setup.hpp"
 #include "gpu/sp3_autonomous_step.hpp"
 #include "gpu/sp4_closed_loop_step.hpp"
+#include "initialization/launch_preparation.hpp"
 #include "model/rider_geometry.hpp"
 #include "model_access.hpp"
 #include "research/environment.hpp"
@@ -120,11 +121,13 @@ struct CycleEnv {
     std::unique_ptr<runtime::NativeRideRuntime> runtime;
     std::int64_t period = 0;
     std::int64_t max_steps = 0;
+    double finish_x_m = 0.0;
     int root_x_qpos = -1;
     int root_x_dof = -1;
 };
 
 struct CycleEnvSpec {
+    std::string_view physics_rel = "examples/research/viewer_physics_welded.toml";
     std::string_view track_rel;
     double duration_s = 0.0;
     double initial_speed_mps = 0.0;
@@ -134,7 +137,7 @@ CycleEnv make_env(const CycleEnvSpec &env_spec) {
     auto owner = std::make_unique<research::ResearchRequest>();
     auto &request = *owner;
     request.setup.model.physics =
-        cfg::load_physics(repo_file("examples/research/viewer_physics_welded.toml"));
+        cfg::load_physics(repo_file(env_spec.physics_rel));
     request.setup.model.physics->initial_speed_mps = env_spec.initial_speed_mps;
     request.setup.model.mode = "ride";
     request.setup.model.crank_joint = true;
@@ -153,12 +156,14 @@ CycleEnv make_env(const CycleEnvSpec &env_spec) {
     request.sensors.delivery.maximum_age_s =
         request.setup.model.physics->research.sensor_maximum_age_s;
     request.sensors.sample_period_s = 0.005;
+    const double finish_x_m = request.setup.track.length_m;
     const auto prepared = research::prepare_environment(std::move(owner));
     auto bootstrap = std::make_unique<runtime::RuntimeBootstrap>(
         std::move(prepared->bootstrap.ride));
     CycleEnv env;
     env.period = prepared->bootstrap.config.control_steps;
     env.max_steps = prepared->bootstrap.config.max_steps;
+    env.finish_x_m = finish_x_m;
     env.runtime = std::make_unique<runtime::NativeRideRuntime>(std::move(*bootstrap));
     bike::validation::RuntimeRigAccess::inspect(
         *env.runtime, [&](const Stepper &stepper, const runtime::PhysicalStep &) {
@@ -275,15 +280,23 @@ struct LegWeightProbe {
 
 struct Scenario {
     const char *id = nullptr;
+    const char *physics_rel = "examples/research/viewer_physics_welded.toml";
     const char *track = nullptr;
     double duration = 0.0;
     double v0 = 0.0;
     bike::physics_core::SurfaceLabel surface_label = bike::physics_core::SurfaceLabel::hardpack;
+    bike::physics_core::TyreBackendKind tyre_backend =
+        bike::physics_core::TyreBackendKind::compliant_2d;
+    int station_count = 0;
+    double max_rel_dist_err = 0.002;
+    bool diagnostic_rough = false;
     runtime::RideControl control{};
 };
 
 struct RunMetrics {
     std::string first_failure = "none";
+    bool crashed = false;
+    bool balance_lost = false;
     double min_press_front = std::numeric_limits<double>::infinity();
     double min_press_rear = std::numeric_limits<double>::infinity();
     double max_rising_front = -std::numeric_limits<double>::infinity();
@@ -292,10 +305,23 @@ struct RunMetrics {
     double max_saddle = -std::numeric_limits<double>::infinity();
     double distance = 0.0;
     double end_speed = 0.0;
+    std::vector<double> root_x_trace;
 };
+
+double percentile_sorted(const std::vector<double> &sorted_vals, double pct) {
+    if (sorted_vals.empty()) {
+        return 0.0;
+    }
+    const double pos = (pct / 100.0) * static_cast<double>(sorted_vals.size() - 1U);
+    const auto lo = static_cast<std::size_t>(std::floor(pos));
+    const auto hi = static_cast<std::size_t>(std::ceil(pos));
+    const double frac = pos - static_cast<double>(lo);
+    return sorted_vals[lo] * (1.0 - frac) + sorted_vals[hi] * frac;
+}
 
 RunMetrics run_m0(const Scenario &sc) {
     auto env = make_env(CycleEnvSpec{
+        .physics_rel = sc.physics_rel,
         .track_rel = sc.track,
         .duration_s = sc.duration,
         .initial_speed_mps = sc.v0,
@@ -309,6 +335,11 @@ RunMetrics run_m0(const Scenario &sc) {
         if (result.reason == "outcome") {
             break;
         }
+        const auto &rec = env.runtime->recorded_intervals();
+        if (!rec.empty() &&
+            rec.back()->qpos[to_index(env.root_x_qpos)] >= env.finish_x_m - 0.5) {
+            break;
+        }
     }
     const auto snap = env.runtime->snapshot();
     const mjModel *model = nullptr;
@@ -320,11 +351,17 @@ RunMetrics run_m0(const Scenario &sc) {
     const auto &rows = env.runtime->recorded_intervals();
     RunMetrics out;
     out.first_failure = snap.first_failure.has_value() ? "violation" : "none";
+    out.crashed = snap.outcome.has_value() && snap.outcome->starts_with("crash:");
     if (rows.empty()) {
         return out;
     }
+    out.root_x_trace.reserve(rows.size());
     const double x0 = rows.front()->qpos[to_index(env.root_x_qpos)];
     for (const auto &row : rows) {
+        const auto &bal = sw::object(sw::required(row->channels, "rider_balance"));
+        if (sw::boolean(sw::required(bal, "balance_lost"))) {
+            out.balance_lost = true;
+        }
         const auto &welds = sw::object(sw::required(row->channels, "rider_welds"));
         const double f_press = sw::number(sw::required(welds, "front_pedal_press_n"));
         const double r_press = sw::number(sw::required(welds, "rear_pedal_press_n"));
@@ -353,6 +390,7 @@ RunMetrics run_m0(const Scenario &sc) {
         }
         out.end_speed = row->qvel[to_index(env.root_x_dof)];
         out.distance = row->qpos[to_index(env.root_x_qpos)] - x0;
+        out.root_x_trace.push_back(row->qpos[to_index(env.root_x_qpos)]);
     }
     return out;
 }
@@ -367,17 +405,18 @@ struct TerrainAndTyre {
 std::unique_ptr<TerrainAndTyre> build_tyre_terrain(
     const fs::path &xml_path,
     const bike::gpu::GpuModelIndices &idx,
-    bike::physics_core::SurfaceLabel surface_label
+    const Scenario &sc
 ) {
     auto out = std::make_unique<TerrainAndTyre>();
     int f32_count = 0;
     int i32_count = 0;
-    const int s_label = static_cast<int>(surface_label);
+    const int s_label = static_cast<int>(sc.surface_label);
+    const int backend_kind = static_cast<int>(sc.tyre_backend);
     require(
         bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
             xml_path.string().c_str(),
-            static_cast<int>(bike::physics_core::TyreBackendKind::compliant_2d),
-            0, s_label, &idx, &out->tyre, &out->terrain_desc,
+            backend_kind,
+            sc.station_count, s_label, &idx, &out->tyre, &out->terrain_desc,
             nullptr, &f32_count, nullptr, &i32_count) == 0 && f32_count > 0,
         "terrain size query failed");
     out->terrain_f32.resize(to_index(f32_count));
@@ -385,8 +424,8 @@ std::unique_ptr<TerrainAndTyre> build_tyre_terrain(
     require(
         bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
             xml_path.string().c_str(),
-            static_cast<int>(bike::physics_core::TyreBackendKind::compliant_2d),
-            0, s_label, &idx, &out->tyre, &out->terrain_desc,
+            backend_kind,
+            sc.station_count, s_label, &idx, &out->tyre, &out->terrain_desc,
             out->terrain_f32.data(), &f32_count,
             out->terrain_i32.data(), &i32_count) == 0,
         "terrain fill failed");
@@ -395,12 +434,18 @@ std::unique_ptr<TerrainAndTyre> build_tyre_terrain(
 
 std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
     const mjModel *m,
-    const Scenario &sc
+    const bike::gpu::GpuModelIndices &idx,
+    const Scenario &sc,
+    const cfg::SimulationPhysicsConfig &physics
 ) {
     auto cfg_ptr = std::make_unique<bike::gpu::GpuSp3Config>();
     auto &c = *cfg_ptr;
     bike::gpu::gpu_init_default_sp3_config(c);
     c.default_surface_label = sc.surface_label;
+    c.resistance.crr = static_cast<float>(physics.resistance.crr);
+    c.resistance.rolling_taper_rad_s = static_cast<float>(physics.resistance.rolling_taper_rad_s);
+    c.resistance.rho_kg_m3 = static_cast<float>(physics.resistance.rho_kg_m3);
+    c.resistance.cda_m2 = static_cast<float>(physics.resistance.cda_m2);
     c.apply_direct_crank_torque = 0;
     c.arm_standstill_start = (sc.v0 <= 0.0) ? 1 : 0;
     c.seed_lean_from_launch = (sc.v0 <= 0.0) ? 1 : 0;
@@ -411,8 +456,40 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
         c.caller_motor_torque_nm = static_cast<float>(*sc.control.motor_torque_nm);
     }
 
+    const auto jnt_qposadr = ma::readonly_buffer(m->jnt_qposadr, m->njnt, "jnt_qposadr");
     const auto jnt_dofadr = ma::readonly_buffer(m->jnt_dofadr, m->njnt, "jnt_dofadr");
+    const auto jnt_limited = ma::readonly_buffer(m->jnt_limited, m->njnt, "jnt_limited");
+    const auto jnt_range = ma::readonly_buffer(m->jnt_range, 2 * m->njnt, "jnt_range");
     const auto sensor_adr = ma::readonly_buffer(m->sensor_adr, m->nsensor, "sensor_adr");
+
+    // Populate rider joint soft-edge envelope directly from mjModel jnt_range + physics config
+    c.rider.envelope.stiffness_nm_rad =
+        static_cast<float>(physics.articulated.joint_envelope_soft_k_nm_rad);
+    c.rider.envelope.margin_rad =
+        static_cast<float>(physics.articulated.joint_envelope_soft_margin_rad);
+    const std::span env_qpos{c.rider.envelope.qpos_adrs};
+    const std::span env_dof{c.rider.envelope.dof_adrs};
+    const std::span env_lo{c.rider.envelope.lower};
+    const std::span env_hi{c.rider.envelope.upper};
+    const std::span idx_rqpos{idx.rider_qpos};
+    int env_count = 0;
+    for (int rj = 0; rj < bike::gpu::kNumRiderJoints; ++rj) {
+        const int qp_adr = idx_rqpos[to_index(rj)];
+        for (int j = 0; j < m->njnt; ++j) {
+            if (jnt_qposadr[to_index(j)] == qp_adr && jnt_limited[to_index(j)] != 0) {
+                const auto eu = to_index(env_count);
+                env_qpos[eu] = qp_adr;
+                env_dof[eu] = jnt_dofadr[to_index(j)];
+                env_lo[eu] = static_cast<float>(jnt_range[2U * to_index(j) + 0U]);
+                env_hi[eu] = static_cast<float>(jnt_range[2U * to_index(j) + 1U]);
+                ++env_count;
+                break;
+            }
+        }
+    }
+    if (env_count > 0) {
+        c.rider.envelope.count = env_count;
+    }
 
     c.efc_scan.grip_left_eq_id = mj_name2id(m, mjOBJ_EQUALITY, "connect_grip_left");
     c.efc_scan.grip_right_eq_id = mj_name2id(m, mjOBJ_EQUALITY, "connect_grip_right");
@@ -423,12 +500,30 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
     c.efc_scan.crank_dof = jnt_dofadr[to_index(mj_name2id(m, mjOBJ_JOINT, "crank_spin"))];
     c.efc_scan.front_wheel_dof = jnt_dofadr[to_index(mj_name2id(m, mjOBJ_JOINT, "front_wheel_spin"))];
     c.efc_scan.rear_wheel_dof = jnt_dofadr[to_index(mj_name2id(m, mjOBJ_JOINT, "rear_wheel_spin"))];
-    c.efc_scan.handlebar_geom_id = mj_name2id(m, mjOBJ_GEOM, "handlebar");
-    c.efc_scan.catch_geom_id = -1;
+    int hbar_gid = mj_name2id(m, mjOBJ_GEOM, "geom_handlebar");
+    if (hbar_gid < 0) {
+        hbar_gid = mj_name2id(m, mjOBJ_GEOM, "handlebar");
+    }
+    c.efc_scan.handlebar_geom_id = hbar_gid;
+    c.efc_scan.catch_geom_id = mj_name2id(m, mjOBJ_GEOM, "catch_plane");
+    c.efc_scan.terrain_geom_count = 0;
     const int terrain_gid = mj_name2id(m, mjOBJ_GEOM, "terrain");
     if (terrain_gid >= 0) {
-        c.efc_scan.terrain_geom_ids[0] = terrain_gid;
-        c.efc_scan.terrain_geom_count = 1;
+        std::span{c.efc_scan.terrain_geom_ids}[to_index(c.efc_scan.terrain_geom_count++)] =
+            terrain_gid;
+    }
+    if (c.efc_scan.catch_geom_id >= 0 &&
+        c.efc_scan.terrain_geom_count < bike::physics_core::kMaxTerrainGeoms) {
+        std::span{c.efc_scan.terrain_geom_ids}[to_index(c.efc_scan.terrain_geom_count++)] =
+            c.efc_scan.catch_geom_id;
+    }
+    c.efc_scan.rider_geom_count = 0;
+    for (int g = 0; g < m->ngeom; ++g) {
+        const char *gname = mj_id2name(m, mjOBJ_GEOM, g);
+        if (gname != nullptr && std::string_view(gname).starts_with("geom_rider_") &&
+            c.efc_scan.rider_geom_count < bike::physics_core::kMaxRiderCrashGeoms) {
+            std::span{c.efc_scan.rider_geom_ids}[to_index(c.efc_scan.rider_geom_count++)] = g;
+        }
     }
 
     const int motor_act = mj_name2id(m, mjOBJ_ACTUATOR, "mid_drive");
@@ -455,8 +550,8 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
     return cfg_ptr;
 }
 
-RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
-    const fs::path physics_path = repo_file("examples/research/viewer_physics_welded.toml");
+RunMetrics run_gpu_spec_cpu(const Scenario &sc, int target_steps = 0) {
+    const fs::path physics_path = repo_file(sc.physics_rel);
     const fs::path track_path = repo_file(sc.track);
     const fs::path strength_json = repo_file("examples/research/rider_strength_reference.json");
     const fs::path envelope_json = repo_file("examples/research/rider_joint_envelope_anatomical.json");
@@ -468,7 +563,7 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
     spec->duration_s = std::nullopt;
     spec->max_steps = std::size_t{1};
     spec->seed_decimal = "0";
-    spec->physics_config_label = "viewer_physics_welded.toml";
+    spec->physics_config_label = physics_path.filename().string();
     spec->track_label = sc.track;
     spec->asset_root = physics_path.parent_path();
     spec->strict = false;
@@ -525,8 +620,8 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
             envelope_json.string().c_str(),
             1, sp_params.get()) == 0,
         "build_runner_spindle_params failed");
-    const auto tt = build_tyre_terrain(xml_path, idx, sc.surface_label);
-    const auto cfg_sp3 = build_sp3_config(m.get(), sc);
+    const auto tt = build_tyre_terrain(xml_path, idx, sc);
+    const auto cfg_sp3 = build_sp3_config(m.get(), idx, sc, spec->physics);
 
     auto sp3_st = std::make_unique<bike::gpu::GpuSp3WorldState>();
     auto sp4_st = std::make_unique<bike::gpu::GpuSp4WorldState>();
@@ -542,19 +637,23 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
     const int nM = to_int(m->nM);
     const int nsd = to_int(m->nsensordata);
 
-    std::vector<float> qpos_f, qvel_f, bias_f, qacc_f, xpos_f, xmat_f, xa_f, xx_f, site_f, sc_f, M_f;
+    std::vector<float> qpos_f, qvel_f, bias_f, qacc_f, xpos_f, xmat_f, xa_f, xx_f, site_f, sc_f, sm_f, M_f;
     std::vector<float> qfrc_f(to_index(nv), 0.0f);
     std::vector<float> ctrl_f(to_index(nu), 0.0f);
     std::vector<float> tr_f, fl_f, sd_f, eJ_f, ef_f;
     std::vector<int> et_i, eid_i, m_ra, m_rn, m_ci;
+    std::vector<int> con_wid, con_geom, con_efc, con_dim;
     copy_cast(d->qpos, to_index(nq), qpos_f);
+    copy_cast(m->body_subtreemass, to_index(nbody), sm_f);
     copy_cast(m->tendon_range, to_index(2 * ntendon), tr_f);
     copy_cast(m->dof_frictionloss, to_index(nv), fl_f);
     copy_cast(m->M_rowadr, to_index(nv), m_ra);
     copy_cast(m->M_rownnz, to_index(nv), m_rn);
     copy_cast(m->M_colind, to_index(nM), m_ci);
 
-    const float init_grade = 0.0f;
+    const float init_grade = static_cast<float>(
+        bike::initialization::rider_start_grade(
+            spec->track, 2.0, spec->physics.articulated.road_lookahead_m));
     require(
         bike_gpu_launch_sp4_init(
             nullptr, 1, &idx, cfg_sp3.get(), 0, sp3_st.get(), sp4_st.get(), ws.get(),
@@ -567,7 +666,11 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
         }
     }
 
-    const int n_steps = static_cast<int>(std::llround(sc.duration / static_cast<double>(kDtS)));
+    const int n_steps = (target_steps > 0)
+        ? target_steps
+        : static_cast<int>(std::llround(sc.duration / static_cast<double>(kDtS)));
+    std::vector<double> root_x_trace;
+    root_x_trace.reserve(to_index(n_steps));
     std::vector<double> ws_saved(to_index(nv), 0.0);
     for (int step = 0; step < n_steps; ++step) {
         mj_fwdPosition(m.get(), d.get());
@@ -594,7 +697,7 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
                 tt->terrain_f32.data(), tt->terrain_i32.data(),
                 cfg_sp3.get(), 0, sp_params.get(), sp3_st.get(), sp4_st.get(), ws.get(),
                 qpos_f.data(), qvel_f.data(), bias_f.data(), xpos_f.data(), xmat_f.data(),
-                xa_f.data(), xx_f.data(), site_f.data(), sc_f.data(), nullptr,
+                xa_f.data(), xx_f.data(), site_f.data(), sc_f.data(), sm_f.data(),
                 0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
                 qfrc_f.data(), ctrl_f.data(), ntendon, tr_f.data(), 2 * ntendon, fl_f.data(), nv) == 0,
             "gpu_spec pass0 failed");
@@ -668,6 +771,24 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
         copy_cast(d->efc_J, to_index(std::max(1, d->nefc)) * to_index(nv), eJ_f);
         copy_cast(d->efc_force, to_index(std::max(1, d->nefc)), ef_f);
 
+        const int ncon_val = d->ncon;
+        const auto ncon_cap = to_index(std::max(1, ncon_val));
+        con_wid.assign(ncon_cap, 0);
+        con_geom.assign(2U * ncon_cap, -1);
+        con_efc.assign(ncon_cap, -1);
+        con_dim.assign(ncon_cap, 0);
+        if (ncon_val > 0) {
+            const auto d_con = ma::readonly_buffer(d->contact, d->ncon, "contact");
+            for (int c = 0; c < ncon_val; ++c) {
+                const auto cu = to_index(c);
+                const auto &[g0, g1] = d_con[cu].geom;
+                con_geom[2U * cu + 0U] = g0;
+                con_geom[2U * cu + 1U] = g1;
+                con_efc[cu] = d_con[cu].efc_address;
+                con_dim[cu] = d_con[cu].dim;
+            }
+        }
+
         require(
             bike_gpu_launch_sp4_post_solve(
                 nullptr, 1, kDtS, &idx, cfg_sp3.get(), 0, sp_params.get(),
@@ -675,7 +796,8 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
                 xpos_f.data(), xmat_f.data(), xa_f.data(),
                 nsd, sd_f.data(), &d->nefc, std::max(1, d->nefc), nv,
                 et_i.data(), eid_i.data(), eJ_f.data(), ef_f.data(),
-                nullptr, 0, 1, nullptr, nullptr, nullptr, nullptr) == 0,
+                &ncon_val, std::max(1, ncon_val), 1,
+                con_wid.data(), con_geom.data(), con_efc.data(), con_dim.data()) == 0,
             "gpu_spec post_solve failed");
 
         const auto d_qp = ma::mutable_buffer(d->qpos, m->nq, "qpos");
@@ -683,16 +805,16 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
             require(std::isfinite(qpos_f[to_index(i)]), "nonfinite qpos during gpu_spec run");
             d_qp[to_index(i)] = static_cast<mjtNum>(qpos_f[to_index(i)]);
         }
+        root_x_trace.push_back(static_cast<double>(d_qp[to_index(idx.root_x_qpos)]));
     }
 
     require(sp4_st->sample_count == n_steps, "sample_count mismatch");
     RunMetrics out;
-    out.first_failure =
-        (sp3_st->sp3.monitors.balance.triggered != 0 ||
-         sp3_st->sp3.monitors.crash.cause != bike::physics_core::CrashCause::none ||
-         sp3_st->last_efc.contact_crash_cause != bike::physics_core::CrashCause::none)
-            ? "violation"
-            : "none";
+    out.crashed =
+        (sp3_st->sp3.monitors.crash.cause != bike::physics_core::CrashCause::none ||
+         sp3_st->last_efc.contact_crash_cause != bike::physics_core::CrashCause::none);
+    out.balance_lost = (sp3_st->sp3.monitors.balance.triggered != 0);
+    out.first_failure = (out.crashed || out.balance_lost) ? "violation" : "none";
     out.min_press_front = static_cast<double>(sp4_st->min_press_front_n);
     out.min_press_rear = static_cast<double>(sp4_st->min_press_rear_n);
     out.max_rising_front = static_cast<double>(sp4_st->max_rising_front_excess_n);
@@ -701,6 +823,7 @@ RunMetrics run_gpu_spec_cpu(const Scenario &sc) {
     out.max_saddle = static_cast<double>(sp4_st->max_saddle_force_n);
     out.distance = static_cast<double>(sp4_st->end_root_x_m - sp4_st->start_root_x_m);
     out.end_speed = static_cast<double>(sp4_st->end_speed_mps);
+    out.root_x_trace = std::move(root_x_trace);
     return out;
 }
 
@@ -738,72 +861,153 @@ int main() {
         const double rear_r_eff = compute_rear_r_eff();
         const double steady90_v0 = 90.0 * 2.0 * kPi / 60.0 * gear_ratio * rear_r_eff;
 
-        const std::array<Scenario, 4> scenarios{{
+        const std::array<Scenario, 8> scenarios{{
             {.id = "S1_flat",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
              .track = "tests/fixtures/tracks/flat.toml",
              .duration = 6.0,
              .v0 = 0.0,
              .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.002,
              .control = runtime::RideControl{}},
             {.id = "S2_climb15",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
              .track = "tests/fixtures/tracks/climb_15pct.toml",
              .duration = 25.0,
              .v0 = 0.0,
              .surface_label = bike::physics_core::SurfaceLabel::asphalt,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.002,
              .control = runtime::RideControl{}},
             {.id = "S3_steady90",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
              .track = "tests/fixtures/tracks/flat.toml",
              .duration = 8.0,
              .v0 = steady90_v0,
              .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.002,
              .control = runtime::RideControl{.motor_torque_nm = std::nullopt,
                                              .motor_limit_nm = std::nullopt,
                                              .human_torque_nm = 24.0,
                                              .crank_target_rate_rad_s = std::nullopt,
                                              .posture = std::nullopt}},
             {.id = "S4_start_uphill15_60nm",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
              .track = "tests/fixtures/tracks/climb_15pct.toml",
              .duration = 10.0,
              .v0 = 0.0,
              .surface_label = bike::physics_core::SurfaceLabel::asphalt,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.002,
              .control = runtime::RideControl{.motor_torque_nm = 0.0,
                                              .motor_limit_nm = std::nullopt,
                                              .human_torque_nm = 60.0,
                                              .crank_target_rate_rad_s = std::nullopt,
                                              .posture = std::nullopt}},
+            {.id = "G1_welded_flat_30s",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
+             .track = "tests/fixtures/tracks/flat.toml",
+             .duration = 30.0,
+             .v0 = 0.0,
+             .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.0035,
+             .diagnostic_rough = false,
+             .control = runtime::RideControl{}},
+            {.id = "G2_welded_rough_uphill_extreme_30s",
+             .physics_rel = "examples/research/viewer_physics_welded.toml",
+             .track = "examples/research/rough_uphill_extreme.toml",
+             .duration = 30.0,
+             .v0 = 0.0,
+             .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::compliant_2d,
+             .station_count = 0,
+             .max_rel_dist_err = 0.025,
+             .diagnostic_rough = true,
+             .control = runtime::RideControl{}},
+            {.id = "G3_distributed_flat_30s",
+             .physics_rel = "examples/research/viewer_physics_distributed.toml",
+             .track = "tests/fixtures/tracks/flat.toml",
+             .duration = 30.0,
+             .v0 = 0.0,
+             .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::distributed_2d_reference,
+             .station_count = 128,
+             .max_rel_dist_err = 0.002,
+             .diagnostic_rough = false,
+             .control = runtime::RideControl{}},
+            {.id = "G4_distributed_rough_uphill_extreme_30s",
+             .physics_rel = "examples/research/viewer_physics_distributed.toml",
+             .track = "examples/research/rough_uphill_extreme.toml",
+             .duration = 30.0,
+             .v0 = 0.0,
+             .surface_label = bike::physics_core::SurfaceLabel::hardpack,
+             .tyre_backend = bike::physics_core::TyreBackendKind::distributed_2d_reference,
+             .station_count = 128,
+             .max_rel_dist_err = 0.010,
+             .diagnostic_rough = true,
+             .control = runtime::RideControl{}},
         }};
 
         bool all_ok = true;
         for (const auto &sc : scenarios) {
             const RunMetrics m0 = run_m0(sc);
-            const RunMetrics gpu = run_gpu_spec_cpu(sc);
+            const RunMetrics gpu =
+                run_gpu_spec_cpu(sc, static_cast<int>(m0.root_x_trace.size()));
             const double dist_rel_err =
                 std::abs(gpu.distance - m0.distance) / std::max(1.0, std::abs(m0.distance));
             const double min_press_gpu = std::min(gpu.min_press_front, gpu.min_press_rear);
             const double max_rising_gpu = std::max(gpu.max_rising_front, gpu.max_rising_rear);
 
+            const std::size_t n_cmp =
+                std::min(m0.root_x_trace.size(), gpu.root_x_trace.size());
+            std::vector<double> dx_abs;
+            dx_abs.reserve(n_cmp);
+            for (std::size_t i = 0; i < n_cmp; ++i) {
+                dx_abs.push_back(std::abs(gpu.root_x_trace[i] - m0.root_x_trace[i]));
+            }
+            std::ranges::sort(dx_abs);
+            const double dx_p50 = percentile_sorted(dx_abs, 50.0);
+            const double dx_p95 = percentile_sorted(dx_abs, 95.0);
+            const double dx_max = dx_abs.empty() ? 0.0 : dx_abs.back();
+
             std::cout << std::format(
-                "[{}] M0(fail={} dist={:.4f} vend={:.4f} press={:+.2f}/{:+.2f} rise={:+.2f}/{:+.2f} saddle={:+.1f}..{:.1f}) "
-                "GPU_SPEC(fail={} dist={:.4f} vend={:.4f} rel={:.4f}% press={:+.2f}/{:+.2f} rise={:+.2f}/{:+.2f} saddle={:+.1f}..{:.1f})\n",
-                sc.id, m0.first_failure, m0.distance, m0.end_speed, m0.min_press_front, m0.min_press_rear,
+                "[{}] steps={} M0(fail={} crash={} bal={} dist={:.4f} vend={:.4f} press={:+.2f}/{:+.2f} rise={:+.2f}/{:+.2f} saddle={:+.1f}..{:.1f}) "
+                "GPU_SPEC(fail={} crash={} bal={} dist={:.4f} vend={:.4f} rel={:.4f}% |dx|=p50:{:.5f}/p95:{:.5f}/max:{:.5f}m press={:+.2f}/{:+.2f} rise={:+.2f}/{:+.2f} saddle={:+.1f}..{:.1f})\n",
+                sc.id, n_cmp,
+                m0.first_failure, m0.crashed, m0.balance_lost, m0.distance, m0.end_speed,
+                m0.min_press_front, m0.min_press_rear,
                 m0.max_rising_front, m0.max_rising_rear, m0.min_saddle, m0.max_saddle,
-                gpu.first_failure, gpu.distance, gpu.end_speed, dist_rel_err * 100.0,
+                gpu.first_failure, gpu.crashed, gpu.balance_lost, gpu.distance, gpu.end_speed,
+                dist_rel_err * 100.0, dx_p50, dx_p95, dx_max,
                 gpu.min_press_front, gpu.min_press_rear,
                 gpu.max_rising_front, gpu.max_rising_rear, gpu.min_saddle, gpu.max_saddle);
 
-            const bool ok =
-                m0.first_failure == "none" &&
-                gpu.first_failure == "none" &&
-                min_press_gpu >= -6.0 &&
-                max_rising_gpu <= 6.0 &&
-                gpu.min_saddle >= -6.0 &&
-                gpu.max_saddle <= 1750.0 &&
-                dist_rel_err <= 0.002;
+            const bool ok = sc.diagnostic_rough
+                ? (!m0.crashed &&
+                   !gpu.crashed &&
+                   gpu.balance_lost == m0.balance_lost &&
+                   gpu.max_saddle <= 1750.0 &&
+                   dist_rel_err <= sc.max_rel_dist_err)
+                : (m0.first_failure == "none" &&
+                   gpu.first_failure == "none" &&
+                   min_press_gpu >= -6.0 &&
+                   max_rising_gpu <= 6.0 &&
+                   gpu.min_saddle >= -6.0 &&
+                   gpu.max_saddle <= 1750.0 &&
+                   dist_rel_err <= sc.max_rel_dist_err);
             if (!ok) {
                 all_ok = false;
             }
         }
-        require(all_ok, "one or more S1-S4 acceptance scenarios failed");
+        require(all_ok, "one or more S1-S4 / G1-G4 acceptance scenarios failed");
         std::cout << "ALL sp4_s1s4_cpu_acceptance scenarios PASSED\n";
         return 0;
     } catch (const std::exception &ex) {

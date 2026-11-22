@@ -58,6 +58,7 @@ try:
     from tools.colab_gpu.build_cuda_writers import (
         DEFAULT_GPU_SRC_DIR,
         GpuModelIndicesStruct,
+        GpuSp3ConfigStruct,
         build_sp3_sweep_configs_bytes,
         build_spindle_params_bytes,
         build_sweep_configs_bytes,
@@ -88,6 +89,7 @@ try:
         _mjwarp_clean_split_step,
         _mjwarp_sp3_clean_split_step,
         _mjwarp_sp4_clean_split_step,
+        _polyline_slope_from_desc_and_f32,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
         _resolve_dof_frictionloss_binding,
@@ -102,6 +104,7 @@ except ImportError:
     from build_cuda_writers import (  # type: ignore[no-redef]
         DEFAULT_GPU_SRC_DIR,
         GpuModelIndicesStruct,
+        GpuSp3ConfigStruct,
         build_sp3_sweep_configs_bytes,
         build_spindle_params_bytes,
         build_sweep_configs_bytes,
@@ -132,6 +135,7 @@ except ImportError:
         _mjwarp_clean_split_step,
         _mjwarp_sp3_clean_split_step,
         _mjwarp_sp4_clean_split_step,
+        _polyline_slope_from_desc_and_f32,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
         _resolve_dof_frictionloss_binding,
@@ -1860,8 +1864,10 @@ def _run_metal_sp4_batch(
     station_count: int,
     control_period_steps: int,
     cfg_bytes: bytes,
-    njmax: int = 48,
+    nconmax: int = 32,
+    njmax: int = 64,
     device: str = "metal:0",
+    init_grade: float | None = None,
 ) -> dict[str, Any]:
     m = load_model_with_assets(xml_path)
     _ensure_newton_solver(m)
@@ -1914,8 +1920,9 @@ def _run_metal_sp4_batch(
     expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
     init_tr_np = m_wp.tendon_range.numpy().copy()
     init_fl_np = m_wp.dof_frictionloss.numpy().copy()
-    eff_njmax = max(int(njmax), int(d0.nefc) + 16)
-    d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=0, njmax=eff_njmax)
+    eff_nconmax = max(int(nconmax), int(d0.ncon) + 32)
+    eff_njmax = max(int(njmax), int(d0.nefc) + 32)
+    d_b = mjwarp.put_data(m, d0, nworld=nworld, nconmax=eff_nconmax, njmax=eff_njmax)
     mjwarp.forward(m_wp, d_b)
     if qacc_ws0 is not None and qacc_ws0.size == int(m.nv):
         ws_np = np.tile(qacc_ws0.astype(np.float32)[None, :], (nworld, 1))
@@ -1932,6 +1939,16 @@ def _run_metal_sp4_batch(
     m_colind_ptr = int(m_wp.M_colind.ptr)
     m_world_stride = int(d_b.M.shape[1])
     xz_ctx = _build_sp4_xz_rebase_ctx(m, nworld, device)
+    cfg0 = GpuSp3ConfigStruct.from_buffer_copy(cfg_bytes)
+    resolved_init_grade = (
+        float(init_grade)
+        if init_grade is not None
+        else _polyline_slope_from_desc_and_f32(
+            d_terrain_desc.numpy().tobytes(),
+            _d_tf32.numpy(),
+            float(qpos0[int(idx_struct.root_x_qpos)]) + float(cfg0.road_lookahead_m),
+        )
+    )
 
     def _init_states() -> None:
         if xz_ctx is not None:
@@ -1979,7 +1996,7 @@ def _run_metal_sp4_batch(
             d_sp4_states_ptr=int(d_sp4_states.ptr),
             d_world_states_ptr=int(d_world_states.ptr),
             d_qpos_ptr=int(d_b.qpos.ptr),
-            init_grade=0.0,
+            init_grade=resolved_init_grade,
             ntendon=int(m.ntendon),
             d_tendon_range_ptr=tr_ptr,
             tendon_range_world_stride=tr_stride,
@@ -2093,14 +2110,14 @@ def _run_metal_sp4_batch(
     # Warmup uncaptured step so Metal shaders compile before ScopedCapture
     _init_states()
     _mjwarp_sp4_clean_split_step(
-        ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=False, xz_ctx=xz_ctx
+        ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
     )
     wp.synchronize()
 
     _init_states()
     with wp.ScopedCapture() as capture:
         _mjwarp_sp4_clean_split_step(
-            ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=False, xz_ctx=xz_ctx
+            ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
         )
     graph = capture.graph
     for _ in range(warmup_steps):
@@ -2125,6 +2142,11 @@ def _run_metal_sp4_batch(
     world0_metrics = unpack_sp4_world_metrics(sp4_raw[:sizeof_sp4])
     sp3_buf0 = ctypes.create_string_buffer(sp3_raw[:sizeof_sp3], sizeof_sp3)
     has_failure0 = int(lib.bike_gpu_sp3_state_has_failure(ctypes.cast(sp3_buf0, ctypes.c_void_p)))
+    failure_flags0 = (
+        int(lib.bike_gpu_sp3_state_failure_flags(ctypes.cast(sp3_buf0, ctypes.c_void_p)))
+        if hasattr(lib, "bike_gpu_sp3_state_failure_flags")
+        else (1 if has_failure0 != 0 else 0)
+    )
     total_world_steps = int(nworld) * int(n_steps)
     sim_time_s = float(n_steps) * dt_s
     return {
@@ -2143,6 +2165,9 @@ def _run_metal_sp4_batch(
         "forward_distance_root_x_m": _summarize_distribution(forward_distance_m),
         "world0_metrics": world0_metrics,
         "world0_first_failure": "violation" if has_failure0 != 0 else "none",
+        "world0_failure_flags": failure_flags0,
+        "world0_balance_lost": bool((failure_flags0 & 1) != 0),
+        "world0_crash_detected": bool((failure_flags0 & 6) != 0),
     }
 
 
@@ -2152,7 +2177,7 @@ def run_mjwarp_metal_sp4_closed_loop_sweep(
     warmup_steps: int = 5,
     seed: int = 42,
     backend: str = "both",
-    station_count: int = 64,
+    station_count: int = 128,
     control_period_steps: int = 1,
     lib: ctypes.CDLL | None = None,
     wm_rt: WarpMetalWritersRuntime | None = None,
@@ -2192,6 +2217,7 @@ def run_mjwarp_metal_sp4_closed_loop_sweep(
             rebound_scale=scales["rebound_scale"],
             shock_rate_scale=scales["shock_rate_scale"],
             tire_stiff_scale=scales["tire_stiff_scale"],
+            physics_config_json=xml12.parent / "physics_config.json",
         )
         for bk in backends:
             res = _run_metal_sp4_batch(
@@ -2253,6 +2279,7 @@ def run_mjwarp_metal_sp4_s1s4_acceptance(
                 v0=sc["v0"],
                 human_torque_nm=sc["human_torque_nm"],
                 motor_torque_nm=sc["motor_torque_nm"],
+                physics_config_json=xml12.parent / "physics_config.json",
             )
             n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
             res = _run_metal_sp4_batch(

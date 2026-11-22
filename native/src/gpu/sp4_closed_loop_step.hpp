@@ -223,6 +223,11 @@ BIKE_HD bike::physics_core::Status gpu_sp4_pre_solve_and_pass0_world(
     sp4_st->has_posture_min_lean = has_spindle_min_lean;
     sp4_st->last_posture_min_lean_rad = spindle_min_lean_rad;
 
+    const bike::physics_core::i32 period =
+        (spindle_params->control_period_steps > 0) ? spindle_params->control_period_steps : 1;
+    const bool control_tick =
+        (sp4_st->spindle.has_held_torques == 0) || ((sp3_st->step_index % period) == 0);
+
     bike::physics_core::IntentResolutionCore<float> intent_res{};
     bike::physics_core::PedalingOutput<float> pedal_out{};
     const bike::physics_core::Status sp3_st_code = detail::gpu_sp3_pre_solve_core(
@@ -254,6 +259,7 @@ BIKE_HD bike::physics_core::Status gpu_sp4_pre_solve_and_pass0_world(
         eff_has_min_lean,
         eff_min_lean_rad,
         false,
+        control_tick,
         &intent_res,
         &pedal_out);
     if (sp3_st_code != bike::physics_core::Status::ok) {

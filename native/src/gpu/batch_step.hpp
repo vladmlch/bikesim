@@ -906,9 +906,14 @@ BIKE_HD bike::physics_core::Status gpu_step_world_writers_single(
         return tyre_st;
     }
 
-    // 3. Rolling resistance + planar X-Z aerodynamic drag via full body Jacobians
+    // 3. Rolling resistance + planar X-Z aerodynamic drag via full body Jacobians.
+    // Ban #39: distributed_2d_reference radial hysteresis already carries rolling dissipation.
+    bike::physics_core::ResistanceParams<float> res_p = cfg.resistance;
+    if (tyre_model->backend == bike::physics_core::TyreBackendKind::distributed_2d_reference) {
+        res_p.crr = 0.0f;
+    }
     const bike::physics_core::Status res_st = gpu_write_resistance_qfrc(
-        cfg.resistance,
+        res_p,
         tyre_model,
         idx,
         qvel_w,

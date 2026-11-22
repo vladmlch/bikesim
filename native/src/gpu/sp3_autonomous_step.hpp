@@ -104,6 +104,12 @@ struct GpuSp3WorldState {
     float last_motor_torque_nm = 0.0f;
     float last_pitch_rate_up_rad_s = 0.0f;
     float last_specific_force_body_mps2[3]{0.0f, 0.0f, 9.81f};
+    float cached_posture_grade = 0.0f;
+    float cached_preview_grade = 0.0f;
+    bike::physics_core::SurfaceLabel cached_surface_front = bike::physics_core::SurfaceLabel::hardpack;
+    bike::physics_core::SurfaceLabel cached_surface_ahead = bike::physics_core::SurfaceLabel::hardpack;
+    bike::physics_core::u8 has_cached_road_state = 0;
+    bike::physics_core::u8 reposition_consumed = 0;
     bike::physics_core::u8 last_wheel_grounded[2]{};
     bike::physics_core::u8 last_has_front_load_share = 0;
     bike::physics_core::u8 using_cassette_tendons = 0;
@@ -582,6 +588,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
     sp3_st->last_specific_force_body_mps2[0] = 0.0f;
     sp3_st->last_specific_force_body_mps2[1] = 0.0f;
     sp3_st->last_specific_force_body_mps2[2] = 9.81f;
+    sp3_st->cached_posture_grade = init_grade;
+    sp3_st->cached_preview_grade = init_grade;
+    sp3_st->cached_surface_front = cfg->default_surface_label;
+    sp3_st->cached_surface_ahead = cfg->default_surface_label;
+    sp3_st->has_cached_road_state = 0;
+    sp3_st->reposition_consumed = 0;
     sp3_st->using_cassette_tendons = (ntendon >= cfg->shifting.cog_count) ? 1 : 0;
 
     return gpu_sp3_write_tendon_ranges(
@@ -630,6 +642,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     bool ov_has_min_lean,
     float ov_min_lean_rad,
     bool write_sp3_pd_ctrl,
+    bool control_tick,
     BIKE_THREAD bike::physics_core::IntentResolutionCore<float> *out_intent_res,
     BIKE_THREAD bike::physics_core::PedalingOutput<float> *out_pedal_out
 ) noexcept {
@@ -652,59 +665,71 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
     const float kTwoPi = 6.28318530717958647692f;
 
-    // 1. Road grades & surface labels from shared polyline terrain
+    // 1. Road grades & surface labels from shared polyline terrain (updated on control_tick,
+    // matching runtime/step.cpp:1248-1258).
     const float front_wheel_x =
         (idx.front_wheel_body >= 0) ? xpos_w[3 * idx.front_wheel_body + 0] : 0.0f;
     const float rear_wheel_x =
         (idx.rear_wheel_body >= 0) ? xpos_w[3 * idx.rear_wheel_body + 0] : 0.0f;
 
-    float posture_grade = 0.0f;
-    float preview_grade = 0.0f;
-    if (terrain_desc.polyline_vertex_count >= 2 && terrain_f32 != nullptr &&
-        terrain_desc.px_offset >= 0 && terrain_desc.pz_offset >= 0) {
-        const bike::physics_core::Status rg_st =
-            bike::physics_core::eval_road_grades<float, bike::physics_core::GpuToolkit>(
-                terrain_desc.polyline_vertex_count,
-                terrain_f32 + terrain_desc.px_offset,
-                terrain_f32 + terrain_desc.pz_offset,
-                front_wheel_x,
-                rear_wheel_x,
-                cfg->road_lookahead_m,
-                cfg->road_sample_spacing_m,
-                posture_grade,
-                preview_grade,
-                err);
-        if (rg_st != bike::physics_core::Status::ok) {
-            return rg_st;
+    if (control_tick || sp3_st->has_cached_road_state == 0) {
+        float posture_grade = 0.0f;
+        float preview_grade = 0.0f;
+        if (terrain_desc.polyline_vertex_count >= 2 && terrain_f32 != nullptr &&
+            terrain_desc.px_offset >= 0 && terrain_desc.pz_offset >= 0) {
+            const bike::physics_core::Status rg_st =
+                bike::physics_core::eval_road_grades<float, bike::physics_core::GpuToolkit>(
+                    terrain_desc.polyline_vertex_count,
+                    terrain_f32 + terrain_desc.px_offset,
+                    terrain_f32 + terrain_desc.pz_offset,
+                    front_wheel_x,
+                    rear_wheel_x,
+                    cfg->road_lookahead_m,
+                    cfg->road_sample_spacing_m,
+                    posture_grade,
+                    preview_grade,
+                    err);
+            if (rg_st != bike::physics_core::Status::ok) {
+                return rg_st;
+            }
         }
-    }
 
-    bike::physics_core::SurfaceLabel surface_front = cfg->default_surface_label;
-    bike::physics_core::SurfaceLabel surface_ahead = cfg->default_surface_label;
-    if (cfg->surface_section_count > 0) {
-        const bike::physics_core::Status sf_st =
-            bike::physics_core::surface_labels_at<float>(
-                cfg->default_surface_label,
-                cfg->surface_section_count,
-                cfg->surface_sections,
-                front_wheel_x,
-                surface_front,
-                err);
-        if (sf_st != bike::physics_core::Status::ok) {
-            return sf_st;
+        bike::physics_core::SurfaceLabel surface_front = cfg->default_surface_label;
+        bike::physics_core::SurfaceLabel surface_ahead = cfg->default_surface_label;
+        if (cfg->surface_section_count > 0) {
+            const bike::physics_core::Status sf_st =
+                bike::physics_core::surface_labels_at<float>(
+                    cfg->default_surface_label,
+                    cfg->surface_section_count,
+                    cfg->surface_sections,
+                    front_wheel_x,
+                    surface_front,
+                    err);
+            if (sf_st != bike::physics_core::Status::ok) {
+                return sf_st;
+            }
+            const bike::physics_core::Status sa_st =
+                bike::physics_core::surface_labels_at<float>(
+                    cfg->default_surface_label,
+                    cfg->surface_section_count,
+                    cfg->surface_sections,
+                    front_wheel_x + cfg->road_lookahead_m,
+                    surface_ahead,
+                    err);
+            if (sa_st != bike::physics_core::Status::ok) {
+                return sa_st;
+            }
         }
-        const bike::physics_core::Status sa_st =
-            bike::physics_core::surface_labels_at<float>(
-                cfg->default_surface_label,
-                cfg->surface_section_count,
-                cfg->surface_sections,
-                front_wheel_x + cfg->road_lookahead_m,
-                surface_ahead,
-                err);
-        if (sa_st != bike::physics_core::Status::ok) {
-            return sa_st;
-        }
+        sp3_st->cached_posture_grade = posture_grade;
+        sp3_st->cached_preview_grade = preview_grade;
+        sp3_st->cached_surface_front = surface_front;
+        sp3_st->cached_surface_ahead = surface_ahead;
+        sp3_st->has_cached_road_state = 1;
     }
+    const float posture_grade = sp3_st->cached_posture_grade;
+    const float preview_grade = sp3_st->cached_preview_grade;
+    const bike::physics_core::SurfaceLabel surface_front = sp3_st->cached_surface_front;
+    const bike::physics_core::SurfaceLabel surface_ahead = sp3_st->cached_surface_ahead;
 
     // 2. RiderIntent resolution using previous-step solved reactions & IMU signals
     const float speed_mps = (idx.root_x_dof >= 0) ? qvel_w[idx.root_x_dof] : 0.0f;
@@ -1025,17 +1050,37 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     sp3_st->using_cassette_tendons = (ntendon >= cfg->shifting.cog_count) ? 1 : 0;
 
     // 5. Pedaling policy & crank torque
+    // Matches runtime/step.cpp:1259-1262,1367-1371:
+    // - ceiling is passed whenever automatic_effort is active (disabling the legacy low-cadence
+    //   mash_torque_nm ramp while SeatedClimb supplies the effort);
+    // - cut_after_ceiling is the resolver's effort_limited flag (LaunchPlan / FrontLiftReaction).
     const float req_cadence_after = (rw_omega / curr_applied_ratio) * (60.0f / kTwoPi);
     const float torque_factor =
         bike::physics_core::shift_torque_factor<float>(&cfg->shifting, &sp3_st->shifting);
+    const bool automatic_effort =
+        (cfg->intent.enabled != 0) &&
+        (cfg->caller_human_torque_nm < 0.0f) &&
+        (cfg->rider.rider_enabled != 0);
     const bool has_ceiling =
-        (intent_res.effort_limited != 0) && (intent_res.control.has_human_torque_nm != 0);
+        automatic_effort && (intent_res.control.has_human_torque_nm != 0);
     const float ceiling_nm = has_ceiling ? intent_res.control.human_torque_nm : 0.0f;
+    const bool eff_cut_after_ceiling =
+        (cfg->cut_after_ceiling != 0) && (intent_res.effort_limited != 0);
+
+    // One-shot reposition edge consumed on the first control_tick (step.cpp:1347-1349).
+    if (cfg->reposition_request == 0) {
+        sp3_st->reposition_consumed = 0;
+    }
+    const bool fire_reposition =
+        (cfg->reposition_request != 0) && control_tick && (sp3_st->reposition_consumed == 0);
+    if (fire_reposition) {
+        sp3_st->reposition_consumed = 1;
+    }
 
     bike::physics_core::PedalingOutput<float> pedal_out{};
     if (!rider_enabled || cfg->effort_mode == 0) {
         bike::physics_core::pedaling_reset<float>(&sp3_st->pedaling);
-        if (cfg->reposition_request != 0) {
+        if (fire_reposition) {
             sp3_st->pedaling.reposition.active = 1;
             sp3_st->pedaling.reposition.armed = 0;
         }
@@ -1057,13 +1102,13 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
                 effort_cmd,
                 dt_s,
                 brakes.legs_coast != 0,
-                cfg->reposition_request != 0,
+                fire_reposition,
                 has_drive_shaft,
                 fh_driver_omega,
                 has_ceiling,
                 ceiling_nm,
                 torque_factor,
-                cfg->cut_after_ceiling != 0,
+                eff_cut_after_ceiling,
                 pedal_out,
                 err);
         if (ped_st != bike::physics_core::Status::ok) {
@@ -1084,17 +1129,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     }
 
     // 6. Motor assist step -> actuator ctrl or drive_shaft_spin qfrc
+    // Matches DrivetrainWriter::stage_motor_assist + stage_settle (drivetrain.cpp:862-895,1054-1065):
+    // assist_step receives only explicit motor_torque_nm, then motor_limit_nm and actuator range clamp
+    // the delivered torque and reconcile assist.torque.
     const float crank_rpm = crank_omega * (60.0f / kTwoPi);
-    const bool has_tq_req =
-        (intent_res.control.has_motor_torque_nm != 0) || (intent_res.control.has_motor_limit_nm != 0);
-    float tq_req = 0.0f;
-    if (intent_res.control.has_motor_torque_nm != 0 && intent_res.control.has_motor_limit_nm != 0) {
-        tq_req = gpu_min(intent_res.control.motor_torque_nm, intent_res.control.motor_limit_nm);
-    } else if (intent_res.control.has_motor_torque_nm != 0) {
-        tq_req = intent_res.control.motor_torque_nm;
-    } else if (intent_res.control.has_motor_limit_nm != 0) {
-        tq_req = intent_res.control.motor_limit_nm;
-    }
+    const bool has_tq_req = (intent_res.control.has_motor_torque_nm != 0);
+    const float tq_req = has_tq_req ? intent_res.control.motor_torque_nm : 0.0f;
 
     float motor_tq = 0.0f;
     if (cfg->effort_mode != 0) {
@@ -1124,14 +1164,23 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         if (ast_st != bike::physics_core::Status::ok) {
             return ast_st;
         }
+        if (intent_res.control.has_motor_limit_nm != 0) {
+            motor_tq = gpu_min(motor_tq, intent_res.control.motor_limit_nm);
+        }
+        if (!(motor_tq > 0.0f) || brakes.motor_braking != 0) {
+            motor_tq = 0.0f;
+        }
     }
-    sp3_st->last_motor_torque_nm = motor_tq;
     if (cfg->motor_actuator_idx >= 0 && cfg->motor_actuator_idx < idx.nu) {
-        ctrl_w[cfg->motor_actuator_idx] =
-            gpu_clamp(motor_tq, cfg->motor_ctrl_min_nm, cfg->motor_ctrl_max_nm);
+        motor_tq = gpu_clamp(motor_tq, cfg->motor_ctrl_min_nm, cfg->motor_ctrl_max_nm);
+        ctrl_w[cfg->motor_actuator_idx] = motor_tq;
     } else if (idx.drive_shaft_spin_dof >= 0) {
         qfrc_w[idx.drive_shaft_spin_dof] += motor_tq;
     }
+    if (cfg->effort_mode != 0) {
+        sp3_st->assist.torque = gpu_max(motor_tq, 0.0f);
+    }
+    sp3_st->last_motor_torque_nm = motor_tq;
 
     // 7. Suspension, tyres, resistance, and rider posture/envelope
     const GpuSuspensionParams susp_p = cfg->suspension;
@@ -1184,7 +1233,10 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
         sp3_st->last_front_load_share = 0.0f;
     }
 
-    const bike::physics_core::ResistanceParams<float> res_p = cfg->resistance;
+    bike::physics_core::ResistanceParams<float> res_p = cfg->resistance;
+    if (tyre_model->backend == bike::physics_core::TyreBackendKind::distributed_2d_reference) {
+        res_p.crr = 0.0f;
+    }
     const bike::physics_core::Status res_st = gpu_write_resistance_qfrc(
         res_p,
         tyre_model,
@@ -1264,7 +1316,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
         qpos_w, qvel_w, xpos_w, xmat_w, xanchor_w, xaxis_w,
         qfrc_w, ctrl_w, ntendon, tendon_range_w, dof_frictionloss_w,
         false, false, 0.0f, false, 0.0f,
-        true, nullptr, nullptr);
+        true, true, nullptr, nullptr);
 }
 
 namespace detail {

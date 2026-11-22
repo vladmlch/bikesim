@@ -332,6 +332,7 @@ int bike_gpu_launch_sp4_post_solve(
 );
 
 int bike_gpu_sp3_state_has_failure(const bike::gpu::GpuSp3WorldState *st);
+int bike_gpu_sp3_state_failure_flags(const bike::gpu::GpuSp3WorldState *st);
 
 } // extern "C"
 // NOLINTEND(bugprone-easily-swappable-parameters)

@@ -983,6 +983,10 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
         lib.bike_gpu_sp3_state_has_failure.argtypes = [ctypes.c_void_p]
         lib.bike_gpu_sp3_state_has_failure.restype = ctypes.c_int
 
+    if hasattr(lib, "bike_gpu_sp3_state_failure_flags"):
+        lib.bike_gpu_sp3_state_failure_flags.argtypes = [ctypes.c_void_p]
+        lib.bike_gpu_sp3_state_failure_flags.restype = ctypes.c_int
+
     return lib
 
 
@@ -1424,12 +1428,29 @@ def build_sp3_config_struct_from_mjmodel(lib: ctypes.CDLL, m_mj: Any) -> GpuSp3C
     _, cfg.efc_scan.crank_dof = _lookup_joint_addrs(m_mj, ("crank_spin",), 3, 3)
     _, cfg.efc_scan.front_wheel_dof = _lookup_joint_addrs(m_mj, ("front_wheel_spin",), 7, 7)
     _, cfg.efc_scan.rear_wheel_dof = _lookup_joint_addrs(m_mj, ("rear_wheel_spin",), 10, 10)
-    cfg.efc_scan.handlebar_geom_id = _name_id(mujoco.mjtObj.mjOBJ_GEOM, "handlebar")
-    cfg.efc_scan.catch_geom_id = -1
+    hbar_gid = _name_id(mujoco.mjtObj.mjOBJ_GEOM, "geom_handlebar")
+    if hbar_gid < 0:
+        hbar_gid = _name_id(mujoco.mjtObj.mjOBJ_GEOM, "handlebar")
+    cfg.efc_scan.handlebar_geom_id = hbar_gid
+    catch_gid = _name_id(mujoco.mjtObj.mjOBJ_GEOM, "catch_plane")
+    cfg.efc_scan.catch_geom_id = catch_gid
+    t_cnt = 0
     terrain_gid = _name_id(mujoco.mjtObj.mjOBJ_GEOM, "terrain")
-    if terrain_gid >= 0:
-        cfg.efc_scan.terrain_geom_ids[0] = terrain_gid
-        cfg.efc_scan.terrain_geom_count = 1
+    if terrain_gid >= 0 and t_cnt < 4:
+        cfg.efc_scan.terrain_geom_ids[t_cnt] = terrain_gid
+        t_cnt += 1
+    if catch_gid >= 0 and t_cnt < 4:
+        cfg.efc_scan.terrain_geom_ids[t_cnt] = catch_gid
+        t_cnt += 1
+    cfg.efc_scan.terrain_geom_count = t_cnt
+
+    r_cnt = 0
+    for gid in range(int(m_mj.ngeom)):
+        gname = mujoco.mj_id2name(m_mj, mujoco.mjtObj.mjOBJ_GEOM, gid)
+        if gname and gname.startswith("geom_rider_") and r_cnt < 16:
+            cfg.efc_scan.rider_geom_ids[r_cnt] = int(gid)
+            r_cnt += 1
+    cfg.efc_scan.rider_geom_count = r_cnt
 
     motor_act = _lookup_actuator_id(m_mj, ("mid_drive",), -1)
     cfg.motor_actuator_idx = motor_act
@@ -1452,7 +1473,205 @@ def build_sp3_config_struct_from_mjmodel(lib: ctypes.CDLL, m_mj: Any) -> GpuSp3C
             m_mj, ("ideal_mid_drive_freehub",), 0
         )
     cfg.efc_scan.crank_clutch_tendon_id = _lookup_tendon_id(m_mj, ("crank_clutch",), 1)
+
+    # Populate rider joint envelope qpos/dof addresses and MuJoCo jnt_range limits from m_mj
+    rider_joint_names = (
+        "rider_shoulder_left",
+        "rider_elbow_left",
+        "rider_shoulder_right",
+        "rider_elbow_right",
+        "rider_torso_hinge",
+        "rider_hip_front",
+        "rider_knee_front",
+        "rider_hip_rear",
+        "rider_knee_rear",
+    )
+    env_cnt = 0
+    for jname in rider_joint_names:
+        jid = _name_id(mujoco.mjtObj.mjOBJ_JOINT, jname)
+        if jid >= 0 and int(m_mj.jnt_limited[jid]) != 0 and env_cnt < 16:
+            cfg.rider.envelope.qpos_adrs[env_cnt] = int(m_mj.jnt_qposadr[jid])
+            cfg.rider.envelope.dof_adrs[env_cnt] = int(m_mj.jnt_dofadr[jid])
+            cfg.rider.envelope.lower[env_cnt] = float(m_mj.jnt_range[jid, 0])
+            cfg.rider.envelope.upper[env_cnt] = float(m_mj.jnt_range[jid, 1])
+            env_cnt += 1
+    if env_cnt > 0:
+        cfg.rider.envelope.count = env_cnt
     return cfg
+
+
+def apply_physics_config_json_to_sp3_config(
+    cfg: GpuSp3ConfigStruct,
+    phys_cfg: dict[str, Any],
+) -> None:
+    """Apply exported ``physics_config.json`` fields onto ``GpuSp3ConfigStruct``."""
+    dt_s = float(phys_cfg.get("timestep_s", 0.00125))
+    if dt_s <= 0.0:
+        dt_s = 0.00125
+
+    def _ticks(sec: float, step_s: float = dt_s) -> int:
+        return max(0, int(round(float(sec) / float(step_s))))
+
+    res = phys_cfg.get("resistance")
+    if isinstance(res, dict):
+        if "crr" in res:
+            cfg.resistance.crr = float(res["crr"])
+        if "rolling_taper_rad_s" in res:
+            cfg.resistance.rolling_taper_rad_s = float(res["rolling_taper_rad_s"])
+        if "rho_kg_m3" in res:
+            cfg.resistance.rho_kg_m3 = float(res["rho_kg_m3"])
+        if "cda_m2" in res:
+            cfg.resistance.cda_m2 = float(res["cda_m2"])
+        wind = res.get("wind_world_mps")
+        if isinstance(wind, list) and len(wind) == 3:
+            for i in range(3):
+                cfg.resistance.wind_world_mps[i] = float(wind[i])
+        pt = res.get("point_body_m")
+        if isinstance(pt, list) and len(pt) == 3:
+            for i in range(3):
+                cfg.resistance.point_body_m[i] = float(pt[i])
+
+    tires = phys_cfg.get("tires")
+    if isinstance(tires, dict) and tires.get("backend") == "distributed_2d_reference":
+        cfg.resistance.crr = 0.0
+
+    drive = phys_cfg.get("drive")
+    if isinstance(drive, dict):
+        if "brake_ceiling_nm" in drive:
+            cfg.static_brake_ceiling_nm = float(drive["brake_ceiling_nm"])
+        if "brake_hold_torque_nm" in drive:
+            cfg.brake_hold.torque_nm = float(drive["brake_hold_torque_nm"])
+        if "brake_hold_stiffness_nm_rad" in drive:
+            cfg.brake_hold.stiffness_nm_rad = float(drive["brake_hold_stiffness_nm_rad"])
+        if "brake_hold_damping_nms_rad" in drive:
+            cfg.brake_hold.damping_nms_rad = float(drive["brake_hold_damping_nms_rad"])
+        if "brake_hold_engage_radps" in drive:
+            cfg.brake_hold.engage_radps = float(drive["brake_hold_engage_radps"])
+        if "brake_hold_release_radps" in drive:
+            cfg.brake_hold.release_radps = float(drive["brake_hold_release_radps"])
+        if "torque_ripple" in drive:
+            cfg.crank_torque_ripple = float(drive["torque_ripple"])
+
+        gearing = drive.get("gearing")
+        if isinstance(gearing, dict):
+            if "front_teeth" in gearing:
+                cfg.shifting.front_teeth = int(gearing["front_teeth"])
+            if "rear_teeth" in gearing:
+                cfg.shifting.initial_rear_teeth = int(gearing["rear_teeth"])
+
+        sh = drive.get("shifting")
+        if isinstance(sh, dict):
+            if "enabled" in sh:
+                cfg.shifting.enabled = 1 if bool(sh["enabled"]) else 0
+            cass = sh.get("cassette")
+            if isinstance(cass, list) and 1 <= len(cass) <= 12:
+                cfg.shifting.cog_count = len(cass)
+                for i, t in enumerate(cass):
+                    cfg.shifting.cassette[i] = int(t)
+            if "target_cadence_min_rpm" in sh:
+                cfg.shifting.target_cadence_min_rpm = float(sh["target_cadence_min_rpm"])
+            if "target_cadence_max_rpm" in sh:
+                cfg.shifting.target_cadence_max_rpm = float(sh["target_cadence_max_rpm"])
+            if "shift_cooldown_s" in sh and float(sh["shift_cooldown_s"]) >= 0.0:
+                cfg.shifting.shift_cooldown_ticks = _ticks(float(sh["shift_cooldown_s"]))
+            if "shift_cut_duration_s" in sh and float(sh["shift_cut_duration_s"]) >= 0.0:
+                cfg.shifting.shift_cut_duration_ticks = max(
+                    1, _ticks(float(sh["shift_cut_duration_s"]))
+                )
+            if "torque_factor_larger_cog" in sh:
+                cfg.shifting.torque_factor_larger_cog = float(sh["torque_factor_larger_cog"])
+            if "torque_factor_smaller_cog" in sh:
+                cfg.shifting.torque_factor_smaller_cog = float(sh["torque_factor_smaller_cog"])
+            if "cadence_smoothing_tau_s" in sh:
+                cfg.shifting.cadence_smoothing_tau_s = float(sh["cadence_smoothing_tau_s"])
+            if "upshift_slip_limit_mps" in sh:
+                cfg.shifting.upshift_slip_limit_mps = float(sh["upshift_slip_limit_mps"])
+
+        ped = drive.get("pedaling")
+        if isinstance(ped, dict):
+            if "enabled" in ped:
+                cfg.pedaling.enabled = 1 if bool(ped["enabled"]) else 0
+            for k in (
+                "coast_above_rpm",
+                "resume_below_rpm",
+                "stop_time_s",
+                "coast_cadence_tau_s",
+                "mash_cadence_rpm",
+                "mash_torque_nm",
+                "effort_slew_nm_s",
+                "reposition_min_effort_nm",
+                "reposition_stall_progress_rad",
+                "reposition_back_rate_rad_s",
+                "reposition_phase_tolerance_rad",
+                "reposition_noop_rad",
+            ):
+                if k in ped and float(ped[k]) >= 0.0:
+                    setattr(cfg.pedaling, k, float(ped[k]))
+            if "reposition_on_stall" in ped:
+                cfg.pedaling.reposition_on_stall = 1 if bool(ped["reposition_on_stall"]) else 0
+            if "reposition_stall_window_s" in ped and float(ped["reposition_stall_window_s"]) >= 0.0:
+                cfg.pedaling.reposition_stall_window_ticks = _ticks(
+                    float(ped["reposition_stall_window_s"])
+                )
+            if "reposition_cooldown_s" in ped and float(ped["reposition_cooldown_s"]) >= 0.0:
+                cfg.pedaling.reposition_cooldown_ticks = _ticks(
+                    float(ped["reposition_cooldown_s"])
+                )
+            if "reposition_timeout_s" in ped and float(ped["reposition_timeout_s"]) >= 0.0:
+                cfg.pedaling.reposition_timeout_ticks = _ticks(
+                    float(ped["reposition_timeout_s"])
+                )
+            if "rollback_brake" in ped:
+                cfg.rollback.rollback_brake_enabled = 1 if bool(ped["rollback_brake"]) else 0
+            if "rollback_demand" in ped:
+                cfg.rollback.rollback_demand = float(ped["rollback_demand"])
+            if "rollback_engage_mps" in ped:
+                cfg.rollback.rollback_engage_mps = float(ped["rollback_engage_mps"])
+            if "rollback_release_mps" in ped:
+                cfg.rollback.rollback_release_mps = float(ped["rollback_release_mps"])
+
+    art = phys_cfg.get("articulated")
+    if isinstance(art, dict):
+        if "pedal_torque_ripple" in art:
+            cfg.crank_torque_ripple = float(art["pedal_torque_ripple"])
+        if "joint_envelope_soft_k_nm_rad" in art:
+            cfg.rider.envelope.stiffness_nm_rad = float(art["joint_envelope_soft_k_nm_rad"])
+        if "joint_envelope_soft_margin_rad" in art:
+            cfg.rider.envelope.margin_rad = float(art["joint_envelope_soft_margin_rad"])
+        if "road_lookahead_m" in art:
+            cfg.road_lookahead_m = float(art["road_lookahead_m"])
+
+    sc = phys_cfg.get("seated_climb")
+    if isinstance(sc, dict):
+        if "enabled" in sc:
+            cfg.intent.enabled = 1 if bool(sc["enabled"]) else 0
+        period_s = float(sc.get("period_s", cfg.intent.period_s))
+        if period_s > 0.0:
+            cfg.intent.period_s = period_s
+            cfg.intent.period_steps = max(1, _ticks(period_s))
+            if "reaction_delay_s" in sc:
+                cfg.intent.delay_ticks = _ticks(float(sc["reaction_delay_s"]), period_s)
+            if "trim_dead_time_s" in sc:
+                cfg.intent.dead_time_ticks = _ticks(float(sc["trim_dead_time_s"]), period_s)
+        for k in (
+            "target_crank_power_w",
+            "max_crank_torque_nm",
+            "lean_gain",
+            "max_forward_lean_rad",
+            "max_backward_lean_rad",
+            "lean_rate_rad_s",
+            "orientation_tau_s",
+            "surge_power_w",
+            "surge_grade",
+            "front_load_share_target",
+            "lean_trim_gain_rad_s",
+            "lean_trim_limit_rad",
+            "min_elbow_flexion_deg",
+            "climb_effort_rise_speed_mps",
+            "climb_effort_full_speed_mps",
+        ):
+            if k in sc:
+                setattr(cfg.intent, k, float(sc[k]))
 
 
 def build_sp3_sweep_configs_bytes(
@@ -1491,6 +1710,7 @@ def build_sp3_sweep_configs_bytes(
         arr = arr_type.from_buffer(buf)
         for w in range(int(nworld)):
             arr[w].efc_scan = base_resolved.efc_scan
+            arr[w].rider.envelope = base_resolved.rider.envelope
             arr[w].motor_actuator_idx = base_resolved.motor_actuator_idx
             arr[w].motor_ctrl_min_nm = base_resolved.motor_ctrl_min_nm
             arr[w].motor_ctrl_max_nm = base_resolved.motor_ctrl_max_nm

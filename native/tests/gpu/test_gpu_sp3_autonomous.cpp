@@ -311,12 +311,30 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config_for_model(const mjMode
     cfg.efc_scan.crank_dof = jnt_dofadr[to_index(crank_jnt)];
     cfg.efc_scan.front_wheel_dof = jnt_dofadr[to_index(fw_jnt)];
     cfg.efc_scan.rear_wheel_dof = jnt_dofadr[to_index(rw_jnt)];
-    cfg.efc_scan.handlebar_geom_id = mj_name2id(m, mjOBJ_GEOM, "handlebar");
-    cfg.efc_scan.catch_geom_id = -1;
+    int hbar_gid = mj_name2id(m, mjOBJ_GEOM, "geom_handlebar");
+    if (hbar_gid < 0) {
+        hbar_gid = mj_name2id(m, mjOBJ_GEOM, "handlebar");
+    }
+    cfg.efc_scan.handlebar_geom_id = hbar_gid;
+    cfg.efc_scan.catch_geom_id = mj_name2id(m, mjOBJ_GEOM, "catch_plane");
+    cfg.efc_scan.terrain_geom_count = 0;
     const int terrain_gid = mj_name2id(m, mjOBJ_GEOM, "terrain");
     if (terrain_gid >= 0) {
-        cfg.efc_scan.terrain_geom_ids[0] = terrain_gid;
-        cfg.efc_scan.terrain_geom_count = 1;
+        std::span{cfg.efc_scan.terrain_geom_ids}[to_index(cfg.efc_scan.terrain_geom_count++)] =
+            terrain_gid;
+    }
+    if (cfg.efc_scan.catch_geom_id >= 0 &&
+        cfg.efc_scan.terrain_geom_count < bike::physics_core::kMaxTerrainGeoms) {
+        std::span{cfg.efc_scan.terrain_geom_ids}[to_index(cfg.efc_scan.terrain_geom_count++)] =
+            cfg.efc_scan.catch_geom_id;
+    }
+    cfg.efc_scan.rider_geom_count = 0;
+    for (int g = 0; g < m->ngeom; ++g) {
+        const char *gname = mj_id2name(m, mjOBJ_GEOM, g);
+        if (gname != nullptr && std::string_view(gname).starts_with("geom_rider_") &&
+            cfg.efc_scan.rider_geom_count < bike::physics_core::kMaxRiderCrashGeoms) {
+            std::span{cfg.efc_scan.rider_geom_ids}[to_index(cfg.efc_scan.rider_geom_count++)] = g;
+        }
     }
 
     const int motor_act = mj_name2id(m, mjOBJ_ACTUATOR, "mid_drive");

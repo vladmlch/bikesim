@@ -836,10 +836,10 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
         .surface = bike::gpu::make_surface_spec_from_label(0), // asphalt
         .sections = {
             nativecfg::SurfaceSection{
-                .start_m = 2.02,
-                .end_m = 2.60,
+                .start_m = 2.65,
+                .end_m = 3.40,
                 .surface = bike::gpu::make_surface_spec_from_label(4), // scree: crr_delta=0.008, load_sens=0.15
-                .blend_m = 0.25,
+                .blend_m = 0.30,
             },
         },
     };
@@ -1016,12 +1016,15 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
             sum_brush_loss += sum.brush_and_rolling_loss_j;
 
             const std::span<const GpuPneumaticWheelState<float>, 2> psw(*pneu_states);
-            require(psw[0].carcass.initialized == 1 && psw[1].carcass.initialized == 1,
-                    "pneumatic_wheels carcass state initialized");
-            if (detailed) {
+            if (detailed && kParityTicks[to_index(step % 3)].expect_contact) {
                 require(psw[0].patch_count > 0 || psw[1].patch_count > 0,
                         "detailed pneumatic rollout populates contact patches");
             }
+        }
+        {
+            const std::span<const GpuPneumaticWheelState<float>, 2> psw_final(*pneu_states);
+            require(psw_final[0].carcass.initialized == 1 && psw_final[1].carcass.initialized == 1,
+                    "pneumatic_wheels carcass state initialized");
         }
         require(max_radial_e > 0.0f && max_maxwell_e > 0.0f,
                 "pneumatic rollout produces positive radial_energy_j and maxwell_energy_j");

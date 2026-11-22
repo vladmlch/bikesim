@@ -373,8 +373,8 @@ void verify_metal_vs_cpu_writers_parity(
     d_qvel[to_index(idx.crank_spin_dof)] = 8.0;
     mj_forward(m.get(), d.get());
 
-    const auto bundle_ptr = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
-        m.get(), d.get(), tcfg, f_geom, r_geom, f_body, r_body));
+    const auto bundle_ptr = build_gpu_tyre_model_ptr(
+        m.get(), d.get(), tcfg, f_geom, r_geom, f_body, r_body);
     const HostTyreUploadBundle &bundle = *bundle_ptr;
     const HostPackedTerrain terrain = pack_upload_bundle_terrain(bundle);
 
@@ -572,9 +572,9 @@ void test_metal_shader_and_buffer_reuse() {
     build_welded_initial_state(m_welded.get(), w_idx, qp0, qv0, d_w);
     const int f_geom = find_wheel_contact_geom(m_welded.get(), w_idx.front_wheel_body, "front_contact", "geom_front_contact");
     const int r_geom = find_wheel_contact_geom(m_welded.get(), w_idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
-    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+    const auto bundle = build_gpu_tyre_model_ptr(
         m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
-        f_geom, r_geom, w_idx.front_wheel_body, w_idx.rear_wheel_body));
+        f_geom, r_geom, w_idx.front_wheel_body, w_idx.rear_wheel_body);
     const HostPackedTerrain w_terrain = pack_upload_bundle_terrain(*bundle);
 
     std::vector<float> out_fork(2, 0.0f);
@@ -800,9 +800,9 @@ void test_metal_single_world_stride0_dual_tendon() {
 
     const int f_geom = find_wheel_contact_geom(m_welded.get(), idx.front_wheel_body, "front_contact", "geom_front_contact");
     const int r_geom = find_wheel_contact_geom(m_welded.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
-    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+    const auto bundle = build_gpu_tyre_model_ptr(
         m_welded.get(), d.get(), make_default_compliant_tire_config(),
-        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body);
     const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
 
     GpuWorldConfig cfg{};
@@ -996,9 +996,9 @@ void test_cpu_and_metal_hybrid_rollouts() {
     const int r_geom = find_wheel_contact_geom(
         m_probe.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
     require(f_geom >= 0 && r_geom >= 0, "found front/rear contact geoms in model.xml");
-    const auto dist_bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+    const auto dist_bundle = build_gpu_tyre_model_ptr(
         m_probe.get(), d_probe.get(), make_default_distributed_tire_config(64),
-        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body);
     const HostPackedTerrain dist_terrain = pack_upload_bundle_terrain(*dist_bundle);
 
     verify_hybrid_rollout_backend(
@@ -1007,9 +1007,9 @@ void test_cpu_and_metal_hybrid_rollouts() {
         kNWorld, kSteps, configs, "distributed_2d_reference");
 
     // 3. Explicit custom terrain override (low vs elevated) shifts fork travel peak
-    const auto comp_bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+    const auto comp_bundle = build_gpu_tyre_model_ptr(
         m_probe.get(), d_probe.get(), make_default_compliant_tire_config(),
-        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body);
     const std::vector<float> z_low(2000, -0.390f);
     const std::vector<float> z_high(2000, -0.320f);
     const HostPackedTerrain t_low =
@@ -1058,9 +1058,9 @@ void test_cpu_and_host_argument_validation() {
     build_welded_initial_state(m_welded.get(), idx, qp0, qv0, d_w);
     const int f_geom = find_wheel_contact_geom(m_welded.get(), idx.front_wheel_body, "front_contact", "geom_front_contact");
     const int r_geom = find_wheel_contact_geom(m_welded.get(), idx.rear_wheel_body, "rear_contact", "geom_rear_contact");
-    const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+    const auto bundle = build_gpu_tyre_model_ptr(
         m_welded.get(), d_w.get(), make_default_compliant_tire_config(),
-        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+        f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body);
     const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
 
     GpuWorldConfig cfg{};
@@ -1214,9 +1214,9 @@ void test_welded_80step_rollout_parity() {
     }
 
     const auto run_welded_backend = [&](const nativecfg::TireConfig &tcfg, std::string_view label) {
-        const auto bundle = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
+        const auto bundle = build_gpu_tyre_model_ptr(
             m_welded.get(), d_w.get(), tcfg,
-            f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body));
+            f_geom, r_geom, idx.front_wheel_body, idx.rear_wheel_body);
         const HostPackedTerrain terrain = pack_upload_bundle_terrain(*bundle);
 
         std::vector<float> cpu_fork(to_index(kNWorld), 0.0f);

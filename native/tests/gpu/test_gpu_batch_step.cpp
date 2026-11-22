@@ -68,12 +68,13 @@ constexpr float kHfDx = 0.05f;
 constexpr float kFrontRadiusM = 0.372f;
 constexpr float kRearRadiusM = 0.352f;
 
-bike::physics_core::GpuTyreModel make_synthetic_tyre_model(
+std::unique_ptr<bike::physics_core::GpuTyreModel> make_synthetic_tyre_model(
     const GpuModelIndices &idx,
     bike::physics_core::TyreBackendKind backend
 ) {
     using namespace bike::physics_core;
-    GpuTyreModel tm{};
+    auto tm_ptr = std::make_unique<GpuTyreModel>();
+    GpuTyreModel &tm = *tm_ptr;
     tm.backend = backend;
     tm.nq = idx.nq;
     tm.nv = idx.nv;
@@ -153,7 +154,7 @@ bike::physics_core::GpuTyreModel make_synthetic_tyre_model(
     frame_joints[1] = GpuChainJoint{.joint_id = idx.root_z_dof, .joint_type = kJntSlide, .dof_adr = idx.root_z_dof};
     frame_joints[2] = GpuChainJoint{.joint_id = idx.root_pitch_dof, .joint_type = kJntHinge, .dof_adr = idx.root_pitch_dof};
     tm.frame_chain.joint_count = 3;
-    return tm;
+    return tm_ptr;
 }
 
 float eval_synthetic_ground_z(float x) {
@@ -163,7 +164,7 @@ float eval_synthetic_ground_z(float x) {
 // Shared scenario buffers for the batch-step cases.
 struct BatchScenario {
     GpuModelIndices idx{};
-    bike::physics_core::GpuTyreModel tyre_model{};
+    std::unique_ptr<bike::physics_core::GpuTyreModel> tyre_model{};
     HostPackedTerrain terrain{};
     std::vector<float> hf_heights;
     std::vector<GpuWorldConfig> configs;
@@ -362,7 +363,7 @@ BatchScenario make_batch_scenario(
                 w,
                 kDt,
                 idx,
-                &sc.tyre_model,
+                sc.tyre_model.get(),
                 sc.terrain.desc,
                 sc.terrain.f32.data(),
                 sc.terrain.i32.data(),
@@ -649,7 +650,7 @@ void test_drivetrain_torque_path() {
     std::vector<float> tendon_tmp(static_cast<std::size_t>(kNWorld) * 2, 0.0f);
 
     require(gpu_step_world_writers(
-                0, kDt, idx, &sc.tyre_model, sc.terrain.desc,
+                0, kDt, idx, sc.tyre_model.get(), sc.terrain.desc,
                 sc.terrain.f32.data(), sc.terrain.i32.data(),
                 sc.configs.data(), 1, st_tendon.data(),
                 sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
@@ -658,7 +659,7 @@ void test_drivetrain_torque_path() {
                 bike::physics_core::Status::ok,
             "tendon mode step succeeds");
     require(gpu_step_world_writers(
-                0, kDt, idx, &sc.tyre_model, sc.terrain.desc,
+                0, kDt, idx, sc.tyre_model.get(), sc.terrain.desc,
                 sc.terrain.f32.data(), sc.terrain.i32.data(),
                 sc.configs.data(), 1, st_explicit.data(),
                 sc.qpos_batch.data(), qvel_pedaling.data(), sc.xpos_batch.data(),
@@ -735,7 +736,7 @@ void test_launch_wrappers_and_bounds() {
                 kNWorld,
                 kDt,
                 &idx,
-                &sc.tyre_model,
+                sc.tyre_model.get(),
                 &sc.terrain.desc,
                 sc.terrain.f32.data(),
                 sc.terrain.i32.data(),
@@ -762,7 +763,7 @@ void test_launch_wrappers_and_bounds() {
     const float saved_root_z = sc.qfrc_batch[to_index(idx.root_z_dof)];
     sc.qfrc_batch[to_index(idx.root_z_dof)] = -12345.0f;
     require(bike_gpu_launch_step_writers(
-                nullptr, kNWorld, kDt, &bad_idx, &sc.tyre_model, &sc.terrain.desc,
+                nullptr, kNWorld, kDt, &bad_idx, sc.tyre_model.get(), &sc.terrain.desc,
                 sc.terrain.f32.data(), sc.terrain.i32.data(),
                 sc.configs.data(), 1, sc.states.data(),
                 sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
@@ -773,7 +774,7 @@ void test_launch_wrappers_and_bounds() {
             "rejected launch leaves qfrc_batch unmodified");
 
     {
-        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(sc.tyre_model);
+        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(*sc.tyre_model);
         const std::span bad_wheels(bad_tm->wheels);
         const std::span bad_joints(bad_wheels[0].chain.joints);
         bad_joints[0].joint_id = kNjnt;
@@ -787,7 +788,7 @@ void test_launch_wrappers_and_bounds() {
                 "launch_writers rejects joint_id >= njnt");
     }
     {
-        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(sc.tyre_model);
+        auto bad_tm = std::make_unique<bike::physics_core::GpuTyreModel>(*sc.tyre_model);
         bad_tm->backend = bike::physics_core::TyreBackendKind::distributed_2d_reference;
         bad_tm->station_count = bike::physics_core::kMaxGpuTyreStations + 1;
         require(bike_gpu_launch_writers(
@@ -804,7 +805,7 @@ void test_launch_wrappers_and_bounds() {
         bad_f32[to_index(sc.terrain.desc.px_offset + 10)] =
             bad_f32[to_index(sc.terrain.desc.px_offset + 9)];
         require(bike_gpu_launch_writers(
-                    nullptr, kNWorld, kDt, &idx, &sc.tyre_model, &sc.terrain.desc,
+                    nullptr, kNWorld, kDt, &idx, sc.tyre_model.get(), &sc.terrain.desc,
                     bad_f32.data(), sc.terrain.i32.data(),
                     sc.configs.data(), 1, sc.states.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
@@ -820,7 +821,7 @@ void test_launch_wrappers_and_bounds() {
         std::vector<GpuWorldState> st_t1 = sc.states;
         std::vector<float> tendon_stride4(static_cast<std::size_t>(kNWorld) * 4, -99.0f);
         require(gpu_step_world_writers(
-                    3, kDt, idx_t1, &sc.tyre_model, sc.terrain.desc,
+                    3, kDt, idx_t1, sc.tyre_model.get(), sc.terrain.desc,
                     sc.terrain.f32.data(), sc.terrain.i32.data(),
                     sc.configs.data(), 1, st_t1.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),
@@ -841,7 +842,7 @@ void test_launch_wrappers_and_bounds() {
         sc.qfrc_batch[3 * to_index(idx_t1.nv) + to_index(idx_t1.root_z_dof)] = -54321.0f;
         require(bike_gpu_launch_step_writers(
                     nullptr, kNWorld, kDt, &idx_t1,
-                    &sc.tyre_model, &sc.terrain.desc,
+                    sc.tyre_model.get(), &sc.terrain.desc,
                     sc.terrain.f32.data(), sc.terrain.i32.data(),
                     sc.configs.data(), 1, st_t1.data(),
                     sc.qpos_batch.data(), sc.qvel_batch.data(), sc.xpos_batch.data(),

@@ -1094,17 +1094,19 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
         copy_cast(d->xipos, to_index(nbody) * 3U, xipos_f);
         copy_cast(d->M, to_index(nM), M_f);
 
+        const int ep_rc = bike_gpu_launch_sp4_energy_post_step(
+            nullptr, 1, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+            tt->terrain_f32.data(), cfg_sp3.get(), 0, sp_params.get(),
+            sp3_st.get(), sp4_st.get(), ws.get(),
+            0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
+            qpos_f.data(), qvel_f.data(), ctrl_f.data(),
+            bmass_f.data(), xipos_f.data(), grav_f.data(),
+            &d->nefc, std::max(1, d->nefc), nv,
+            et_i.data(), eJ_f.data(), ef_f.data());
         require(
-            bike_gpu_launch_sp4_energy_post_step(
-                nullptr, 1, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
-                tt->terrain_f32.data(), cfg_sp3.get(), 0, sp_params.get(),
-                sp3_st.get(), sp4_st.get(), ws.get(),
-                0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
-                qpos_f.data(), qvel_f.data(), ctrl_f.data(),
-                bmass_f.data(), xipos_f.data(), grav_f.data(),
-                &d->nefc, std::max(1, d->nefc), nv,
-                et_i.data(), eJ_f.data(), ef_f.data()) == 0,
-            "gpu_spec energy_post_step failed");
+            ep_rc == 0,
+            std::format("gpu_spec energy_post_step failed sc={} m0={} step={} rc={}",
+                        sc.id, use_m0, step, ep_rc));
 
         root_x_trace.push_back(static_cast<double>(d_qp[to_index(idx.root_x_qpos)]));
     }

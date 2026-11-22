@@ -481,6 +481,7 @@ int bike_gpu_launch_sp4_energy_post_step(
     const float *d_M_or_qM,
     const float *d_qpos,
     const float *d_qvel,
+    const float *d_xpos,
     const float *d_ctrl,
     const float *d_body_mass,
     const float *d_xipos,

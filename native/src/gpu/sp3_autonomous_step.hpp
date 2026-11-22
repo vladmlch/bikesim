@@ -253,6 +253,11 @@ BIKE_HD void gpu_init_default_sp3_config(BIKE_THREAD GpuSp3Config &cfg) noexcept
     cfg.intent.climb_effort_rise_speed_mps = 2.5f;
     cfg.intent.climb_effort_full_speed_mps = 4.0f;
 
+    cfg.cruise.target_speed_kmh = 25.0f;
+    cfg.cruise.kp_nm_per_mps = 120.0f;
+    cfg.cruise.ki_nm_per_mps_s = 40.0f;
+    cfg.cruise.torque_ceiling_nm = 250.0f;
+
     // FrontLiftReaction defaults matching viewer_physics_welded.toml
     cfg.front_lift.hand_drop_ratio = 0.7f;
     cfg.front_lift.pitch_rate_up_rad_s = 0.15f;
@@ -511,7 +516,22 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
     sp3_st->stall_reposition = bike::physics_core::StallRepositionStatePod<float>{};
     bike::physics_core::assist_reset<float>(&sp3_st->assist);
     sp3_st->cruise = bike::physics_core::CruiseStatePod<float>{};
-    if (cfg->cruise_enabled != 0 || cfg->program_enabled != 0) {
+    bool program_uses_cruise = false;
+    if (cfg->program_enabled != 0) {
+        const bike::physics_core::i32 seg_cnt =
+            (cfg->ride_program.segment_count < bike::physics_core::kMaxProgramSegments)
+                ? cfg->ride_program.segment_count
+                : bike::physics_core::kMaxProgramSegments;
+        for (bike::physics_core::i32 si = 0; si < seg_cnt; ++si) {
+            if ((cfg->ride_program.segments[si].channel_mask &
+                 static_cast<bike::physics_core::u32>(
+                     bike::physics_core::GpuProgramChannelMask::has_cruise_speed_kmh)) != 0u) {
+                program_uses_cruise = true;
+                break;
+            }
+        }
+    }
+    if (cfg->cruise_enabled != 0 || program_uses_cruise) {
         const bike::physics_core::Status cr_st =
             bike::physics_core::cruise_init<float, bike::physics_core::GpuToolkit>(
                 &cfg->cruise, &sp3_st->cruise, err);

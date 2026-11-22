@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <vector>
 
@@ -1609,7 +1610,8 @@ int bike_gpu_launch_writers(
         return 0;
     }
     bike::gpu::GpuModelIndices host_idx{};
-    bike::physics_core::GpuTyreModel host_tyre_model{};
+    const auto host_tyre_model_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+    bike::physics_core::GpuTyreModel &host_tyre_model = *host_tyre_model_ptr;
     bike::physics_core::GpuTerrainTableDesc host_terrain_desc{};
     const int val_rc = bike::gpu::validate_writers_inputs(
         nworld,
@@ -1673,7 +1675,8 @@ int bike_gpu_launch_writers(
 #else
     (void)cuda_stream;
     bike::gpu::GpuModelIndices host_idx{};
-    bike::physics_core::GpuTyreModel host_tyre_model{};
+    const auto host_tyre_model_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+    bike::physics_core::GpuTyreModel &host_tyre_model = *host_tyre_model_ptr;
     bike::physics_core::GpuTerrainTableDesc host_terrain_desc{};
     const int val_rc = bike::gpu::validate_writers_inputs(
         nworld,
@@ -1943,7 +1946,8 @@ int bike_gpu_launch_sp3_pre_solve(
     bike::physics_core::GpuPneumaticStepScratch<float> *d_pneum = nullptr;
     if (capture_status != cudaStreamCaptureStatusActive) {
         bike::gpu::GpuModelIndices host_idx{};
-        bike::physics_core::GpuTyreModel host_tm{};
+        const auto host_tm_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+        bike::physics_core::GpuTyreModel &host_tm = *host_tm_ptr;
         bike::physics_core::GpuTerrainTableDesc host_td{};
         if (!bike::gpu::copy_maybe_device_struct(d_idx, host_idx) ||
             !bike::gpu::copy_maybe_device_struct(d_tyre_model, host_tm) ||
@@ -1994,7 +1998,8 @@ int bike_gpu_launch_sp3_pre_solve(
 #else
     (void)cuda_stream;
     bike::gpu::GpuModelIndices host_idx{};
-    bike::physics_core::GpuTyreModel host_tm{};
+    const auto host_tm_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+    bike::physics_core::GpuTyreModel &host_tm = *host_tm_ptr;
     bike::physics_core::GpuTerrainTableDesc host_td{};
     if (!bike::gpu::copy_maybe_device_struct(d_idx, host_idx) ||
         !bike::gpu::copy_maybe_device_struct(d_tyre_model, host_tm) ||
@@ -2392,7 +2397,8 @@ int bike_gpu_launch_sp4_pre_solve_and_pass0(
     bike::physics_core::GpuPneumaticStepScratch<float> *d_pneum = nullptr;
     if (capture_status != cudaStreamCaptureStatusActive) {
         bike::gpu::GpuModelIndices host_idx{};
-        bike::physics_core::GpuTyreModel host_tm{};
+        const auto host_tm_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+        bike::physics_core::GpuTyreModel &host_tm = *host_tm_ptr;
         bike::physics_core::GpuTerrainTableDesc host_td{};
         std::vector<bike::physics_core::SpindleM2K2Params<float>> host_sp(1);
         if (!bike::gpu::copy_maybe_device_struct(d_idx, host_idx) ||
@@ -2454,7 +2460,7 @@ int bike_gpu_launch_sp4_pre_solve_and_pass0(
 #else
     (void)cuda_stream;
     const bike::gpu::GpuModelIndices host_idx = *d_idx;
-    const bike::physics_core::GpuTyreModel host_tm = *d_tyre_model;
+    const bike::physics_core::GpuTyreModel &host_tm = *d_tyre_model;
     const bike::physics_core::GpuTerrainTableDesc host_terrain_desc = *d_terrain_desc;
     if (!bike::gpu::gpu_validate_model_indices(host_idx, ntendon) ||
         !bike::physics_core::validate_spindle_m2k2_params(d_spindle_params)) {
@@ -3024,7 +3030,8 @@ int bike_gpu_launch_sp4_m0_pre_solve_and_begin(
         return -7;
     }
     bike::gpu::GpuModelIndices host_idx{};
-    bike::physics_core::GpuTyreModel host_tm{};
+    const auto host_tm_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+    bike::physics_core::GpuTyreModel &host_tm = *host_tm_ptr;
     bike::physics_core::GpuTerrainTableDesc host_td{};
     std::vector<bike::physics_core::SpindleM2K2Params<float>> host_sp(1);
     if (!bike::gpu::copy_maybe_device_struct(d_idx, host_idx) ||
@@ -3097,7 +3104,7 @@ int bike_gpu_launch_sp4_m0_pre_solve_and_begin(
 #else
     (void)cuda_stream;
     const bike::gpu::GpuModelIndices host_idx = *d_idx;
-    const bike::physics_core::GpuTyreModel host_tm = *d_tyre_model;
+    const bike::physics_core::GpuTyreModel &host_tm = *d_tyre_model;
     const bike::physics_core::GpuTerrainTableDesc host_terrain_desc = *d_terrain_desc;
     if (!bike::gpu::gpu_validate_model_indices(host_idx, ntendon) ||
         !bike::physics_core::validate_spindle_m2k2_params(d_spindle_params)) {
@@ -3502,7 +3509,8 @@ int bike_gpu_launch_sp4_energy_post_step(
     bike::physics_core::GpuPneumaticStepScratch<float> *d_pneum = nullptr;
     if (capture_status != cudaStreamCaptureStatusActive) {
         bike::gpu::GpuModelIndices host_idx{};
-        bike::physics_core::GpuTyreModel host_tm{};
+        const auto host_tm_ptr = std::make_unique<bike::physics_core::GpuTyreModel>();
+        bike::physics_core::GpuTyreModel &host_tm = *host_tm_ptr;
         bike::physics_core::GpuTerrainTableDesc host_td{};
         std::vector<bike::physics_core::SpindleM2K2Params<float>> host_sp(1);
         if (!bike::gpu::copy_maybe_device_struct(d_idx, host_idx) ||
@@ -3549,7 +3557,7 @@ int bike_gpu_launch_sp4_energy_post_step(
 #else
     (void)cuda_stream;
     const bike::gpu::GpuModelIndices host_idx = *d_idx;
-    const bike::physics_core::GpuTyreModel host_tm = *d_tyre_model;
+    const bike::physics_core::GpuTyreModel &host_tm = *d_tyre_model;
     const bike::physics_core::GpuTerrainTableDesc host_td = *d_terrain_desc;
     if (!bike::gpu::gpu_validate_model_indices(host_idx) ||
         !bike::physics_core::validate_spindle_m2k2_params(d_spindle_params)) {

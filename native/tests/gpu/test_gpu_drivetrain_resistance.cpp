@@ -122,10 +122,9 @@ void test_resistance_parity_with_writer() {
     const int rear_geom = mj_name2id(m.get(), mjOBJ_GEOM, "geom_rear_contact");
     require(front_geom >= 0 && rear_geom >= 0, "welded wheel contact geoms resolved");
 
-    const auto bundle = std::make_unique<HostTyreUploadBundle>(
-        bike::physics_core::build_gpu_tyre_model(
-            m.get(), d.get(), make_compliant_cfg(),
-            front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body));
+    const auto bundle = bike::physics_core::build_gpu_tyre_model_ptr(
+        m.get(), d.get(), make_compliant_cfg(),
+        front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body);
 
     nativecfg::ResistanceConfig rcfg{};
     rcfg.crr = 0.012;

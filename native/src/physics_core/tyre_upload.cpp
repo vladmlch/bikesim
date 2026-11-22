@@ -381,7 +381,8 @@ void validate_and_pack_pneumatic_side(
         static bool isfinite(double x) noexcept { return std::isfinite(x); }
     };
 
-    PneumaticRayRing<double> ring_d{};
+    auto ring_d_ptr = std::make_unique<PneumaticRayRing<double>>();
+    PneumaticRayRing<double> &ring_d = *ring_d_ptr;
     ErrCode ring_err = ErrCode::none;
     const double half_angle_rad = pneu.half_angle_deg * (std::numbers::pi / 180.0);
     if (init_pneumatic_ray_ring<double, HostDoubleTk>(
@@ -896,8 +897,8 @@ HostTyreUploadBundle &HostTyreUploadBundle::operator=(const HostTyreUploadBundle
     if (this == &other) {
         return *this;
     }
-    HostTyreUploadBundle copy(other);
-    *this = std::move(copy);
+    auto copy = std::make_unique<HostTyreUploadBundle>(other);
+    *this = std::move(*copy);
     return *this;
 }
 

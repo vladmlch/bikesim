@@ -311,7 +311,8 @@ int bike_cpu_run_batch_ex(
         qvel0[i] = init_qvel_v[i];
     }
 
-    bike::gpu::ResolvedRunnerTyre resolved_tyre{};
+    const auto resolved_tyre_ptr = std::make_unique<bike::gpu::ResolvedRunnerTyre>();
+    bike::gpu::ResolvedRunnerTyre &resolved_tyre = *resolved_tyre_ptr;
     {
         mjData *d_init = engine::make_data(m_base);
         const std::span<mjtNum> d_init_qpos = boundary_span(d_init->qpos, to_index(nq));

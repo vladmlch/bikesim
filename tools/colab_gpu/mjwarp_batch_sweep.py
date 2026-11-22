@@ -36,6 +36,7 @@ try:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         GpuSp3ConfigStruct,
+        apply_manifest_json_to_sp3_config,
         apply_physics_config_json_to_sp3_config,
         build_sp3_config_struct_from_mjmodel,
         build_sp3_sweep_configs_bytes,
@@ -46,6 +47,7 @@ try:
         expand_mjwarp_tendon_range_and_frictionloss,
         materialize_model_12gears_xml,
         resolve_gpu_model_indices,
+        unpack_sp3_energy_ledger,
         unpack_sp4_world_metrics,
     )
     from tools.colab_gpu.model_assets import (
@@ -60,6 +62,7 @@ except ImportError:
         DEFAULT_OUT_SO_PATH,
         GpuModelIndicesStruct,
         GpuSp3ConfigStruct,
+        apply_manifest_json_to_sp3_config,
         apply_physics_config_json_to_sp3_config,
         build_sp3_config_struct_from_mjmodel,
         build_sp3_sweep_configs_bytes,
@@ -70,6 +73,7 @@ except ImportError:
         expand_mjwarp_tendon_range_and_frictionloss,
         materialize_model_12gears_xml,
         resolve_gpu_model_indices,
+        unpack_sp3_energy_ledger,
         unpack_sp4_world_metrics,
     )
     from model_assets import (  # type: ignore[no-redef]
@@ -129,6 +133,14 @@ TYRE_BACKEND_TIERS: tuple[dict[str, Any], ...] = (
         "units_per_wheel": 128,
         "units_per_world": 256,
     },
+    {
+        "tier_id": "pneumatic_fast_64",
+        "label": "Pneumatic Fast (N=64 rays)",
+        "backend": "pneumatic",
+        "station_count": 64,
+        "units_per_wheel": 64,
+        "units_per_world": 128,
+    },
 )
 
 
@@ -136,6 +148,10 @@ def _require_gpu_stack() -> None:
     if mujoco is None or wp is None or mjwarp is None:
         raise RuntimeError(
             "mujoco, warp-lang, and mujoco_warp are required to run the GPU batch benchmarks."
+        )
+    if int(str(mujoco.__version__).split(".", 1)[0]) != 3:
+        raise RuntimeError(
+            f"Unsupported mujoco major version {mujoco.__version__}; expected mujoco>=3.11.0,<4.0.0"
         )
     wp.config.enable_mathdx_gemm = False
     wp.config.enable_mathdx_solver = False
@@ -620,6 +636,7 @@ def _mjwarp_sp4_clean_split_step(
     launch_pass2_fn: Callable[[], None],
     launch_pass3_fn: Callable[[], None],
     launch_post_solve_fn: Callable[[], None],
+    launch_energy_post_step_fn: Callable[[], None] | None = None,
     run_collision: bool = False,
     xz_ctx: dict[str, Any] | None = None,
 ) -> None:
@@ -662,6 +679,53 @@ def _mjwarp_sp4_clean_split_step(
     ops["implicit"](m_wp, d_b)
     _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
     launch_post_solve_fn()
+    if launch_energy_post_step_fn is not None:
+        launch_energy_post_step_fn()
+
+
+def _mjwarp_sp4_m0_clean_split_step(
+    ops: dict[str, Any],
+    m_wp: Any,
+    d_b: Any,
+    launch_m0_pre_solve_fn: Callable[[], None],
+    launch_m0_step_fn: Callable[[], int],
+    launch_m0_post_solve_fn: Callable[[], None],
+    launch_energy_post_step_fn: Callable[[], None] | None = None,
+    run_collision: bool = False,
+    xz_ctx: dict[str, Any] | None = None,
+    max_passes: int = 37,
+) -> None:
+    """Execute one SP4 closed-loop multi-pass Armijo Newton ``m0`` ``clean_split`` step."""
+    _launch_sp4_xz_shift(xz_ctx, d_b, 0.0, 1)
+    ops["fwd_kinematics"](m_wp, d_b)
+    _launch_sp4_exact_tendon_length(xz_ctx, d_b)
+    ops["crb"](m_wp, d_b)
+    ops["tendon_armature"](m_wp, d_b)
+    ops["factor_m"](m_wp, d_b)
+    ops["transmission"](m_wp, d_b)
+    ops["fwd_velocity"](m_wp, d_b)
+    ops["sensor_vel"](m_wp, d_b)
+    _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 2)
+    if run_collision:
+        ops["collision"](m_wp, d_b)
+    launch_m0_pre_solve_fn()
+    _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 3)
+    ops["make_constraint"](m_wp, d_b)
+    ops["fwd_actuation"](m_wp, d_b)
+    ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+    ops["solve"](m_wp, d_b)
+    for _ in range(int(max_passes)):
+        if launch_m0_step_fn() == 0:
+            break
+        ops["fwd_actuation"](m_wp, d_b)
+        ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+        ops["solve"](m_wp, d_b)
+    ops["sensor_acc"](m_wp, d_b)
+    ops["implicit"](m_wp, d_b)
+    _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
+    launch_m0_post_solve_fn()
+    if launch_energy_post_step_fn is not None:
+        launch_energy_post_step_fn()
 
 
 REPO_ROOT = DEFAULT_GPU_SRC_DIR.parents[2]
@@ -863,7 +927,7 @@ def _build_sp4_config_bytes(
     lib: ctypes.CDLL,
     m_mj: Any,
     nworld: int,
-    surface_label: int = 1,
+    surface_label: int | None = 1,
     v0: float = 0.0,
     human_torque_nm: float | None = None,
     motor_torque_nm: float | None = None,
@@ -872,13 +936,25 @@ def _build_sp4_config_bytes(
     shock_rate_scale: np.ndarray | None = None,
     tire_stiff_scale: np.ndarray | None = None,
     physics_config_json: dict[str, Any] | Path | None = None,
+    manifest_json: dict[str, Any] | Path | None = None,
 ) -> bytes:
     phys_dict: dict[str, Any] | None = None
+    manifest_dict: dict[str, Any] | None = None
     if isinstance(physics_config_json, Path):
         if physics_config_json.is_file():
             phys_dict = json.loads(physics_config_json.read_text(encoding="utf-8"))
+        if manifest_json is None:
+            cand_mf = physics_config_json.parent / "manifest.json"
+            if cand_mf.is_file():
+                manifest_dict = json.loads(cand_mf.read_text(encoding="utf-8"))
     elif isinstance(physics_config_json, dict):
         phys_dict = physics_config_json
+
+    if isinstance(manifest_json, Path):
+        if manifest_json.is_file():
+            manifest_dict = json.loads(manifest_json.read_text(encoding="utf-8"))
+    elif isinstance(manifest_json, dict):
+        manifest_dict = manifest_json
 
     if (
         fork_psi_scale is not None
@@ -897,21 +973,31 @@ def _build_sp4_config_bytes(
         )
         buf = ctypes.create_string_buffer(raw)
         arr = (GpuSp3ConfigStruct * int(nworld)).from_buffer(buf)
-        if phys_dict is not None:
-            for w in range(int(nworld)):
-                apply_physics_config_json_to_sp3_config(arr[w], phys_dict)
+        for w in range(int(nworld)):
+            if phys_dict is not None:
+                apply_physics_config_json_to_sp3_config(arr[w], phys_dict, manifest=manifest_dict)
+            elif manifest_dict is not None:
+                apply_manifest_json_to_sp3_config(arr[w], manifest_dict)
     else:
         base = build_sp3_config_struct_from_mjmodel(lib, m_mj)
         if phys_dict is not None:
-            apply_physics_config_json_to_sp3_config(base, phys_dict)
+            apply_physics_config_json_to_sp3_config(base, phys_dict, manifest=manifest_dict)
+        elif manifest_dict is not None:
+            apply_manifest_json_to_sp3_config(base, manifest_dict)
         cfg_size = int(lib.bike_gpu_sizeof_sp3_config())
         buf = ctypes.create_string_buffer(int(nworld) * cfg_size)
         arr = (GpuSp3ConfigStruct * int(nworld)).from_buffer(buf)
         for w in range(int(nworld)):
             arr[w] = base
 
+    has_manifest_surface = bool(
+        isinstance(manifest_dict, dict)
+        and isinstance(manifest_dict.get("track_spec"), dict)
+        and manifest_dict["track_spec"].get("surface") is not None
+    )
     for w in range(int(nworld)):
-        arr[w].default_surface_label = int(surface_label)
+        if surface_label is not None and not has_manifest_surface:
+            arr[w].default_surface_label = int(surface_label)
         arr[w].apply_direct_crank_torque = 0
         arr[w].arm_standstill_start = 1 if float(v0) <= 0.0 else 0
         arr[w].seed_lean_from_launch = 1 if float(v0) <= 0.0 else 0
@@ -1848,50 +1934,150 @@ def run_mjwarp_sp3_autonomous_sweep(
 
 def _build_sp4_s1s4_scenarios(
     sp4_bundle_dir: Path | None = None,
+    include_g_scenarios: bool = True,
 ) -> list[dict[str, Any]]:
     steady90_v0 = _compute_steady90_v0(sp4_bundle_dir=sp4_bundle_dir)
-    return [
+    scenarios: list[dict[str, Any]] = [
         {
             "id": "S1_flat",
+            "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/flat.toml",
             "duration_s": 6.0,
             "v0": 0.0,
             "surface_label": 1,  # hardpack
+            "backend": "compliant_2d",
+            "station_count": 0,
             "human_torque_nm": None,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S1_flat"],
         },
         {
             "id": "S2_climb15",
+            "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/climb_15pct.toml",
             "duration_s": 25.0,
             "v0": 0.0,
             "surface_label": 0,  # asphalt
+            "backend": "compliant_2d",
+            "station_count": 0,
             "human_torque_nm": None,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S2_climb15"],
         },
         {
             "id": "S3_steady90",
+            "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/flat.toml",
             "duration_s": 8.0,
             "v0": float(steady90_v0),
             "surface_label": 1,  # hardpack
+            "backend": "compliant_2d",
+            "station_count": 0,
             "human_torque_nm": 24.0,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S3_steady90"],
         },
         {
             "id": "S4_start_uphill15_60nm",
+            "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/climb_15pct.toml",
             "duration_s": 10.0,
             "v0": 0.0,
             "surface_label": 0,  # asphalt
+            "backend": "compliant_2d",
+            "station_count": 0,
             "human_torque_nm": 60.0,
             "motor_torque_nm": 0.0,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S4_start_uphill15_60nm"],
         },
     ]
+    if include_g_scenarios:
+        scenarios.extend(
+            [
+                {
+                    "id": "G1_welded_flat_30s",
+                    "physics_toml": "examples/research/viewer_physics_welded.toml",
+                    "track": "tests/fixtures/tracks/flat.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "compliant_2d",
+                    "station_count": 0,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+                {
+                    "id": "G2_welded_rough_uphill_extreme_30s",
+                    "physics_toml": "examples/research/viewer_physics_welded.toml",
+                    "track": "examples/research/rough_uphill_extreme.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "compliant_2d",
+                    "station_count": 0,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+                {
+                    "id": "G3_distributed_flat_30s",
+                    "physics_toml": "examples/research/viewer_physics_distributed.toml",
+                    "track": "tests/fixtures/tracks/flat.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "distributed_2d_reference",
+                    "station_count": 128,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+                {
+                    "id": "G4_distributed_rough_uphill_extreme_30s",
+                    "physics_toml": "examples/research/viewer_physics_distributed.toml",
+                    "track": "examples/research/rough_uphill_extreme.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "distributed_2d_reference",
+                    "station_count": 128,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+                {
+                    "id": "G5_pneumatic_flat_30s",
+                    "physics_toml": "examples/research/viewer_physics_pneumatic.toml",
+                    "track": "tests/fixtures/tracks/flat.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "pneumatic",
+                    "station_count": 64,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+                {
+                    "id": "G6_pneumatic_mixed_surface_savage",
+                    "physics_toml": "examples/research/viewer_physics_pneumatic.toml",
+                    "track": "examples/research/alpine_scree.toml",
+                    "duration_s": 30.0,
+                    "v0": 0.0,
+                    "surface_label": 1,
+                    "backend": "pneumatic",
+                    "station_count": 64,
+                    "human_torque_nm": None,
+                    "motor_torque_nm": None,
+                    "m0_distance_m": None,
+                },
+            ]
+        )
+    return scenarios
+
+
+_build_sp4_closed_loop_scenarios = _build_sp4_s1s4_scenarios
 
 
 def _run_cuda_sp4_batch(
@@ -1914,6 +2100,7 @@ def _run_cuda_sp4_batch(
     njmax: int = 64,
     device: str = "cuda:0",
     init_grade: float | None = None,
+    spindle_solver: str = "m2k2",
 ) -> dict[str, Any]:
     m = load_model_with_assets(xml_path)
     _ensure_newton_solver(m)
@@ -1935,9 +2122,15 @@ def _run_cuda_sp4_batch(
         envelope_json_path=DEFAULT_ENVELOPE_JSON,
         control_period_steps=control_period_steps,
     )
+    solver_mode = str(spindle_solver).strip().lower()
+    if solver_mode not in ("m2k2", "m0"):
+        raise ValueError(f"Unsupported spindle_solver '{spindle_solver}'; expected 'm2k2' or 'm0'")
+    use_m0 = solver_mode == "m0"
+
     sizeof_ws = int(lib.bike_gpu_sizeof_world_state())
     sizeof_sp3 = int(lib.bike_gpu_sizeof_sp3_world_state())
     sizeof_sp4 = int(lib.bike_gpu_sizeof_sp4_world_state())
+    sizeof_m0 = int(lib.bike_gpu_sizeof_spindle_m0_scratch()) if use_m0 else 0
 
     d_idx = _allocate_and_copy_device_bytes(idx_bytes, device=device)
     d_sp3_configs = _allocate_and_copy_device_bytes(cfg_bytes, device=device)
@@ -1945,6 +2138,8 @@ def _run_cuda_sp4_batch(
     d_world_states = wp.zeros(nworld * sizeof_ws, dtype=wp.uint8, device=device)
     d_sp3_states = wp.zeros(nworld * sizeof_sp3, dtype=wp.uint8, device=device)
     d_sp4_states = wp.zeros(nworld * sizeof_sp4, dtype=wp.uint8, device=device)
+    d_m0_scratch = wp.zeros(nworld * sizeof_m0, dtype=wp.uint8, device=device) if use_m0 else None
+    d_any_needs_solve = wp.zeros(1, dtype=wp.int32, device=device) if use_m0 else None
     (
         d_tyre_model,
         d_terrain_desc,
@@ -2003,6 +2198,10 @@ def _run_cuda_sp4_batch(
         d_world_states.zero_()
         d_sp3_states.zero_()
         d_sp4_states.zero_()
+        if d_m0_scratch is not None:
+            d_m0_scratch.zero_()
+        if d_any_needs_solve is not None:
+            d_any_needs_solve.zero_()
         m_wp.tendon_range.assign(
             wp.array(init_tr_np, dtype=m_wp.tendon_range.dtype, device=device)
         )
@@ -2034,25 +2233,47 @@ def _run_cuda_sp4_batch(
             d_b.act.zero_()
         mjwarp.forward(m_wp, d_b)
         wp.synchronize()
-        rc = int(
-            lib.bike_gpu_launch_sp4_init(
-                ctypes.c_void_p(cuda_stream),
-                int(nworld),
-                ctypes.c_void_p(d_idx.ptr),
-                ctypes.c_void_p(d_sp3_configs.ptr),
-                1,
-                ctypes.c_void_p(d_sp3_states.ptr),
-                ctypes.c_void_p(d_sp4_states.ptr),
-                ctypes.c_void_p(d_world_states.ptr),
-                ctypes.c_void_p(d_b.qpos.ptr),
-                ctypes.c_float(resolved_init_grade),
-                int(m.ntendon),
-                ctypes.c_void_p(tr_ptr),
-                int(tr_stride),
+        if use_m0:
+            rc = int(
+                lib.bike_gpu_launch_sp4_m0_init(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_sp3_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_sp3_states.ptr),
+                    ctypes.c_void_p(d_sp4_states.ptr),
+                    ctypes.c_void_p(d_m0_scratch.ptr),
+                    ctypes.c_void_p(d_world_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_float(resolved_init_grade),
+                    int(m.ntendon),
+                    ctypes.c_void_p(tr_ptr),
+                    int(tr_stride),
+                )
             )
-        )
-        if rc != 0:
-            raise RuntimeError(f"bike_gpu_launch_sp4_init failed with code {rc}")
+            if rc != 0:
+                raise RuntimeError(f"bike_gpu_launch_sp4_m0_init failed with code {rc}")
+        else:
+            rc = int(
+                lib.bike_gpu_launch_sp4_init(
+                    ctypes.c_void_p(cuda_stream),
+                    int(nworld),
+                    ctypes.c_void_p(d_idx.ptr),
+                    ctypes.c_void_p(d_sp3_configs.ptr),
+                    1,
+                    ctypes.c_void_p(d_sp3_states.ptr),
+                    ctypes.c_void_p(d_sp4_states.ptr),
+                    ctypes.c_void_p(d_world_states.ptr),
+                    ctypes.c_void_p(d_b.qpos.ptr),
+                    ctypes.c_float(resolved_init_grade),
+                    int(m.ntendon),
+                    ctypes.c_void_p(tr_ptr),
+                    int(tr_stride),
+                )
+            )
+            if rc != 0:
+                raise RuntimeError(f"bike_gpu_launch_sp4_init failed with code {rc}")
         wp.synchronize()
 
     def _pre() -> None:
@@ -2173,28 +2394,218 @@ def _run_cuda_sp4_batch(
         if r != 0:
             raise RuntimeError(f"bike_gpu_launch_sp4_post_solve failed: {r}")
 
-    _init_states()
-    _mjwarp_sp4_clean_split_step(
-        ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
-    )
-    wp.synchronize()
-
-    _init_states()
-    with wp.ScopedCapture() as capture:
-        _mjwarp_sp4_clean_split_step(
-            ops, m_wp, d_b, _pre, p1, p2, p3, _post, run_collision=True, xz_ctx=xz_ctx
+    def _energy_post() -> None:
+        if not hasattr(lib, "bike_gpu_launch_sp4_energy_post_step"):
+            return
+        r = int(
+            lib.bike_gpu_launch_sp4_energy_post_step(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_float(dt_s),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_tyre_model.ptr),
+                ctypes.c_void_p(d_terrain_desc.ptr),
+                ctypes.c_void_p(terrain_f32_ptr),
+                ctypes.c_void_p(d_sp3_configs.ptr),
+                1,
+                ctypes.c_void_p(d_spindle_params.ptr),
+                ctypes.c_void_p(d_sp3_states.ptr),
+                ctypes.c_void_p(d_sp4_states.ptr),
+                ctypes.c_void_p(d_world_states.ptr),
+                0,
+                int(m_world_stride),
+                ctypes.c_void_p(m_rowadr_ptr),
+                ctypes.c_void_p(m_rownnz_ptr),
+                ctypes.c_void_p(m_colind_ptr),
+                ctypes.c_void_p(d_b.M.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
+                ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.ctrl.ptr),
+                ctypes.c_void_p(int(m_wp.body_mass.ptr)),
+                ctypes.c_void_p(int(d_b.xipos.ptr)),
+                ctypes.c_void_p(int(m_wp.opt.gravity.ptr)),
+                ctypes.c_void_p(post_b["nefc_ptr"]),
+                int(post_b["njmax"]),
+                int(post_b["efc_J_row_stride"]),
+                ctypes.c_void_p(post_b["efc_type_ptr"]),
+                ctypes.c_void_p(post_b["efc_J_ptr"]),
+                ctypes.c_void_p(post_b["efc_force_ptr"]),
+            )
         )
-    graph = capture.graph
-    for _ in range(warmup_steps):
-        wp.capture_launch(graph)
-    wp.synchronize()
+        if r != 0:
+            raise RuntimeError(f"bike_gpu_launch_sp4_energy_post_step failed: {r}")
 
-    _init_states()
-    t0 = time.perf_counter()
-    for _ in range(n_steps):
-        wp.capture_launch(graph)
-    wp.synchronize()
-    wall_time_s = time.perf_counter() - t0
+    def _m0_pre() -> None:
+        assert d_m0_scratch is not None and d_any_needs_solve is not None
+        d_any_needs_solve.zero_()
+        r = int(
+            lib.bike_gpu_launch_sp4_m0_pre_solve_and_begin(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_float(dt_s),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_tyre_model.ptr),
+                ctypes.c_void_p(d_terrain_desc.ptr),
+                ctypes.c_void_p(terrain_f32_ptr),
+                ctypes.c_void_p(terrain_i32_ptr),
+                ctypes.c_void_p(d_sp3_configs.ptr),
+                1,
+                ctypes.c_void_p(d_spindle_params.ptr),
+                ctypes.c_void_p(d_sp3_states.ptr),
+                ctypes.c_void_p(d_sp4_states.ptr),
+                ctypes.c_void_p(d_m0_scratch.ptr),
+                ctypes.c_void_p(d_world_states.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
+                ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.qfrc_bias.ptr),
+                ctypes.c_void_p(d_b.xpos.ptr),
+                ctypes.c_void_p(d_b.xmat.ptr),
+                ctypes.c_void_p(d_b.xanchor.ptr),
+                ctypes.c_void_p(d_b.xaxis.ptr),
+                ctypes.c_void_p(d_b.site_xpos.ptr),
+                ctypes.c_void_p(d_b.subtree_com.ptr),
+                ctypes.c_void_p(submass_ptr),
+                0,
+                int(m_world_stride),
+                ctypes.c_void_p(m_rowadr_ptr),
+                ctypes.c_void_p(m_rownnz_ptr),
+                ctypes.c_void_p(m_colind_ptr),
+                ctypes.c_void_p(d_b.M.ptr),
+                ctypes.c_void_p(d_b.qfrc_applied.ptr),
+                ctypes.c_void_p(d_b.ctrl.ptr),
+                int(m.ntendon),
+                ctypes.c_void_p(tr_ptr),
+                int(tr_stride),
+                ctypes.c_void_p(fl_ptr),
+                int(fl_stride),
+                ctypes.c_void_p(d_b.qacc_warmstart.ptr),
+                ctypes.c_void_p(d_any_needs_solve.ptr),
+            )
+        )
+        if r != 0:
+            raise RuntimeError(f"bike_gpu_launch_sp4_m0_pre_solve_and_begin failed: {r}")
+
+    def _m0_step() -> int:
+        assert d_m0_scratch is not None and d_any_needs_solve is not None
+        if int(d_any_needs_solve.numpy()[0]) == 0:
+            return 0
+        d_any_needs_solve.zero_()
+        r = int(
+            lib.bike_gpu_launch_sp4_m0_step(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                int(m.nq),
+                int(m.nv),
+                int(m.nu),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_sp3_configs.ptr),
+                1,
+                ctypes.c_void_p(d_sp3_states.ptr),
+                ctypes.c_void_p(d_spindle_params.ptr),
+                ctypes.c_void_p(d_sp4_states.ptr),
+                ctypes.c_void_p(d_m0_scratch.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
+                ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.qfrc_bias.ptr),
+                ctypes.c_void_p(d_b.qacc.ptr),
+                0,
+                int(m_world_stride),
+                ctypes.c_void_p(m_rowadr_ptr),
+                ctypes.c_void_p(m_rownnz_ptr),
+                ctypes.c_void_p(m_colind_ptr),
+                ctypes.c_void_p(d_b.M.ptr),
+                ctypes.c_void_p(d_b.ctrl.ptr),
+                ctypes.c_void_p(d_b.qacc_warmstart.ptr),
+                ctypes.c_void_p(d_any_needs_solve.ptr),
+            )
+        )
+        if r != 0:
+            raise RuntimeError(f"bike_gpu_launch_sp4_m0_step failed: {r}")
+        return int(d_any_needs_solve.numpy()[0])
+
+    def _m0_post() -> None:
+        assert d_m0_scratch is not None
+        r = int(
+            lib.bike_gpu_launch_sp4_m0_post_solve(
+                ctypes.c_void_p(cuda_stream),
+                int(nworld),
+                ctypes.c_float(dt_s),
+                ctypes.c_void_p(d_idx.ptr),
+                ctypes.c_void_p(d_sp3_configs.ptr),
+                1,
+                ctypes.c_void_p(d_spindle_params.ptr),
+                ctypes.c_void_p(d_sp3_states.ptr),
+                ctypes.c_void_p(d_sp4_states.ptr),
+                ctypes.c_void_p(d_m0_scratch.ptr),
+                ctypes.c_void_p(d_b.qpos.ptr),
+                ctypes.c_void_p(d_b.qvel.ptr),
+                ctypes.c_void_p(d_b.xpos.ptr),
+                ctypes.c_void_p(d_b.xmat.ptr),
+                ctypes.c_void_p(d_b.xanchor.ptr),
+                int(post_b["nsensordata"]),
+                ctypes.c_void_p(post_b["sensordata_ptr"]),
+                ctypes.c_void_p(post_b["nefc_ptr"]),
+                int(post_b["njmax"]),
+                int(post_b["efc_J_row_stride"]),
+                ctypes.c_void_p(post_b["efc_type_ptr"]),
+                ctypes.c_void_p(post_b["efc_id_ptr"]),
+                ctypes.c_void_p(post_b["efc_J_ptr"]),
+                ctypes.c_void_p(post_b["efc_force_ptr"]),
+                ctypes.c_void_p(post_b["nacon_ptr"]),
+                int(post_b["nconmax"]),
+                int(post_b["contact_efc_stride"]),
+                ctypes.c_void_p(post_b["contact_worldid_ptr"]),
+                ctypes.c_void_p(post_b["contact_geom_ptr"]),
+                ctypes.c_void_p(post_b["contact_efc_address_ptr"]),
+                ctypes.c_void_p(post_b["contact_dim_ptr"]),
+            )
+        )
+        if r != 0:
+            raise RuntimeError(f"bike_gpu_launch_sp4_m0_post_solve failed: {r}")
+
+    if use_m0:
+        _init_states()
+        _mjwarp_sp4_m0_clean_split_step(
+            ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+        )
+        wp.synchronize()
+        _init_states()
+        for _ in range(warmup_steps):
+            _mjwarp_sp4_m0_clean_split_step(
+                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+            )
+        wp.synchronize()
+        _init_states()
+        t0 = time.perf_counter()
+        for _ in range(n_steps):
+            _mjwarp_sp4_m0_clean_split_step(
+                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+            )
+        wp.synchronize()
+        wall_time_s = time.perf_counter() - t0
+    else:
+        _init_states()
+        _mjwarp_sp4_clean_split_step(
+            ops, m_wp, d_b, _pre, p1, p2, p3, _post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+        )
+        wp.synchronize()
+
+        _init_states()
+        with wp.ScopedCapture() as capture:
+            _mjwarp_sp4_clean_split_step(
+                ops, m_wp, d_b, _pre, p1, p2, p3, _post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+            )
+        graph = capture.graph
+        for _ in range(warmup_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+
+        _init_states()
+        t0 = time.perf_counter()
+        for _ in range(n_steps):
+            wp.capture_launch(graph)
+        wp.synchronize()
+        wall_time_s = time.perf_counter() - t0
 
     final_qpos = d_b.qpos.numpy()
     final_qvel = d_b.qvel.numpy()
@@ -2205,6 +2616,7 @@ def _run_cuda_sp4_batch(
     sp4_raw = d_sp4_states.numpy().tobytes()
     sp3_raw = d_sp3_states.numpy().tobytes()
     world0_metrics = unpack_sp4_world_metrics(sp4_raw[:sizeof_sp4])
+    world0_energy_ledger = unpack_sp3_energy_ledger(sp3_raw[:sizeof_sp3])
     sp3_buf0 = ctypes.create_string_buffer(sp3_raw[:sizeof_sp3], sizeof_sp3)
     has_failure0 = int(lib.bike_gpu_sp3_state_has_failure(ctypes.cast(sp3_buf0, ctypes.c_void_p)))
     failure_flags0 = (
@@ -2219,6 +2631,7 @@ def _run_cuda_sp4_batch(
         "n_steps": int(n_steps),
         "dt_s": dt_s,
         "backend": backend,
+        "spindle_solver": solver_mode,
         "station_count": int(station_count),
         "control_period_steps": int(control_period_steps),
         "wall_time_ms": wall_time_s * 1000.0,
@@ -2229,6 +2642,7 @@ def _run_cuda_sp4_batch(
         "all_finite": all_finite,
         "forward_distance_root_x_m": _summarize_distribution(forward_distance_m),
         "world0_metrics": world0_metrics,
+        "world0_energy_ledger": world0_energy_ledger,
         "world0_first_failure": "violation" if has_failure0 != 0 else "none",
         "world0_failure_flags": failure_flags0,
         "world0_balance_lost": bool((failure_flags0 & 1) != 0),
@@ -2239,8 +2653,9 @@ def _run_cuda_sp4_batch(
 def export_sp4_bundles(
     out_dir: Path,
     physics_toml: Path = DEFAULT_PHYSICS_TOML,
+    include_g_scenarios: bool = True,
 ) -> Path:
-    """Export S1-S4 scenario bundles (`model_12gears.xml`, `hfield_data.bin`, `step_closure_bundle.bin`, `manifest.json`)."""
+    """Export S1-S4 + G1-G6 scenario bundles (`model_12gears.xml`, `hfield_data.bin`, `step_closure_bundle.bin`, `manifest.json`)."""
     out_root = Path(out_dir).resolve()
     out_root.mkdir(parents=True, exist_ok=True)
     _export_sp4_scenario_bundle(
@@ -2250,14 +2665,18 @@ def export_sp4_bundles(
         physics_toml=physics_toml,
     )
     steady90_v0 = _compute_steady90_v0(physics_toml=physics_toml, sp4_bundle_dir=out_root)
-    scenarios = _build_sp4_s1s4_scenarios(sp4_bundle_dir=out_root)
+    scenarios = _build_sp4_s1s4_scenarios(
+        sp4_bundle_dir=out_root,
+        include_g_scenarios=include_g_scenarios,
+    )
     for sc in scenarios:
         if sc["id"] != "S1_flat":
+            sc_toml = REPO_ROOT / str(sc.get("physics_toml", physics_toml))
             _export_sp4_scenario_bundle(
                 sc["track"],
                 float(sc["v0"]),
                 out_root / sc["id"],
-                physics_toml=physics_toml,
+                physics_toml=sc_toml,
             )
     manifest = {
         "physics_toml": str(physics_toml.resolve()),
@@ -2273,15 +2692,16 @@ def run_mjwarp_sp4_closed_loop_sweep(
     n_steps: int = 200,
     warmup_steps: int = 5,
     seed: int = 42,
-    backend: str = "both",
+    backend: str = "all",
     station_count: int = 128,
     control_period_steps: int = 1,
     lib: ctypes.CDLL | None = None,
     host_lib: ctypes.CDLL | None = None,
     device: str = "cuda:0",
     sp4_bundle_dir: Path | None = None,
+    spindle_solver: str = "m2k2",
 ) -> dict[str, Any]:
-    """Full SP4 closed-loop 4x-solve CUDA Graph throughput sweep."""
+    """Full SP4 closed-loop CUDA throughput sweep (m2k2 CUDA Graph or m0 Armijo Newton)."""
     _require_gpu_stack()
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
@@ -2292,35 +2712,48 @@ def run_mjwarp_sp4_closed_loop_sweep(
             from cpu_batch_sweep import compile_cpu_batch_runner  # type: ignore[no-redef]
         host_lib = compile_cpu_batch_runner()
 
-    backends = (
-        ("compliant_2d", "distributed_2d_reference")
-        if backend == "both"
-        else (backend,)
-    )
+    if backend == "all":
+        backends: tuple[str, ...] = ("compliant_2d", "distributed_2d_reference", "pneumatic")
+    elif backend == "both":
+        backends = ("compliant_2d", "distributed_2d_reference")
+    else:
+        backends = (backend,)
     scales = generate_parameter_sweep_scales(nworld=nworld, seed=seed)
     runs = []
-    with tempfile.TemporaryDirectory(prefix="bike-sp4-cuda-") as td:
-        xml12, qpos0, qvel0, qacc_ws0 = _export_sp4_scenario_bundle(
-            "tests/fixtures/tracks/flat.toml",
-            0.0,
-            Path(td),
-            sp4_bundle_dir=sp4_bundle_dir,
-            scenario_id="S1_flat",
+    for bk in backends:
+        toml_rel = (
+            "examples/research/viewer_physics_pneumatic.toml"
+            if bk == "pneumatic"
+            else (
+                "examples/research/viewer_physics_distributed.toml"
+                if bk == "distributed_2d_reference"
+                else "examples/research/viewer_physics_welded.toml"
+            )
         )
-        m = load_model_with_assets(xml12)
-        cfg_bytes = _build_sp4_config_bytes(
-            lib=lib,
-            m_mj=m,
-            nworld=nworld,
-            surface_label=1,
-            v0=0.0,
-            fork_psi_scale=scales["fork_psi_scale"],
-            rebound_scale=scales["rebound_scale"],
-            shock_rate_scale=scales["shock_rate_scale"],
-            tire_stiff_scale=scales["tire_stiff_scale"],
-            physics_config_json=xml12.parent / "physics_config.json",
-        )
-        for bk in backends:
+        with tempfile.TemporaryDirectory(prefix=f"bike-sp4-cuda-{bk}-") as td:
+            xml12, qpos0, qvel0, qacc_ws0 = _export_sp4_scenario_bundle(
+                "tests/fixtures/tracks/flat.toml",
+                0.0,
+                Path(td),
+                physics_toml=REPO_ROOT / toml_rel,
+                sp4_bundle_dir=sp4_bundle_dir,
+                scenario_id="S1_flat" if bk != "pneumatic" else "G5_pneumatic_flat_30s",
+            )
+            m = load_model_with_assets(xml12)
+            cfg_bytes = _build_sp4_config_bytes(
+                lib=lib,
+                m_mj=m,
+                nworld=nworld,
+                surface_label=1,
+                v0=0.0,
+                fork_psi_scale=scales["fork_psi_scale"],
+                rebound_scale=scales["rebound_scale"],
+                shock_rate_scale=scales["shock_rate_scale"],
+                tire_stiff_scale=scales["tire_stiff_scale"],
+                physics_config_json=xml12.parent / "physics_config.json",
+                manifest_json=xml12.parent / "manifest.json",
+            )
+            sc_count = 64 if bk == "pneumatic" else (station_count if bk == "distributed_2d_reference" else 0)
             res = _run_cuda_sp4_batch(
                 lib=lib,
                 host_lib=host_lib,
@@ -2333,15 +2766,17 @@ def run_mjwarp_sp4_closed_loop_sweep(
                 warmup_steps=warmup_steps,
                 surface_label=1,
                 backend=bk,
-                station_count=station_count if bk == "distributed_2d_reference" else 0,
+                station_count=sc_count,
                 control_period_steps=control_period_steps,
                 cfg_bytes=cfg_bytes,
                 device=device,
+                spindle_solver=spindle_solver,
             )
             runs.append(res)
     return {
-        "experiment": "SP4_closed_loop_4solve_cuda",
+        "experiment": "SP4_closed_loop_cuda",
         "device": device,
+        "spindle_solver": spindle_solver,
         "runs": runs,
     }
 
@@ -2351,8 +2786,10 @@ def run_mjwarp_sp4_s1s4_acceptance(
     host_lib: ctypes.CDLL | None = None,
     device: str = "cuda:0",
     sp4_bundle_dir: Path | None = None,
+    spindle_solver: str = "m2k2",
+    include_g_scenarios: bool = True,
 ) -> dict[str, Any]:
-    """Run closed-loop S1-S4 acceptance scenarios on CUDA (`4x solve`)."""
+    """Run closed-loop S1-S4 (+ G1-G6) acceptance scenarios on CUDA (``m2k2`` or ``m0``)."""
     _require_gpu_stack()
     if lib is None:
         lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
@@ -2363,99 +2800,127 @@ def run_mjwarp_sp4_s1s4_acceptance(
             from cpu_batch_sweep import compile_cpu_batch_runner  # type: ignore[no-redef]
         host_lib = compile_cpu_batch_runner()
 
+    solvers = ("m2k2", "m0") if spindle_solver == "both" else (spindle_solver,)
     scenario_results = []
     all_passed = True
-    for sc in _build_sp4_s1s4_scenarios(sp4_bundle_dir=sp4_bundle_dir):
-        with tempfile.TemporaryDirectory(prefix=f"bike-s1s4-cuda-{sc['id']}-") as td:
-            xml12, qpos0, qvel0, qacc_ws0 = _export_sp4_scenario_bundle(
-                sc["track"],
-                sc["v0"],
-                Path(td),
-                sp4_bundle_dir=sp4_bundle_dir,
-                scenario_id=sc["id"],
-            )
-            m = load_model_with_assets(xml12)
-            cfg_bytes = _build_sp4_config_bytes(
-                lib=lib,
-                m_mj=m,
-                nworld=1,
-                surface_label=sc["surface_label"],
-                v0=sc["v0"],
-                human_torque_nm=sc["human_torque_nm"],
-                motor_torque_nm=sc["motor_torque_nm"],
-                physics_config_json=xml12.parent / "physics_config.json",
-            )
-            n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
-            res = _run_cuda_sp4_batch(
-                lib=lib,
-                host_lib=host_lib,
-                xml_path=xml12,
-                qpos0=qpos0,
-                qvel0=qvel0,
-                qacc_ws0=qacc_ws0,
-                nworld=1,
-                n_steps=n_steps,
-                warmup_steps=2,
-                surface_label=sc["surface_label"],
-                backend="compliant_2d",
-                station_count=0,
-                control_period_steps=1,
-                cfg_bytes=cfg_bytes,
-                device=device,
-            )
-            wm = res["world0_metrics"]
-            dist = float(wm["distance_m"])
-            m0_dist = float(sc["m0_distance_m"])
-            rel_err = abs(dist - m0_dist) / max(1.0, abs(m0_dist))
-            min_press = min(float(wm["min_press_front_n"]), float(wm["min_press_rear_n"]))
-            max_rise_f = wm["max_rising_front_excess_n"]
-            max_rise_r = wm["max_rising_rear_excess_n"]
-            max_rise = (
-                max(float(max_rise_f), float(max_rise_r))
-                if (max_rise_f is not None and max_rise_r is not None)
-                else (
-                    float(max_rise_f)
-                    if max_rise_f is not None
-                    else (float(max_rise_r) if max_rise_r is not None else None)
+    scenarios = _build_sp4_s1s4_scenarios(
+        sp4_bundle_dir=sp4_bundle_dir,
+        include_g_scenarios=include_g_scenarios,
+    )
+    for solver_mode in solvers:
+        for sc in scenarios:
+            sc_toml = REPO_ROOT / str(sc.get("physics_toml", DEFAULT_PHYSICS_TOML))
+            with tempfile.TemporaryDirectory(prefix=f"bike-sp4-cuda-{sc['id']}-") as td:
+                xml12, qpos0, qvel0, qacc_ws0 = _export_sp4_scenario_bundle(
+                    sc["track"],
+                    sc["v0"],
+                    Path(td),
+                    physics_toml=sc_toml,
+                    sp4_bundle_dir=sp4_bundle_dir,
+                    scenario_id=sc["id"],
                 )
-            )
-            min_saddle = float(wm["min_saddle_force_n"])
-            max_saddle = float(wm["max_saddle_force_n"])
-            passed = (
-                res["all_finite"]
-                and res["world0_first_failure"] == "none"
-                and min_press >= -6.0
-                and (max_rise is not None and max_rise <= 6.0)
-                and min_saddle >= -6.0
-                and max_saddle <= 1750.0
-                and rel_err <= 0.002
-            )
-            if not passed:
-                all_passed = False
-            scenario_results.append(
-                {
-                    "id": sc["id"],
-                    "passed": bool(passed),
-                    "first_failure": res["world0_first_failure"],
-                    "distance_m": dist,
-                    "m0_distance_m": m0_dist,
-                    "distance_rel_err": rel_err,
-                    "end_speed_mps": float(wm["end_speed_mps"]),
-                    "min_press_front_n": float(wm["min_press_front_n"]),
-                    "min_press_rear_n": float(wm["min_press_rear_n"]),
-                    "min_press_n": min_press,
-                    "max_rising_front_excess_n": max_rise_f,
-                    "max_rising_rear_excess_n": max_rise_r,
-                    "max_rising_excess_n": max_rise,
-                    "min_saddle_force_n": min_saddle,
-                    "max_saddle_force_n": max_saddle,
-                    "wall_time_ms": res["wall_time_ms"],
-                    "all_finite": res["all_finite"],
-                }
-            )
+                m = load_model_with_assets(xml12)
+                cfg_bytes = _build_sp4_config_bytes(
+                    lib=lib,
+                    m_mj=m,
+                    nworld=1,
+                    surface_label=sc["surface_label"],
+                    v0=sc["v0"],
+                    human_torque_nm=sc["human_torque_nm"],
+                    motor_torque_nm=sc["motor_torque_nm"],
+                    physics_config_json=xml12.parent / "physics_config.json",
+                    manifest_json=xml12.parent / "manifest.json",
+                )
+                n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
+                res = _run_cuda_sp4_batch(
+                    lib=lib,
+                    host_lib=host_lib,
+                    xml_path=xml12,
+                    qpos0=qpos0,
+                    qvel0=qvel0,
+                    qacc_ws0=qacc_ws0,
+                    nworld=1,
+                    n_steps=n_steps,
+                    warmup_steps=2,
+                    surface_label=sc["surface_label"],
+                    backend=str(sc.get("backend", "compliant_2d")),
+                    station_count=int(sc.get("station_count", 0)),
+                    control_period_steps=1,
+                    cfg_bytes=cfg_bytes,
+                    device=device,
+                    spindle_solver=solver_mode,
+                )
+                wm = res["world0_metrics"]
+                dist = float(wm["distance_m"])
+                m0_dist = sc.get("m0_distance_m")
+                rel_err = (
+                    abs(dist - float(m0_dist)) / max(1.0, abs(float(m0_dist)))
+                    if m0_dist is not None
+                    else 0.0
+                )
+                min_press = min(float(wm["min_press_front_n"]), float(wm["min_press_rear_n"]))
+                max_rise_f = wm["max_rising_front_excess_n"]
+                max_rise_r = wm["max_rising_rear_excess_n"]
+                max_rise = (
+                    max(float(max_rise_f), float(max_rise_r))
+                    if (max_rise_f is not None and max_rise_r is not None)
+                    else (
+                        float(max_rise_f)
+                        if max_rise_f is not None
+                        else (float(max_rise_r) if max_rise_r is not None else None)
+                    )
+                )
+                min_saddle = float(wm["min_saddle_force_n"])
+                max_saddle = float(wm["max_saddle_force_n"])
+                max_rel_e = float(wm["max_rel_energy_residual"])
+                e_ok = int(wm["energy_contract_ok"])
+                passed = (
+                    res["all_finite"]
+                    and res["world0_first_failure"] == "none"
+                    and min_press >= -6.0
+                    and (max_rise is not None and max_rise <= 6.0)
+                    and min_saddle >= -6.0
+                    and max_saddle <= 1750.0
+                    and (m0_dist is None or rel_err <= 0.002)
+                    and max_rel_e <= 0.05
+                    and e_ok == 1
+                )
+                if not passed:
+                    all_passed = False
+                scenario_results.append(
+                    {
+                        "id": sc["id"],
+                        "backend": str(sc.get("backend", "compliant_2d")),
+                        "spindle_solver": solver_mode,
+                        "passed": bool(passed),
+                        "first_failure": res["world0_first_failure"],
+                        "distance_m": dist,
+                        "m0_distance_m": float(m0_dist) if m0_dist is not None else None,
+                        "distance_rel_err": rel_err,
+                        "end_speed_mps": float(wm["end_speed_mps"]),
+                        "min_press_front_n": float(wm["min_press_front_n"]),
+                        "min_press_rear_n": float(wm["min_press_rear_n"]),
+                        "min_press_n": min_press,
+                        "max_rising_front_excess_n": max_rise_f,
+                        "max_rising_rear_excess_n": max_rise_r,
+                        "max_rising_excess_n": max_rise,
+                        "min_saddle_force_n": min_saddle,
+                        "max_saddle_force_n": max_saddle,
+                        "energy_residual_j": float(wm["energy_residual_j"]),
+                        "energy_scale_j": float(wm["energy_scale_j"]),
+                        "max_rel_energy_residual": max_rel_e,
+                        "energy_contract_ok": e_ok,
+                        "solver_mode": int(wm["solver_mode"]),
+                        "max_m0_passes_used": int(wm["max_m0_passes_used"]),
+                        "current_m0_passes": int(wm["current_m0_passes"]),
+                        "wall_time_ms": res["wall_time_ms"],
+                        "all_finite": res["all_finite"],
+                    }
+                )
     return {
-        "experiment": "SP4_S1S4_cuda",
+        "experiment": "SP4_S1S4_G1G6_cuda",
         "device": device,
+        "spindle_solver": spindle_solver,
         "all_passed": bool(all_passed),
         "scenarios": scenario_results,
     }
@@ -2508,10 +2973,13 @@ def _print_report(results: dict[str, Any]) -> None:
         for sc in s1s4["scenarios"]:
             mr = sc["max_rising_excess_n"]
             mr_str = f"{mr:+.2f}" if mr is not None else "None"
+            m0_str = f"{sc['m0_distance_m']:.4f}" if sc["m0_distance_m"] is not None else "N/A"
             print(
-                f"  [{sc['id']}] pass={sc['passed']} fail={sc['first_failure']} "
-                f"dist={sc['distance_m']:.4f} m0={sc['m0_distance_m']:.4f} "
+                f"  [{sc['id']} {sc.get('spindle_solver', 'm2k2')}] pass={sc['passed']} fail={sc['first_failure']} "
+                f"dist={sc['distance_m']:.4f} m0={m0_str} "
                 f"rel={sc['distance_rel_err'] * 100.0:.4f}% "
+                f"e_rel={sc.get('max_rel_energy_residual', 0.0) * 100.0:.4f}% e_ok={sc.get('energy_contract_ok', 1)} "
+                f"m0_passes={sc.get('max_m0_passes_used', 0)} "
                 f"min_press={sc['min_press_n']:+.2f} max_rise={mr_str} "
                 f"saddle={sc['min_saddle_force_n']:+.1f}..{sc['max_saddle_force_n']:.1f}"
             )
@@ -2553,9 +3021,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--backend",
-        choices=("both", "compliant_2d", "distributed_2d_reference"),
-        default="both",
-        help="Tyre backend for sp4_closed_loop sweep (default: both).",
+        choices=("all", "both", "compliant_2d", "distributed_2d_reference", "pneumatic"),
+        default="all",
+        help="Tyre backend for sp4_closed_loop sweep (default: all).",
+    )
+    parser.add_argument(
+        "--spindle-solver",
+        choices=("m2k2", "m0", "both"),
+        default="m2k2",
+        help="Spindle solver mode for SP4 closed-loop / acceptance runs (default: m2k2).",
     )
     parser.add_argument(
         "--sp4-bundle-dir",
@@ -2590,7 +3064,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.export_sp4_bundles is not None:
         out_root = export_sp4_bundles(args.export_sp4_bundles)
-        print(f"Exported SP4 S1-S4 bundles to {out_root}")
+        print(f"Exported SP4 S1-S4 + G1-G6 bundles to {out_root}")
         return 0
 
     lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
@@ -2628,18 +3102,21 @@ def main(argv: list[str] | None = None) -> int:
             )
 
         if args.experiment in ("sp4_closed_loop", "sp4_all"):
+            solver_arg = "m2k2" if args.spindle_solver == "both" else args.spindle_solver
             results["sp4_closed_loop"] = run_mjwarp_sp4_closed_loop_sweep(
                 nworld=args.nworld,
                 n_steps=args.n_steps,
                 backend=args.backend,
                 lib=lib,
                 sp4_bundle_dir=args.sp4_bundle_dir,
+                spindle_solver=solver_arg,
             )
 
         if args.experiment in ("sp4_s1s4", "sp4_all"):
             results["sp4_s1s4"] = run_mjwarp_sp4_s1s4_acceptance(
                 lib=lib,
                 sp4_bundle_dir=args.sp4_bundle_dir,
+                spindle_solver=args.spindle_solver,
             )
 
     _print_report(results)

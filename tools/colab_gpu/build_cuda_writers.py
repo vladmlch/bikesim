@@ -155,7 +155,43 @@ class CompliantMaterialViewStruct(ctypes.Structure):
         ("valid_load_min_n", ctypes.c_float),
         ("valid_load_max_n", ctypes.c_float),
         ("has_tabulated_radial", ctypes.c_uint8),
-        ("_pad", ctypes.c_uint8 * 3),
+        ("use_tabulated", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 2),
+        ("knot_count", ctypes.c_int32),
+        ("deflection_m", ctypes.c_float * 64),
+        ("force_n", ctypes.c_float * 64),
+        ("slopes", ctypes.c_float * 63),
+        ("integral", ctypes.c_float * 64),
+    ]
+
+
+class PneumaticMaterialViewStruct(ctypes.Structure):
+    _fields_ = [
+        ("outer_radius_mm", ctypes.c_float),
+        ("rim_radius_mm", ctypes.c_float),
+        ("section_height_mm", ctypes.c_float),
+        ("pressure_bar", ctypes.c_float),
+        ("crr_reference", ctypes.c_float),
+        ("casing_width_mm", ctypes.c_float),
+        ("compressed_casing_mm", ctypes.c_float),
+        ("area_factor", ctypes.c_float),
+        ("carcass_stiffness_n_mm2", ctypes.c_float),
+        ("contact_length_factor", ctypes.c_float),
+        ("rate_stiffening", ctypes.c_float),
+        ("rate_relaxation_s", ctypes.c_float),
+        ("loss_factor", ctypes.c_float),
+        ("hysteresis_rate_eps_mps", ctypes.c_float),
+        ("relaxation_length_mm", ctypes.c_float),
+        ("rim_stiffness_n_mm2", ctypes.c_float),
+        ("tread_loss_crr", ctypes.c_float),
+        ("n_rays", ctypes.c_int32),
+        ("discretised_brush", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+        ("half_angle_rad", ctypes.c_float),
+        ("dtheta_rad", ctypes.c_float),
+        ("theta_rad", ctypes.c_float * 256),
+        ("ux", ctypes.c_float * 256),
+        ("uz", ctypes.c_float * 256),
     ]
 
 
@@ -184,6 +220,7 @@ class TyreWheelSpecStruct(ctypes.Structure):
         ("valid_deflection_max_m", ctypes.c_float),
         ("local_xyz", ctypes.c_float * (3 * 128)),
         ("station_weight", ctypes.c_float),
+        ("pneumatic", PneumaticMaterialViewStruct),
     ]
 
 
@@ -193,6 +230,8 @@ class SurfaceSpecPodStruct(ctypes.Structure):
         ("mu_slide", ctypes.c_float),
         ("slip_stiffness_per_load", ctypes.c_float),
         ("stribeck_speed_mps", ctypes.c_float),
+        ("crr_delta", ctypes.c_float),
+        ("load_sensitivity", ctypes.c_float),
         ("surface_id", ctypes.c_int32),
     ]
 
@@ -202,6 +241,7 @@ class SurfaceSectionViewStruct(ctypes.Structure):
         ("start_m", ctypes.c_float),
         ("end_m", ctypes.c_float),
         ("surface", SurfaceSpecPodStruct),
+        ("blend_m", ctypes.c_float),
     ]
 
 
@@ -229,6 +269,10 @@ class GpuTyreModelStruct(ctypes.Structure):
         ("wheels", TyreWheelSpecStruct * 2),
         ("frame_chain", GpuWheelChainStruct),
         ("surface_map", SurfaceMapViewStruct),
+        ("road_x0_m", ctypes.c_float),
+        ("road_dx_m", ctypes.c_float),
+        ("road_is_uniform_grid", ctypes.c_uint8),
+        ("pad_road", ctypes.c_uint8 * 3),
     ]
 
 
@@ -368,6 +412,133 @@ class BrakeHoldParamsStruct(ctypes.Structure):
         ("damping_nms_rad", ctypes.c_float),
         ("engage_radps", ctypes.c_float),
         ("release_radps", ctypes.c_float),
+    ]
+
+
+class GpuDrivetrainParamsStruct(ctypes.Structure):
+    _fields_ = [
+        ("chainring_teeth", ctypes.c_float),
+        ("cog_teeth", ctypes.c_float),
+        ("freehub_stiffness_nm_rad", ctypes.c_float),
+        ("pawl_engage_rad", ctypes.c_float),
+        ("max_rider_cadence_rad_s", ctypes.c_float),
+        ("target_cadence_rad_s", ctypes.c_float),
+        ("nominal_crank_torque_nm", ctypes.c_float),
+        ("front_max_brake_torque_nm", ctypes.c_float),
+        ("rear_max_brake_torque_nm", ctypes.c_float),
+        ("brake_taper_rad_s", ctypes.c_float),
+        ("static_brake_ceiling_nm", ctypes.c_float),
+        ("brake_hold", BrakeHoldParamsStruct),
+    ]
+
+
+class GpuWorldConfigStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::gpu::GpuWorldConfig``."""
+
+    _fields_ = [
+        ("suspension", GpuSuspensionParamsStruct),
+        ("tire_stiff_scale", ctypes.c_float),
+        ("resistance", ResistanceParamsStruct),
+        ("drivetrain", GpuDrivetrainParamsStruct),
+        ("rider", GpuRiderParamsStruct),
+        ("pedal_demand", ctypes.c_float),
+        ("front_brake_demand", ctypes.c_float),
+        ("rear_brake_demand", ctypes.c_float),
+    ]
+
+
+class GpuCompliantWheelStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("xi", ctypes.c_float),
+        ("tangent", ctypes.c_float * 3),
+        ("point", ctypes.c_float * 3),
+        ("center", ctypes.c_float * 3),
+        ("segment", ctypes.c_int32),
+        ("has_tangent", ctypes.c_uint8),
+        ("has_point", ctypes.c_uint8),
+        ("has_center", ctypes.c_uint8),
+        ("has_segment", ctypes.c_uint8),
+    ]
+
+
+class GpuStationStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("xi", ctypes.c_float),
+        ("tangent", ctypes.c_float * 3),
+        ("active", ctypes.c_uint8),
+        ("has_tangent", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 2),
+    ]
+
+
+class PneumaticCarcassStatePodStruct(ctypes.Structure):
+    _fields_ = [
+        ("delta_prev_m", ctypes.c_float * 256),
+        ("elastic_prev_n", ctypes.c_float * 256),
+        ("maxwell_force_n", ctypes.c_float * 256),
+        ("rim_event_x_m", ctypes.c_float),
+        ("rim_event_speed_mps", ctypes.c_float),
+        ("rim_event_peak_load_n", ctypes.c_float),
+        ("rim_event_peak_force_n", ctypes.c_float),
+        ("rim_event_energy_j", ctypes.c_float),
+        ("n_rays", ctypes.c_int32),
+        ("initialized", ctypes.c_uint8),
+        ("rim_strike_active", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 2),
+    ]
+
+
+class GpuPneumaticPatchMetaStruct(ctypes.Structure):
+    _fields_ = [
+        ("start", ctypes.c_int32),
+        ("stop", ctypes.c_int32),
+        ("kappa_prime", ctypes.c_float),
+        ("detailed_kappa_prime", ctypes.c_float),
+        ("has_detailed", ctypes.c_uint8),
+        ("active", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 2),
+    ]
+
+
+class GpuPneumaticWheelStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("carcass", PneumaticCarcassStatePodStruct),
+        ("bristle_deflection_m", ctypes.c_float * 256),
+        ("patches", GpuPneumaticPatchMetaStruct * 16),
+        ("patch_count", ctypes.c_int32),
+    ]
+
+
+class RatchetBoundStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("engaged", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+        ("latch_theta", ctypes.c_float),
+        ("slack_rad", ctypes.c_float),
+    ]
+
+
+class GpuDrivetrainStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("freehub", RatchetBoundStateStruct),
+        ("crank_clutch", RatchetBoundStateStruct),
+        ("front_brake_latched", ctypes.c_uint8),
+        ("rear_brake_latched", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 2),
+        ("front_brake_latch_theta", ctypes.c_float),
+        ("rear_brake_latch_theta", ctypes.c_float),
+        ("crank_target_phase_rad", ctypes.c_float),
+    ]
+
+
+class GpuWorldStateStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::gpu::GpuWorldState``."""
+
+    _fields_ = [
+        ("compliant_wheels", GpuCompliantWheelStateStruct * 2),
+        ("distributed_wheels", (GpuStationStateStruct * 128) * 2),
+        ("pneumatic_wheels", GpuPneumaticWheelStateStruct * 2),
+        ("drivetrain", GpuDrivetrainStateStruct),
     ]
 
 
@@ -601,6 +772,38 @@ class SurfaceSectionCoreStruct(ctypes.Structure):
     ]
 
 
+class CruiseConfigPodStruct(ctypes.Structure):
+    _fields_ = [
+        ("target_speed_kmh", ctypes.c_float),
+        ("kp_nm_per_mps", ctypes.c_float),
+        ("ki_nm_per_mps_s", ctypes.c_float),
+        ("torque_ceiling_nm", ctypes.c_float),
+    ]
+
+
+class GpuProgramSegmentStruct(ctypes.Structure):
+    _fields_ = [
+        ("t_end_s", ctypes.c_float),
+        ("channel_mask", ctypes.c_uint32),
+        ("human_torque_nm", ctypes.c_float),
+        ("motor_torque_nm", ctypes.c_float),
+        ("motor_limit_nm", ctypes.c_float),
+        ("crank_rate_rad_s", ctypes.c_float),
+        ("front_brake", ctypes.c_float),
+        ("rear_brake", ctypes.c_float),
+        ("cruise_speed_kmh", ctypes.c_float),
+        ("posture_lean_rad", ctypes.c_float),
+    ]
+
+
+class GpuRideProgramStruct(ctypes.Structure):
+    _fields_ = [
+        ("segments", GpuProgramSegmentStruct * 32),
+        ("segment_count", ctypes.c_int32),
+        ("reaction_delay_s", ctypes.c_float),
+    ]
+
+
 class GpuSp3ConfigStruct(ctypes.Structure):
     """Exact ctypes layout matching ``bike::gpu::GpuSp3Config``."""
 
@@ -656,6 +859,352 @@ class GpuSp3ConfigStruct(ctypes.Structure):
         ("use_bridged_load", ctypes.c_uint8),
         ("reposition_request", ctypes.c_uint8),
         ("pad1", ctypes.c_uint8),
+        ("cruise", CruiseConfigPodStruct),
+        ("ride_program", GpuRideProgramStruct),
+        ("control_period_steps", ctypes.c_int32),
+        ("cruise_enabled", ctypes.c_uint8),
+        ("program_enabled", ctypes.c_uint8),
+        ("freeze_on_crash", ctypes.c_uint8),
+        ("track_energy_ledger", ctypes.c_uint8),
+    ]
+
+
+class ShiftingStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("rear_teeth", ctypes.c_int32),
+        ("from_teeth", ctypes.c_int32),
+        ("active_cog_idx", ctypes.c_int32),
+        ("shift_count", ctypes.c_int32),
+        ("cooldown_ticks", ctypes.c_int32),
+        ("cut_remaining_ticks", ctypes.c_int32),
+        ("cadence_ema", ctypes.c_float),
+        ("required_ema", ctypes.c_float),
+        ("direction", ctypes.c_uint8),
+        ("rider_response", ctypes.c_uint8),
+        ("has_ema", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8),
+    ]
+
+
+class RepositionStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("crank_rad", ctypes.c_float),
+        ("wheel_rad", ctypes.c_float),
+        ("goal_rad", ctypes.c_float),
+        ("stall_elapsed_ticks", ctypes.c_int32),
+        ("elapsed_ticks", ctypes.c_int32),
+        ("cooldown_ticks", ctypes.c_int32),
+        ("active", ctypes.c_uint8),
+        ("armed", ctypes.c_uint8),
+        ("reason", ctypes.c_uint8),
+        ("has_goal", ctypes.c_uint8),
+    ]
+
+
+class PedalingStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("target_phase_rad", ctypes.c_float),
+        ("target_rate_rad_s", ctypes.c_float),
+        ("deceleration_rad_s2", ctypes.c_float),
+        ("effort", ctypes.c_float),
+        ("cadence_ema", ctypes.c_float),
+        ("reposition", RepositionStateStruct),
+        ("coasting", ctypes.c_uint8),
+        ("has_target_phase", ctypes.c_uint8),
+        ("has_cadence_ema", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8),
+    ]
+
+
+class AssistStateStruct(ctypes.Structure):
+    _fields_ = [
+        ("torque", ctypes.c_float),
+        ("last_gain", ctypes.c_float),
+        ("hold_power_w", ctypes.c_float),
+        ("hold_torque_nm", ctypes.c_float),
+        ("release_hold_ticks", ctypes.c_int32),
+        ("pedaling", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class EfcScanResultStruct(ctypes.Structure):
+    _fields_ = [
+        ("hand_press_n", ctypes.c_float),
+        ("left_hand_press_n", ctypes.c_float),
+        ("right_hand_press_n", ctypes.c_float),
+        ("pelvis_saddle_force_n", ctypes.c_float),
+        ("foot_front_press_n", ctypes.c_float),
+        ("foot_rear_press_n", ctypes.c_float),
+        ("delivered_crank_torque_nm", ctypes.c_float),
+        ("front_brake_friction_torque_nm", ctypes.c_float),
+        ("rear_brake_friction_torque_nm", ctypes.c_float),
+        ("freehub_tendon_force_n", ctypes.c_float),
+        ("crank_clutch_tendon_force_n", ctypes.c_float),
+        ("handlebar_load_n", ctypes.c_float),
+        ("saddle_separating", ctypes.c_uint8),
+        ("handlebar_in_contact", ctypes.c_uint8),
+        ("contact_crash_cause", ctypes.c_uint8),
+        ("has_grip_left", ctypes.c_uint8),
+        ("has_grip_right", ctypes.c_uint8),
+        ("has_saddle", ctypes.c_uint8),
+        ("has_foot_front", ctypes.c_uint8),
+        ("has_foot_rear", ctypes.c_uint8),
+    ]
+
+
+class BrakeResolutionCoreStruct(ctypes.Structure):
+    _fields_ = [
+        ("final_front", ctypes.c_float),
+        ("final_rear", ctypes.c_float),
+        ("legs_coast", ctypes.c_uint8),
+        ("motor_braking", ctypes.c_uint8),
+        ("shift_blocked", ctypes.c_uint8),
+        ("riding", ctypes.c_uint8),
+    ]
+
+
+class CruiseStatePodStruct(ctypes.Structure):
+    _fields_ = [
+        ("target_speed_mps", ctypes.c_float),
+        ("integral_mps_s", ctypes.c_float),
+        ("torque_nm", ctypes.c_float),
+        ("gain_scale", ctypes.c_float),
+        ("engaged", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class StallRepositionStatePodStruct(ctypes.Structure):
+    _fields_ = [
+        ("crank_rad", ctypes.c_float),
+        ("wheel_rad", ctypes.c_float),
+        ("stall_elapsed_s", ctypes.c_float),
+        ("goal_rad", ctypes.c_float),
+        ("elapsed_s", ctypes.c_float),
+        ("cooldown_s", ctypes.c_float),
+        ("active", ctypes.c_uint8),
+        ("armed", ctypes.c_uint8),
+        ("reason", ctypes.c_uint8),
+        ("has_stall_elapsed", ctypes.c_uint8),
+        ("has_goal", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class GpuEnergyLedgerStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::physics_core::GpuEnergyLedger<float>``."""
+
+    _fields_ = [
+        ("E_mech_initial", ctypes.c_float),
+        ("E_mech", ctypes.c_float),
+        ("E_scale_baseline", ctypes.c_float),
+        ("E_scale_min", ctypes.c_float),
+        ("W_muscle_signed", ctypes.c_float),
+        ("W_muscle_pos", ctypes.c_float),
+        ("W_motor_signed", ctypes.c_float),
+        ("W_motor_pos", ctypes.c_float),
+        ("W_cruise_signed", ctypes.c_float),
+        ("W_cruise_pos", ctypes.c_float),
+        ("W_external_signed", ctypes.c_float),
+        ("D_tyre_radial", ctypes.c_float),
+        ("D_tyre_brush_roll", ctypes.c_float),
+        ("D_suspension", ctypes.c_float),
+        ("D_resistance", ctypes.c_float),
+        ("D_brake", ctypes.c_float),
+        ("D_rider_end_stop", ctypes.c_float),
+        ("W_constraint_signed", ctypes.c_float),
+        ("W_constraint_abs", ctypes.c_float),
+        ("W_closure_signed", ctypes.c_float),
+        ("W_closure_abs", ctypes.c_float),
+        ("source_j", ctypes.c_float),
+        ("source_positive_j", ctypes.c_float),
+        ("delta_E_mech", ctypes.c_float),
+        ("net_supply", ctypes.c_float),
+        ("residual_j", ctypes.c_float),
+        ("energy_scale_j", ctypes.c_float),
+        ("rel_residual", ctypes.c_float),
+        ("max_rel_residual", ctypes.c_float),
+        ("step_count", ctypes.c_int32),
+        ("initialized", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class GpuSp3WorldStateStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::gpu::GpuSp3WorldState``."""
+
+    _fields_ = [
+        ("sp3", ctypes.c_uint8 * 12104),
+        ("shifting", ShiftingStateStruct),
+        ("pedaling", PedalingStateStruct),
+        ("assist", AssistStateStruct),
+        ("freehub", RatchetBoundStateStruct),
+        ("crank_clutch", RatchetBoundStateStruct),
+        ("last_efc", EfcScanResultStruct),
+        ("last_brakes", BrakeResolutionCoreStruct),
+        ("cruise", CruiseStatePodStruct),
+        ("stall_reposition", StallRepositionStatePodStruct),
+        ("energy_ledger", GpuEnergyLedgerStruct),
+        ("step_index", ctypes.c_int32),
+        ("last_wheel_load_n", ctypes.c_float * 2),
+        ("last_wheel_slip_mps", ctypes.c_float * 2),
+        ("last_wheel_eff_radius_m", ctypes.c_float * 2),
+        ("last_front_load_share", ctypes.c_float),
+        ("last_commanded_crank_torque_nm", ctypes.c_float),
+        ("last_motor_torque_nm", ctypes.c_float),
+        ("last_cruise_torque_nm", ctypes.c_float),
+        ("last_front_hold_nm", ctypes.c_float),
+        ("last_rear_hold_nm", ctypes.c_float),
+        ("last_front_frictionloss_nm", ctypes.c_float),
+        ("last_rear_frictionloss_nm", ctypes.c_float),
+        ("last_step_u_elastic_pre_j", ctypes.c_float),
+        ("last_step_d_tyre_radial_j", ctypes.c_float),
+        ("last_step_d_tyre_brush_roll_j", ctypes.c_float),
+        ("last_step_d_susp_j", ctypes.c_float),
+        ("last_step_d_res_j", ctypes.c_float),
+        ("last_pitch_rate_up_rad_s", ctypes.c_float),
+        ("last_specific_force_body_mps2", ctypes.c_float * 3),
+        ("cached_posture_grade", ctypes.c_float),
+        ("cached_preview_grade", ctypes.c_float),
+        ("cached_surface_front", ctypes.c_uint8),
+        ("cached_surface_ahead", ctypes.c_uint8),
+        ("has_cached_road_state", ctypes.c_uint8),
+        ("reposition_consumed", ctypes.c_uint8),
+        ("last_wheel_grounded", ctypes.c_uint8 * 2),
+        ("last_has_front_load_share", ctypes.c_uint8),
+        ("using_cassette_tendons", ctypes.c_uint8),
+        ("frozen", ctypes.c_uint8),
+        ("pad_sp3", ctypes.c_uint8),
+        ("_tail_pad", ctypes.c_uint8 * 2),
+    ]
+
+
+class PressStateCoreStruct(ctypes.Structure):
+    _fields_ = [
+        ("f_passive", ctypes.c_float * 2),
+        ("max_total_press_n", ctypes.c_float),
+    ]
+
+
+class SpindleM2K2StateStruct(ctypes.Structure):
+    _fields_ = [
+        ("coast_hold_nm", ctypes.c_float),
+        ("held_torques", ctypes.c_float * 9),
+        ("prev_ps", PressStateCoreStruct),
+        ("enabled", ctypes.c_uint8),
+        ("command_enabled", ctypes.c_uint8),
+        ("has_held_torques", ctypes.c_uint8),
+        ("has_prev_ps", ctypes.c_uint8),
+    ]
+
+
+class SpindleM2K2StepScratchStruct(ctypes.Structure):
+    _fields_ = [
+        ("frame_r", ctypes.c_float * 9),
+        ("crank_world", ctypes.c_float * 3),
+        ("frame_pitch_anchor", ctypes.c_float * 3),
+        ("rider_pitch_anchor", ctypes.c_float * 3),
+        ("hip_world", (ctypes.c_float * 3) * 2),
+        ("delta_hip", (ctypes.c_float * 3) * 2),
+        ("phase", ctypes.c_float),
+        ("rate", ctypes.c_float),
+        ("pelvis_pitch", ctypes.c_float),
+        ("shares", ctypes.c_float * 2),
+        ("jacobians", (ctypes.c_float * 2) * 2),
+        ("djacs", (ctypes.c_float * 2) * 2),
+        ("gammas", (ctypes.c_float * 2) * 2),
+        ("gammas_x", (ctypes.c_float * 2) * 2),
+        ("f_weight", ctypes.c_float * 2),
+        ("qdot_leg_kin", (ctypes.c_float * 2) * 2),
+        ("leg_cap_pos", (ctypes.c_float * 2) * 2),
+        ("leg_cap_neg", (ctypes.c_float * 2) * 2),
+        ("press_per_nm", ctypes.c_float * 2),
+        ("upper_req", ctypes.c_float * 5),
+        ("arm_gamma_sh", ctypes.c_float * 2),
+        ("arm_gamma_el", ctypes.c_float * 2),
+        ("arm_tau_sh", ctypes.c_float * 2),
+        ("arm_tau_el", ctypes.c_float * 2),
+        ("arm_valid", ctypes.c_uint8 * 2),
+        ("has_jacobian", ctypes.c_uint8 * 2),
+        ("incoming_coast_hold_nm", ctypes.c_float),
+        ("mean_crank_torque_nm", ctypes.c_float),
+        ("crank_target_rate_rad_s", ctypes.c_float),
+        ("weld_crank_torque_nm", ctypes.c_float),
+        ("has_weld_crank_torque", ctypes.c_uint8),
+        ("command_enabled", ctypes.c_uint8),
+        ("crank_reposition", ctypes.c_uint8),
+        ("steady_state", ctypes.c_uint8),
+        ("advance", ctypes.c_uint8),
+        ("active_newton", ctypes.c_uint8),
+        ("converged", ctypes.c_uint8),
+        ("perturbed0", ctypes.c_uint8),
+        ("perturbed1", ctypes.c_uint8),
+        ("adaptive_mode", ctypes.c_uint8),
+        ("torso_saturated", ctypes.c_uint8),
+        ("arms_saturated", ctypes.c_uint8),
+        ("pad_flags", ctypes.c_uint8 * 4),
+        ("ps0", PressStateCoreStruct),
+        ("P", PressStateCoreStruct),
+        ("P0", PressStateCoreStruct),
+        ("ps_trial", PressStateCoreStruct),
+        ("base_leg_req", ctypes.c_float * 4),
+        ("base_leg_prio", ctypes.c_float * 4),
+        ("crank_task_nm", ctypes.c_float),
+        ("last_req", ctypes.c_float * 9),
+        ("last_exc", ctypes.c_float * 9),
+    ]
+
+
+class SpindleCommandStruct(ctypes.Structure):
+    _fields_ = [
+        ("mean_crank_torque_nm", ctypes.c_float),
+        ("torso_lean_rad", ctypes.c_float),
+        ("crank_target_rate_rad_s", ctypes.c_float),
+        ("weld_crank_torque_nm", ctypes.c_float),
+        ("has_weld_crank_torque", ctypes.c_uint8),
+        ("enabled", ctypes.c_uint8),
+        ("crank_reposition", ctypes.c_uint8),
+        ("steady_state", ctypes.c_uint8),
+        ("advance", ctypes.c_uint8),
+        ("pad", ctypes.c_uint8 * 3),
+    ]
+
+
+class GpuSp4WorldStateStruct(ctypes.Structure):
+    """Exact ctypes layout matching ``bike::gpu::GpuSp4WorldState``."""
+
+    _fields_ = [
+        ("spindle", SpindleM2K2StateStruct),
+        ("scratch", SpindleM2K2StepScratchStruct),
+        ("last_cmd", SpindleCommandStruct),
+        ("saved_qacc_warmstart", ctypes.c_float * 32),
+        ("last_posture_min_lean_rad", ctypes.c_float),
+        ("min_press_front_n", ctypes.c_float),
+        ("min_press_rear_n", ctypes.c_float),
+        ("max_rising_front_excess_n", ctypes.c_float),
+        ("max_rising_rear_excess_n", ctypes.c_float),
+        ("min_saddle_force_n", ctypes.c_float),
+        ("max_saddle_force_n", ctypes.c_float),
+        ("sum_delivered_crank_torque_nm", ctypes.c_float),
+        ("sum_commanded_crank_torque_nm", ctypes.c_float),
+        ("start_root_x_m", ctypes.c_float),
+        ("end_root_x_m", ctypes.c_float),
+        ("end_speed_mps", ctypes.c_float),
+        ("max_speed_mps", ctypes.c_float),
+        ("energy_residual_j", ctypes.c_float),
+        ("energy_scale_j", ctypes.c_float),
+        ("max_rel_energy_residual", ctypes.c_float),
+        ("sample_count", ctypes.c_int32),
+        ("max_m0_passes_used", ctypes.c_int32),
+        ("current_m0_passes", ctypes.c_int32),
+        ("has_posture_min_lean", ctypes.c_uint8),
+        ("has_start_root_x", ctypes.c_uint8),
+        ("active_control_tick", ctypes.c_uint8),
+        ("last_cmd_enabled", ctypes.c_uint8),
+        ("energy_contract_ok", ctypes.c_uint8),
+        ("solver_mode", ctypes.c_uint8),
+        ("pad_sp4", ctypes.c_uint8 * 2),
     ]
 
 
@@ -676,6 +1225,8 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     lib.bike_gpu_sizeof_terrain_desc.argtypes = []
     lib.bike_gpu_sizeof_terrain_desc.restype = ctypes.c_int
 
+    _assert_struct_size(lib, "bike_gpu_sizeof_world_config", GpuWorldConfigStruct)
+    _assert_struct_size(lib, "bike_gpu_sizeof_world_state", GpuWorldStateStruct)
     _assert_struct_size(lib, "bike_gpu_sizeof_model_indices", GpuModelIndicesStruct)
     _assert_struct_size(lib, "bike_gpu_sizeof_tyre_model", GpuTyreModelStruct)
     _assert_struct_size(lib, "bike_gpu_sizeof_terrain_desc", GpuTerrainTableDescStruct)
@@ -741,9 +1292,7 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     if hasattr(lib, "bike_gpu_sizeof_sp3_world_state"):
         lib.bike_gpu_sizeof_sp3_world_state.argtypes = []
         lib.bike_gpu_sizeof_sp3_world_state.restype = ctypes.c_int
-        sp3_st_bytes = int(lib.bike_gpu_sizeof_sp3_world_state())
-        if sp3_st_bytes <= 0 or sp3_st_bytes > 16384:
-            raise RuntimeError(f"Invalid GpuSp3WorldState size: {sp3_st_bytes} bytes")
+        _assert_struct_size(lib, "bike_gpu_sizeof_sp3_world_state", GpuSp3WorldStateStruct)
 
     if hasattr(lib, "bike_gpu_init_default_sp3_config"):
         lib.bike_gpu_init_default_sp3_config.argtypes = [ctypes.c_void_p]
@@ -841,9 +1390,7 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     if hasattr(lib, "bike_gpu_sizeof_sp4_world_state"):
         lib.bike_gpu_sizeof_sp4_world_state.argtypes = []
         lib.bike_gpu_sizeof_sp4_world_state.restype = ctypes.c_int
-        sp4_st_bytes = int(lib.bike_gpu_sizeof_sp4_world_state())
-        if sp4_st_bytes <= 0 or sp4_st_bytes > 16384:
-            raise RuntimeError(f"Invalid GpuSp4WorldState size: {sp4_st_bytes} bytes")
+        _assert_struct_size(lib, "bike_gpu_sizeof_sp4_world_state", GpuSp4WorldStateStruct)
 
     if hasattr(lib, "bike_gpu_sizeof_spindle_params"):
         lib.bike_gpu_sizeof_spindle_params.argtypes = []
@@ -986,6 +1533,180 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
     if hasattr(lib, "bike_gpu_sp3_state_failure_flags"):
         lib.bike_gpu_sp3_state_failure_flags.argtypes = [ctypes.c_void_p]
         lib.bike_gpu_sp3_state_failure_flags.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_sizeof_pneumatic_scratch"):
+        lib.bike_gpu_sizeof_pneumatic_scratch.argtypes = []
+        lib.bike_gpu_sizeof_pneumatic_scratch.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_sizeof_spindle_m0_scratch"):
+        lib.bike_gpu_sizeof_spindle_m0_scratch.argtypes = []
+        lib.bike_gpu_sizeof_spindle_m0_scratch.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_m0_init"):
+        lib.bike_gpu_launch_sp4_m0_init.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_float,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+        ]
+        lib.bike_gpu_launch_sp4_m0_init.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_m0_pre_solve_and_begin"):
+        lib.bike_gpu_launch_sp4_m0_pre_solve_and_begin.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_float,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_m0_pre_solve_and_begin.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_m0_step"):
+        lib.bike_gpu_launch_sp4_m0_step.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_m0_step.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_m0_post_solve"):
+        lib.bike_gpu_launch_sp4_m0_post_solve.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_float,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_m0_post_solve.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_energy_post_step"):
+        lib.bike_gpu_launch_sp4_energy_post_step.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_float,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_energy_post_step.restype = ctypes.c_int
 
     return lib
 
@@ -1474,43 +2195,265 @@ def build_sp3_config_struct_from_mjmodel(lib: ctypes.CDLL, m_mj: Any) -> GpuSp3C
         )
     cfg.efc_scan.crank_clutch_tendon_id = _lookup_tendon_id(m_mj, ("crank_clutch",), 1)
 
-    # Populate rider joint envelope qpos/dof addresses and MuJoCo jnt_range limits from m_mj
+    # Populate rider joint envelope qpos/dof addresses and MuJoCo jnt_range limits
+    # in canonical idx.rider_qpos order:
+    #   [hip_front, knee_front, hip_rear, knee_rear, torso,
+    #    shoulder_left, elbow_left, shoulder_right, elbow_right]
     rider_joint_names = (
-        "rider_shoulder_left",
-        "rider_elbow_left",
-        "rider_shoulder_right",
-        "rider_elbow_right",
-        "rider_torso_hinge",
         "rider_hip_front",
         "rider_knee_front",
         "rider_hip_rear",
         "rider_knee_rear",
+        "rider_torso_hinge",
+        "rider_shoulder_left",
+        "rider_elbow_left",
+        "rider_shoulder_right",
+        "rider_elbow_right",
     )
-    env_cnt = 0
-    for jname in rider_joint_names:
+    for slot in range(16):
+        cfg.rider.envelope.qpos_adrs[slot] = -1
+        cfg.rider.envelope.dof_adrs[slot] = -1
+        cfg.rider.envelope.lower[slot] = 0.0
+        cfg.rider.envelope.upper[slot] = 0.0
+    for j, jname in enumerate(rider_joint_names):
         jid = _name_id(mujoco.mjtObj.mjOBJ_JOINT, jname)
-        if jid >= 0 and int(m_mj.jnt_limited[jid]) != 0 and env_cnt < 16:
-            cfg.rider.envelope.qpos_adrs[env_cnt] = int(m_mj.jnt_qposadr[jid])
-            cfg.rider.envelope.dof_adrs[env_cnt] = int(m_mj.jnt_dofadr[jid])
-            cfg.rider.envelope.lower[env_cnt] = float(m_mj.jnt_range[jid, 0])
-            cfg.rider.envelope.upper[env_cnt] = float(m_mj.jnt_range[jid, 1])
-            env_cnt += 1
-    if env_cnt > 0:
-        cfg.rider.envelope.count = env_cnt
+        if jid >= 0 and int(m_mj.jnt_limited[jid]) != 0:
+            cfg.rider.envelope.qpos_adrs[j] = int(m_mj.jnt_qposadr[jid])
+            cfg.rider.envelope.dof_adrs[j] = int(m_mj.jnt_dofadr[jid])
+            cfg.rider.envelope.lower[j] = float(m_mj.jnt_range[jid, 0])
+            cfg.rider.envelope.upper[j] = float(m_mj.jnt_range[jid, 1])
+    cfg.rider.envelope.count = len(rider_joint_names)
     return cfg
+
+
+_SURFACE_LABEL_IDS: dict[str, int] = {
+    "asphalt": 0,
+    "hardpack": 1,
+    "loose": 2,
+    "wet": 3,
+    "scree": 4,
+}
+
+_SURFACE_SPECS: dict[str, dict[str, float | int]] = {
+    "asphalt": {
+        "mu_peak": 1.05,
+        "mu_slide": 0.75,
+        "slip_stiffness_per_load": 15.0,
+        "stribeck_speed_mps": 4.5,
+        "crr_delta": 0.0,
+        "load_sensitivity": 0.06,
+        "surface_id": 0,
+    },
+    "hardpack": {
+        "mu_peak": 0.80,
+        "mu_slide": 0.60,
+        "slip_stiffness_per_load": 12.0,
+        "stribeck_speed_mps": 4.5,
+        "crr_delta": 0.0025,
+        "load_sensitivity": 0.08,
+        "surface_id": 1,
+    },
+    "loose": {
+        "mu_peak": 0.55,
+        "mu_slide": 0.45,
+        "slip_stiffness_per_load": 7.0,
+        "stribeck_speed_mps": 4.5,
+        "crr_delta": 0.0060,
+        "load_sensitivity": 0.12,
+        "surface_id": 2,
+    },
+    "wet": {
+        "mu_peak": 0.50,
+        "mu_slide": 0.40,
+        "slip_stiffness_per_load": 10.0,
+        "stribeck_speed_mps": 4.5,
+        "crr_delta": 0.0035,
+        "load_sensitivity": 0.12,
+        "surface_id": 3,
+    },
+    "scree": {
+        "mu_peak": 0.45,
+        "mu_slide": 0.38,
+        "slip_stiffness_per_load": 4.5,
+        "stribeck_speed_mps": 4.5,
+        "crr_delta": 0.0080,
+        "load_sensitivity": 0.15,
+        "surface_id": 4,
+    },
+}
+
+_BACKEND_DEFAULT_SUSPENSION_SAG: dict[str, tuple[float, float]] = {
+    "compliant_2d": (97.0, 81550.0),
+    "distributed_2d_reference": (90.8, 84372.0),
+    "pneumatic": (113.8, 73557.0),
+}
+
+DEFAULT_EFFORT_CAP_GRADE_NM: tuple[float, ...] = (
+    36.0,
+    15.0,
+    14.5,
+    13.2,
+    14.0,
+    15.5,
+    19.5,
+    18.5,
+    21.0,
+    20.0,
+)
+
+
+def _as_seq(val: Any) -> list[Any] | None:
+    if isinstance(val, dict) and "$tuple" in val:
+        inner = val["$tuple"]
+        return list(inner) if isinstance(inner, (list, tuple)) else None
+    if isinstance(val, (list, tuple)):
+        return list(val)
+    return None
+
+
+def _surface_id_from_value(val: Any, default: int = 1) -> int:
+    if isinstance(val, (int, np.integer)):
+        return int(val)
+    if isinstance(val, str):
+        key = val.strip().lower()
+        if key in _SURFACE_LABEL_IDS:
+            return _SURFACE_LABEL_IDS[key]
+    return int(default)
+
+
+def recompute_suspension_preloads(susp: GpuSuspensionParamsStruct) -> None:
+    """Recompute static sag preloads matching ``bike::gpu::gpu_init_suspension_preloads``."""
+    import math
+
+    air = susp.params.air_spring
+    coil = susp.params.coil
+    fork_sag_m = (float(air.total_travel_mm) * 1e-3) * float(susp.fork_sag_fraction)
+    shock_sag_m = (float(coil.stroke_mm) * 1e-3) * float(susp.shock_sag_fraction)
+
+    r_m = (float(air.stanchion_inner_diam_mm) * 0.5) * 1e-3
+    area = math.pi * r_m * r_m
+    tokens = max(0, min(int(air.num_tokens), int(air.max_tokens)))
+    v_pos_0 = area * (float(air.pos_chamber_length_mm) * 1e-3) - float(tokens) * (float(air.token_volume_cm3) * 1e-6)
+    v_neg_0 = area * (float(air.neg_chamber_length_mm) * 1e-3)
+    v_disp = area * max(0.0, min(float(air.total_travel_mm) * 1e-3, fork_sag_m))
+    if v_pos_0 > 0.0 and v_neg_0 > 0.0 and v_disp < v_pos_0:
+        p_abs_0 = float(air.gauge_pressure_psi) * 6894.757293168 + float(air.atm_pressure_pa)
+        v_pos = v_pos_0 - v_disp
+        v_neg = v_neg_0 + v_disp
+        gamma = float(air.gamma)
+        susp.fork_preload_n = float(area * (p_abs_0 * ((v_pos_0 / v_pos) ** gamma) - p_abs_0 * ((v_neg_0 / v_neg) ** gamma)))
+    else:
+        susp.fork_preload_n = 0.0
+
+    stroke_m = float(coil.stroke_mm) * 1e-3
+    if 0.0 <= shock_sag_m <= stroke_m:
+        susp.shock_preload_n = float(float(coil.rate_n_m) * (float(coil.preload_mm) * 1e-3 + shock_sag_m))
+    else:
+        susp.shock_preload_n = 0.0
+
+
+def apply_manifest_json_to_sp3_config(
+    cfg: GpuSp3ConfigStruct,
+    manifest: dict[str, Any],
+) -> None:
+    """Apply ``manifest.json`` (``resolved_bike``, ``track_spec``, ``ride_program``) onto ``GpuSp3ConfigStruct``."""
+    rb = manifest.get("resolved_bike")
+    if isinstance(rb, dict):
+        if "fork_initial_psi" in rb and rb["fork_initial_psi"] is not None:
+            cfg.suspension.params.air_spring.gauge_pressure_psi = float(rb["fork_initial_psi"])
+        if "shock_stiffness" in rb and rb["shock_stiffness"] is not None:
+            cfg.suspension.params.coil.rate_n_m = float(rb["shock_stiffness"])
+        recompute_suspension_preloads(cfg.suspension)
+
+    ts = manifest.get("track_spec")
+    if isinstance(ts, dict):
+        if "surface" in ts and ts["surface"] is not None:
+            cfg.default_surface_label = _surface_id_from_value(
+                ts["surface"], int(cfg.default_surface_label)
+            )
+        sections = _as_seq(ts.get("surface_sections")) or _as_seq(ts.get("sections"))
+        if sections is not None:
+            cnt = min(len(sections), 16)
+            cfg.surface_section_count = cnt
+            for i in range(cnt):
+                sec = sections[i]
+                if not isinstance(sec, dict):
+                    continue
+                cfg.surface_sections[i].start_m = float(sec.get("start_m", 0.0))
+                cfg.surface_sections[i].end_m = float(sec.get("end_m", 0.0))
+                cfg.surface_sections[i].label = _surface_id_from_value(
+                    sec.get("surface", sec.get("label", cfg.default_surface_label)),
+                    int(cfg.default_surface_label),
+                )
+
+    rp = manifest.get("ride_program")
+    if isinstance(rp, dict):
+        _apply_ride_program_dict_to_sp3_config(cfg, rp)
+
+
+def _apply_ride_program_dict_to_sp3_config(
+    cfg: GpuSp3ConfigStruct,
+    rp: dict[str, Any],
+) -> None:
+    segs = _as_seq(rp.get("segments"))
+    if segs is None:
+        return
+    cnt = min(len(segs), 32)
+    cfg.ride_program.segment_count = cnt
+    cfg.ride_program.reaction_delay_s = float(rp.get("reaction_delay_s", 0.0))
+    for i in range(cnt):
+        seg = segs[i]
+        if not isinstance(seg, dict):
+            continue
+        dst = cfg.ride_program.segments[i]
+        dst.t_end_s = float(seg.get("t_end_s", 0.0))
+        mask = int(seg.get("channel_mask", 0))
+        if mask == 0:
+            if seg.get("human_torque_nm") is not None:
+                mask |= 1 << 0
+            if seg.get("motor_torque_nm") is not None:
+                mask |= 1 << 1
+            if seg.get("motor_limit_nm") is not None:
+                mask |= 1 << 2
+            if seg.get("crank_rate_rad_s") is not None:
+                mask |= 1 << 3
+            if seg.get("front_brake") is not None:
+                mask |= 1 << 4
+            if seg.get("rear_brake") is not None:
+                mask |= 1 << 5
+            if seg.get("cruise_speed_kmh") is not None:
+                mask |= 1 << 6
+            if seg.get("posture_lean_rad") is not None:
+                mask |= 1 << 7
+            if seg.get("linear_ramp"):
+                mask |= 1 << 8
+        dst.channel_mask = mask
+        dst.human_torque_nm = float(seg.get("human_torque_nm") or 0.0)
+        dst.motor_torque_nm = float(seg.get("motor_torque_nm") or 0.0)
+        dst.motor_limit_nm = float(seg.get("motor_limit_nm") or 0.0)
+        dst.crank_rate_rad_s = float(seg.get("crank_rate_rad_s") or 0.0)
+        dst.front_brake = float(seg.get("front_brake") or 0.0)
+        dst.rear_brake = float(seg.get("rear_brake") or 0.0)
+        dst.cruise_speed_kmh = float(seg.get("cruise_speed_kmh") or 0.0)
+        dst.posture_lean_rad = float(seg.get("posture_lean_rad") or 0.0)
+    cfg.program_enabled = 1 if bool(rp.get("enabled", cnt > 0)) and cnt > 0 else 0
 
 
 def apply_physics_config_json_to_sp3_config(
     cfg: GpuSp3ConfigStruct,
     phys_cfg: dict[str, Any],
+    manifest: dict[str, Any] | None = None,
 ) -> None:
-    """Apply exported ``physics_config.json`` fields onto ``GpuSp3ConfigStruct``."""
+    """Apply exported ``physics_config.json`` (and optional ``manifest.json``) onto ``GpuSp3ConfigStruct``."""
     dt_s = float(phys_cfg.get("timestep_s", 0.00125))
     if dt_s <= 0.0:
         dt_s = 0.00125
 
     def _ticks(sec: float, step_s: float = dt_s) -> int:
         return max(0, int(round(float(sec) / float(step_s))))
+
+    if "control_period_s" in phys_cfg and float(phys_cfg["control_period_s"]) > 0.0:
+        cfg.control_period_steps = max(1, _ticks(float(phys_cfg["control_period_s"])))
 
     res = phys_cfg.get("resistance")
     if isinstance(res, dict):
@@ -1522,18 +2465,70 @@ def apply_physics_config_json_to_sp3_config(
             cfg.resistance.rho_kg_m3 = float(res["rho_kg_m3"])
         if "cda_m2" in res:
             cfg.resistance.cda_m2 = float(res["cda_m2"])
-        wind = res.get("wind_world_mps")
-        if isinstance(wind, list) and len(wind) == 3:
+        wind = _as_seq(res.get("wind_world_mps"))
+        if wind is not None and len(wind) == 3:
             for i in range(3):
                 cfg.resistance.wind_world_mps[i] = float(wind[i])
-        pt = res.get("point_body_m")
-        if isinstance(pt, list) and len(pt) == 3:
+        pt = _as_seq(res.get("point_body_m"))
+        if pt is not None and len(pt) == 3:
             for i in range(3):
                 cfg.resistance.point_body_m[i] = float(pt[i])
 
     tires = phys_cfg.get("tires")
-    if isinstance(tires, dict) and tires.get("backend") == "distributed_2d_reference":
+    if not isinstance(tires, dict):
+        tires = phys_cfg.get("tire")
+    backend_name = str(tires.get("backend", "compliant_2d")) if isinstance(tires, dict) else "compliant_2d"
+    if backend_name in ("distributed_2d_reference", "pneumatic"):
         cfg.resistance.crr = 0.0
+    if backend_name in _BACKEND_DEFAULT_SUSPENSION_SAG:
+        psi_def, rate_def = _BACKEND_DEFAULT_SUSPENSION_SAG[backend_name]
+        cfg.suspension.params.air_spring.gauge_pressure_psi = float(psi_def)
+        cfg.suspension.params.coil.rate_n_m = float(rate_def)
+    if isinstance(tires, dict):
+        pneu = tires.get("pneumatic")
+        if isinstance(pneu, dict) and pneu.get("surface") is not None:
+            cfg.default_surface_label = _surface_id_from_value(
+                pneu["surface"], int(cfg.default_surface_label)
+            )
+
+    end_stops = phys_cfg.get("end_stops")
+    if isinstance(end_stops, dict):
+        ref_f = float(end_stops.get("reference_force_n", 0.0))
+        ref_d = float(end_stops.get("reference_deflection_m", 0.0))
+        if ref_f > 0.0 and ref_d > 0.0:
+            cfg.suspension.params.end_stops.stiffness_n_m = float(ref_f / ref_d)
+        if "damping_n_s_m" in end_stops:
+            cfg.suspension.params.end_stops.damping_n_s_m = float(end_stops["damping_n_s_m"])
+
+    susp = phys_cfg.get("suspension")
+    if isinstance(susp, dict):
+        air = susp.get("air_spring")
+        if isinstance(air, dict):
+            for k in (
+                "stanchion_inner_diam_mm",
+                "total_travel_mm",
+                "pos_chamber_length_mm",
+                "neg_chamber_length_mm",
+                "token_volume_cm3",
+                "gamma",
+                "atm_pressure_pa",
+                "gauge_pressure_psi",
+            ):
+                if k in air:
+                    setattr(cfg.suspension.params.air_spring, k, float(air[k]))
+            for k in ("max_tokens", "num_tokens"):
+                if k in air:
+                    setattr(cfg.suspension.params.air_spring, k, int(air[k]))
+        coil = susp.get("coil")
+        if isinstance(coil, dict):
+            for k in ("rate_n_m", "preload_mm", "stroke_mm", "bumper_length_mm", "bumper_peak_n"):
+                if k in coil:
+                    setattr(cfg.suspension.params.coil, k, float(coil[k]))
+        if "fork_sag_fraction" in susp:
+            cfg.suspension.fork_sag_fraction = float(susp["fork_sag_fraction"])
+        if "shock_sag_fraction" in susp:
+            cfg.suspension.shock_sag_fraction = float(susp["shock_sag_fraction"])
+    recompute_suspension_preloads(cfg.suspension)
 
     drive = phys_cfg.get("drive")
     if isinstance(drive, dict):
@@ -1563,8 +2558,8 @@ def apply_physics_config_json_to_sp3_config(
         if isinstance(sh, dict):
             if "enabled" in sh:
                 cfg.shifting.enabled = 1 if bool(sh["enabled"]) else 0
-            cass = sh.get("cassette")
-            if isinstance(cass, list) and 1 <= len(cass) <= 12:
+            cass = _as_seq(sh.get("cassette"))
+            if cass is not None and 1 <= len(cass) <= 12:
                 cfg.shifting.cog_count = len(cass)
                 for i, t in enumerate(cass):
                     cfg.shifting.cassette[i] = int(t)
@@ -1586,6 +2581,41 @@ def apply_physics_config_json_to_sp3_config(
                 cfg.shifting.cadence_smoothing_tau_s = float(sh["cadence_smoothing_tau_s"])
             if "upshift_slip_limit_mps" in sh:
                 cfg.shifting.upshift_slip_limit_mps = float(sh["upshift_slip_limit_mps"])
+            if "upshift_slip_mode" in sh:
+                mode_s = str(sh["upshift_slip_mode"]).strip().lower()
+                cfg.shifting.upshift_slip_mode = 1 if mode_s == "magnitude" else 0
+
+        assist = drive.get("assist")
+        if isinstance(assist, dict):
+            for k in (
+                "gain",
+                "max_torque",
+                "max_power",
+                "tau",
+                "slew",
+                "engage_torque_nm",
+                "cutoff_mps",
+                "taper_width_mps",
+            ):
+                if k in assist:
+                    setattr(cfg.assist, k, float(assist[k]))
+            if "release_hold_s" in assist and float(assist["release_hold_s"]) >= 0.0:
+                cfg.assist.release_hold_ticks = _ticks(float(assist["release_hold_s"]))
+            prof = assist.get("profile")
+            if isinstance(prof, str) and prof.strip():
+                pmap = {"eco": 0, "tour": 1, "emtb": 2, "turbo": 3}
+                cfg.assist.profile_mode = pmap.get(prof.strip().lower(), 3)
+                cfg.assist.has_profile = 1
+            elif prof is None and "profile" in assist:
+                cfg.assist.has_profile = 0
+            tc = _as_seq(assist.get("torque_curve"))
+            if tc is not None and len(tc) > 0:
+                cnt = min(len(tc), 8)
+                cfg.assist.curve_len = cnt
+                for i in range(cnt):
+                    pair = _as_seq(tc[i]) or tc[i]
+                    cfg.assist.curve_rpm[i] = float(pair[0])
+                    cfg.assist.curve_nm[i] = float(pair[1])
 
         ped = drive.get("pedaling")
         if isinstance(ped, dict):
@@ -1640,6 +2670,13 @@ def apply_physics_config_json_to_sp3_config(
             cfg.rider.envelope.margin_rad = float(art["joint_envelope_soft_margin_rad"])
         if "road_lookahead_m" in art:
             cfg.road_lookahead_m = float(art["road_lookahead_m"])
+        if "balance_floor_kmh" in art:
+            cfg.balance.floor_mps = float(art["balance_floor_kmh"]) / 3.6
+        if "balance_dwell_s" in art:
+            cfg.balance.dwell_ticks = _ticks(float(art["balance_dwell_s"]))
+        if "balance_grace_s" in art:
+            cfg.balance.grace_ticks = _ticks(float(art["balance_grace_s"]))
+        cfg.balance.period_s = dt_s
 
     sc = phys_cfg.get("seated_climb")
     if isinstance(sc, dict):
@@ -1653,6 +2690,10 @@ def apply_physics_config_json_to_sp3_config(
                 cfg.intent.delay_ticks = _ticks(float(sc["reaction_delay_s"]), period_s)
             if "trim_dead_time_s" in sc:
                 cfg.intent.dead_time_ticks = _ticks(float(sc["trim_dead_time_s"]), period_s)
+            if "surge_budget_s" in sc:
+                cfg.intent.surge_max_subticks = int(round(float(sc["surge_budget_s"]) / period_s * 600.0))
+        if "surge_recovery_rate" in sc:
+            cfg.intent.surge_recover_subticks = int(round(float(sc["surge_recovery_rate"]) * 600.0))
         for k in (
             "target_crank_power_w",
             "max_crank_torque_nm",
@@ -1672,6 +2713,160 @@ def apply_physics_config_json_to_sp3_config(
         ):
             if k in sc:
                 setattr(cfg.intent, k, float(sc[k]))
+        c_grades = _as_seq(sc.get("climb_effort_cap_grades"))
+        c_vals = _as_seq(sc.get("climb_effort_cap_grade_nm"))
+        if c_grades is not None and c_vals is not None and len(c_grades) == len(c_vals):
+            cnt = min(len(c_grades), 16)
+            cfg.intent.climb_effort_cap_count = cnt
+            for i in range(cnt):
+                cfg.intent.climb_effort_cap_grades[i] = float(c_grades[i])
+                cfg.intent.climb_effort_cap_grade_nm[i] = float(c_vals[i])
+
+    rl = phys_cfg.get("rider_launch")
+    if isinstance(rl, dict):
+        if "plan_enabled" in rl:
+            cfg.launch.plan_enabled = 1 if bool(rl["plan_enabled"]) else 0
+        for k in (
+            "start_pedal_angle_rad",
+            "standstill_speed_mps",
+            "standstill_crank_rpm",
+            "effort_rate_nm_s",
+            "effort_cap_asphalt_nm",
+            "effort_cap_hardpack_nm",
+            "effort_cap_loose_nm",
+            "effort_cap_wet_nm",
+            "effort_cap_scree_nm",
+            "effort_rise_speed_mps",
+            "upshift_crank_rpm",
+            "end_speed_mps",
+            "end_crank_rpm",
+        ):
+            if k in rl:
+                setattr(cfg.launch, k, float(rl[k]))
+        cfg.launch.period_s = dt_s
+        if "brake_release_s" in rl:
+            cfg.launch.release_ticks = _ticks(float(rl["brake_release_s"]))
+        if "max_hold_s" in rl:
+            cfg.launch.max_hold_ticks = _ticks(float(rl["max_hold_s"]))
+        if "end_hold_s" in rl:
+            cfg.launch.end_hold_ticks = _ticks(float(rl["end_hold_s"]))
+        if "max_launch_s" in rl:
+            cfg.launch.max_launch_ticks = _ticks(float(rl["max_launch_s"]))
+        if "handover_s" in rl:
+            cfg.launch.handover_ticks = _ticks(float(rl["handover_s"]))
+        if "shift_retry_s" in rl:
+            cfg.launch.retry_ticks = _ticks(float(rl["shift_retry_s"]))
+        cog_b = _as_seq(rl.get("start_cog_grade_breaks"))
+        cog_t = _as_seq(rl.get("start_cog_teeth"))
+        if cog_b is not None and cog_t is not None and len(cog_b) == len(cog_t):
+            cnt = min(len(cog_b), 16)
+            cfg.launch.start_cog_count = cnt
+            for i in range(cnt):
+                cfg.launch.start_cog_grade_breaks[i] = float(cog_b[i])
+                cfg.launch.start_cog_teeth[i] = int(cog_t[i])
+        lean_g = _as_seq(rl.get("start_lean_grades"))
+        lean_r = _as_seq(rl.get("start_lean_rad"))
+        if lean_g is not None and lean_r is not None and len(lean_g) == len(lean_r):
+            cnt = min(len(lean_g), 16)
+            cfg.launch.start_lean_count = cnt
+            for i in range(cnt):
+                cfg.launch.start_lean_grades[i] = float(lean_g[i])
+                cfg.launch.start_lean_rad[i] = float(lean_r[i])
+        ec_g = _as_seq(rl.get("effort_cap_grades"))
+        ec_v = _as_seq(rl.get("effort_cap_grade_nm"))
+        if ec_g is not None and ec_v is not None and len(ec_g) == len(ec_v):
+            cnt = min(len(ec_g), 16)
+            cfg.launch.effort_cap_count = cnt
+            for i in range(cnt):
+                cfg.launch.effort_cap_grades[i] = float(ec_g[i])
+                cfg.launch.effort_cap_grade_nm[i] = float(ec_v[i])
+        rt_g = _as_seq(rl.get("release_torque_grades"))
+        rt_v = _as_seq(rl.get("release_torque_nm"))
+        if rt_g is not None and rt_v is not None and len(rt_g) == len(rt_v):
+            cnt = min(len(rt_g), 16)
+            cfg.launch.release_torque_count = cnt
+            for i in range(cnt):
+                cfg.launch.release_torque_grades[i] = float(rt_g[i])
+                cfg.launch.release_torque_nm[i] = float(rt_v[i])
+    if cfg.launch.effort_cap_count == 0:
+        cfg.launch.effort_cap_count = len(DEFAULT_EFFORT_CAP_GRADE_NM)
+        for i, val in enumerate(DEFAULT_EFFORT_CAP_GRADE_NM):
+            cfg.launch.effort_cap_grade_nm[i] = float(val)
+
+    fl = phys_cfg.get("front_lift_reaction")
+    if isinstance(fl, dict):
+        fl_period = float(cfg.intent.period_s if cfg.intent.period_s > 0.0 else dt_s)
+        cfg.front_lift.period_s = fl_period
+        for k in (
+            "hand_drop_ratio",
+            "pitch_rate_up_rad_s",
+            "pitch_rad",
+            "ease_fraction",
+            "ease_rate_per_s",
+            "lean_add_rad",
+            "lean_rate_rad_s",
+        ):
+            if k in fl:
+                setattr(cfg.front_lift, k, float(fl[k]))
+        if "hand_window_s" in fl:
+            cfg.front_lift.window_ticks = _ticks(float(fl["hand_window_s"]), fl_period)
+        if "hand_lag_s" in fl:
+            cfg.front_lift.lag_ticks = _ticks(float(fl["hand_lag_s"]), fl_period)
+        if "decision_s" in fl:
+            cfg.front_lift.decision_ticks = _ticks(float(fl["decision_s"]), fl_period)
+        if "clear_s" in fl:
+            cfg.front_lift.clear_ticks = _ticks(float(fl["clear_s"]), fl_period)
+        if "ease_enabled" in fl:
+            cfg.front_lift.ease_enabled = 1 if bool(fl["ease_enabled"]) else 0
+        if "lean_enabled" in fl:
+            cfg.front_lift.lean_enabled = 1 if bool(fl["lean_enabled"]) else 0
+
+    mon = phys_cfg.get("monitors")
+    if isinstance(mon, dict):
+        if "grounded_hold_s" in mon:
+            cfg.grounded_filter.hold_ticks = _ticks(float(mon["grounded_hold_s"]))
+        if "contact_dropout_s" in mon:
+            cfg.bridged_load.dropout_steps = _ticks(float(mon["contact_dropout_s"]))
+
+    cruise = phys_cfg.get("cruise")
+    if isinstance(cruise, dict):
+        for k in ("target_speed_kmh", "kp_nm_per_mps", "ki_nm_per_mps_s", "torque_ceiling_nm"):
+            if k in cruise:
+                setattr(cfg.cruise, k, float(cruise[k]))
+        if "enabled" in cruise:
+            cfg.cruise_enabled = 1 if bool(cruise["enabled"]) else 0
+
+    rp = phys_cfg.get("ride_program")
+    if isinstance(rp, dict):
+        _apply_ride_program_dict_to_sp3_config(cfg, rp)
+
+    if isinstance(manifest, dict):
+        apply_manifest_json_to_sp3_config(cfg, manifest)
+
+
+def load_bundle_sp3_config(
+    lib: ctypes.CDLL,
+    m_mj: Any,
+    bundle_dir: Path | str | None = None,
+    phys_cfg: dict[str, Any] | None = None,
+    manifest: dict[str, Any] | None = None,
+) -> GpuSp3ConfigStruct:
+    """Build a ``GpuSp3ConfigStruct`` from ``m_mj`` plus bundle ``physics_config.json`` & ``manifest.json``."""
+    cfg = build_sp3_config_struct_from_mjmodel(lib, m_mj)
+    bdir = Path(bundle_dir) if bundle_dir is not None else None
+    if phys_cfg is None and bdir is not None:
+        pc_path = bdir / "physics_config.json"
+        if pc_path.is_file():
+            phys_cfg = json.loads(pc_path.read_text(encoding="utf-8"))
+    if manifest is None and bdir is not None:
+        mf_path = bdir / "manifest.json"
+        if mf_path.is_file():
+            manifest = json.loads(mf_path.read_text(encoding="utf-8"))
+    if isinstance(phys_cfg, dict):
+        apply_physics_config_json_to_sp3_config(cfg, phys_cfg, manifest=manifest)
+    elif isinstance(manifest, dict):
+        apply_manifest_json_to_sp3_config(cfg, manifest)
+    return cfg
 
 
 def build_sp3_sweep_configs_bytes(
@@ -1798,6 +2993,8 @@ def build_tyre_and_terrain_buffers(
         backend_kind = 0
     elif backend == "distributed_2d_reference":
         backend_kind = 1
+    elif backend == "pneumatic":
+        backend_kind = 2
     else:
         raise ValueError(f"Unknown tyre backend '{backend}'")
 
@@ -1866,6 +3063,420 @@ def build_tyre_and_terrain_buffers(
     )
 
 
+def _fill_surface_spec_pod(dst: SurfaceSpecPodStruct, surface_name_or_id: Any) -> None:
+    if isinstance(surface_name_or_id, (int, np.integer)):
+        sid = int(surface_name_or_id)
+        name = next((k for k, v in _SURFACE_LABEL_IDS.items() if v == sid), "hardpack")
+    else:
+        name = str(surface_name_or_id).strip().lower()
+        if name not in _SURFACE_SPECS:
+            name = "hardpack"
+    spec = _SURFACE_SPECS[name]
+    dst.mu_peak = float(spec["mu_peak"])
+    dst.mu_slide = float(spec["mu_slide"])
+    dst.slip_stiffness_per_load = float(spec["slip_stiffness_per_load"])
+    dst.stribeck_speed_mps = float(spec["stribeck_speed_mps"])
+    dst.crr_delta = float(spec["crr_delta"])
+    dst.load_sensitivity = float(spec["load_sensitivity"])
+    dst.surface_id = int(spec["surface_id"])
+
+
+def _fill_wheel_chain(m_mj: Any, body_id: int, dst: GpuWheelChainStruct) -> None:
+    dst.wheel_body_id = int(body_id)
+    dst.njnt = int(m_mj.njnt)
+    chain_jnts: list[tuple[int, int, int]] = []
+    b = int(body_id)
+    while b > 0:
+        jnum = int(m_mj.body_jntnum[b])
+        jadr = int(m_mj.body_jntadr[b])
+        for k in range(jnum):
+            jid = jadr + k
+            chain_jnts.append((jid, int(m_mj.jnt_type[jid]), int(m_mj.jnt_dofadr[jid])))
+        b = int(m_mj.body_parentid[b])
+    chain_jnts.reverse()
+    cnt = min(len(chain_jnts), 8)
+    dst.joint_count = cnt
+    for i in range(cnt):
+        dst.joints[i].joint_id = chain_jnts[i][0]
+        dst.joints[i].joint_type = chain_jnts[i][1]
+        dst.joints[i].dof_adr = chain_jnts[i][2]
+
+
+def _fill_pneumatic_material(
+    dst: PneumaticMaterialViewStruct,
+    tyre_dict: dict[str, Any] | None,
+    default_spec: dict[str, float],
+    n_rays: int,
+    discretised_brush: bool,
+    half_angle_deg: float = 75.0,
+) -> None:
+    import math
+
+    src = tyre_dict if isinstance(tyre_dict, dict) else {}
+    for k, v in default_spec.items():
+        setattr(dst, k, float(src.get(k, v)))
+    dst.n_rays = int(n_rays)
+    dst.discretised_brush = 1 if discretised_brush else 0
+    half_angle_rad = float(half_angle_deg) * (math.pi / 180.0)
+    dst.half_angle_rad = float(half_angle_rad)
+    step = (2.0 * half_angle_rad) / float(n_rays - 1)
+    for i in range(n_rays):
+        theta = -half_angle_rad + float(i) * step
+        if i == n_rays - 1:
+            theta = half_angle_rad
+        dst.theta_rad[i] = float(theta)
+        dst.ux[i] = float(math.sin(theta))
+        dst.uz[i] = float(-math.cos(theta))
+    dst.dtheta_rad = float(dst.theta_rad[1] - dst.theta_rad[0])
+
+
+def build_gpu_tyre_model_struct_from_mjmodel(
+    m_mj: Any,
+    phys_cfg: dict[str, Any] | None = None,
+    manifest: dict[str, Any] | None = None,
+    backend: str | None = None,
+    station_count: int | None = None,
+    surface_label: int | None = None,
+) -> tuple[GpuTyreModelStruct, dict[str, Any]]:
+    """Build ``GpuTyreModelStruct`` purely in Python from ``m_mj``, ``physics_config.json``, and ``manifest.json``."""
+    import math
+    import mujoco
+
+    pc = phys_cfg or {}
+    tires = pc.get("tires")
+    if not isinstance(tires, dict):
+        tires = pc.get("tire") if isinstance(pc.get("tire"), dict) else {}
+
+    be_name = str(backend or tires.get("backend", "compliant_2d"))
+    if be_name == "compliant_2d":
+        backend_kind = 0
+    elif be_name == "distributed_2d_reference":
+        backend_kind = 1
+    elif be_name == "pneumatic":
+        backend_kind = 2
+    else:
+        raise ValueError(f"Unknown tyre backend '{be_name}'")
+
+    model = GpuTyreModelStruct()
+    model.backend = int(backend_kind)
+    model.nq = int(m_mj.nq)
+    model.nv = int(m_mj.nv)
+    model.nbody = int(m_mj.nbody)
+    model.njnt = int(m_mj.njnt)
+
+    distinct_deg = float(tires.get("distinct_normal_deg", 10.0))
+    model.distinct_normal_cosine = float(math.cos(math.radians(distinct_deg)))
+    model.dt_s = float(pc.get("timestep_s", m_mj.opt.timestep))
+    model.gravity_mps2 = float(abs(m_mj.opt.gravity[2])) if abs(float(m_mj.opt.gravity[2])) > 0.0 else 9.81
+    model.load_threshold_n = 1.0
+
+    pneu_cfg = tires.get("pneumatic") if isinstance(tires.get("pneumatic"), dict) else {}
+    tier_str = str(pneu_cfg.get("tier", "fast")).strip().lower()
+    if be_name == "pneumatic":
+        if station_count is None:
+            station_count = 256 if tier_str == "detailed" else 64
+        discretised_brush = (int(station_count) >= 256) or (tier_str == "detailed")
+        model.station_count = int(station_count)
+    elif be_name == "distributed_2d_reference":
+        dist_cfg = tires.get("distributed") if isinstance(tires.get("distributed"), dict) else {}
+        model.station_count = int(station_count or dist_cfg.get("station_count", 64))
+        discretised_brush = False
+    else:
+        model.station_count = int(station_count or 1)
+        discretised_brush = False
+
+    wheel_body_names = (("front_wheel",), ("rear_wheel",))
+    wheel_geom_names = (("front_tire", "front_wheel"), ("rear_tire", "rear_wheel"))
+    wheel_jnt_names = (("front_wheel_spin",), ("rear_wheel_spin",))
+    default_radii = (0.372, 0.352)
+    rb = manifest.get("resolved_bike") if isinstance(manifest, dict) and isinstance(manifest.get("resolved_bike"), dict) else {}
+    rb_radii = (
+        float(rb["front_wheel_radius_mm"]) * 1e-3 if rb.get("front_wheel_radius_mm") else None,
+        float(rb["rear_wheel_radius_mm"]) * 1e-3 if rb.get("rear_wheel_radius_mm") else None,
+    )
+
+    pneu_defaults = (
+        {
+            "outer_radius_mm": 372.0,
+            "rim_radius_mm": 320.0,
+            "section_height_mm": 55.0,
+            "pressure_bar": 1.7,
+            "crr_reference": 0.011,
+            "casing_width_mm": 60.0,
+            "compressed_casing_mm": 6.0,
+            "area_factor": 0.4435,
+            "carcass_stiffness_n_mm2": 0.1194,
+            "contact_length_factor": 0.8589,
+            "rate_stiffening": 0.2484,
+            "rate_relaxation_s": 0.2,
+            "loss_factor": 0.0662,
+            "hysteresis_rate_eps_mps": 0.01,
+            "relaxation_length_mm": 60.0,
+            "rim_stiffness_n_mm2": 28.0,
+            "tread_loss_crr": 0.00586,
+        },
+        {
+            "outer_radius_mm": 352.0,
+            "rim_radius_mm": 300.0,
+            "section_height_mm": 55.0,
+            "pressure_bar": 1.7,
+            "crr_reference": 0.0103,
+            "casing_width_mm": 60.0,
+            "compressed_casing_mm": 6.0,
+            "area_factor": 0.4576,
+            "carcass_stiffness_n_mm2": 0.1225,
+            "contact_length_factor": 0.8801,
+            "rate_stiffening": 0.2498,
+            "rate_relaxation_s": 0.2,
+            "loss_factor": 0.069,
+            "hysteresis_rate_eps_mps": 0.01,
+            "relaxation_length_mm": 60.0,
+            "rim_stiffness_n_mm2": 28.0,
+            "tread_loss_crr": 0.00481,
+        },
+    )
+
+    frame_bid = _lookup_body_id(m_mj, ("frame", "main_frame", "chassis"), 1)
+    _fill_wheel_chain(m_mj, frame_bid, model.frame_chain)
+
+    side_keys = ("front", "rear")
+    dist_cfg = tires.get("distributed") if isinstance(tires.get("distributed"), dict) else {}
+    for s in range(2):
+        w = model.wheels[s]
+        bid = _lookup_body_id(m_mj, wheel_body_names[s], 1)
+        _fill_wheel_chain(m_mj, bid, w.chain)
+        gid = -1
+        for gname in wheel_geom_names[s]:
+            cand = int(mujoco.mj_name2id(m_mj, mujoco.mjtObj.mjOBJ_GEOM, gname))
+            if cand >= 0:
+                gid = cand
+                break
+        w.geom_id = gid
+        jid = -1
+        for jname in wheel_jnt_names[s]:
+            cand = int(mujoco.mj_name2id(m_mj, mujoco.mjtObj.mjOBJ_JOINT, jname))
+            if cand >= 0:
+                jid = cand
+                break
+        w.hinge_joint_id = jid
+        w.nv = int(m_mj.nv)
+        w.njnt = int(m_mj.njnt)
+
+        geom_r = float(m_mj.geom_size[gid, 0]) if gid >= 0 else default_radii[s]
+        w.radius_m = float(rb_radii[s] or geom_r or default_radii[s])
+
+        tp = tires.get(side_keys[s]) if isinstance(tires.get(side_keys[s]), dict) else {}
+        w.tangent_k_n_m = float(tp.get("tangent_k_n_m", 48000.0))
+        w.tire_mu = float(tp.get("mu", 0.90))
+        w.relaxation_length_m = float(tp.get("relaxation_length_m", 0.08))
+
+        mat = tp.get("material") if isinstance(tp.get("material"), dict) else {}
+        defl_seq = _as_seq(mat.get("deflection_m"))
+        force_seq = _as_seq(mat.get("force_n"))
+        if defl_seq is not None and force_seq is not None and len(defl_seq) == len(force_seq) and 2 <= len(defl_seq) <= 64:
+            n_k = len(defl_seq)
+            w.compliant.has_tabulated_radial = 1
+            w.compliant.use_tabulated = 1
+            w.compliant.knot_count = n_k
+            for i in range(n_k):
+                w.compliant.deflection_m[i] = float(defl_seq[i])
+                w.compliant.force_n[i] = float(force_seq[i])
+            w.compliant.integral[0] = 0.0
+            for i in range(n_k - 1):
+                dx = float(defl_seq[i + 1]) - float(defl_seq[i])
+                df = float(force_seq[i + 1]) - float(force_seq[i])
+                w.compliant.slopes[i] = float(df / dx) if dx > 0.0 else 0.0
+                w.compliant.integral[i + 1] = float(
+                    w.compliant.integral[i] + 0.5 * (float(force_seq[i]) + float(force_seq[i + 1])) * dx
+                )
+            w.compliant.radial_k_n_m = float(w.compliant.slopes[0]) if n_k >= 2 else float(mat.get("radial_k_n_m", 120000.0))
+        else:
+            w.compliant.radial_k_n_m = float(mat.get("radial_k_n_m", 120000.0))
+            w.compliant.has_tabulated_radial = 0
+            w.compliant.use_tabulated = 0
+        w.compliant.loss_factor = float(mat.get("loss_factor", 0.05))
+        w.compliant.hysteresis_rate_eps_mps = float(mat.get("hysteresis_rate_eps_mps", 0.01))
+        vlr = _as_seq(mat.get("valid_load_range_n"))
+        if vlr is not None and len(vlr) == 2:
+            w.compliant.valid_load_min_n = float(vlr[0])
+            w.compliant.valid_load_max_n = float(vlr[1])
+
+        dmat = dist_cfg.get(f"{side_keys[s]}_material") if isinstance(dist_cfg.get(f"{side_keys[s]}_material"), dict) else dist_cfg
+        dens = dmat.get("density") if isinstance(dmat.get("density"), dict) else {}
+        knots_seq = _as_seq(dens.get("knots_m")) or [0.0, 0.025]
+        stiff_seq = _as_seq(dens.get("stiffness_n_m")) or [1.2e6, 1.2e6]
+        kcnt = min(len(knots_seq), len(stiff_seq), 8)
+        w.distributed_density.knot_count = kcnt
+        for i in range(kcnt):
+            w.distributed_density.knots_m[i] = float(knots_seq[i])
+            w.distributed_density.stiffness_n_m[i] = float(stiff_seq[i])
+        w.distributed_density.damping_ns_m = float(dens.get("damping_ns_m", 0.0))
+        w.distributed_density.loss_factor = float(dens.get("loss_factor", 0.05))
+        w.distributed_density.hysteresis_rate_eps_mps = float(dens.get("hysteresis_rate_eps_mps", 0.01))
+        vdr = _as_seq(dmat.get("valid_deflection_range_m"))
+        if vdr is not None and len(vdr) == 2:
+            w.valid_deflection_min_m = float(vdr[0])
+            w.valid_deflection_max_m = float(vdr[1])
+        else:
+            w.valid_deflection_max_m = float(w.radius_m * 0.45)
+
+        if be_name == "distributed_2d_reference":
+            scnt = max(1, min(int(model.station_count), 128))
+            w.station_weight = float(1.0 / float(scnt))
+            for st in range(scnt):
+                ang = (2.0 * math.pi * float(st)) / float(scnt)
+                w.local_xyz[3 * st + 0] = float(w.radius_m * math.cos(ang))
+                w.local_xyz[3 * st + 1] = 0.0
+                w.local_xyz[3 * st + 2] = float(w.radius_m * math.sin(ang))
+
+        p_side = pneu_cfg.get(side_keys[s]) if isinstance(pneu_cfg.get(side_keys[s]), dict) else {}
+        _fill_pneumatic_material(
+            w.pneumatic,
+            p_side,
+            pneu_defaults[s],
+            int(model.station_count) if be_name == "pneumatic" else 64,
+            discretised_brush,
+            half_angle_deg=float(pneu_cfg.get("half_angle_deg", 75.0)),
+        )
+
+    # Surface map (Stage A)
+    ts = manifest.get("track_spec") if isinstance(manifest, dict) and isinstance(manifest.get("track_spec"), dict) else {}
+    def_surf = surface_label if surface_label is not None else ts.get("surface", pneu_cfg.get("surface", "hardpack"))
+    _fill_surface_spec_pod(model.surface_map.default_surface, def_surf)
+    secs = _as_seq(ts.get("surface_sections")) or _as_seq(ts.get("sections")) or []
+    sec_cnt = min(len(secs), 16)
+    model.surface_map.section_count = sec_cnt
+    for i in range(sec_cnt):
+        sec = secs[i]
+        if not isinstance(sec, dict):
+            continue
+        model.surface_map.sections[i].start_m = float(sec.get("start_m", 0.0))
+        model.surface_map.sections[i].end_m = float(sec.get("end_m", 0.0))
+        model.surface_map.sections[i].blend_m = float(sec.get("blend_m", 0.0))
+        _fill_surface_spec_pod(
+            model.surface_map.sections[i].surface,
+            sec.get("surface", sec.get("label", def_surf)),
+        )
+    model.surface_map.has_surface_map = 1 if (be_name == "pneumatic" or sec_cnt > 0 or surface_label is not None) else 0
+
+    meta = {
+        "backend": be_name,
+        "station_count": int(model.station_count),
+        "discretised_brush": bool(discretised_brush),
+        "significant_delta_m": float(tires.get("significant_delta_m", 0.002)),
+        "significance_fraction": float(tires.get("significance_fraction", 0.25)),
+        "distinct_normal_cosine": float(model.distinct_normal_cosine),
+    }
+    return model, meta
+
+
+def build_terrain_buffers_from_mjmodel(
+    m_mj: Any,
+    model_struct: GpuTyreModelStruct,
+    significant_delta_m: float = 0.002,
+    significance_fraction: float = 0.25,
+) -> tuple[bytes, bytes, np.ndarray, np.ndarray]:
+    """Build ``(tyre_model_bytes, terrain_desc_bytes, terrain_f32, terrain_i32)`` from ``m_mj`` in Python."""
+    import mujoco
+
+    terrain_gid = int(mujoco.mj_name2id(m_mj, mujoco.mjtObj.mjOBJ_GEOM, "terrain"))
+    if terrain_gid < 0:
+        raise ValueError("MuJoCo model has no 'terrain' geom")
+
+    gtype = int(m_mj.geom_type[terrain_gid])
+    gpos = np.asarray(m_mj.geom_pos[terrain_gid], dtype=np.float64)
+    rmat = np.asarray(m_mj.geom_mat[terrain_gid], dtype=np.float64) if hasattr(m_mj, "geom_mat") else np.eye(3)
+
+    if gtype == int(mujoco.mjtGeom.mjGEOM_HFIELD):
+        hf_id = int(m_mj.geom_dataid[terrain_gid])
+        nrow = int(m_mj.hfield_nrow[hf_id])
+        ncol = int(m_mj.hfield_ncol[hf_id])
+        adr = int(m_mj.hfield_adr[hf_id])
+        size = np.asarray(m_mj.hfield_size[hf_id], dtype=np.float64)  # (hx, hy, z_top, z_base)
+        raw = np.asarray(m_mj.hfield_data[adr : adr + nrow * ncol], dtype=np.float64).reshape(nrow, ncol)
+        row_idx = nrow // 2
+        z_samples = gpos[2] + raw[row_idx, :] * size[2]
+        x_local = np.linspace(-size[0], size[0], ncol, dtype=np.float64)
+        px = gpos[0] + x_local
+        pz = z_samples
+        step = float(px[1] - px[0]) if ncol >= 2 else 0.0
+        if step > 0.0 and np.allclose(rmat.reshape(3, 3), np.eye(3), atol=1e-9):
+            model_struct.road_x0_m = float(px[0])
+            model_struct.road_dx_m = float(step)
+            model_struct.road_is_uniform_grid = 1
+        else:
+            model_struct.road_x0_m = 0.0
+            model_struct.road_dx_m = 0.0
+            model_struct.road_is_uniform_grid = 0
+    else:
+        # Flat or tilted plane geom
+        px = np.array([-1000.0, 5000.0], dtype=np.float64)
+        pz = np.array([float(gpos[2]), float(gpos[2])], dtype=np.float64)
+        model_struct.road_x0_m = float(px[0])
+        model_struct.road_dx_m = float(px[1] - px[0])
+        model_struct.road_is_uniform_grid = 1
+
+    px32 = np.asarray(px, dtype=np.float32)
+    pz32 = np.asarray(pz, dtype=np.float32)
+    n_pts = int(px32.size)
+    n_seg = max(0, n_pts - 1)
+    dx = px32[1:] - px32[:-1]
+    dz = pz32[1:] - pz32[:-1]
+    len_sq = dx * dx + dz * dz
+
+    # Signed profile (closed CCW polygon below road for non-pneumatic)
+    z_bot = float(np.min(pz32) - 5.0)
+    sp_x = np.concatenate([px32, np.array([px32[-1], px32[0]], dtype=np.float32)])
+    sp_z = np.concatenate([pz32, np.array([z_bot, z_bot], dtype=np.float32)])
+    n_sp = int(sp_x.size)
+    sp_x_next = np.roll(sp_x, -1)
+    sp_z_next = np.roll(sp_z, -1)
+    sp_ex = sp_x_next - sp_x
+    sp_ez = sp_z_next - sp_z
+    sp_len2 = sp_ex * sp_ex + sp_ez * sp_ez
+    sp_len = np.sqrt(np.maximum(sp_len2, 1e-12))
+    sp_nx = -sp_ez / sp_len
+    sp_nz = sp_ex / sp_len
+
+    f32_parts = [px32, pz32, dx, dz, len_sq, sp_x, sp_z, sp_ex, sp_ez, sp_len2, sp_nx, sp_nz]
+    offsets: list[int] = []
+    cur = 0
+    for part in f32_parts:
+        offsets.append(cur)
+        cur += int(part.size)
+    f32_arr = np.ascontiguousarray(np.concatenate(f32_parts), dtype=np.float32)
+
+    i32_arr = np.zeros(max(1, 5 * max(1, n_seg)), dtype=np.int32)
+    desc = GpuTerrainTableDescStruct()
+    desc.polyline_vertex_count = n_pts
+    desc.px_offset = offsets[0]
+    desc.pz_offset = offsets[1]
+    desc.seg_x_offset = offsets[2]
+    desc.seg_z_offset = offsets[3]
+    desc.seg_len_sq_offset = offsets[4]
+    desc.height_changes_offset = 0
+    desc.left_x_offset = 0
+    desc.left_z_offset = 0
+    desc.right_x_offset = 0
+    desc.right_z_offset = 0
+    desc.maximum_z = float(np.max(pz32))
+    desc.significant_delta_m = float(significant_delta_m)
+    desc.significance_fraction = float(significance_fraction)
+    desc.normal_cosine = float(model_struct.distinct_normal_cosine)
+    desc.signed_vertex_count = n_sp
+    desc.sp_x_offset = offsets[5]
+    desc.sp_z_offset = offsets[6]
+    desc.sp_edge_x_offset = offsets[7]
+    desc.sp_edge_z_offset = offsets[8]
+    desc.sp_length2_offset = offsets[9]
+    desc.sp_normal_x_offset = offsets[10]
+    desc.sp_normal_z_offset = offsets[11]
+    desc.f32_count = int(f32_arr.size)
+    desc.i32_count = int(i32_arr.size)
+
+    return bytes(model_struct), bytes(desc), f32_arr, i32_arr
+
+
 def configure_host_spindle_builder(lib: ctypes.CDLL, symbol_name: str) -> Any:
     """Bind ``bike_{cpu,metal}_build_spindle_params`` argtypes and restype."""
     fn = getattr(lib, symbol_name)
@@ -1923,11 +3534,50 @@ def build_spindle_params_bytes(
     return buf.raw
 
 
+def unpack_sp3_energy_ledger(raw_bytes: bytes | bytearray | memoryview) -> dict[str, Any]:
+    """Decode ``GpuEnergyLedger`` fields from one ``GpuSp3WorldState`` struct."""
+    st = GpuSp3WorldStateStruct.from_buffer_copy(raw_bytes)
+    el = st.energy_ledger
+    return {
+        "E_mech_initial": float(el.E_mech_initial),
+        "E_mech": float(el.E_mech),
+        "E_scale_baseline": float(el.E_scale_baseline),
+        "E_scale_min": float(el.E_scale_min),
+        "W_muscle_signed": float(el.W_muscle_signed),
+        "W_muscle_pos": float(el.W_muscle_pos),
+        "W_motor_signed": float(el.W_motor_signed),
+        "W_motor_pos": float(el.W_motor_pos),
+        "W_cruise_signed": float(el.W_cruise_signed),
+        "W_cruise_pos": float(el.W_cruise_pos),
+        "W_external_signed": float(el.W_external_signed),
+        "D_tyre_radial": float(el.D_tyre_radial),
+        "D_tyre_brush_roll": float(el.D_tyre_brush_roll),
+        "D_suspension": float(el.D_suspension),
+        "D_resistance": float(el.D_resistance),
+        "D_brake": float(el.D_brake),
+        "D_rider_end_stop": float(el.D_rider_end_stop),
+        "W_constraint_signed": float(el.W_constraint_signed),
+        "W_constraint_abs": float(el.W_constraint_abs),
+        "W_closure_signed": float(el.W_closure_signed),
+        "W_closure_abs": float(el.W_closure_abs),
+        "source_j": float(el.source_j),
+        "source_positive_j": float(el.source_positive_j),
+        "delta_E_mech": float(el.delta_E_mech),
+        "net_supply": float(el.net_supply),
+        "residual_j": float(el.residual_j),
+        "energy_scale_j": float(el.energy_scale_j),
+        "rel_residual": float(el.rel_residual),
+        "max_rel_residual": float(el.max_rel_residual),
+        "step_count": int(el.step_count),
+        "initialized": int(el.initialized),
+    }
+
+
 def unpack_sp4_world_metrics(raw_bytes: bytes | bytearray | memoryview) -> dict[str, Any]:
     """Decode the scalar metrics tail from one ``GpuSp4WorldState`` struct."""
     import struct
 
-    tail_fmt = "<13fi4B"
+    tail_fmt = "<16f3i8B"
     tail_size = struct.calcsize(tail_fmt)
     if len(raw_bytes) < tail_size:
         raise ValueError(f"Expected >= {tail_size} bytes for GpuSp4WorldState, got {len(raw_bytes)}")
@@ -1949,11 +3599,18 @@ def unpack_sp4_world_metrics(raw_bytes: bytes | bytearray | memoryview) -> dict[
         "distance_m": float(vals[10] - vals[9]),
         "end_speed_mps": float(vals[11]),
         "max_speed_mps": float(vals[12]),
-        "sample_count": int(vals[13]),
-        "has_posture_min_lean": int(vals[14]),
-        "has_start_root_x": int(vals[15]),
-        "active_control_tick": int(vals[16]),
-        "last_cmd_enabled": int(vals[17]),
+        "energy_residual_j": float(vals[13]),
+        "energy_scale_j": float(vals[14]),
+        "max_rel_energy_residual": float(vals[15]),
+        "sample_count": int(vals[16]),
+        "max_m0_passes_used": int(vals[17]),
+        "current_m0_passes": int(vals[18]),
+        "has_posture_min_lean": int(vals[19]),
+        "has_start_root_x": int(vals[20]),
+        "active_control_tick": int(vals[21]),
+        "last_cmd_enabled": int(vals[22]),
+        "energy_contract_ok": int(vals[23]),
+        "solver_mode": int(vals[24]),
     }
 
 
@@ -1965,5 +3622,10 @@ if __name__ == "__main__":
         "sizeof_model_indices": int(so_lib.bike_gpu_sizeof_model_indices()),
         "sizeof_tyre_model": int(so_lib.bike_gpu_sizeof_tyre_model()),
         "sizeof_terrain_desc": int(so_lib.bike_gpu_sizeof_terrain_desc()),
+        "sizeof_sp3_config": int(so_lib.bike_gpu_sizeof_sp3_config()),
+        "sizeof_sp3_world_state": int(so_lib.bike_gpu_sizeof_sp3_world_state()),
+        "sizeof_sp4_world_state": int(so_lib.bike_gpu_sizeof_sp4_world_state()),
+        "sizeof_pneumatic_scratch": int(so_lib.bike_gpu_sizeof_pneumatic_scratch()),
+        "sizeof_spindle_m0_scratch": int(so_lib.bike_gpu_sizeof_spindle_m0_scratch()),
     }
     print(json.dumps(info, indent=2))

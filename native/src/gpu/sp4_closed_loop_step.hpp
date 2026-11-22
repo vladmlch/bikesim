@@ -53,6 +53,9 @@ struct GpuSp4WorldState {
 };
 
 static_assert(
+    sizeof(GpuSp4WorldState) == 804,
+    "GpuSp4WorldState ABI size");
+static_assert(
     sizeof(GpuSp4WorldState) <= 2560,
     "GpuSp4WorldState should stay compact (<= 2560 bytes per world)");
 
@@ -172,7 +175,11 @@ template <
     class XanchorPtr,
     class XaxisPtr,
     class TendonRangePtr,
-    class FrictionLossPtr>
+    class FrictionLossPtr,
+    class PneumaticStatePtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *,
+    class PneumaticScratchPtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>
 BIKE_HD bike::physics_core::Status gpu_sp4_prepare_pre_solve_and_cmd(
     int w,
     float dt_s,
@@ -199,7 +206,11 @@ BIKE_HD bike::physics_core::Status gpu_sp4_prepare_pre_solve_and_cmd(
     TendonRangePtr tendon_range_w,
     FrictionLossPtr dof_frictionloss_w,
     BIKE_THREAD bike::physics_core::SpindleCommand<float> &out_cmd,
-    BIKE_THREAD bool &out_frozen
+    BIKE_THREAD bool &out_frozen,
+    PneumaticStatePtr pneum_wheels_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *>(nullptr),
+    PneumaticScratchPtr pneum_scratch_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>(nullptr)
 ) noexcept {
     out_cmd = bike::physics_core::SpindleCommand<float>{};
     out_frozen = (sp3_st->frozen != 0 && sp3_cfg->freeze_on_crash != 0);
@@ -298,7 +309,9 @@ BIKE_HD bike::physics_core::Status gpu_sp4_prepare_pre_solve_and_cmd(
         false,
         control_tick,
         &intent_res,
-        &pedal_out);
+        &pedal_out,
+        pneum_wheels_w,
+        pneum_scratch_w);
     if (sp3_st_code != bike::physics_core::Status::ok) {
         return sp3_st_code;
     }
@@ -346,7 +359,11 @@ template <
     class PtrM,
     class TendonRangePtr,
     class FrictionLossPtr,
-    class PtrWarmstart>
+    class PtrWarmstart,
+    class PneumaticStatePtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *,
+    class PneumaticScratchPtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>
 BIKE_HD bike::physics_core::Status gpu_sp4_pre_solve_and_pass0_world(
     int w,
     float dt_s,
@@ -381,7 +398,11 @@ BIKE_HD bike::physics_core::Status gpu_sp4_pre_solve_and_pass0_world(
     int ntendon,
     TendonRangePtr tendon_range_w,
     FrictionLossPtr dof_frictionloss_w,
-    PtrWarmstart qacc_warmstart_w
+    PtrWarmstart qacc_warmstart_w,
+    PneumaticStatePtr pneum_wheels_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *>(nullptr),
+    PneumaticScratchPtr pneum_scratch_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>(nullptr)
 ) noexcept {
     if (w < 0 || sp3_cfg == nullptr || spindle_params == nullptr ||
         sp3_st == nullptr || sp4_st == nullptr ||
@@ -402,7 +423,8 @@ BIKE_HD bike::physics_core::Status gpu_sp4_pre_solve_and_pass0_world(
         sp3_cfg, spindle_params, sp3_st, sp4_st,
         compliant_wheels_w, dist_wheels_w, qpos_w, qvel_w,
         xpos_w, xmat_w, xanchor_w, xaxis_w, qfrc_w, ctrl_w,
-        ntendon, tendon_range_w, dof_frictionloss_w, cmd, frozen);
+        ntendon, tendon_range_w, dof_frictionloss_w, cmd, frozen,
+        pneum_wheels_w, pneum_scratch_w);
     if (prep_st != bike::physics_core::Status::ok) {
         return prep_st;
     }
@@ -644,7 +666,11 @@ template <
     class PtrM,
     class TendonRangePtr,
     class FrictionLossPtr,
-    class PtrWarmstart>
+    class PtrWarmstart,
+    class PneumaticStatePtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *,
+    class PneumaticScratchPtr =
+        BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>
 BIKE_HD bike::physics_core::Status gpu_sp4_m0_pre_solve_and_begin_world(
     int w,
     float dt_s,
@@ -682,7 +708,11 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_pre_solve_and_begin_world(
     FrictionLossPtr dof_frictionloss_w,
     PtrWarmstart qacc_warmstart_w,
     BIKE_THREAD bike::physics_core::u8 &out_needs_solve,
-    BIKE_THREAD bike::physics_core::u8 &out_done
+    BIKE_THREAD bike::physics_core::u8 &out_done,
+    PneumaticStatePtr pneum_wheels_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticWheelState<float> *>(nullptr),
+    PneumaticScratchPtr pneum_scratch_w =
+        static_cast<BIKE_DEVICE bike::physics_core::GpuPneumaticStepScratch<float> *>(nullptr)
 ) noexcept {
     out_needs_solve = 0;
     out_done = 1;
@@ -706,7 +736,8 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_pre_solve_and_begin_world(
         sp3_cfg, spindle_params, sp3_st, sp4_st,
         compliant_wheels_w, dist_wheels_w, qpos_w, qvel_w,
         xpos_w, xmat_w, xanchor_w, xaxis_w, qfrc_w, ctrl_w,
-        ntendon, tendon_range_w, dof_frictionloss_w, cmd, frozen);
+        ntendon, tendon_range_w, dof_frictionloss_w, cmd, frozen,
+        pneum_wheels_w, pneum_scratch_w);
     if (prep_st != bike::physics_core::Status::ok) {
         return prep_st;
     }
@@ -1014,6 +1045,449 @@ BIKE_HD bike::physics_core::Status gpu_sp4_post_solve_world(
             ? 1u
             : 0u;
     sp4_st->sample_count += 1;
+    return bike::physics_core::Status::ok;
+}
+
+#if defined(__METAL_VERSION__)
+#define BIKE_SP4_NOINLINE_HD inline
+#elif defined(__CUDACC__)
+#define BIKE_SP4_NOINLINE_HD __host__ __device__ __noinline__
+#elif defined(__clang__) || defined(__GNUC__)
+#define BIKE_SP4_NOINLINE_HD __attribute__((noinline)) inline
+#else
+#define BIKE_SP4_NOINLINE_HD inline
+#endif
+
+namespace detail {
+
+template <class XposPtr, class WorldStatePtr, class QposPtr>
+BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_compliant_stored_energy(
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    float tire_stiff_scale,
+    WorldStatePtr world_states_w,
+    XposPtr xpos_w,
+    QposPtr /*qpos_w*/,
+    BIKE_THREAD bike::physics_core::ElasticEnergyBreakdown<float> &out_elastic,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    if (terrain_desc.polyline_vertex_count < 2 || terrain_f32 == nullptr) {
+        return bike::physics_core::Status::ok;
+    }
+    const bike::physics_core::PolylineView<float> pl =
+        bike::physics_core::make_polyline_view(terrain_desc, terrain_f32, nullptr);
+    const int count = pl.num_vertices - 1;
+    if (count <= 0) {
+        return bike::physics_core::Status::ok;
+    }
+    const float scale = gpu_max(0.0f, tire_stiff_scale);
+    for (int side = 0; side < 2; ++side) {
+        const int bid = tyre_model->wheels[side].chain.wheel_body_id;
+        if (bid < 0 || bid >= idx.nbody) {
+            err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::out_of_bounds;
+        }
+        const float cx = xpos_w[3 * bid + 0];
+        const float cz = xpos_w[3 * bid + 2];
+        const float radius = tyre_model->wheels[side].radius_m;
+        if (!bike::physics_core::GpuToolkit::isfinite(cx) ||
+            !bike::physics_core::GpuToolkit::isfinite(cz)) {
+            err = bike::physics_core::ErrCode::nonfinite_center;
+            return bike::physics_core::Status::invalid_argument;
+        }
+        float delta = 0.0f;
+        if (pl.px[0] <= cx && cx <= pl.px[count]) {
+            const int lo = bike::physics_core::terrain_scanner_detail::max_i32(
+                0,
+                bike::physics_core::terrain_scanner_detail::search_right<float>(
+                    pl.px, pl.num_vertices, cx - radius) - 2);
+            const int hi = bike::physics_core::terrain_scanner_detail::min_i32(
+                count,
+                bike::physics_core::terrain_scanner_detail::search_right<float>(
+                    pl.px, pl.num_vertices, cx + radius) + 1);
+            const bike::physics_core::terrain_scanner_detail::WindowScanSummary<float> sum =
+                bike::physics_core::terrain_scanner_detail::scan_window_o1<
+                    float, bike::physics_core::GpuToolkit>(
+                    pl, lo, hi, cx, cz,
+                    world_states_w->compliant_wheels[side].has_segment != 0,
+                    world_states_w->compliant_wheels[side].segment);
+            if (sum.nonempty) {
+                float winner_dist = sum.winner_dist;
+                if (sum.has_prev && sum.prev_keep &&
+                    gpu_abs(sum.prev_dist - winner_dist) <= 1.0e-12f) {
+                    winner_dist = sum.prev_dist;
+                }
+                delta = radius - winner_dist;
+            }
+        }
+        const float pen = gpu_max(0.0f, delta);
+        if (pen > 0.0f) {
+            if (tyre_model->wheels[side].compliant.use_tabulated != 0) {
+                BIKE_DEVICE const bike::physics_core::CompliantMaterialView<float> *c =
+                    &tyre_model->wheels[side].compliant;
+                float unused_f = 0.0f;
+                float elastic_e = 0.0f;
+                const bike::physics_core::Status st =
+                    bike::physics_core::tabulated_radial_elastic_arrays<
+                        float, bike::physics_core::GpuToolkit>(
+                        c->knot_count, c->deflection_m, c->force_n, c->slopes, c->integral,
+                        pen, unused_f, elastic_e, err);
+                if (st != bike::physics_core::Status::ok) {
+                    return st;
+                }
+                out_elastic.u_tyre_radial += elastic_e * scale;
+            } else {
+                const float kr = tyre_model->wheels[side].compliant.radial_k_n_m * scale;
+                out_elastic.u_tyre_radial += 0.5f * kr * pen * pen;
+            }
+        }
+        const float xi = world_states_w->compliant_wheels[side].xi;
+        const float tk = tyre_model->wheels[side].tangent_k_n_m * scale;
+        out_elastic.u_tyre_shear += 0.5f * tk * xi * xi;
+    }
+    return bike::physics_core::Status::ok;
+}
+
+template <class XposPtr, class WorldStatePtr, class QposPtr>
+BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_distributed_stored_energy(
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    float tire_stiff_scale,
+    WorldStatePtr world_states_w,
+    XposPtr xpos_w,
+    QposPtr qpos_w,
+    BIKE_THREAD bike::physics_core::ElasticEnergyBreakdown<float> &out_elastic,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    if (terrain_desc.signed_vertex_count < 2 || terrain_f32 == nullptr) {
+        return bike::physics_core::Status::ok;
+    }
+    const bike::physics_core::SignedProfileView<float> sp =
+        bike::physics_core::make_signed_profile_view(terrain_desc, terrain_f32);
+    const float scale = gpu_max(0.0f, tire_stiff_scale);
+    const int scnt = (tyre_model->station_count < bike::physics_core::kMaxGpuTyreStations)
+        ? tyre_model->station_count
+        : bike::physics_core::kMaxGpuTyreStations;
+    const float pitch = (idx.root_pitch_qpos >= 0 && idx.root_pitch_qpos < idx.nq)
+        ? qpos_w[idx.root_pitch_qpos]
+        : 0.0f;
+
+    for (int side = 0; side < 2; ++side) {
+        const int bid = tyre_model->wheels[side].chain.wheel_body_id;
+        if (bid < 0 || bid >= idx.nbody) {
+            err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::out_of_bounds;
+        }
+        const float cx = xpos_w[3 * bid + 0];
+        const float cz = xpos_w[3 * bid + 2];
+        const int spin_adr = (side == 0) ? idx.front_wheel_spin_qpos : idx.rear_wheel_spin_qpos;
+        const float spin = (spin_adr >= 0 && spin_adr < idx.nq) ? qpos_w[spin_adr] : 0.0f;
+        const float ang = pitch + spin;
+        const float ca = gpu_cos(ang);
+        const float sa = gpu_sin(ang);
+
+        bike::physics_core::HingeDensityView<float> density =
+            tyre_model->wheels[side].distributed_density;
+        for (int k = 0; k < density.knot_count && k < bike::physics_core::kMaxHingeKnots; ++k) {
+            density.stiffness_n_m[k] *= scale;
+        }
+        const float w_sid = tyre_model->wheels[side].station_weight;
+        const float tk = tyre_model->wheels[side].tangent_k_n_m * scale;
+
+        for (int i = 0; i < scnt; ++i) {
+            const float lx = tyre_model->wheels[side].local_xyz[3 * i + 0];
+            const float lz = tyre_model->wheels[side].local_xyz[3 * i + 2];
+            const float wx = cx + (ca * lx + sa * lz);
+            const float wz = cz + (-sa * lx + ca * lz);
+            bike::physics_core::PointDistanceResult<float> qres{};
+            const bike::physics_core::Status qst =
+                bike::physics_core::signed_profile_query<float, bike::physics_core::GpuToolkit>(
+                    sp, wx, wz, qres, err);
+            if (qst != bike::physics_core::Status::ok) {
+                return qst;
+            }
+            const float pen = -qres.distance;
+            if (pen > 0.0f) {
+                float f_d = 0.0f;
+                float e_d = 0.0f;
+                const bike::physics_core::Status dst =
+                    bike::physics_core::station_density<float, bike::physics_core::GpuToolkit>(
+                        pen, density, f_d, e_d, err);
+                if (dst != bike::physics_core::Status::ok) {
+                    return dst;
+                }
+                out_elastic.u_tyre_radial += w_sid * e_d;
+            }
+            if (world_states_w->distributed_wheels[side][i].active != 0) {
+                const float xi = world_states_w->distributed_wheels[side][i].xi;
+                out_elastic.u_tyre_shear += 0.5f * tk * w_sid * xi * xi;
+            }
+        }
+    }
+    return bike::physics_core::Status::ok;
+}
+
+template <class XposPtr, class WorldStatePtr, class PneumScratchPtr>
+BIKE_SP4_NOINLINE_HD bike::physics_core::Status gpu_sp4_eval_pneumatic_stored_energy(
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    WorldStatePtr world_states_w,
+    PneumScratchPtr pneum_scratch_w,
+    XposPtr xpos_w,
+    BIKE_THREAD bike::physics_core::ElasticEnergyBreakdown<float> &out_elastic,
+    BIKE_THREAD bike::physics_core::ErrCode &err
+) noexcept {
+    err = bike::physics_core::ErrCode::none;
+    if (pneum_scratch_w == nullptr || terrain_desc.polyline_vertex_count < 2 ||
+        terrain_f32 == nullptr) {
+        return bike::physics_core::Status::ok;
+    }
+    BIKE_DEVICE const float *road_px = terrain_f32 + terrain_desc.px_offset;
+    BIKE_DEVICE const float *road_pz = terrain_f32 + terrain_desc.pz_offset;
+    const bike::physics_core::i32 road_num_vertices = terrain_desc.polyline_vertex_count;
+    const bool uniform_grid = (tyre_model->road_is_uniform_grid != 0);
+
+    for (int side = 0; side < 2; ++side) {
+        BIKE_DEVICE const bike::physics_core::PneumaticMaterialView<float> *pv =
+            &tyre_model->wheels[side].pneumatic;
+        bike::physics_core::GpuPneumaticSpecRef spec{};
+        spec.tyre.outer_radius_mm = pv->outer_radius_mm;
+        spec.tyre.rim_radius_mm = pv->rim_radius_mm;
+        spec.tyre.section_height_mm = pv->section_height_mm;
+        spec.tyre.pressure_bar = pv->pressure_bar;
+        spec.tyre.crr_reference = pv->crr_reference;
+        spec.tyre.casing_width_mm = pv->casing_width_mm;
+        spec.tyre.compressed_casing_mm = pv->compressed_casing_mm;
+        spec.tyre.area_factor = pv->area_factor;
+        spec.tyre.carcass_stiffness_n_mm2 = pv->carcass_stiffness_n_mm2;
+        spec.tyre.contact_length_factor = pv->contact_length_factor;
+        spec.tyre.rate_stiffening = pv->rate_stiffening;
+        spec.tyre.rate_relaxation_s = pv->rate_relaxation_s;
+        spec.tyre.loss_factor = pv->loss_factor;
+        spec.tyre.hysteresis_rate_eps_mps = pv->hysteresis_rate_eps_mps;
+        spec.tyre.relaxation_length_mm = pv->relaxation_length_mm;
+        spec.tyre.rim_stiffness_n_mm2 = pv->rim_stiffness_n_mm2;
+        spec.tyre.tread_loss_crr = pv->tread_loss_crr;
+        spec.ring.n_rays = pv->n_rays;
+        spec.ring.half_angle_rad = pv->half_angle_rad;
+        spec.ring.dtheta_rad = pv->dtheta_rad;
+        spec.ring.theta_rad = pv->theta_rad;
+        spec.ring.ux = pv->ux;
+        spec.ring.uz = pv->uz;
+        spec.chain = tyre_model->wheels[side].chain;
+        spec.wheel_body_id = spec.chain.wheel_body_id;
+        spec.nv = tyre_model->nv;
+        spec.njnt = tyre_model->njnt;
+        spec.discretised_brush = pv->discretised_brush;
+
+        const int bid = spec.wheel_body_id;
+        if (bid < 0 || bid >= idx.nbody) {
+            err = bike::physics_core::ErrCode::out_of_bounds_chain;
+            return bike::physics_core::Status::out_of_bounds;
+        }
+        const float hub_x = xpos_w[3 * bid + 0];
+        const float hub_z = xpos_w[3 * bid + 2];
+        const float outer_radius_m = spec.tyre.outer_radius_mm * 0.001f;
+        bike::physics_core::u8 cov = 0;
+        bike::physics_core::u8 air = 0;
+        if (uniform_grid) {
+            const bike::physics_core::Status st =
+                bike::physics_core::pneumatic_intersect_uniform_grid<
+                    float, bike::physics_core::GpuToolkit>(
+                    &spec.ring, hub_x, hub_z, outer_radius_m,
+                    tyre_model->road_x0_m, tyre_model->road_dx_m, road_num_vertices,
+                    road_px, road_pz,
+                    pneum_scratch_w->r_m, pneum_scratch_w->delta_m,
+                    pneum_scratch_w->road_x_m, pneum_scratch_w->road_z_m,
+                    cov, air, err);
+            if (st != bike::physics_core::Status::ok) {
+                return st;
+            }
+        } else {
+            const bike::physics_core::Status st =
+                bike::physics_core::pneumatic_intersect_polyline_arrays<
+                    float, bike::physics_core::GpuToolkit>(
+                    &spec.ring, hub_x, hub_z, outer_radius_m,
+                    road_px, road_pz, road_num_vertices,
+                    pneum_scratch_w->r_m, pneum_scratch_w->delta_m,
+                    pneum_scratch_w->road_x_m, pneum_scratch_w->road_z_m,
+                    cov, air, err);
+            if (st != bike::physics_core::Status::ok) {
+                return st;
+            }
+        }
+        float rad_j = 0.0f;
+        float max_j = 0.0f;
+        float rim_j = 0.0f;
+        bike::physics_core::pneumatic_compute_radial_energies<
+            float, bike::physics_core::GpuToolkit>(
+            spec.tyre, &spec.ring, &world_states_w->pneumatic_wheels[side],
+            pneum_scratch_w->delta_m, rad_j, max_j, rim_j);
+        out_elastic.u_tyre_radial += rad_j;
+        out_elastic.u_tyre_maxwell += max_j;
+        out_elastic.u_tyre_rim += rim_j;
+    }
+    return bike::physics_core::Status::ok;
+}
+
+} // namespace detail
+
+template <
+    class Sp3CfgPtr,
+    class SpindleParamsPtr,
+    class Sp3StatePtr,
+    class Sp4StatePtr,
+    class WorldStatePtr,
+    class PneumScratchPtr,
+    class PtrRowAdr,
+    class PtrRowNnz,
+    class PtrColInd,
+    class PtrM,
+    class QposPtr,
+    class QvelPtr,
+    class XposPtr,
+    class CtrlPtr,
+    class PtrMass,
+    class PtrXipos,
+    class PtrGrav,
+    class PtrType = const bike::physics_core::i32 *,
+    class PtrJ = const float *,
+    class PtrForce = const float *>
+BIKE_HD bike::physics_core::Status gpu_sp4_energy_post_step_world(
+    float dt_s,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    Sp3CfgPtr sp3_cfg,
+    SpindleParamsPtr spindle_params,
+    Sp3StatePtr sp3_st,
+    Sp4StatePtr sp4_st,
+    WorldStatePtr world_states_w,
+    PneumScratchPtr pneum_scratch_w,
+    int qM_row_stride,
+    PtrRowAdr M_rowadr,
+    PtrRowNnz M_rownnz,
+    PtrColInd M_colind,
+    PtrM M,
+    QposPtr qpos_w,
+    QvelPtr qvel_w,
+    XposPtr xpos_w,
+    CtrlPtr ctrl_w,
+    PtrMass body_mass,
+    PtrXipos xipos_or_com_w,
+    PtrGrav gravity,
+    int nefc_w = 0,
+    int efc_J_row_stride = 0,
+    PtrType efc_type_w = static_cast<const bike::physics_core::i32 *>(nullptr),
+    PtrJ efc_J_w = static_cast<const float *>(nullptr),
+    PtrForce efc_force_w = static_cast<const float *>(nullptr)
+) noexcept {
+    if (sp3_cfg == nullptr || spindle_params == nullptr ||
+        sp3_st == nullptr || sp4_st == nullptr || !gpu_validate_model_indices(idx) ||
+        qpos_w == nullptr || qvel_w == nullptr || M == nullptr ||
+        body_mass == nullptr || xipos_or_com_w == nullptr || gravity == nullptr) {
+        return bike::physics_core::Status::invalid_argument;
+    }
+    if (sp3_cfg->track_energy_ledger == 0) {
+        return bike::physics_core::Status::ok;
+    }
+    if (sp3_st->frozen != 0 && sp3_cfg->freeze_on_crash != 0) {
+        return bike::physics_core::Status::ok;
+    }
+
+    bike::physics_core::ElasticEnergyBreakdown<float> extra_elastic{};
+    bike::physics_core::ErrCode err = bike::physics_core::ErrCode::none;
+    if (tyre_model != nullptr && world_states_w != nullptr && xpos_w != nullptr) {
+        bike::physics_core::Status tst = bike::physics_core::Status::ok;
+        if (tyre_model->backend == bike::physics_core::TyreBackendKind::compliant_2d) {
+            tst = detail::gpu_sp4_eval_compliant_stored_energy(
+                idx, tyre_model, terrain_desc, terrain_f32, sp3_cfg->tire_stiff_scale,
+                world_states_w, xpos_w, qpos_w, extra_elastic, err);
+        } else if (tyre_model->backend ==
+                   bike::physics_core::TyreBackendKind::distributed_2d_reference) {
+            tst = detail::gpu_sp4_eval_distributed_stored_energy(
+                idx, tyre_model, terrain_desc, terrain_f32, sp3_cfg->tire_stiff_scale,
+                world_states_w, xpos_w, qpos_w, extra_elastic, err);
+        } else if (tyre_model->backend == bike::physics_core::TyreBackendKind::pneumatic) {
+            tst = detail::gpu_sp4_eval_pneumatic_stored_energy(
+                idx, tyre_model, terrain_desc, terrain_f32,
+                world_states_w, pneum_scratch_w, xpos_w, extra_elastic, err);
+        }
+        if (tst != bike::physics_core::Status::ok) {
+            return tst;
+        }
+    }
+    extra_elastic.u_closures = 0.0f;
+
+    float w_muscle_signed_j = 0.0f;
+    float w_muscle_pos_j = 0.0f;
+    if (sp3_cfg->apply_direct_crank_torque != 0) {
+        const float crank_omega =
+            (idx.crank_spin_dof >= 0 && idx.crank_spin_dof < idx.nv)
+                ? qvel_w[idx.crank_spin_dof]
+                : 0.0f;
+        const float p_c = sp3_st->last_commanded_crank_torque_nm * crank_omega * dt_s;
+        w_muscle_signed_j = p_c;
+        w_muscle_pos_j = gpu_max(0.0f, p_c);
+    } else if (ctrl_w != nullptr) {
+        for (int j = 0; j < bike::physics_core::kNumSpindleJoints; ++j) {
+            const int aid = spindle_params->joint_actuator_id[j];
+            const int dof = spindle_params->joint_dof_adr[j];
+            if (aid >= 0 && aid < idx.nu && dof >= 0 && dof < idx.nv) {
+                const float p_j = ctrl_w[aid] * qvel_w[dof] * dt_s;
+                w_muscle_signed_j += p_j;
+                w_muscle_pos_j += gpu_max(0.0f, p_j);
+            }
+        }
+    }
+
+    const bike::physics_core::Status led_st = gpu_sp3_step_energy_ledger_world(
+        dt_s,
+        idx,
+        sp3_cfg,
+        sp3_st,
+        M_rowadr,
+        M_rownnz,
+        M_colind,
+        M,
+        qpos_w,
+        qvel_w,
+        body_mass,
+        xipos_or_com_w,
+        gravity,
+        w_muscle_signed_j,
+        w_muscle_pos_j,
+        0.0f,
+        extra_elastic,
+        nefc_w,
+        efc_J_row_stride,
+        efc_type_w,
+        efc_J_w,
+        efc_force_w,
+        0.0f,
+        qM_row_stride);
+    if (led_st != bike::physics_core::Status::ok) {
+        return led_st;
+    }
+
+    sp4_st->energy_residual_j = sp3_st->energy_ledger.residual_j;
+    sp4_st->energy_scale_j = sp3_st->energy_ledger.energy_scale_j;
+    sp4_st->max_rel_energy_residual = sp3_st->energy_ledger.max_rel_residual;
+    sp4_st->energy_contract_ok =
+        (sp3_st->energy_ledger.initialized == 0 ||
+         bike::physics_core::energy_ledger_contract_ok<float, bike::physics_core::GpuToolkit>(
+             &sp3_st->energy_ledger, 0.05f, 1.0e-3f))
+            ? 1u
+            : 0u;
     return bike::physics_core::Status::ok;
 }
 

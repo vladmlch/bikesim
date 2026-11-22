@@ -65,73 +65,63 @@
 #include "../contact/laws.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_pneumatic_carcass.hpp"
 
 namespace biketyre {
+    namespace {
+        [[nodiscard]] bike::physics_core::PneumaticTyreSpecPod<double>
+        to_tyre_pod(const nativecfg::PneumaticTyreSpec &tyre) noexcept {
+            return {
+                .outer_radius_mm = tyre.outer_radius_mm,
+                .rim_radius_mm = tyre.rim_radius_mm,
+                .section_height_mm = tyre.section_height_mm,
+                .pressure_bar = tyre.pressure_bar,
+                .crr_reference = tyre.crr_reference,
+                .casing_width_mm = tyre.casing_width_mm,
+                .compressed_casing_mm = tyre.compressed_casing_mm,
+                .area_factor = tyre.area_factor,
+                .carcass_stiffness_n_mm2 = tyre.carcass_stiffness_n_mm2,
+                .contact_length_factor = tyre.contact_length_factor,
+                .rate_stiffening = tyre.rate_stiffening,
+                .rate_relaxation_s = tyre.rate_relaxation_s,
+                .loss_factor = tyre.loss_factor,
+                .hysteresis_rate_eps_mps = tyre.hysteresis_rate_eps_mps,
+                .relaxation_length_mm = tyre.relaxation_length_mm,
+                .rim_stiffness_n_mm2 = tyre.rim_stiffness_n_mm2,
+                .tread_loss_crr = tyre.tread_loss_crr
+            };
+        }
+    } // namespace
+
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) dimensional arguments follow the specified energy interface.
     double casing_chord_integral_m2(double deflection_m, double casing_radius_m) noexcept {
-        const double d = std::max(deflection_m, 0.0);
-        const double rho = casing_radius_m;
-        if (d == 0.0 || rho <= 0.0) return 0.0;
-        if (d >= rho)
-            return 0.5 * std::numbers::pi * rho * rho + 2.0 * rho * (d - rho);
-        const double psi = 4.0 * std::asin(std::sqrt(d / (2.0 * rho)));
-        const double psi2 = psi * psi;
-        const double integral = psi < 0.02
-                ? psi * psi2 / 6.0 * (1.0 - psi2 / 20.0 + psi2 * psi2 / 840.0)
-                : psi - std::sin(psi);
-        return 0.5 * rho * rho * integral;
+        return bike::physics_core::casing_chord_integral_m2<
+            double, bike::physics_core::CpuExactToolkit>(
+                deflection_m, casing_radius_m);
     }
 
     double ray_elastic_force_n(double deflection_m, const nativecfg::PneumaticTyreSpec &tyre,
                                double ds_m) noexcept {
-        const double d = std::max(deflection_m, 0.0);
-        const double rho = 0.5 * tyre.casing_width_mm * 0.001;
-        const double chord = d >= rho ? 2.0 * rho : 2.0 * std::sqrt(d * (2.0 * rho - d));
-        return (tyre.area_factor * tyre.pressure_pa() * chord +
-                tyre.carcass_stiffness_n_mm2 * 1e6 * d) * ds_m;
+        return bike::physics_core::ray_elastic_force_n<
+            double, bike::physics_core::CpuExactToolkit>(
+                deflection_m, to_tyre_pod(tyre), ds_m);
     }
 
     double ray_elastic_energy_j(double deflection_m, const nativecfg::PneumaticTyreSpec &tyre,
                                 double ds_m) noexcept {
-        const double d = std::max(deflection_m, 0.0);
-        const double rho = 0.5 * tyre.casing_width_mm * 0.001;
-        return (tyre.area_factor * tyre.pressure_pa() * casing_chord_integral_m2(d, rho) +
-                0.5 * tyre.carcass_stiffness_n_mm2 * 1e6 * d * d) * ds_m;
+        return bike::physics_core::ray_elastic_energy_j<
+            double, bike::physics_core::CpuExactToolkit>(
+                deflection_m, to_tyre_pod(tyre), ds_m);
     }
 
     // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) arguments follow the specified state-energy interface.
     double ray_maxwell_energy_j(double deflection_m, double elastic_prev_n, double maxwell_force_n,
                                 const nativecfg::PneumaticTyreSpec &tyre, double ds_m) noexcept {
-        const double gamma = tyre.rate_stiffening;
-        if (gamma <= 0.0) return 0.0;
-        const double d = std::max(deflection_m, 0.0);
-        const double xi = elastic_prev_n - maxwell_force_n / gamma;
-        double equilibrium = 0.0;
-        if (xi > 0.0) {
-            const double rho = 0.5 * tyre.casing_width_mm * 0.001;
-            const double cap = ray_elastic_force_n(rho, tyre, ds_m);
-            const double stiffness = tyre.carcass_stiffness_n_mm2 * 1e6 * ds_m;
-            if (xi >= cap) {
-                equilibrium = stiffness == 0.0 ? rho : rho + (xi - cap) / stiffness;
-            } else {
-                const double pressure = tyre.area_factor * tyre.pressure_pa();
-                double phi = std::asin(std::min(1.0, xi / (2.0 * pressure * rho * ds_m)));
-                for (int i = 0; i < 4; ++i) {
-                    const double sine = std::sin(phi);
-                    const double cosine = std::cos(phi);
-                    const double residual = (2.0 * pressure * rho * sine +
-                            tyre.carcass_stiffness_n_mm2 * 1e6 * rho * (1.0 - cosine)) * ds_m - xi;
-                    const double derivative = (2.0 * pressure * cosine +
-                            tyre.carcass_stiffness_n_mm2 * 1e6 * sine) * rho * ds_m;
-                    phi = std::clamp(phi - residual / derivative, 0.0, 0.5 * std::numbers::pi);
-                }
-                const double half_sin = std::sin(0.5 * phi);
-                equilibrium = 2.0 * rho * half_sin * half_sin;
-            }
-        }
-        return gamma * std::max(ray_elastic_energy_j(d, tyre, ds_m) +
-                (xi > 0.0 ? xi * equilibrium - ray_elastic_energy_j(equilibrium, tyre, ds_m) : 0.0) -
-                xi * d, 0.0);
+        return bike::physics_core::ray_maxwell_energy_j<
+            double, bike::physics_core::CpuExactToolkit>(
+                deflection_m, elastic_prev_n, maxwell_force_n,
+                to_tyre_pod(tyre), ds_m);
     }
 
     namespace {
@@ -149,48 +139,11 @@ namespace biketyre {
                 // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) oracle parameter order
                 double dt_s, double dtheta_rad,
                 std::span<double> out) noexcept {
-            const std::size_t n = delta.size();
-            if (n == 0)
-                // numpy 2.x broadcasts a length-0 row against the
-                // concatenate() length-1 tap without error: every
-                // branch yields an empty result row and never reads
-                // delta[0] / delta[n-1].
-                return;
-            if (omega_radps > 0.0) {
-                // next_ray = concatenate((delta[1:], [0.0])) — the
-                // out-of-range tap is a literal +0.0.
-                for (std::size_t i = 0; i + 1 < n; ++i) {
-                    const double gradient =
-                            (delta[i + 1] - delta[i]) / dtheta_rad;
-                    out[i] = (delta[i] - previous[i]) / dt_s -
-                             omega_radps * gradient;
-                }
-                const double gradient =
-                        (0.0 - delta[n - 1]) / dtheta_rad;
-                out[n - 1] = (delta[n - 1] - previous[n - 1]) / dt_s -
-                             omega_radps * gradient;
-            } else if (omega_radps < 0.0) {
-                // previous_ray = concatenate(([0.0], delta[:-1])).
-                {
-                    const double gradient =
-                            (delta[0] - 0.0) / dtheta_rad;
-                    out[0] = (delta[0] - previous[0]) / dt_s -
-                             omega_radps * gradient;
-                }
-                for (std::size_t i = 1; i < n; ++i) {
-                    const double gradient =
-                            (delta[i] - delta[i - 1]) / dtheta_rad;
-                    out[i] = (delta[i] - previous[i]) / dt_s -
-                             omega_radps * gradient;
-                }
-            } else {
-                // gradient = np.zeros_like(delta) — including NaN omega:
-                // the oracle's `omega > 0` / `omega < 0` tests are false
-                // and `nan * 0.0` propagates nan into the rate.
-                for (std::size_t i = 0; i < n; ++i)
-                    out[i] = (delta[i] - previous[i]) / dt_s -
-                             omega_radps * 0.0;
-            }
+            bike::physics_core::pneumatic_material_rate_loop<
+                double, bike::physics_core::CpuExactToolkit>(
+                    static_cast<bike::physics_core::i32>(delta.size()),
+                    delta.data(), previous.data(), omega_radps, dt_s,
+                    dtheta_rad, out.data());
         }
 
         // _contact_lengths_m (carcass.py:177-192): scaled Euclidean span

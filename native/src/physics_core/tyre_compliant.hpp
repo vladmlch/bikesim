@@ -5,6 +5,7 @@
 
 #include "common.hpp"
 #include "tyre_contact.hpp"
+#include "tyre_tabulated.hpp"
 #include "tyre_types.hpp"
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel: templated pointer parameters accept device/constant/thread buffers in MSL without address-space cast errors. Register: docs/TESTING.md GPU kernel row.
@@ -56,6 +57,125 @@ struct CompliantRecord {
     i32 section_idx = -1;
     Real release_loss = BIKE_REAL(Real, 0.0);
     Real brush_loss = BIKE_REAL(Real, 0.0);
+};
+
+template <class Real>
+struct CompliantWheelParams {
+    Real radial_k_n_m = BIKE_REAL(Real, 0.0);
+    Real loss_factor = BIKE_REAL(Real, 0.0);
+    Real hysteresis_rate_eps_mps = BIKE_REAL(Real, 0.0);
+    TabulatedRadialParams<Real> radial_table{};
+    u8 use_tabulated = 0;
+};
+
+template <class Real, class TK, class ParamsPtr>
+BIKE_HD Status eval_compliant_radial(
+    ParamsPtr params,
+    Real delta,
+    Real delta_dot,
+    BIKE_REF(RadialEvalOutput<Real>) out,
+    BIKE_REF(ErrCode) err
+) noexcept {
+    out = RadialEvalOutput<Real>{};
+    if (params == nullptr) {
+        err = ErrCode::missing_material;
+        return Status::invalid_argument;
+    }
+    if (params->use_tabulated != 0) {
+        Real force = BIKE_REAL(Real, 0.0);
+        Real energy = BIKE_REAL(Real, 0.0);
+        Status st = tabulated_radial_contact<Real, TK>(
+            &params->radial_table, delta, delta_dot,
+            params->loss_factor, params->hysteresis_rate_eps_mps,
+            force, energy, err);
+        if (st != Status::ok) {
+            return st;
+        }
+        Real elastic = BIKE_REAL(Real, 0.0);
+        Real elastic_energy = BIKE_REAL(Real, 0.0);
+        st = tabulated_radial_elastic<Real, TK>(
+            &params->radial_table, delta, elastic, elastic_energy, err);
+        if (st != Status::ok) {
+            return st;
+        }
+        out.normal = force;
+        out.energy = energy;
+        out.elastic = elastic;
+        err = ErrCode::none;
+        return Status::ok;
+    }
+    Real force = BIKE_REAL(Real, 0.0);
+    Real energy = BIKE_REAL(Real, 0.0);
+    const Status st = normal_contact_hysteresis<Real, TK>(
+        delta, delta_dot, params->radial_k_n_m, params->loss_factor,
+        params->hysteresis_rate_eps_mps, force, energy, err);
+    if (st != Status::ok) {
+        return st;
+    }
+    out.normal = force;
+    out.energy = energy;
+    out.elastic = params->radial_k_n_m * TK::max(delta, BIKE_REAL(Real, 0.0));
+    err = ErrCode::none;
+    return Status::ok;
+}
+
+template <class Real, class TK, class TablePtr>
+struct TabulatedRadialIo {
+    TablePtr tables = nullptr;
+    u8 enabled[2]{1, 1};
+
+    BIKE_HD bool eval_radial(
+        i32 side,
+        BIKE_CREF(RadialEvalInput<Real>) in,
+        BIKE_REF(RadialEvalOutput<Real>) out,
+        BIKE_REF(Status) out_status,
+        BIKE_REF(ErrCode) err
+    ) const noexcept {
+        if (tables == nullptr || side < 0 || side > 1 || enabled[side] == 0) {
+            return false;
+        }
+        TablePtr tbl = tables + side;
+        Real force = BIKE_REAL(Real, 0.0);
+        Real energy = BIKE_REAL(Real, 0.0);
+        Status st = tabulated_radial_contact<Real, TK>(
+            tbl, in.delta, in.delta_dot, in.eta, in.eps, force, energy, err);
+        if (st != Status::ok) {
+            out_status = st;
+            return true;
+        }
+        Real elastic = BIKE_REAL(Real, 0.0);
+        Real elastic_energy = BIKE_REAL(Real, 0.0);
+        st = tabulated_radial_elastic<Real, TK>(
+            tbl, in.delta, elastic, elastic_energy, err);
+        if (st != Status::ok) {
+            out_status = st;
+            return true;
+        }
+        out.normal = force;
+        out.energy = energy;
+        out.elastic = elastic;
+        out_status = Status::ok;
+        err = ErrCode::none;
+        return true;
+    }
+
+    BIKE_HD bool custom_friction(
+        BIKE_CREF(FrictionQuery<Real>),
+        BIKE_REF(FrictionResult<Real>),
+        BIKE_REF(Status),
+        BIKE_REF(ErrCode)
+    ) const noexcept {
+        return false;
+    }
+
+    BIKE_HD Status record(
+        i32,
+        BIKE_CREF(CompliantRecord<Real>),
+        BIKE_REF(ErrCode) err
+    ) const noexcept {
+        err = ErrCode::none;
+        return Status::ok;
+    }
 };
 
 template <class Real, class Io>

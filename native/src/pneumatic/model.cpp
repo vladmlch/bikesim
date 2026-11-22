@@ -62,6 +62,8 @@
 #include "../contact/laws.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_pneumatic_model.hpp"
 #include "../writers/pyfloat.hpp"
 
 namespace biketyre {
@@ -147,14 +149,22 @@ namespace biketyre {
     // comparisons for this operand arrangement (a NaN keeps the 0.8
     // bound in both).
     double clamp_pressure_bar(double pressure_bar) noexcept {
-        return std::min(kPressureMaxBar,
-                        std::max(kPressureMinBar, pressure_bar));
+        return bike::physics_core::pneumatic_clamp_pressure_bar<
+            double, bike::physics_core::CpuExactToolkit>(pressure_bar);
     }
 
     // _tread_loss_crr_at_pressure (model.py:485-489) — tread_loss_crr
     // * (pressure_bar / 1.5) ** -0.3 with CPython's float **.
     double tread_loss_crr_at_pressure(
             const nativecfg::PneumaticTyreSpec &tyre) {
+        if (std::isfinite(tyre.pressure_bar) && tyre.pressure_bar > 0.0 &&
+            tyre.pressure_bar != kCrrReferencePressureBar) {
+            bike::physics_core::PneumaticTyreSpecPod<double> pod{};
+            pod.pressure_bar = tyre.pressure_bar;
+            pod.tread_loss_crr = tyre.tread_loss_crr;
+            return bike::physics_core::pneumatic_tread_loss_crr_at_pressure<
+                double, bike::physics_core::CpuExactToolkit>(pod);
+        }
         return tyre.tread_loss_crr *
                pyfloat::float_pow(tyre.pressure_bar /
                                           kCrrReferencePressureBar,

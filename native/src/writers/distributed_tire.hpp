@@ -22,7 +22,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <span>
 #include <string>
@@ -36,19 +35,16 @@
 #include "tire_common.hpp"
 #include "writer_types.hpp"
 
-namespace bike::physics_core {
-template <class Real>
-struct TyreModel;
-template <class Real>
-struct StationStatePod;
-} // namespace bike::physics_core
-
 // Per-station state — the C++ equivalent of the Python `_StationState`
 // dataclass. `active` mirrors presence/absence in the Python `states` dict:
 // an inactive station carries no `xi`/`tangent` at all and writes four NaNs
-// on the wire. `tangent` is the unit scale direction from the previous tick;
-// it is *not* a state variable in the Python applier — the tick computes the
-// tangent — but the state wire carries it so a restore can reproduce it.
+// on the wire. `xi` stores the energy-scaled brush deflection
+// `xi_phys * sqrt(r_k)` (`== xi_phys` when `r_k == 1.0`), preserving
+// `0.5 * k_station * xi^2` across track-surface transitions without changing
+// the 4-column wire schema. `tangent` is the unit scale direction from the
+// previous tick; it is *not* a state variable in the Python applier — the
+// tick computes the tangent — but the state wire carries it so a restore can
+// reproduce it.
 struct StationState {
     bool active = false;
     double xi = 0.0;
@@ -70,11 +66,6 @@ public:
     // context must outlive it.
     DistributedTireWriter(const mjModel *m, const mjData *d,
                           nativecfg::TireConfig config);
-    ~DistributedTireWriter();
-    DistributedTireWriter(const DistributedTireWriter &);
-    DistributedTireWriter &operator=(const DistributedTireWriter &);
-    DistributedTireWriter(DistributedTireWriter &&) noexcept;
-    DistributedTireWriter &operator=(DistributedTireWriter &&) noexcept;
 
     // CONTRACT — distributed state wire (mirrors Python `set_state`/`state_dict`):
     //
@@ -244,10 +235,6 @@ private:
     std::array<std::vector<std::array<double, 3>>, 2> local_{};
     std::array<std::vector<StationState>, 2> states_{};
     std::array<std::vector<StationState>, 2> states_stage_{};
-    std::array<std::vector<bike::physics_core::StationStatePod<double>>, 2>
-        states_pod_in_, states_pod_out_;
-    std::shared_ptr<const bike::physics_core::TyreModel<double>> core_model_;
-    bool core_surface_map_complete_ = false;
 
     // Wire scaffolding — sized once at construction.
     std::vector<std::string> state_names_{};
@@ -268,6 +255,8 @@ private:
     std::vector<double> energies_{};          // N
     std::vector<double> depths_{};            // N
     std::vector<double> normals_{};           // N*3
+    std::vector<double> contact_x_{};         // N
+    std::vector<double> slips_{};             // N
     std::vector<double> tmp_{};               // nv
     std::vector<double> qfrc_out_{};          // nv
     std::array<TireSnapshot, 2> snapshot_stage_{};

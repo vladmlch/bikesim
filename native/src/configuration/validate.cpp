@@ -825,11 +825,10 @@ void post_init(const EndStopConfig &config) {
 void post_init(const SeatedClimbConfig &config) {
     // seated_climb.py SeatedClimbConfig.__post_init__ on the shared
     // rider::IntentConfig record.
-    // max_crank_torque_nm and max_forward_lean_rad are required profile
-    // keys: the -1. unset sentinel is rejected by the positive /
-    // non-negative domain checks below (the reposition_back_rate_rad_s
-    // idiom), so a programmatic construction that leaves either unset
-    // fails here naming the field.
+    // Required seated-climb profile scalars use -1. unset sentinels,
+    // rejected by the positive / non-negative domain checks below (the
+    // reposition_back_rate_rad_s idiom), so a programmatic construction
+    // that leaves one unset fails here naming the field.
     static constexpr std::array kPositive{
         std::pair{"period_s", &SeatedClimbConfig::period_s},
         std::pair{"target_crank_power_w",
@@ -1329,6 +1328,8 @@ void post_init(SimulationPhysicsConfig &config) {
         fail("equilibrium_state_file must be a non-empty path or None");
     if (config.drive.pedaling.reposition_on_stall && config.articulated.pedal_attachment != "spindle")
         fail("drive.pedaling.reposition_on_stall requires articulated.pedal_attachment = 'spindle'");
+    if (config.drive.pedaling.reposition_on_stall && !config.drive.motor_clutch)
+        fail("drive.pedaling.reposition_on_stall requires drive.motor_clutch");
     // The six isinstance(...immutable...) checks are type-enforced.
     const auto *detailed = find_tire_tier("detailed");
     if (config.tires.backend == "pneumatic" &&
@@ -1379,9 +1380,18 @@ SimulationPhysicsConfig default_physics() {
     config.monitors.contact_dropout_s = 10. * config.timestep_s;
     config.seated_climb.period_s = .00125;
     config.seated_climb.reaction_delay_s = .15;
+    config.seated_climb.target_crank_power_w = 225.;
+    config.seated_climb.lean_gain = 1.;
+    config.seated_climb.max_backward_lean_rad = .10;
     config.seated_climb.lean_rate_rad_s = .5;
     config.seated_climb.orientation_tau_s = .5;
+    config.seated_climb.surge_power_w = 400.;
+    config.seated_climb.surge_grade = .20;
     config.seated_climb.surge_budget_s = 15.;
+    config.seated_climb.surge_recovery_rate = 1. / 3.;
+    config.seated_climb.front_load_share_target = .30;
+    config.seated_climb.lean_trim_gain_rad_s = .3;
+    config.seated_climb.lean_trim_limit_rad = .15;
     config.seated_climb.trim_dead_time_s = .2;
     config.seated_climb.max_crank_torque_nm = 60.0;
     config.seated_climb.max_forward_lean_rad = 0.55;

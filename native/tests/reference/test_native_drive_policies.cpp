@@ -7,6 +7,139 @@
 namespace {
 using namespace policy_reference;
 
+void test_shift_cut_subthreshold() {
+    auto policy = policies(config(source(false)));
+    auto shift = policy.shifting.state();
+    shift.direction = "down";
+    shift.shift_count = 1;
+    shift.cut_remaining_s = .5e-12;
+    policy.shifting.set_state(shift);
+    bt::require(policy.shifting.torque_factor() == 1.,
+                "subthreshold shift cut must not reduce torque");
+    for (const double remaining : {0., .5e-12, 1e-12}) {
+        shift.cut_remaining_s = remaining;
+        policy.shifting.set_state(shift);
+        bt::require(!drivetrain::shift_cut_active(remaining) &&
+                        policy.shifting.torque_factor() == 1.,
+                    "cut threshold includes its boundary");
+    }
+    shift.cut_remaining_s = std::nextafter(1e-12, 1.);
+    policy.shifting.set_state(shift);
+    bt::require(drivetrain::shift_cut_active(shift.cut_remaining_s) &&
+                    policy.shifting.torque_factor() != 1.,
+                "cut is active immediately above its threshold");
+}
+
+void test_pedaling_relations() {
+    auto policy = policies(config(source(false)));
+    const auto before = state_text(policy);
+    auto bad = policy.snapshot();
+    bad.pedaling.reposition.emplace();
+    bad.pedaling.reposition->crank_rad = 1.;
+    bt::invalid([&] { policy.pedaling.set_state(bad.pedaling); });
+    bt::invalid([&] { restore(policy, drivetrain::encode_policy_snapshot(bad)); });
+    bt::require(state_text(policy) == before, "invalid pedal restore is atomic");
+}
+
+void test_pedaling_wire_relations() {
+    auto policy = policies(config(source(false)));
+    const auto before = state_text(policy);
+    auto bad = policy.snapshot();
+    bad.pedaling.reposition.emplace();
+    bad.pedaling.reposition->goal_rad = 1.;
+    bt::invalid([&] { restore(policy, drivetrain::encode_policy_snapshot(bad)); });
+    bt::require(state_text(policy) == before, "invalid pedal wire is atomic");
+}
+
+void test_assist_relations() {
+    auto policy = policies(config(source(false)));
+    const auto before = state_text(policy);
+    auto bad = policy.snapshot();
+    bad.assist.hold_power_w = 1.;
+    bad.assist.hold_torque_nm = 0.;
+    bt::invalid([&] { policy.assist.set_state(bad.assist); });
+    bt::invalid([&] { restore(policy, drivetrain::encode_policy_snapshot(bad)); });
+    bt::require(state_text(policy) == before, "invalid assist restore is atomic");
+}
+
+void test_assist_wire_relations() {
+    auto policy = policies(config(source(false)));
+    const auto before = state_text(policy);
+    auto bad = policy.snapshot();
+    bad.assist.release_hold_left_s = 1.;
+    bt::invalid([&] { restore(policy, drivetrain::encode_policy_snapshot(bad)); });
+    bt::require(state_text(policy) == before, "invalid assist wire is atomic");
+}
+
+void test_fsm_relations_and_reachable_states() {
+    auto policy = policies(config(source(false)));
+    const auto before = state_text(policy);
+    using Snapshot = drivetrain::PolicySnapshot;
+    using Edit = void (*)(Snapshot &);
+    const std::array<Edit, 8> edits{
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->wheel_rad = 1.; },
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->goal_rad = 1.; },
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->reason = 1; },
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->reason = 1; s.pedaling.reposition->goal_rad = 1.; s.pedaling.reposition->cooldown_s = .1; },
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->reason = 1; s.pedaling.reposition->goal_rad = 1.; s.pedaling.effort = 1.; },
+        +[](Snapshot &s) { s.pedaling.reposition.emplace(); s.pedaling.reposition->reason = 1; s.pedaling.reposition->goal_rad = 1.; s.pedaling.coasting = true; s.pedaling.target_phase_rad = 0.; },
+        +[](Snapshot &s) { s.pedaling.coasting = true; s.pedaling.target_phase_rad = 0.; s.pedaling.effort = 1.; },
+        +[](Snapshot &s) { s.assist.release_hold_left_s = 1.; }};
+    for (const auto edit : edits) {
+        auto bad = policy.snapshot();
+        edit(bad);
+        bt::invalid([&] { policy.restore(bad); });
+        bt::invalid([&] { (void)drivetrain::decode_policy_snapshot(
+            drivetrain::encode_policy_snapshot(bad)); });
+        bt::invalid([&] { restore(policy, drivetrain::encode_policy_snapshot(bad)); });
+        bt::require(state_text(policy) == before, "relational rejection is atomic");
+    }
+
+    // A real coast and a real manoeuvre both zero effort immediately.
+    (void)policy.pedaling.update(1., 1., 10., 20., .01);
+    bt::require(policy.pedaling.state().effort > 0., "pedaling builds effort");
+    (void)policy.pedaling.update(1., 1., 10., 20., .01, true, true);
+    bt::require(policy.pedaling.state().coasting &&
+                    policy.pedaling.state().effort == 0.,
+                "coasting zeros effort immediately");
+    policy.pedaling.set_state(policy.pedaling.state());
+    (void)policy.pedaling.update(1., 0., 0., 20., .01, true, false, true);
+    bt::require(policy.pedaling.state().reposition.has_value() &&
+                    policy.pedaling.state().reposition->goal_rad.has_value() &&
+                    !policy.pedaling.state().coasting &&
+                    policy.pedaling.state().effort == 0.,
+                "live reposition goal clears coasting and effort");
+    policy.pedaling.set_state(policy.pedaling.state());
+    restore(policy, state(policy));
+
+    // Positive torque * tiny positive omega can underflow to zero watts.
+    auto input = source(false);
+    input.assist.engage_torque_nm = 0.;
+    auto tiny = policies(config(input));
+    (void)tiny.assist.step(1e-30, 80., 0., false, .01);
+    bt::require(tiny.assist.state().torque > 0., "tiny torque is delivered");
+    (void)tiny.assist.step(0., 1e-300, 0., false, .01);
+    const auto hold = tiny.assist.state();
+    bt::require(hold.release_hold_left_s > 0. && hold.hold_torque_nm > 0. &&
+                    hold.hold_power_w == 0.,
+                "real binary64 underflow permits zero power during hold");
+    tiny.assist.set_state(hold);
+    restore(tiny, state(tiny));
+
+    auto stopped = policies(config(source(false)));
+    (void)stopped.assist.step(30., 80., 0., false, .01);
+    (void)stopped.assist.step(0., 80., 0., false, .01);
+    (void)stopped.assist.step(0., 0., 0., false, .01);
+    const auto stopped_hold = stopped.assist.state();
+    bt::require(stopped_hold.release_hold_left_s > 0. &&
+                    stopped_hold.hold_torque_nm > 0. &&
+                    stopped_hold.hold_power_w > 0. &&
+                    stopped_hold.torque == 0.,
+                "a previously armed hold survives a stopped shaft");
+    stopped.assist.set_state(stopped_hold);
+    restore(stopped, state(stopped));
+}
+
 // native_drive_policies/native_policy_api_exists
 [[gnu::noinline]] void test_native_policy_api_exists(const Value& baseline) {
     auto policy = policies(baseline);
@@ -468,9 +601,15 @@ struct Mutation { std::string_view id, section, key, json; };
 }
 } // namespace
 
-// bt::run wraps the test body in try/catch(...) — failures are reported, nothing escapes main.
-// cppcheck-suppress throwInEntryPoint
-int main() { return bt::run([] {
+int main() try {
+    int failures = 0;
+    failures += bt::run(test_shift_cut_subthreshold);
+    failures += bt::run(test_pedaling_relations);
+    failures += bt::run(test_pedaling_wire_relations);
+    failures += bt::run(test_assist_relations);
+    failures += bt::run(test_assist_wire_relations);
+    failures += bt::run(test_fsm_relations_and_reachable_states);
+    failures += bt::run([] {
     const auto baseline = policy_reference::config(policy_reference::source());
     test_native_policy_api_exists(baseline);
     test_crank_torque();
@@ -500,4 +639,8 @@ int main() { return bt::run([] {
     test_unrepresentable_count_restore_is_atomic(baseline);
     test_assist_computed_crank_overflow_matches_python_state();
     test_assist_braking_resets_before_computed_crank_overflow(baseline);
-}); }
+    });
+    return failures == 0 ? 0 : 1;
+} catch (...) {
+    return 1;
+}

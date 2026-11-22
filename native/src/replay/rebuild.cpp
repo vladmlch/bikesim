@@ -35,12 +35,14 @@ template<class Owner> void integers(Owner& out, const Value& source,
 }
 geometry::BikeSpecs bike_specs(const Value& value) {
     geometry::BikeSpecs out;
-#define BIKE_REAL(name) {#name, &geometry::BikeSpecs::name}
-    reals(out, value, {BIKE_REAL(reach), BIKE_REAL(stack), BIKE_REAL(head_angle_deg), BIKE_REAL(effective_seat_angle_deg), BIKE_REAL(bb_drop),
-        BIKE_REAL(wheelbase), BIKE_REAL(headtube_length), BIKE_REAL(front_wheel_radius), BIKE_REAL(rear_wheel_radius), BIKE_REAL(wheel_radius),
-        BIKE_REAL(crank_length), BIKE_REAL(fork_travel), BIKE_REAL(fork_offset), BIKE_REAL(rear_wheel_travel), BIKE_REAL(shock_eye_to_eye),
-        BIKE_REAL(shock_stroke), BIKE_REAL(fork_stiffness), BIKE_REAL(fork_damping), BIKE_REAL(shock_stiffness), BIKE_REAL(shock_damping), BIKE_REAL(fork_initial_psi)});
-#undef BIKE_REAL
+#define BIKE_SPEC_REAL(name) {#name, &geometry::BikeSpecs::name}
+    reals(out, value, {BIKE_SPEC_REAL(reach), BIKE_SPEC_REAL(stack), BIKE_SPEC_REAL(head_angle_deg), BIKE_SPEC_REAL(effective_seat_angle_deg), BIKE_SPEC_REAL(bb_drop),
+        BIKE_SPEC_REAL(wheelbase), BIKE_SPEC_REAL(headtube_length), BIKE_SPEC_REAL(front_wheel_radius), BIKE_SPEC_REAL(rear_wheel_radius), BIKE_SPEC_REAL(wheel_radius),
+        BIKE_SPEC_REAL(crank_length), BIKE_SPEC_REAL(fork_travel), BIKE_SPEC_REAL(fork_offset), BIKE_SPEC_REAL(rear_wheel_travel), BIKE_SPEC_REAL(shock_eye_to_eye),
+        BIKE_SPEC_REAL(shock_stroke), BIKE_SPEC_REAL(fork_stiffness), BIKE_SPEC_REAL(fork_damping), BIKE_SPEC_REAL(shock_stiffness), BIKE_SPEC_REAL(shock_damping), BIKE_SPEC_REAL(fork_initial_psi)});
+#undef BIKE_SPEC_REAL
+    if (find(value, "fork_initial_psi") || find(value, "shock_stiffness"))
+        out.backend_default_suspension = false;
 #define BIKE_INT(name) {#name, &geometry::BikeSpecs::name}
     integers(out, value, {BIKE_INT(fork_hsc), BIKE_INT(fork_lsc), BIKE_INT(fork_rebound), BIKE_INT(fork_air_tokens),
         BIKE_INT(shock_hsc), BIKE_INT(shock_lsc), BIKE_INT(shock_rebound), BIKE_INT(shock_hbo)});

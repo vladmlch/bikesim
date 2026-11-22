@@ -41,14 +41,15 @@ public:
     StaticBrake(int front_dofadr, int rear_dofadr, double ceiling_nm,
                 BrakeHoldSpec hold = {});
 
-    // apply(model, data, front_demand, rear_demand): validate both demands
-    // before either write, then
-    //   dof_frictionloss[dof] = ceiling * clip(demand, 0, 1)
-    // front first — the Python statement order. Returns whether either
+    // Validate both demands and hold torques before either write. The
+    // solver gets only the budget not already used by the latched bite:
+    //   dof_frictionloss[dof] = max(0, ceiling * clip(demand, 0, 1) - |hold|)
+    // front first. Returns whether either
     // bound changed (a position-stage model input; the caller's freshness
     // guard needs it).
     [[nodiscard]] bool apply(mjModel *model, double front_demand,
-                             double rear_demand) const;
+                             double rear_demand, double front_hold_nm = 0.,
+                             double rear_hold_nm = 0.) const;
 
     // hold_qfrc(model, data, front_demand, rear_demand, advance, reseat):
     // the bite's generalized force (nv zeros when unlatched). An
@@ -56,7 +57,7 @@ public:
     // committed latch without moving it — the Python ``advance``
     // contract verbatim. ``reseat`` (the oracle's keyword) lets an
     // advancing evaluation re-anchor a saturated bite: inside the engage
-    // band a spring demand past torque_nm*demand means the pad is
+    // band a spring demand past min(torque_nm, ceiling_nm)*demand means the pad is
     // slipping, so the latch re-seats at the current angle. The held
     // relaxation passes it — a latch captured before the pose settled
     // would otherwise hold a saturated stale offset the friction bound

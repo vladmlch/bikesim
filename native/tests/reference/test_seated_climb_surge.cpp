@@ -40,6 +40,13 @@ namespace research = bike::research;
 namespace cfg = bike::configuration;
 namespace sw = runtime::sample_wire;
 
+rider::IntentConfig default_intent_config() {
+    auto config = cfg::default_physics().seated_climb;
+    // Preserve this rider-layer suite's pre-profile default ceiling.
+    config.max_forward_lean_rad = .35;
+    return config;
+}
+
 // The live example document — bt::oracle::root() is
 // <repo>/tests/fixtures/golden. The batch's welded physics loads the
 // same file the oracle's WELDED constant reads; the migration fixture
@@ -52,7 +59,7 @@ std::filesystem::path repo_file(std::string_view relative) {
 
 // test_surge_budget_depletes_and_recovers
 void test_surge_budget_depletes_and_recovers() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.target_crank_power_w = 250.;
     config.period_s = .01;
@@ -86,7 +93,7 @@ void test_surge_budget_depletes_and_recovers() {
 
 // test_below_threshold_uses_sustained_power
 void test_below_threshold_uses_sustained_power() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.target_crank_power_w = 250.;
     config.period_s = .01;
@@ -228,7 +235,7 @@ void test_launch_plan_sets_standstill_effort_ceiling() {
 
 // test_surge_reset_restores_budget_and_rejects_nonfinite_inputs
 void test_surge_reset_restores_budget_and_rejects_nonfinite_inputs() {
-    rider::IntentConfig config;
+    rider::IntentConfig config = default_intent_config();
     config.enabled = true;
     config.period_s = .01;
     config.reaction_delay_s = .15;

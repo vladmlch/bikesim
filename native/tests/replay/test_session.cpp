@@ -46,6 +46,15 @@ std::unique_ptr<bike::research::ResearchRequest> roundtrip_request() {
     auto owner=std::make_unique<research::ResearchRequest>();
     auto& request=*owner;
     bike::configuration::SimulationPhysicsConfig physics;
+    physics.seated_climb.target_crank_power_w = 225.;
+    physics.seated_climb.lean_gain = 1.;
+    physics.seated_climb.max_backward_lean_rad = .10;
+    physics.seated_climb.surge_power_w = 400.;
+    physics.seated_climb.surge_grade = .20;
+    physics.seated_climb.surge_recovery_rate = 1. / 3.;
+    physics.seated_climb.front_load_share_target = .30;
+    physics.seated_climb.lean_trim_gain_rad_s = .3;
+    physics.seated_climb.lean_trim_limit_rad = .15;
     physics.physics_mode="physical"; physics.drive_mode="crank_effort"; physics.drive.motor_clutch=true; physics.timestep_s=.0005;
     physics.control_period_s=.005; physics.monitors.grounded_hold_s=.005; physics.monitors.contact_dropout_s=10.*physics.timestep_s;
     physics.initial_speed_mps=.1; physics.equilibrium_cache_enabled=false;

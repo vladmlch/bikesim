@@ -18,6 +18,21 @@ inline Value metrics(std::initializer_list<std::pair<std::string,double>> fields
 inline Value bounds(std::initializer_list<std::tuple<std::string,double,double>> fields) {
     Object out;for(const auto& [key,low,high]:fields)out.emplace_back(key,pair(low,high));return Value{std::move(out)};
 }
+// Internal validation fixtures used to inherit these seated-climb values
+// from IntentConfig's member defaults. Keep their effective inputs explicit
+// now that the public config record uses unset sentinels.
+inline void initialize_seated_climb_profile_defaults(
+    configuration::SeatedClimbConfig& config) {
+    config.target_crank_power_w = 225.;
+    config.lean_gain = 1.;
+    config.max_backward_lean_rad = .10;
+    config.surge_power_w = 400.;
+    config.surge_grade = .20;
+    config.surge_recovery_rate = 1. / 3.;
+    config.front_load_share_target = .30;
+    config.lean_trim_gain_rad_s = .3;
+    config.lean_trim_limit_rad = .15;
+}
 inline model::BuildRequest request(configuration::SimulationPhysicsConfig physics,bool articulated=false) {
     configuration::post_init(physics);model::BuildRequest out;out.mode="ride";out.physics=std::move(physics);
     configuration::RiderSpecs rider;rider.variant=articulated?"articulated_planar":"none";out.rider=rider;return out;

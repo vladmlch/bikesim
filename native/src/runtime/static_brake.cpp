@@ -1,5 +1,5 @@
 // runtime/static_brake.cpp — StaticBrakeApplier port; see the header for
-// the contract. Expression order follows static_braking.py literally.
+// the contract. The hold and solver friction share one brake budget.
 #include "static_brake.hpp"
 
 #include <algorithm>
@@ -11,8 +11,6 @@
 
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
-#include "../physics_core/brake_hold.hpp"
-#include "../physics_core/cpu_exact_toolkit.hpp"
 #include "../validation.hpp"
 
 namespace runtime {
@@ -44,10 +42,13 @@ StaticBrake::StaticBrake(int front_dofadr, int rear_dofadr,
 }
 
 bool StaticBrake::apply(mjModel *model, double front_demand,
-                        double rear_demand) const {
+                        double rear_demand, double front_hold_nm,
+                        double rear_hold_nm) const {
     const double front =
         validation::finite(front_demand, "front brake demand");
     const double rear = validation::finite(rear_demand, "rear brake demand");
+    validation::finite(front_hold_nm, "front brake hold torque");
+    validation::finite(rear_hold_nm, "rear brake hold torque");
     if (std::max(front_, rear_) >= model->nv)
         throw std::invalid_argument("brake DOF is outside this model");
     const auto frictionloss = model_access::mutable_buffer(
@@ -55,15 +56,19 @@ bool StaticBrake::apply(mjModel *model, double front_demand,
     // Validate both before writing either. These are bounds on solved
     // static friction, not a predetermined signed torque or a velocity
     // reset.
-    bool changed = false;
-    auto err = bike::physics_core::ErrCode::none;
-    const auto st = bike::physics_core::apply_static_brake<
-        double, bike::physics_core::CpuExactToolkit>(
-        ceiling_nm_, front, rear, front_, rear_,
-        static_cast<bike::physics_core::i32>(model->nv),
-        frictionloss.data(), changed, err);
-    if (st != bike::physics_core::Status::ok)
-        throw std::invalid_argument("invalid static brake state");
+    // ctor guarantees 0 <= front_/rear_ and the nv bound ran above, so the
+    // size_t casts below can only wrap an already-rejected index.
+    const double front_loss = std::max(0., ceiling_nm_ * std::clamp(front, 0., 1.) - std::abs(front_hold_nm));
+    const double rear_loss = std::max(0., ceiling_nm_ * std::clamp(rear, 0., 1.) - std::abs(rear_hold_nm));
+    const std::size_t fi = static_cast<std::size_t>(front_);
+    const std::size_t ri = static_cast<std::size_t>(rear_);
+    // dof_frictionloss is a position-stage model input (makeConstraint
+    // builds the FRICTION_DOF rows from it) — report whether this write
+    // changed a value so the caller can invalidate cached stage products.
+    const bool changed =
+        frictionloss[fi] != front_loss || frictionloss[ri] != rear_loss;
+    frictionloss[fi] = front_loss;
+    frictionloss[ri] = rear_loss;
     return changed;
 }
 
@@ -83,42 +88,43 @@ std::vector<double> StaticBrake::hold_qfrc(
         data->qpos, model->nq, "qpos");
     const auto qvel = model_access::readonly_buffer(
         data->qvel, model->nv, "qvel");
-    const bike::physics_core::BrakeHoldParams<double> hold_params{
-        .torque_nm = hold_.torque_nm,
-        .stiffness_nm_rad = hold_.stiffness_nm_rad,
-        .damping_nms_rad = hold_.damping_nms_rad,
-        .engage_radps = hold_.engage_radps,
-        .release_radps = hold_.release_radps,
-    };
-    std::optional<double> next_front = latch_front_;
-    std::optional<double> next_rear = latch_rear_;
-    for (const auto &[dof, demand, next_latch] :
-         {std::tuple{front_, front, &next_front},
-          std::tuple{rear_, rear, &next_rear}}) {
+    for (const auto &[dof, demand, latch] :
+         {std::tuple{front_, front, &latch_front_},
+          std::tuple{rear_, rear, &latch_rear_}}) {
+        const double u = std::clamp(demand, 0., 1.);
+        const double cap = std::min(hold_.torque_nm, ceiling_nm_) * u;
         const std::size_t di = static_cast<std::size_t>(dof);
         const double theta = qpos[static_cast<std::size_t>(
             jnt_qposadr[static_cast<std::size_t>(dof_jntid[di])])];
         const double omega = qvel[di];
-        bool has_latch = next_latch->has_value();
-        double latch_theta = next_latch->value_or(0.0);
-        double out_torque = 0.0;
-        auto err = bike::physics_core::ErrCode::none;
-        const auto st = bike::physics_core::eval_brake_hold_wheel<
-            double, bike::physics_core::CpuExactToolkit>(
-            &hold_params, demand, theta, omega, advance, reseat,
-            has_latch, latch_theta, out_torque, err);
-        if (st != bike::physics_core::Status::ok)
-            throw std::invalid_argument("non-finite wheel state for brake hold");
+        std::optional<double> latched = *latch;
         if (advance) {
-            *next_latch =
-                has_latch ? std::optional<double>(latch_theta) : std::nullopt;
+            if (!latched.has_value()) {
+                if (u > 0. && hold_.torque_nm > 0. &&
+                    hold_.stiffness_nm_rad > 0. &&
+                    std::abs(omega) <= hold_.engage_radps) {
+                    latched = theta;
+                    *latch = latched;
+                }
+            } else if (u <= 0. || std::abs(omega) > hold_.release_radps) {
+                latched = std::nullopt;
+                *latch = std::nullopt;
+            } else if (reseat && std::abs(omega) <= hold_.engage_radps &&
+                       std::abs(-hold_.stiffness_nm_rad * (theta - *latched) -
+                                hold_.damping_nms_rad * omega) >
+                           cap) {
+                // A saturated bite inside the engage band is a slipped pad:
+                // re-seat the anchor at the current angle (the oracle's
+                // `reseat` branch — static_braking.py).
+                latched = theta;
+                *latch = latched;
+            }
         }
-        if (!has_latch) continue;
-        out[di] = out_torque;
-    }
-    if (advance) {
-        latch_front_ = next_front;
-        latch_rear_ = next_rear;
+        if (!latched.has_value()) continue;
+        out[di] = std::clamp(
+            -hold_.stiffness_nm_rad * (theta - *latched) -
+                hold_.damping_nms_rad * omega,
+            -cap, cap);
     }
     return out;
 }

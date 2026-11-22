@@ -27,6 +27,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace {
@@ -172,14 +173,15 @@ void test_specs_defaults() {
                 "BikeSpecs travel/offset/shock defaults");
     bt::require(s.fork_stiffness == 6000.0 &&
                     s.fork_damping == 450.0 &&
-                    s.shock_stiffness == 114600.0 &&
                     s.shock_damping == 1200.0,
                 "BikeSpecs rate defaults");
+    bt::require(s.shock_stiffness == 81550.0, "BikeSpecs shock rate default");
     // Damper/spring settings defaults.
     bt::require(s.fork_hsc == 2 && s.fork_lsc == 7 &&
-                    s.fork_rebound == 9 && s.fork_initial_psi == 85.2 &&
+                    s.fork_rebound == 9 &&
                     s.fork_air_tokens == 2,
                 "BikeSpecs fork damper defaults");
+    bt::require(s.fork_initial_psi == 97.0, "BikeSpecs fork pressure default");
     bt::require(s.shock_hsc == 2 && s.shock_lsc == 7 &&
                     s.shock_rebound == 7 && s.shock_hbo == 2 &&
                     !s.shock_lockout,
@@ -214,6 +216,47 @@ void test_specs_defaults() {
     bt::require(geo::FrameGeometrySpecs{}.bb_drop == 22.5 &&
                     geo::SuspensionHardwareSpecs{}.shock_stroke == 65.0,
                 "nested record standalone defaults");
+}
+
+void test_backend_suspension_defaults() {
+    {
+        geo::BikeSpecs bike;
+        geo::sync_backend_default_suspension(bike, "distributed_2d_reference");
+        geo::sync_backend_default_suspension(bike, "pneumatic");
+        bt::require(bike.fork_initial_psi == 113.8 && bike.shock_stiffness == 73557.,
+                    "backend switch distributed to pneumatic");
+        geo::sync_backend_default_suspension(bike, "compliant_2d");
+        bt::require(bike.fork_initial_psi == 97. && bike.shock_stiffness == 81550.,
+                    "backend switch pneumatic to compliant");
+    }
+    for (const auto &[backend, pressure, rate] :
+         {std::tuple{"compliant_2d", 97.0, 81550.0},
+          std::tuple{"distributed_2d_reference", 90.8, 84372.0},
+          std::tuple{"pneumatic", 113.8, 73557.0}}) {
+        geo::BikeSpecs bike;
+        geo::sync_backend_default_suspension(bike, backend);
+        bt::require(bike.fork_initial_psi == pressure && bike.shock_stiffness == rate,
+                    std::string(backend) + " suspension defaults");
+        geo::sync_backend_default_suspension(bike, backend);
+        bt::require(bike.fork_initial_psi == pressure && bike.shock_stiffness == rate,
+                    std::string(backend) + " repeated suspension sync");
+        bike.fork_initial_psi = 101.;
+        bike.backend_default_suspension = false;
+        geo::sync_backend_default_suspension(bike, backend);
+        bt::require(bike.fork_initial_psi == 101. && bike.shock_stiffness == rate,
+                    std::string(backend) + " explicit pressure preserved");
+        bike = geo::BikeSpecs{};
+        bike.shock_stiffness = 90000.;
+        bike.backend_default_suspension = false;
+        geo::sync_backend_default_suspension(bike, backend);
+        bt::require(bike.fork_initial_psi == 97. && bike.shock_stiffness == 90000.,
+                    std::string(backend) + " explicit shock preserved");
+        bike = geo::BikeSpecs{};
+        bike.backend_default_suspension = false;
+        geo::sync_backend_default_suspension(bike, backend);
+        bt::require(bike.fork_initial_psi == 97. && bike.shock_stiffness == 81550.,
+                    std::string(backend) + " explicit default pair preserved");
+    }
 }
 
 // ---- geometry/hardpoints -----------------------------------------------------
@@ -952,6 +995,7 @@ void test_trajectory() {
 int main() {
     return bt::run([] {
         test_specs_defaults();
+        test_backend_suspension_defaults();
         test_hardpoints();
         test_cockpit();
         test_validation();

@@ -82,6 +82,87 @@ void materials_and_contacts(){
     bt::invalid([]{(void)t::SurfaceMap(t::get_surface("hardpack"),{{.start_m=1.,.end_m=3.,.surface="wet"},{.start_m=2.,.end_m=4.,.surface="loose"}});});
     bt::invalid([&]{(void)map.at(std::numeric_limits<double>::quiet_NaN());});
     bt::invalid([]{t::SurfaceSpec{.name="bad",.mu_peak=.5,.mu_slide=.6,.slip_stiffness_per_load=1.}.validate();});
+    // Stage A SurfaceSpec + SurfaceMap blend_m validation
+    const auto& asphalt = t::get_surface("asphalt");
+    const auto& hardpack = t::get_surface("hardpack");
+    const auto& loose = t::get_surface("loose");
+    const auto& wet = t::get_surface("wet");
+    const auto& scree = t::get_surface("scree");
+    bt::require(asphalt.crr_delta == 0.0 && asphalt.load_sensitivity == 0.06, "asphalt stage-a fields");
+    bt::require(hardpack.crr_delta == 0.0025 && hardpack.load_sensitivity == 0.08, "hardpack stage-a fields");
+    bt::require(loose.crr_delta == 0.0060 && loose.load_sensitivity == 0.12, "loose stage-a fields");
+    bt::require(wet.crr_delta == 0.0035 && wet.load_sensitivity == 0.12, "wet stage-a fields");
+    bt::require(scree.crr_delta == 0.0080 && scree.load_sensitivity == 0.15, "scree stage-a fields");
+    bt::invalid([] {
+        t::SurfaceSpec{.name = "bad", .mu_peak = 0.8, .mu_slide = 0.6,
+                       .slip_stiffness_per_load = 10.0, .crr_delta = -0.001}.validate();
+    });
+    bt::invalid([] {
+        t::SurfaceSpec{.name = "bad", .mu_peak = 0.8, .mu_slide = 0.6,
+                       .slip_stiffness_per_load = 10.0, .load_sensitivity = -0.01}.validate();
+    });
+    bt::invalid([] {
+        t::SurfaceSpec{.name = "bad", .mu_peak = 0.8, .mu_slide = 0.6,
+                       .slip_stiffness_per_load = 10.0, .load_sensitivity = 0.55}.validate();
+    });
+    t::SurfaceSpec{.name = "edge", .mu_peak = 0.8, .mu_slide = 0.6,
+                   .slip_stiffness_per_load = 10.0, .crr_delta = 0.0,
+                   .load_sensitivity = 0.5}.validate();
+    // Adjacent touching sections with mismatched blend_m reject; equal blend_m accepts.
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 10.0, .end_m = 20.0, .surface = "loose", .blend_m = 0.4},
+             {.start_m = 20.0, .end_m = 30.0, .surface = "scree", .blend_m = 0.8}});
+    });
+    (void)t::SurfaceMap(t::get_surface("hardpack"),
+        {{.start_m = 0.0, .end_m = 0.5, .surface = "asphalt", .blend_m = 1.0},
+         {.start_m = 0.5, .end_m = 12.0, .surface = "scree", .blend_m = 1.0}});
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 0.0, .end_m = 0.4, .surface = "asphalt", .blend_m = 1.0}});
+    });
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 0.2, .end_m = 5.0, .surface = "asphalt", .blend_m = 0.6}});
+    });
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 2.0, .end_m = 5.0, .surface = "asphalt", .blend_m = -0.1}});
+    });
+    // Separated gap smaller than 0.5 * (b_0 + b_1) rejects; exact boundary accepts.
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 2.0, .end_m = 5.0, .surface = "loose", .blend_m = 1.0},
+             {.start_m = 5.8, .end_m = 10.0, .surface = "scree", .blend_m = 1.0}});
+    });
+    (void)t::SurfaceMap(t::get_surface("hardpack"),
+        {{.start_m = 2.0, .end_m = 5.0, .surface = "loose", .blend_m = 1.0},
+         {.start_m = 6.0, .end_m = 10.0, .surface = "scree", .blend_m = 1.0}});
+    // Interior section shorter than 0.5 * b_left + 0.5 * b_right rejects.
+    bt::invalid([] {
+        (void)t::SurfaceMap(t::get_surface("hardpack"),
+            {{.start_m = 2.0, .end_m = 2.8, .surface = "loose", .blend_m = 1.0}});
+    });
+    // Stage A alpine surface_blend_m bounds: 1.0 m feature clearance and
+    // half-blend inside the lead-in; exact boundaries stay valid.
+    bt::invalid([] {
+        t::AlpineGenSpec s{};
+        s.surface_blend_m = 1.5;
+        s.validate();
+    });
+    bt::invalid([] {
+        t::AlpineGenSpec s{};
+        s.surface_blend_m = 1.0;
+        s.lead_in_m = 0.4;
+        s.validate();
+    });
+    t::AlpineGenSpec clearance_boundary{};
+    clearance_boundary.surface_blend_m = 1.0;
+    clearance_boundary.validate();
+    t::AlpineGenSpec lead_in_boundary{};
+    lead_in_boundary.surface_blend_m = 1.0;
+    lead_in_boundary.lead_in_m = 0.5;
+    lead_in_boundary.validate();
     t::ProfileQuery road({{0.,0.},{1.,0.},{2.,0.}});
     const auto contact=road.contact({.5,.49},.5);exact(contact.point[0],.5,"flat contact station");exact(contact.point[1],0.,"flat contact height");bt::require(contact.delta>0.&&!contact.multi_support,"single flat support");
     bt::require(road.contact({.5,2.},.5).delta<0.,"airborne exact signed gap");

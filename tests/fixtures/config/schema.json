@@ -1457,7 +1457,7 @@
       "default_factory": "SeatedClimbConfig",
       "fields": [
         {
-          "default": false,
+          "default": null,
           "default_factory": null,
           "name": "enabled",
           "type": "<class 'bool'>"
@@ -1475,7 +1475,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 225.0,
+          "default": null,
           "default_factory": null,
           "name": "target_crank_power_w",
           "type": "<class 'float'>"
@@ -1487,7 +1487,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 1.0,
+          "default": null,
           "default_factory": null,
           "name": "lean_gain",
           "type": "<class 'float'>"
@@ -1499,7 +1499,7 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.1,
+          "default": null,
           "default_factory": null,
           "name": "max_backward_lean_rad",
           "type": "<class 'float'>"
@@ -1517,13 +1517,13 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 400.0,
+          "default": null,
           "default_factory": null,
           "name": "surge_power_w",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.2,
+          "default": null,
           "default_factory": null,
           "name": "surge_grade",
           "type": "<class 'float'>"
@@ -1535,25 +1535,25 @@
           "type": "<class 'float'>"
         },
         {
-          "default": 0.3333333333333333,
+          "default": null,
           "default_factory": null,
           "name": "surge_recovery_rate",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.3,
+          "default": null,
           "default_factory": null,
           "name": "front_load_share_target",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.3,
+          "default": null,
           "default_factory": null,
           "name": "lean_trim_gain_rad_s",
           "type": "<class 'float'>"
         },
         {
-          "default": 0.15,
+          "default": null,
           "default_factory": null,
           "name": "lean_trim_limit_rad",
           "type": "<class 'float'>"

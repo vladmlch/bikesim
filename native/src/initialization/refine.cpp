@@ -80,6 +80,7 @@ double refine_equilibrium(SetupContext& context,int max_evaluations,double accel
         std::ranges::copy(q0,q.begin());
         for(std::size_t i=0;i<qids.size();++i)q[qids[i]]=x[i];
         std::ranges::fill(std::views::counted(d->qvel,m->nv),0.);
+        context.physical.reset_static_brake();
         stepper.note_posvel_stale();
     };
     auto const residual=[&](std::span<const double> y){

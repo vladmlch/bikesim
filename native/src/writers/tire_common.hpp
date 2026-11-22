@@ -1,17 +1,10 @@
 // writers/tire_common.hpp — tyre-writer internals shared between
-// TireWriter (writers/tire.cpp, compliant_2d) and DistributedTireWriter
-// (writers/distributed_tire.cpp, distributed_2d_reference): the brush
+// TireWriter (writers/tire.cpp, compliant_2d), DistributedTireWriter
+// (writers/distributed_tire.cpp, distributed_2d_reference) and
+// PneumaticTyreModel (pneumatic/model.cpp, pneumatic): the brush
 // step, the effective-friction resolution and the SurfaceMap lookup that
 // used to live inside tire.cpp, plus the snapshot/patch/diagnostics
-// structs both writers publish.
-//
-// The helper bodies were moved verbatim — every floating-point
-// expression keeps its statement, operation order and rounding, so the
-// extraction cannot change TireWriter's proved warm-core results.
-// brush_step's only implementation is contactlaw::brush_step in
-// contact/laws.hpp (already shared with the rider-contact writer); the
-// tirecommon face repacks its tuple into named fields, which adds no
-// arithmetic and is bitwise-transparent.
+// structs the writers publish.
 #pragma once
 
 #include <array>
@@ -23,6 +16,7 @@
 #include <vector>
 
 #include "../config_types.hpp"
+#include "../contact/laws.hpp"
 
 namespace bike::physics_core {
 template <class Real>
@@ -61,10 +55,6 @@ struct TireSnapshot {
 
 // The per-side diagnostics dict the Python writer assembles inside the
 // loop (tire_forces.py:190-199) — exposed for parity checks/debugging.
-// The trailing fields are the distributed backend's scalars and status
-// labels (design spec §table "Диагностика"): the compliant_2d writer
-// never assigns them, so their zero defaults keep its staged diagnostics
-// — and the wire, whose emitter reads only the fields above — identical.
 struct TireDiagnostics {
     bool multi_support;
     double penetration_m;
@@ -84,10 +74,6 @@ struct TireDiagnostics {
             nonsmooth_station_count{}, max_patch_count{};
     bool outside_material_deflection_range{};
     std::string calibration_status, capability_status;
-    // The pneumatic backend's per-side dict (pneumatic_tire_forces.py
-    // :426-455) — same all-default contract as the distributed fields
-    // above: neither existing backend assigns them, so their staged
-    // zeros change nothing on the compliant/distributed wire.
     double support_n{}, slip_ratio{}, transient_slip_ratio{},
             contact_length_m{};
     int patch_count{};
@@ -114,9 +100,7 @@ namespace tirecommon {
     // NOLINTEND(bugprone-easily-swappable-parameters)
 
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide) *
-    // exp(-|slip|/stribeck_speed_mps). Exported for the pneumatic
-    // writer's zero-load `surface_map.at(hub_x).mu(0.0)` fallback;
-    // the body moved out of the anonymous namespace unchanged.
+    // exp(-|slip|/stribeck_speed_mps).
     [[nodiscard]] double surface_mu(const nativecfg::SurfaceSpec &s,
                                     double slip);
 
@@ -125,12 +109,6 @@ namespace tirecommon {
     [[nodiscard]] const nativecfg::SurfaceSpec &
     surface_at(const nativecfg::SurfaceMap &map, double x_m);
 
-    // tire_forces.py:56-61 — effective_friction: the configured mu when
-    // there is no surface map, else the queried section's Stribeck mu
-    // capped by the tire's own mu. The returned name is a view into the
-    // map's storage (or the static 'configured' literal) — it borrows
-    // from *map, which must outlive the view's use.
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the call site's Python order
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     [[nodiscard]] std::pair<double, std::string_view>
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,
@@ -140,9 +118,45 @@ namespace tirecommon {
     [[nodiscard]] bike::physics_core::SurfaceSpecPod<double>
     to_surface_spec_pod(const nativecfg::SurfaceSpec &s) noexcept;
 
-    // Populates `out` when `map != nullptr && map->sections.size() <= kMaxSurfaceSections`.
-    // Returns true if `out` holds the full SurfaceMap; false if absent or oversized.
     [[nodiscard]] bool
     fill_surface_map_view(const nativecfg::SurfaceMap *map,
                           bike::physics_core::SurfaceMapView<double> &out) noexcept;
+
+    inline constexpr double kSurfaceReferenceLoadN = 500.0;
+    inline constexpr double kSurfaceLoadSmoothDelta = 0.1;
+    inline constexpr double kReferenceSlipStiffnessPerLoad = 15.0;
+    inline constexpr double kWheelRollingTaperRadps = 0.2;
+
+    // Stage A evaluated track-surface sample (Spec §2.4). `name` borrows
+    // storage from the queried SurfaceSpec / SurfaceMap, which must outlive
+    // the sample.
+    struct SurfaceSample {
+        std::string_view name{};
+        double mu_peak = 0.0;
+        double mu_slide = 0.0;
+        double slip_stiffness_per_load = 0.0;
+        double stribeck_speed_mps = 4.5;
+        double crr_delta = 0.0;
+        double load_sensitivity = 0.0;
+    };
+
+    [[nodiscard]] SurfaceSample
+    sample_from_spec(const nativecfg::SurfaceSpec &s) noexcept;
+
+    // Precondition: map passed nativecfg::validate and sections are start_m-sorted (writer constructors guarantee both).
+    [[nodiscard]] SurfaceSample
+    eval_surface(const nativecfg::SurfaceMap &map, double x_m);
+
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters)
+    [[nodiscard]] const nativecfg::SurfaceSpec *
+    uniform_surface_for_span(const nativecfg::SurfaceMap &map, double x_min_m,
+                             double x_max_m);
+
+    [[nodiscard]] double load_sensitivity_factor(double wheel_normal_load_n,
+                                                 double k_z) noexcept;
+
+    [[nodiscard]] double sample_mu(const SurfaceSample &s,
+                                   double sliding_speed_mps,
+                                   double wheel_normal_load_n);
+    // NOLINTEND(bugprone-easily-swappable-parameters)
 } // namespace tirecommon

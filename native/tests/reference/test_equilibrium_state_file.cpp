@@ -38,6 +38,7 @@
 #include "terrain/trackfile.hpp"
 #include "terrain/types.hpp"
 #include "support/fixture_test.hpp"
+#include "support/golden.hpp"
 #include "support/temporary_directory.hpp"
 
 #include <algorithm>
@@ -373,6 +374,9 @@ void test_toml_state_file_resolves_relative_to_the_config() {
                 "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
                 "equilibrium_state_file = \"poses/flat.npz\"\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
                 "[seated_climb]\n"
+                "enabled = false\ntarget_crank_power_w = 225.0\nlean_gain = 1.0\nmax_backward_lean_rad = 0.1\n"
+                "surge_power_w = 400.0\nsurge_grade = 0.2\nsurge_recovery_rate = 0.3333333333333333\n"
+                "front_load_share_target = 0.3\nlean_trim_gain_rad_s = 0.3\nlean_trim_limit_rad = 0.15\n"
                 "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15.0\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
                 "[drive]\nmotor_clutch = false\n"
                 "[drive.assist]\nrelease_hold_s = 0.3\n"
@@ -403,6 +407,9 @@ void test_toml_state_file_resolves_relative_to_the_config() {
              << "timestep_s = 0.0005\ncontrol_period_s = 0.005\n"
              << "equilibrium_state_file = \"" << absolute.string() << "\"\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
              << "[seated_climb]\n"
+             << "enabled = false\ntarget_crank_power_w = 225.0\nlean_gain = 1.0\nmax_backward_lean_rad = 0.1\n"
+             << "surge_power_w = 400.0\nsurge_grade = 0.2\nsurge_recovery_rate = 0.3333333333333333\n"
+             << "front_load_share_target = 0.3\nlean_trim_gain_rad_s = 0.3\nlean_trim_limit_rad = 0.15\n"
              << "period_s = 0.00125\nreaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\norientation_tau_s = 0.5\nsurge_budget_s = 15\ntrim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15.0\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
              << "[drive]\nmotor_clutch = false\n"
              << "[drive.assist]\nrelease_hold_s = 0.3\n"
@@ -566,16 +573,21 @@ void test_pneumatic_settle_restore_round_trip() {
     const auto [steps, pose] =
         write_pose(pneumatic_savage_request(dir.path() / "cache_a"),
                    pose_path);
+    const double certified = init::state_array(pose, "residual_qacc").doubles().front();
+    std::cerr << "pneumatic savage certified residual=" << certified << '\n';
 
     auto load_request = pneumatic_savage_request(dir.path() / "cache_b");
     load_request.model.physics->equilibrium_state_file = // NOLINT(bugprone-unchecked-optional-access) fixture contract
         pose_path.string();
     auto loaded = init::make_setup(load_request);
     const auto eq = init::settle(*loaded);
+    std::cerr << "pneumatic savage restored residual=" << eq.residual_qacc << '\n';
     bt::require(eq.cache_hit && eq.steps == steps,
                 "the fresh pneumatic pose restores without settling");
     bt::require(eq.residual_qacc <= .05,
                 "the restored pneumatic pose passes the residual recheck");
+    bt::require(eq.residual_qacc == certified,
+                "the restored pneumatic residual equals the certified residual exactly");
     const auto reloaded = loaded->capture_state_file();
     bt::require(init::state_array(reloaded, "qpos").bytes ==
                     init::state_array(pose, "qpos").bytes,
@@ -606,7 +618,56 @@ void test_capture_initial_state_keeps_launch_velocity() {
                 "a moving start's initial-state transfer preserves qvel");
 }
 
+void test_default_sag_across_backends() {
+    const bt::TemporaryDirectory dir("default_sag");
+    const auto root = bt::oracle::root().parent_path().parent_path().parent_path();
+    std::array<init::EquilibriumResult, 3> results;
+    constexpr std::array profiles{"welded", "distributed", "pneumatic"};
+    for (std::size_t i = 0; i < profiles.size(); ++i) {
+        auto request = welded_request(dir.path(), false);
+        request.model.physics = cfg::load_physics(
+            root / "examples/research" /
+            (std::string("viewer_physics_") + profiles[i] + ".toml"));
+        request.model.physics->equilibrium_state_file.reset();
+        request.model.physics->equilibrium_cache_enabled = false;
+        request.model.physics->initial_speed_mps = 0.;
+        auto owner = init::make_setup(std::move(request));
+        results[i] = init::settle(*owner);
+        std::cerr << profiles[i] << " default sag fork_mm="
+                  << results[i].fork_travel_mm << " shock_mm="
+                  << results[i].shock_stroke_mm << " residual="
+                  << results[i].residual_qacc << '\n';
+    }
+    for (std::size_t i = 0; i < profiles.size(); ++i) {
+        bt::require(std::abs(results[i].fork_travel_mm - 54.) <= .5,
+                    std::string(profiles[i]) + " fork default sag");
+        bt::require(std::abs(results[i].shock_stroke_mm - 19.5) <= .5,
+                    std::string(profiles[i]) + " shock default sag");
+    }
+}
+
+void test_sag_evaluator_explicit_default_pair() {
+    const bt::TemporaryDirectory dir("sag_evaluator_pair");
+    const auto root = bt::oracle::root().parent_path().parent_path().parent_path();
+    for (const auto *profile : {"distributed", "pneumatic"}) {
+        auto request = welded_request(dir.path(), false);
+        request.model.physics = cfg::load_physics(root / "examples/research" /
+            (std::string("viewer_physics_") + profile + ".toml"));
+        request.model.physics->initial_speed_mps = 0.;
+        const auto evaluator = init::build_equilibrium_evaluator(std::move(request));
+        const auto exact = evaluator(97., 81550.);
+        const auto nearby = evaluator(97.000001, 81550.);
+        std::cerr << profile << " evaluator exact=" << exact[0] << "/" << exact[1]
+                  << " nearby=" << nearby[0] << "/" << nearby[1] << '\n';
+        bt::require(std::abs(exact[0] - nearby[0]) < .01 &&
+                    std::abs(exact[1] - nearby[1]) < .01,
+                    std::string(profile) + " preserves explicit default pair");
+    }
+}
+
 void check() {
+    test_sag_evaluator_explicit_default_pair();
+    test_default_sag_across_backends();
     test_state_file_round_trip();
     test_state_file_wins_over_the_auto_cache();
     test_state_file_rejects_a_different_configuration();
@@ -617,8 +678,8 @@ void check() {
     test_toml_state_file_resolves_relative_to_the_config();
     test_equilibrium_override_kwargs_reach_the_solve();
     test_post_episode_lifecycle_writes_no_cache_entry();
-    test_savage_pneumatic_fixture_restores();
     test_pneumatic_settle_restore_round_trip();
+    test_savage_pneumatic_fixture_restores();
     test_capture_initial_state_keeps_launch_velocity();
 }
 

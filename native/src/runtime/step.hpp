@@ -298,6 +298,10 @@ public:
                  std::optional<bool> braking = std::nullopt,
                  const BrakeResolution *resolved = nullptr);
 
+    // Rest-pose certification must match a fresh, unlatched StateFile restore.
+    // Initialization only: the next advancing force assembly re-latches.
+    void reset_static_brake() noexcept { brake_.reset(); }
+
     // _advance_physics — one committed interval. Validates every public
     // input before any mutation; engine failures poison the Stepper
     // through Stepper::mutate.
@@ -458,6 +462,9 @@ private:
     // means the apply_forces default (no explicit control).
     [[nodiscard]] double
     rollback_brake_demand(double speed_mps, const RideControl *control);
+    [[nodiscard]] double
+    peek_rollback_brake_demand(double speed_mps,
+                               const RideControl *control) const noexcept;
 
     // Launch part 1, task 4 — resolves the caller's demands, the
     // rollback reflex's demand and the rider-owned commands into the

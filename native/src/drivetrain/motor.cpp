@@ -25,12 +25,21 @@ namespace drivetrain {
         }
     }
 
+    void validate_assist_relations(const AssistSnapshot &s) {
+        // Positive torque times positive omega may underflow to zero in
+        // binary64, so an armed hold need not have positive stored power.
+        if ((s.release_hold_left_s > 0. || s.hold_power_w > 0.) &&
+            s.hold_torque_nm <= 0.)
+            throw std::invalid_argument("assist hold torque");
+    }
+
     void AssistController::set_state(AssistSnapshot s) {
         nonnegative(s.torque, "torque");
         nonnegative(s.last_gain, "last_gain");
         nonnegative(s.hold_power_w, "hold_power_w");
         nonnegative(s.hold_torque_nm, "hold_torque_nm");
         nonnegative(s.release_hold_left_s, "release_hold_left_s");
+        validate_assist_relations(s);
         state_ = s;
     }
 

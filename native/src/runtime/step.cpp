@@ -1282,7 +1282,7 @@ PhysicalStep::apply_forces_body(
             const rider::LaunchContext launch_context{
                 .shift = {.response = rider::shift_response(shifting.rider_response),
                           .shift_count = shifting.shift_count,
-                          .cut_active = shifting.cut_remaining_s > 1e-12},
+                          .cut_active = drivetrain::shift_cut_active(shifting.cut_remaining_s)},
                 .effort_mode = drive_mode() == "articulated_effort" || drive_mode() == "crank_effort",
                 .external_brake = caller_braking};
             const auto resolution = rider_intent_.resolve_full(
@@ -1310,7 +1310,11 @@ PhysicalStep::apply_forces_body(
                 ? *resolved
                 : resolve_brakes({.caller_front = front,
                                   .caller_rear = rear,
-                                  .rollback_demand = 0.,
+                                  .rollback_demand = active
+                                      ? peek_rollback_brake_demand(
+                                            buf(d->qvel, m->nv)[static_cast<std::size_t>(root_x_dofadr_)],
+                                            &caller_control)
+                                      : 0.,
                                   .caller_braking = braking,
                                   .rider_enabled =
                                       control.rider_enabled});
@@ -1318,10 +1322,6 @@ PhysicalStep::apply_forces_body(
         std::ranges::fill(wbuf(d->qfrc_applied, m->nv), 0.);
         std::ranges::fill(wbuf(d->xfrc_applied, m->nbody * 6), 0.);
         std::ranges::fill(wbuf(d->ctrl, m->nu), 0.);
-        // dof_frictionloss is a position-stage model input — a bound that
-        // actually changed invalidates the cached makeConstraint rows.
-        if (brake_.apply(m, brakes.final_front, brakes.final_rear))
-            stepper_->note_posvel_stale();
         // The latched elastic bite at standstill; an advancing pass may
         // latch or release, a probe reads the committed latch
         // (static_braking.py hold_qfrc — physical_runtime.py:296).
@@ -1334,6 +1334,12 @@ PhysicalStep::apply_forces_body(
         std::vector<double> brake_hold =
             brake_.hold_qfrc(m, d, brakes.final_front, brakes.final_rear,
                              advance, !active);
+        // The bite consumes part of the same budget as solver friction.
+        // A changed position-stage bound invalidates makeConstraint rows.
+        if (brake_.apply(m, brakes.final_front, brakes.final_rear,
+                         brake_hold[static_cast<std::size_t>(brake_.front_dof())],
+                         brake_hold[static_cast<std::size_t>(brake_.rear_dof())]))
+            stepper_->note_posvel_stale();
         // prepare_pedaling reads the LAST committed rear contact — the
         // durable contacts_ (previous step's final refresh or bootstrap).
         const drivetrain::RideControl drive_control{
@@ -2366,20 +2372,25 @@ PhysicalStep::refresh_contacts(bool final, std::optional<double> time_s,
 
 double PhysicalStep::rollback_brake_demand(double speed_mps,
                                          const RideControl *control) {
+    const double demand = peek_rollback_brake_demand(speed_mps, control);
+    rollback_hold_ = demand > 0.;
+    return demand;
+}
+
+double PhysicalStep::peek_rollback_brake_demand(
+    double speed_mps, const RideControl *control) const noexcept {
     const auto &drive_cfg = stepper_->drive().config();
     const auto &cfg = drive_cfg.policies.pedaling;
     if (!cfg.rollback_brake || cfg.rollback_demand <= 0.
         || (drive_cfg.drive_mode != "crank_effort"
             && drive_cfg.drive_mode != "articulated_effort")
         || (control != nullptr && !control->rider_enabled)) {
-        rollback_hold_ = false;
         return 0.;
     }
-    if (rollback_hold_)
-        rollback_hold_ = speed_mps <= -cfg.rollback_release_mps;
-    else
-        rollback_hold_ = speed_mps < -cfg.rollback_engage_mps;
-    return rollback_hold_ ? cfg.rollback_demand : 0.;
+    const bool hold = rollback_hold_
+        ? speed_mps <= -cfg.rollback_release_mps
+        : speed_mps < -cfg.rollback_engage_mps;
+    return hold ? cfg.rollback_demand : 0.;
 }
 
 // ---- resolve_brakes (launch part 1, task 4) ---------------------------
@@ -2959,16 +2970,50 @@ PhysicalStep::probe_step_inputs(const RideControl &control,
         scalar_field(rear_demand, "rear brake demand");
         const mjModel *m = stepper_->model();
         const mjData *d = stepper_->data();
+        const auto frictionloss = wbuf(m->dof_frictionloss, m->nv);
+        const auto front = static_cast<std::size_t>(brake_.front_dof());
+        const auto rear = static_cast<std::size_t>(brake_.rear_dof());
+        struct RestoreBrakeBounds {
+            std::span<double> values;
+            std::size_t front, rear;
+            double old_front, old_rear;
+            Stepper *stepper;
+            bool was_fresh;
+            RestoreBrakeBounds(std::span<double> saved_values,
+                               std::array<std::size_t, 2> indices,
+                               Stepper *owner) noexcept
+                : values(saved_values), front(indices[0]), rear(indices[1]),
+                  old_front(values[front]), old_rear(values[rear]),
+                  stepper(owner), was_fresh(owner->posvel_fresh()) {}
+            RestoreBrakeBounds(const RestoreBrakeBounds &) = delete;
+            RestoreBrakeBounds &operator=(const RestoreBrakeBounds &) = delete;
+            RestoreBrakeBounds(RestoreBrakeBounds &&) = delete;
+            RestoreBrakeBounds &operator=(RestoreBrakeBounds &&) = delete;
+            ~RestoreBrakeBounds() noexcept {
+                const bool changed =
+                    std::bit_cast<std::uint64_t>(values[front]) !=
+                        std::bit_cast<std::uint64_t>(old_front) ||
+                    std::bit_cast<std::uint64_t>(values[rear]) !=
+                        std::bit_cast<std::uint64_t>(old_rear);
+                values[front] = old_front;
+                values[rear] = old_rear;
+                // A probe may have rebuilt the constraint arena against the
+                // temporary bounds. Never claim that arena is fresh after
+                // restoring different bounds, even if it was fresh on entry.
+                if (changed || !was_fresh)
+                    stepper->note_posvel_stale();
+            }
+        };
+        const RestoreBrakeBounds restore{frictionloss, {front, rear}, stepper_};
         (void)apply_forces(true, false, front_demand, rear_demand,
                            std::nullopt, control, std::nullopt);
         ProbeResult out;
         out.components = accumulator_.components();
         out.ctrl = buffer_copy(d->ctrl, m->nu);
-        const auto frictionloss = buf(m->dof_frictionloss, m->nv);
         out.front_brake_bound_nm =
-            frictionloss[static_cast<std::size_t>(brake_.front_dof())];
+            frictionloss[front];
         out.rear_brake_bound_nm =
-            frictionloss[static_cast<std::size_t>(brake_.rear_dof())];
+            frictionloss[rear];
         out.drive = std::get<WireObject>(std::move(
             wire_diagnostics(
                 stepper_->drive().diagnostics(true).to_map())

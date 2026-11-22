@@ -60,6 +60,8 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
                     vector(node, patch.bristle_deflection_m, label + ".bristle_deflection_m");
             }
             const auto output = wheel.last_outputs().patches();
+            const auto &snapshot = rig.tire->snapshot_storage()[side];
+            bt::require(snapshot.patches.size() == output.size(), "snapshot and output patch counts match");
             scalar(node, static_cast<double>(output.size()), prefix + ".output_patch_count");
             for (std::size_t i = 0; i < output.size(); ++i) {
                 const auto label = prefix + ".output." + std::to_string(i);
@@ -67,10 +69,20 @@ void test_oracle_parity_with_xfrc_writer(std::string_view tier) {
                 scalar(node, output[i].slip_speed_mps, label + ".slip_speed_mps");
                 add_jtf(*rig.engine.model, *rig.engine.data, sides[side], output[i].centroid_world_m,
                     output[i].force_world_n, expected);
+                const int body = bike::model::required_id(*rig.engine.model, mjOBJ_BODY,
+                        std::string(sides[side]) + "_wheel");
+                const auto jac = bike::model::point_jacobian(*rig.engine.model, *rig.engine.data,
+                        body, output[i].centroid_world_m);
+                for (std::size_t j = 0; j < expected.size(); ++j)
+                    for (std::size_t k = 0; k < 3; ++k)
+                        expected[j] += jac.rotation[k * expected.size() + j] *
+                                snapshot.patches[i].couple_world_nm[k];
             }
         }
         vector(node, actual, "step." + std::to_string(step) + ".qfrc");
-        numeric_equal(actual, expected);
+        for (std::size_t i = 0; i < actual.size(); ++i)
+            bt::require(std::abs(actual[i] - expected[i]) <= 1e-12 * (1.0 + std::abs(expected[i])),
+                        "qfrc equals projected patch forces and world couples");
         rig.engine.data->time += dt;
     }
     node.done();

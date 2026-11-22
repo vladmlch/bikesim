@@ -17,7 +17,8 @@ void AlpineGenSpec::validate()const{
     detail::range(counter_grade,"counter_grade",-1.);if(counter_grade[1]>=0.)throw std::invalid_argument("counter_grade must be negative: it is a short descent");
     detail::range(n_scree,"n_scree");detail::range(n_wet,"n_wet");detail::range(n_boulders,"n_boulders");detail::range(n_rock_gardens,"n_rock_gardens");detail::range(n_water_bars,"n_water_bars");detail::range(n_sharp_edges,"n_sharp_edges");
     detail::positive(length_m,"length_m");detail::positive(lead_in_m,"lead_in_m");detail::positive(lead_out_m,"lead_out_m");detail::positive(transition_m,"transition_m");detail::positive(min_contact_radius_m,"min_contact_radius_m");detail::positive(max_kink_deg,"max_kink_deg");detail::positive(contact_window_m,"contact_window_m");
-    detail::nonnegative(counter_prob,"counter_prob");detail::nonnegative(scree_ramp_bias,"scree_ramp_bias");
+    detail::nonnegative(counter_prob,"counter_prob");detail::nonnegative(scree_ramp_bias,"scree_ramp_bias");detail::nonnegative(surface_blend_m,"surface_blend_m");
+    if(surface_blend_m>CLEARANCE_M||0.5*surface_blend_m>lead_in_m)throw std::invalid_argument("surface_blend_m must not exceed 1.0 m feature clearance or 2 * lead_in_m");
     if(counter_prob>1.||scree_ramp_bias>1.)throw std::invalid_argument("alpine probabilities must lie in [0, 1]");
     if(n_walls<0||n_walls>1)throw std::invalid_argument("n_walls must be 0 or 1");
     if(wall_grade[0]<ramp_grade[1])throw std::invalid_argument("wall_grade must start at or above the top of ramp_grade");
@@ -35,6 +36,7 @@ AlpineGenSpec AlpineGenSpec::from_dict(const bike::io::Value& value){
         // cppcheck-suppress unknownMacro
         BIKE_ALPINE_SPEC_FIELDS(READ_FIELD)
 #undef READ_FIELD
+        if(key=="surface_blend_m"){detail::read_field(out.surface_blend_m,v,key);found=true;}
         if(!found)throw std::invalid_argument("unknown alpine generator key: "+key);
     }out.validate();return out;
 }
@@ -46,6 +48,7 @@ bike::io::Value AlpineGenSpec::to_dict()const{
     // cppcheck-suppress unknownMacro
     BIKE_ALPINE_SPEC_FIELDS(WRITE_FIELD)
 #undef WRITE_FIELD
+    if(surface_blend_m!=0.)out.emplace_back("surface_blend_m",detail::field_value(surface_blend_m));
     return {std::move(out)};
 }
 std::string AlpineGenSpec::sha256()const{validate();return detail::source_spec_hash(to_dict());}
@@ -111,7 +114,10 @@ TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std
         const double corr=rounded(rng.uniform(s.scree_corr_m[0],s.scree_corr_m[1]),3);
         Interval span{lo,hi};if(rng.uniform01()<s.scree_ramp_bias)span=ramps.at(static_cast<std::size_t>(rng.integers(0,static_cast<std::int64_t>(ramps.size()))));
         const auto placed=place(rng,wanted,span.first,span.second,taken,true);if(placed){
-            const auto [start,length]=*placed;obstacles.push_back(detail::faceted<RoadRoughness>(s,rng,start,length,amp,corr));sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="scree"});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
+            const auto [start,length]=*placed;obstacles.push_back(detail::faceted<RoadRoughness>(s,rng,start,length,amp,corr));
+            const double end=rounded(start+length,2);
+            const double blend=s.surface_blend_m==0.?0.:std::min(s.surface_blend_m,.5*rounded(end-start,2));
+            sections.push_back({.start_m=start,.end_m=end,.surface="scree",.blend_m=blend});taken.emplace_back(start,start+length);used.emplace_back(start,start+length);
         }
     }
     const auto boulder_count=detail::count_draw(rng,s.n_boulders);
@@ -134,7 +140,12 @@ TrackSpec generate_alpine_track(const AlpineGenSpec& s,std::string_view seed,std
     const auto wet_count=detail::count_draw(rng,s.n_wet);
     for(std::int64_t i=0;i<wet_count;++i){
         const double wanted=rounded(rng.uniform(s.wet_len_m[0],s.wet_len_m[1]),2);const auto placed=place(rng,wanted,lo,hi,used,true);
-        if(placed){const auto [start,length]=*placed;sections.push_back({.start_m=start,.end_m=rounded(start+length,2),.surface="wet"});used.emplace_back(start,start+length);}
+        if(placed){
+            const auto [start,length]=*placed;
+            const double end=rounded(start+length,2);
+            const double blend=s.surface_blend_m==0.?0.:std::min(s.surface_blend_m,.5*rounded(end-start,2));
+            sections.push_back({.start_m=start,.end_m=end,.surface="wet",.blend_m=blend});used.emplace_back(start,start+length);
+        }
     }
     const double amp=rounded(rng.uniform(s.background_amp_m[0],s.background_amp_m[1]));
     const double corr=rounded(rng.uniform(s.background_corr_m[0],s.background_corr_m[1]),3);

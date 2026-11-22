@@ -10,6 +10,7 @@
 // records/presets/resolve_suspension mapping — mirroring the Python oracle
 // in the listed source-authority files.
 #include "support/fixture_test.hpp"
+#include "support/temporary_directory.hpp"
 #include "configuration/legacy_rider.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
@@ -17,6 +18,7 @@
 #include "configuration/rider_spec.hpp"
 #include "configuration/suspension_spec.hpp"
 #include "io/json.hpp"
+#include "rider/intent.hpp"
 #include <array>
 #include <bit>
 #include <chrono>
@@ -28,6 +30,7 @@
 #include <vector>
 
 #include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <limits>
 #include <numbers>
@@ -280,8 +283,10 @@ cfg::SimulationPhysicsConfig welded_profile() {
     auto& climb = c.seated_climb;
     climb.enabled = true;
     climb.target_crank_power_w = 250.0;
+    climb.lean_gain = 1.0;
     climb.max_crank_torque_nm = 60.0;
     climb.max_forward_lean_rad = 0.55;
+    climb.max_backward_lean_rad = 0.1;
     climb.surge_power_w = 400.0;
     climb.surge_grade = 0.20;
     climb.surge_budget_s = 15.0;
@@ -920,6 +925,151 @@ transmission_model = "elastic_chain"
                 "the declared default is the ideal drive");
 }
 
+[[gnu::noinline]] void test_seated_climb_table_is_required() {
+    const std::string complete =
+        cfg::write_physics_toml(cfg::default_physics());
+    constexpr std::string_view header = "[seated_climb]";
+    const std::size_t table = complete.find(header);
+    bt::require(table != std::string::npos,
+                "the generated profile declares seated_climb");
+    const std::size_t next_table =
+        complete.find("\n[", table + header.size());
+    const std::size_t table_end =
+        next_table == std::string::npos ? complete.size() : next_table;
+    std::string without_table = complete;
+    without_table.erase(table, table_end - table);
+
+    const bt::TemporaryDirectory temp("t13-seated-climb-table-required");
+    const auto path = temp.path() / "missing-table.toml";
+    std::ofstream output(path);
+    bt::require(output.good(),
+                "temporary TOML file for missing table opens");
+    output << without_table;
+    output.close();
+    bt::require(output.good(),
+                "temporary TOML file without seated_climb is written");
+
+    bool rejected = false;
+    try {
+        (void)cfg::load_physics(path);
+    } catch (const std::invalid_argument &) {
+        rejected = true;
+    }
+    bt::require(rejected, "omitting the seated_climb table is rejected");
+}
+
+[[gnu::noinline]] void test_seated_climb_required_profile_fields() {
+    static constexpr std::array<std::string_view, 21> kRequiredKeys{
+        "enabled",
+        "period_s",
+        "reaction_delay_s",
+        "target_crank_power_w",
+        "max_crank_torque_nm",
+        "lean_gain",
+        "max_forward_lean_rad",
+        "max_backward_lean_rad",
+        "lean_rate_rad_s",
+        "orientation_tau_s",
+        "surge_power_w",
+        "surge_grade",
+        "surge_budget_s",
+        "surge_recovery_rate",
+        "front_load_share_target",
+        "lean_trim_gain_rad_s",
+        "lean_trim_limit_rad",
+        "trim_dead_time_s",
+        "min_elbow_flexion_deg",
+        "climb_effort_rise_speed_mps",
+        "climb_effort_full_speed_mps",
+    };
+    const std::string complete =
+        cfg::write_physics_toml(cfg::default_physics());
+    const bt::TemporaryDirectory temp("t13-seated-climb-required");
+    const std::size_t table = complete.find("[seated_climb]");
+    bt::require(table != std::string::npos,
+                "the generated profile declares seated_climb");
+
+    for (const std::string_view key : kRequiredKeys) {
+        std::string missing = complete;
+        const std::string assignment =
+            "\n" + std::string(key) + " = ";
+        const std::size_t begin = missing.find(assignment, table);
+        bt::require(begin != std::string::npos,
+                    "generated seated_climb profile contains " +
+                        std::string(key));
+        const std::size_t end = missing.find('\n', begin + 1);
+        bt::require(end != std::string::npos,
+                    "generated assignment is line terminated");
+        missing.erase(begin, end - begin);
+
+        const auto path =
+            temp.path() / ("missing-" + std::string(key) + ".toml");
+        std::ofstream output(path);
+        bt::require(output.good(), "temporary TOML file opens");
+        output << missing;
+        output.close();
+        bt::require(output.good(), "temporary TOML file is written");
+        bool rejected = false;
+        try {
+            (void)cfg::load_physics(path);
+        } catch (const std::invalid_argument &error) {
+            rejected = true;
+            bt::require(std::string_view(error.what()).find(key) !=
+                            std::string_view::npos,
+                        std::string(key) +
+                            " omission is named by the TOML diagnostic");
+        }
+        bt::require(rejected,
+                    "omitting seated_climb." + std::string(key) +
+                        " is rejected");
+    }
+
+    bool empty_rejected = false;
+    try {
+        cfg::detail::post_init(rider::IntentConfig{});
+    } catch (const std::invalid_argument &error) {
+        empty_rejected =
+            std::string_view(error.what()).find("period_s") !=
+            std::string_view::npos;
+    }
+    bt::require(empty_rejected,
+                "programmatic IntentConfig{} rejects unset required fields");
+
+    using ClimbMember = double cfg::SeatedClimbConfig::*;
+    static constexpr std::array<std::pair<std::string_view, ClimbMember>, 9>
+        kUnsetScalars{{
+            {"target_crank_power_w",
+             &cfg::SeatedClimbConfig::target_crank_power_w},
+            {"lean_gain", &cfg::SeatedClimbConfig::lean_gain},
+            {"max_backward_lean_rad",
+             &cfg::SeatedClimbConfig::max_backward_lean_rad},
+            {"surge_power_w", &cfg::SeatedClimbConfig::surge_power_w},
+            {"surge_grade", &cfg::SeatedClimbConfig::surge_grade},
+            {"surge_recovery_rate",
+             &cfg::SeatedClimbConfig::surge_recovery_rate},
+            {"front_load_share_target",
+             &cfg::SeatedClimbConfig::front_load_share_target},
+            {"lean_trim_gain_rad_s",
+             &cfg::SeatedClimbConfig::lean_trim_gain_rad_s},
+            {"lean_trim_limit_rad",
+             &cfg::SeatedClimbConfig::lean_trim_limit_rad},
+        }};
+    for (const auto &[name, member] : kUnsetScalars) {
+        auto config = cfg::default_physics().seated_climb;
+        config.*member = -1.;
+        bool rejected = false;
+        try {
+            cfg::detail::post_init(config);
+        } catch (const std::invalid_argument &error) {
+            rejected = std::string_view(error.what()).find(name) !=
+                       std::string_view::npos;
+        }
+        bt::require(rejected,
+                    "programmatic unset " + std::string(name) +
+                        " is rejected by post_init");
+    }
+}
+
 void test_validation() {
     // The brief's mandatory red-line case plus exact diagnostics.
     case_from_default("timestep_s must be finite and positive",
@@ -1016,6 +1166,12 @@ void test_validation() {
         [](cfg::SimulationPhysicsConfig& c) {
             c.drive.pedaling.reposition_on_stall = true;
             c.articulated.pedal_attachment = "flat";
+        });
+    case_from_welded(
+        "drive.pedaling.reposition_on_stall requires drive.motor_clutch",
+        [](cfg::SimulationPhysicsConfig& c) {
+            c.drive.pedaling.reposition_on_stall = true;
+            c.drive.motor_clutch = false;
         });
     // Control: the same request stays valid on the spindle-weld rider the
     // welded profile already uses.
@@ -1176,11 +1332,18 @@ void test_resolved_profiles() {
                              "pitch_assist"),
                 "welded oracle carries the profile timestep/effort mode");
 
-    expect_resolved(welded_profile(), "config/resolved/welded.json",
+    const auto calibrated_launch_caps = [](cfg::SimulationPhysicsConfig& c) {
+        c.rider_launch.effort_cap_grades = {0., .05, .08, .1, .12, .13, .15, .2, .22, .25};
+        c.rider_launch.effort_cap_grade_nm = {36., 15., 14.5, 13.2, 14., 15.5, 19.5, 18.5, 21., 20.};
+    };
+    auto welded = std::make_unique<cfg::SimulationPhysicsConfig>(welded_profile());
+    calibrated_launch_caps(*welded);
+    expect_resolved(*welded, "config/resolved/welded.json",
                     "config/resolved/welded.json");
     resolved_case("config/resolved/distributed.json",
                   "config/resolved/distributed.json",
-                  [](cfg::SimulationPhysicsConfig& c) {
+                  [&](cfg::SimulationPhysicsConfig& c) {
+                      calibrated_launch_caps(c);
                       c.tires.backend = "distributed_2d_reference";
                       c.tires.distributed.station_count = 128;
                       // The distributed TOML's [resistance] crr = 0.0:
@@ -1203,9 +1366,13 @@ void test_resolved_profiles() {
                   });
     resolved_case("config/resolved/pneumatic.json",
                   "config/resolved/pneumatic.json",
-                  [](cfg::SimulationPhysicsConfig& c) {
+                  [&](cfg::SimulationPhysicsConfig& c) {
+                      calibrated_launch_caps(c);
                       c.tires.backend = "pneumatic";
                       c.tires.pneumatic.tier = "fast";
+                      // Pneumatic carcass + tread_loss_crr + crr_delta own
+                      // rolling loss; external crr is zeroed like distributed.
+                      c.resistance.crr = 0.0;
                       // The pneumatic TOML drops the [tires.front]/[rear]
                       // mu overrides — the parameters stay at their
                       // declared defaults.
@@ -1466,6 +1633,22 @@ void test_wire_validation() {
         make_number("-0.1");
     expect_invalid("invalid config.rider_contacts.arm_reach_m",
                    [&] { cfg::wire::validate_rider_contacts(contacts); });
+
+    // Stage A optional wire members on surface and tire.surface_map.sections.
+    mutated = wire;
+    {
+        Value& sm = member_mut(member_mut(mutated, "tire", "wire"), "surface_map", "tire");
+        Value& surf = member_mut(sm, "surface", "surface_map");
+        object_of(surf).emplace_back("crr_delta", make_number("0.0025"));
+        object_of(surf).emplace_back("load_sensitivity", make_number("0.08"));
+        Value sec_surf = surf;
+        Value sec = make_object({{"start_m", make_number("2.0")},
+                                 {"end_m", make_number("5.0")},
+                                 {"surface", std::move(sec_surf)},
+                                 {"blend_m", make_number("0.4")}});
+        member_mut(sm, "sections", "surface_map") = make_array({std::move(sec)});
+    }
+    cfg::wire::validate_config(mutated);
 }
 
 void test_rider() {
@@ -1826,8 +2009,8 @@ void test_suspension() {
                     "Base Tune (Factory Neutral)" &&
                     resolved.air.total_travel_mm == 180.0 &&
                     resolved.num_tokens == 2 &&
-                    resolved.gauge_pressure_psi == 85.2 &&
-                    resolved.coil.rate_n_m == 114600.0 &&
+                    resolved.gauge_pressure_psi == 97.0 &&
+                    resolved.coil.rate_n_m == 81550.0 &&
                     resolved.coil.stroke_mm == 65.0 &&
                     resolved.fork_damper.total_travel_mm == 180.0 &&
                     resolved.shock_damper.total_stroke_mm == 65.0,
@@ -1876,6 +2059,8 @@ int main(int argc, char* argv[]) {
         physics_mode_is_physical_only();
         test_defaults();
         test_schema();
+        test_seated_climb_table_is_required();
+        test_seated_climb_required_profile_fields();
         test_elastic_chain_is_rejected();
         test_validation();
         test_aliases_and_resolution();

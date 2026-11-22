@@ -19,6 +19,7 @@ std::string generate_mjcf(const BuildRequest& request) {
         std::make_unique<configuration::SimulationPhysicsConfig>(*request.physics):nullptr;
     if(physics) configuration::post_init(*physics);
     auto build_request = request;
+    if (physics) geometry::sync_backend_default_suspension(build_request.bike, physics->tires.backend);
     if(physics && physics->tires.backend=="pneumatic") {
         build_request.bike.front_wheel_radius = physics->tires.pneumatic.front.outer_radius_mm;
         build_request.bike.rear_wheel_radius = physics->tires.pneumatic.rear.outer_radius_mm;

@@ -118,9 +118,9 @@ struct SuspensionInputs {
     // BikeSpecs geometry/rate fields -> damper travels + spring args.
     double fork_travel = 180.0;
     double shock_stroke = 65.0;
-    double fork_initial_psi = 85.2;
+    double fork_initial_psi = 97.0;
     int fork_air_tokens = 2;
-    double shock_stiffness = 114600.0;
+    double shock_stiffness = 81550.0;
 };
 
 // The resolved suspension setup: what the Python constructors receive after

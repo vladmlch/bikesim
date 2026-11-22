@@ -84,6 +84,7 @@ struct AlpineGenSpec {
     Range sharp_edge_height_m{.03,.08};
     bool single_contact_safe=true;
     double min_contact_radius_m=.45,max_kink_deg=17.,contact_window_m=.25;
+    double surface_blend_m=0.;
     void validate() const;
     [[nodiscard]] static AlpineGenSpec from_dict(const bike::io::Value& data);
     [[nodiscard]] bike::io::Value to_dict() const;

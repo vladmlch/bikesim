@@ -120,6 +120,7 @@ EquilibriumResult settle_context(SetupContext& context,const EquilibriumOptions&
     while(!cache_hit&&steps<budget){
         steps+=segments.run(context,relax_step,budget-steps);++resets;
         auto const* d=context.stepper.data();std::ranges::fill(std::views::counted(d->qvel,context.stepper.model()->nv),0.);context.stepper.note_posvel_stale();
+        context.physical.reset_static_brake();
         apply_initial_forces(context,false);context.stepper.forward();residual=acceleration_residual(context);
         // Kinetic segment lengths vary, so its refine schedule is a time
         // threshold rather than an exact step multiple.

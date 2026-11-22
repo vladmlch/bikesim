@@ -19,6 +19,7 @@
 //     the identical effective configuration; exclusive (non-overwriting)
 //     destination semantics via the platform boundary.
 #include "support/fixture_test.hpp"
+#include "support/seated_climb_test_profile.hpp"
 #include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "platform/files.hpp"
@@ -374,7 +375,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-reject");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        write_text_file(path, bt::complete_seated_climb_test_profile(toml));
         return path;
     };
 
@@ -616,7 +617,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-seated");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        const std::string complete =
+            name.starts_with("missing_seated_")
+                ? std::string(toml)
+                : bt::complete_seated_climb_test_profile(toml);
+        write_text_file(path, complete);
         return path;
     };
     const std::string_view seated_head =
@@ -625,6 +630,11 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         "[seated_climb]\nenabled = true\n";
     const std::string_view seated_tail =
         "period_s = 0.00125\nreaction_delay_s = 0.15\n"
+        "target_crank_power_w = 225.0\nlean_gain = 1.0\n"
+        "max_backward_lean_rad = 0.1\nsurge_power_w = 400.0\n"
+        "surge_grade = 0.2\nsurge_recovery_rate = 0.3333333333333333\n"
+        "front_load_share_target = 0.3\nlean_trim_gain_rad_s = 0.3\n"
+        "lean_trim_limit_rad = 0.15\n"
         "lean_rate_rad_s = 0.5\norientation_tau_s = 0.5\n"
         "surge_budget_s = 15\ntrim_dead_time_s = 0.2\n"
         "max_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n";
@@ -729,7 +739,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-reposition");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        write_text_file(path, bt::complete_seated_climb_test_profile(toml));
         return path;
     };
     const std::string_view repo_head =
@@ -778,14 +788,14 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     // Engaged manoeuvre (spindle-weld rider): each physics-tick-counted
     // timing rejects a non-multiple of timestep_s.
     const std::string_view engaged_head =
-        "timestep_s = 0.00125\ncontrol_period_s = 0.005\n"
+        "timestep_s = 0.00125\ncontrol_period_s = 0.005\ndrive_mode = \"articulated_effort\"\n"
         "closure_time_constant_s = 0.0025\nequilibrium_crank_hold_kp_nm_rad = 20000.0\nequilibrium_crank_hold_kd_nms_rad = 88.0\n"
         "[rider_launch]\nstart_cog_grade_breaks = []\nstart_cog_teeth = [24]\nstart_pedal_angle_rad = 0.0\nstart_lean_grades = [0.0]\nstart_lean_rad = [0.0]\nplan_enabled = false\nstandstill_speed_mps = 0.1\nstandstill_crank_rpm = 5.0\neffort_rate_nm_s = 40.0\neffort_cap_asphalt_nm = 60.0\neffort_cap_hardpack_nm = 60.0\neffort_cap_loose_nm = 60.0\neffort_cap_wet_nm = 60.0\neffort_cap_scree_nm = 60.0\neffort_cap_grades = [0.0]\neffort_cap_grade_nm = [1000.0]\neffort_rise_speed_mps = 2.5\nrelease_torque_grades = [0.0, 0.2]\nrelease_torque_nm = [0.0, 30.0]\nbrake_release_s = 0.15\nmax_hold_s = 1.5\nupshift_crank_rpm = 82.0\nshift_retry_s = 0.25\nend_speed_mps = 3.0\nend_crank_rpm = 60.0\nend_hold_s = 0.3\nmax_launch_s = 6.0\nhandover_s = 0.9\n[front_lift_reaction]\nhand_window_s = 0.5\nhand_lag_s = 0.5\nhand_drop_ratio = 0.7\npitch_rate_up_rad_s = 0.5\npitch_rad = 0.17\ndecision_s = 0.1\nease_enabled = false\nlean_enabled = false\nrear_brake_tap_enabled = false\nease_fraction = 0.7\nease_rate_per_s = 5.0\nlean_add_rad = 0.1\nlean_rate_rad_s = 0.5\nclear_s = 0.3\n[monitors]\ngrounded_hold_s = 0.005\ncontact_dropout_s = 0.0125\n"
         "[seated_climb]\nenabled = false\nperiod_s = 0.00125\n"
         "reaction_delay_s = 0.15\nlean_rate_rad_s = 0.5\n"
         "orientation_tau_s = 0.5\nsurge_budget_s = 15\n"
         "trim_dead_time_s = 0.2\nmax_forward_lean_rad = 0.55\nmax_crank_torque_nm = 60.0\nmin_elbow_flexion_deg = 15\nclimb_effort_cap_grades = [0.0]\nclimb_effort_cap_grade_nm = [1000.0]\nclimb_effort_rise_speed_mps = 2.5\nclimb_effort_full_speed_mps = 4.0\n"
-        "[drive]\nmotor_clutch = false\n[drive.pedaling]\nreposition_on_stall = true\n"
+        "[drive]\nmotor_clutch = true\n[drive.pedaling]\nreposition_on_stall = true\n"
         "reposition_min_effort_nm = 20.0\n"
         "reposition_stall_progress_rad = 0.5\n"
         "reposition_back_rate_rad_s = 3.0\nreposition_damping_nms_rad = 12.0\n"
@@ -912,7 +922,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-research");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        write_text_file(path, bt::complete_seated_climb_test_profile(toml));
         return path;
     };
     const std::string_view research_head =
@@ -1022,7 +1032,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-drive");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        write_text_file(path, bt::complete_seated_climb_test_profile(toml));
         return path;
     };
     const std::string_view head =
@@ -1277,7 +1287,7 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     const TempDir temp("bike-t13-holdmembers");
     const auto stage = [&](std::string_view name, std::string_view toml) {
         const auto path = temp.path / std::string(name);
-        write_text_file(path, toml);
+        write_text_file(path, bt::complete_seated_climb_test_profile(toml));
         return path;
     };
     const std::string full =
@@ -1450,6 +1460,15 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
         });
     {
         auto unresolved_base = cfg::SimulationPhysicsConfig{};
+        unresolved_base.seated_climb.target_crank_power_w = 225.;
+        unresolved_base.seated_climb.lean_gain = 1.;
+        unresolved_base.seated_climb.max_backward_lean_rad = .10;
+        unresolved_base.seated_climb.surge_power_w = 400.;
+        unresolved_base.seated_climb.surge_grade = .20;
+        unresolved_base.seated_climb.surge_recovery_rate = 1. / 3.;
+        unresolved_base.seated_climb.front_load_share_target = .30;
+        unresolved_base.seated_climb.lean_trim_gain_rad_s = .3;
+        unresolved_base.seated_climb.lean_trim_limit_rad = .15;
         unresolved_base.timestep_s = 0.0005;
         unresolved_base.control_period_s = 0.005;
         unresolved_base.monitors.grounded_hold_s = 0.005;

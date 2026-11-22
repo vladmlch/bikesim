@@ -178,6 +178,7 @@ std::unique_ptr<SetupOwner> make_setup(SetupRequest request) {
     // settle and the intent reset.
     const auto preparation = prepare_request(request);
     configuration::post_init(*request.model.physics);
+    geometry::sync_backend_default_suspension(request.model.bike, request.model.physics->tires.backend);
     if (request.model.physics->tires.backend == "pneumatic") {
         request.model.bike.front_wheel_radius =
             request.model.physics->tires.pneumatic.front.outer_radius_mm;

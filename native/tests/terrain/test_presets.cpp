@@ -26,6 +26,23 @@ void schemas(){
     bt::invalid([]{(void)t::track_from_dict(toml("name='bad'\nlength_m=30\n"),std::string("1"));});
     const auto zone=t::track_from_dict(toml("name='zones'\nlength_m=10\ngrade_profile={knots=[[0.0,0.0],[10.0,0.1]]}\nsurface_sections=[{start_m=2,end_m=3,surface='wet'}]\n"));
     bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(zone))))==t::dump_track(zone),"grade and material zones retained");
+    bt::require(t::dump_track(zone).find("blend_m")==std::string::npos&&io::canonical_json(t::identity_value(zone)).find("blend_m")==std::string::npos,"zero blend_m omitted from TOML and track identity");
+    const auto blended=t::track_from_dict(toml("name='blended'\nlength_m=20\nsurface_sections=[{start_m=0.0,end_m=5.0,surface='asphalt',blend_m=0.4},{start_m=5.0,end_m=12.0,surface='scree',blend_m=0.4}]\n"));
+    bt::require(blended.surface_sections.size()==2&&blended.surface_sections[0].blend_m==0.4&&blended.surface_sections[1].blend_m==0.4,"trackfile parses optional blend_m");
+    bt::require(t::dump_track(blended).find("blend_m = 0.4")!=std::string::npos&&t::dump_track(t::track_from_dict(toml(t::dump_track(blended))))==t::dump_track(blended),"nonzero blend_m roundtrips through TOML");
+    bt::require(io::canonical_json(t::identity_value(blended)).find("\"blend_m\":0.4")!=std::string::npos,"nonzero blend_m enters track identity");
+    {
+        bool caught_unknown=false;
+        try{(void)t::track_from_dict(toml("name='bad'\nlength_m=10\nsurface_sections=[{start_m=2,end_m=4,surface='wet',extra=1}]\n"));}
+        catch(const t::TrackFileError&){caught_unknown=true;}
+        bt::require(caught_unknown,"unknown surface section key raises TrackFileError");
+    }
+    {
+        bool caught_missing=false;
+        try{(void)t::track_from_dict(toml("name='bad'\nlength_m=10\nsurface_sections=[{start_m=2,end_m=4,blend_m=0.2}]\n"));}
+        catch(const t::TrackFileError&){caught_missing=true;}
+        bt::require(caught_missing,"missing surface section required key raises TrackFileError");
+    }
     const auto big=t::obstacle_from_dict(io::parse_json(R"({"type":"roots","start_m":1.0,"seed":184467440737095516170})"));
     bt::require(std::get<t::Roots>(big.shape).seed=="184467440737095516170","seed exceeds uint64 without precision loss");
     const auto climb=t::climb_steps();bt::invalid([&]{(void)t::dump_track(climb);});
@@ -80,6 +97,16 @@ void generators(){
     for(std::size_t seed=0;seed<hashes.size();++seed)bt::require(hash(t::dump_track(t::generate_track(t::TerrainGenSpec{},static_cast<std::uint64_t>(seed))))==hashes[seed],"source fixed-seed terrain bytes");
     bt::require(t::AlpineGenSpec::from_dict(toml("length_m=120\n")).sha256()==t::AlpineGenSpec{}.sha256(),"alpine scalar int/float normalization");
     bt::require(t::AlpineGenSpec::from_dict(t::AlpineGenSpec{}.to_dict()).sha256()==t::AlpineGenSpec{}.sha256(),"complete alpine spec roundtrip");
+    bt::require(io::canonical_json(t::AlpineGenSpec{}.to_dict()).find("surface_blend_m")==std::string::npos,"default alpine spec omits surface_blend_m for hash stability");
+    {
+        const auto blended_spec=t::AlpineGenSpec::from_dict(toml("surface_blend_m=0.4\nn_wet=[1,1]\n"));
+        bt::require(blended_spec.surface_blend_m==0.4&&blended_spec.sha256()!=t::AlpineGenSpec{}.sha256(),"nonzero alpine surface_blend_m participates in spec hash");
+        bt::require(t::AlpineGenSpec::from_dict(blended_spec.to_dict()).sha256()==blended_spec.sha256(),"alpine surface_blend_m roundtrips through dict");
+        const auto gen_track=t::generate_alpine_track(blended_spec,"41");
+        bt::require(!gen_track.surface_sections.empty(),"alpine track generates surface sections");
+        for(const auto& sec:gen_track.surface_sections)bt::require(sec.blend_m>0.&&sec.blend_m<=0.4,"alpine generated sections carry clamped blend_m");
+        bt::invalid([&]{(void)t::AlpineGenSpec::from_dict(toml("surface_blend_m=-0.1\n"));});
+    }
     for(const std::string input:{"ramp_len_m=[0,15]\n","transition_m=0.001\n","counter_prob=2\n","n_walls=2\n","n_boulders=[1.5,2]\n","base_surface='ice'\n","n_sharp_edges=[1,1]\n","single_contact_safe='yes'\n","unknown=1\n"})bt::invalid([&]{(void)t::AlpineGenSpec::from_dict(toml(input));});
     bt::invalid([]{(void)t::TerrainGenSpec::from_dict(toml("length_m=[1,2]\n"));});
     bt::invalid([]{(void)t::TerrainGenSpec::from_dict(toml("n_features=[1.5,2]\n"));});

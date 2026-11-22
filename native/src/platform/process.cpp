@@ -119,9 +119,10 @@ int add_chdir(posix_spawn_file_actions_t *actions, const char *path) {
 #else
     return ::posix_spawn_file_actions_addchdir_np(actions, path);
 #endif
-#elif defined(__linux__) && defined(__GLIBC__) && defined(__GLIBC_PREREQ)
-#if __GLIBC_PREREQ(2, 40)
-    // POSIX.1-2024 name; glibc exports it from 2.40.
+#elif defined(__linux__) && defined(__GLIBC__)
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 202405L
+    // POSIX.1-2024 name; under _GNU_SOURCE glibc defines _POSIX_C_SOURCE = 200809L
+    // and exposes only the _np spelling in <spawn.h>.
     return ::posix_spawn_file_actions_addchdir(actions, path);
 #else
     return ::posix_spawn_file_actions_addchdir_np(actions, path);

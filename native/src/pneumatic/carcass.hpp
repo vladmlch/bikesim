@@ -36,6 +36,18 @@
 
 namespace biketyre {
 
+    [[nodiscard]] double casing_chord_integral_m2(double deflection_m, double casing_radius_m) noexcept;
+    [[nodiscard]] double ray_elastic_force_n(double deflection_m,
+                                             const nativecfg::PneumaticTyreSpec &tyre,
+                                             double ds_m) noexcept;
+    [[nodiscard]] double ray_elastic_energy_j(double deflection_m,
+                                               const nativecfg::PneumaticTyreSpec &tyre,
+                                               double ds_m) noexcept;
+    [[nodiscard]] double ray_maxwell_energy_j(double deflection_m, double elastic_prev_n,
+                                               double maxwell_force_n,
+                                               const nativecfg::PneumaticTyreSpec &tyre,
+                                               double ds_m) noexcept;
+
     struct CarcassBuffers;
 
     // RimStrikeEvent (carcass.py:22-30) — one completed rim strike;
@@ -189,7 +201,7 @@ namespace biketyre {
         std::vector<std::pair<int, int>> contact_patches;
         std::vector<double> contact_lengths_m;
         double force_x_n = 0.0, force_z_n = 0.0, normal_load_n = 0.0,
-                rim_energy_j = 0.0;
+                rim_energy_j = 0.0, dissipated_power_w = 0.0;
         bool rim_strike_active = false;
         std::optional<RimStrikeEvent> rim_event;
     };
@@ -211,7 +223,7 @@ namespace biketyre {
         std::span<double> scratch;
         std::size_t patch_count = 0;
         double force_x_n = 0.0, force_z_n = 0.0, normal_load_n = 0.0,
-                rim_energy_j = 0.0;
+                rim_energy_j = 0.0, dissipated_power_w = 0.0;
         bool rim_strike_active = false;
         std::optional<RimStrikeEvent> rim_event;
     };

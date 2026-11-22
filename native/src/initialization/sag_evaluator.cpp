@@ -12,6 +12,7 @@ std::array<double, 2> evaluate_sag_point(const SetupRequest& base, double fork_p
     auto candidate = std::make_unique<SetupRequest>(base);
     candidate->model.bike.fork_initial_psi = fork_psi;
     candidate->model.bike.shock_stiffness = coil_n_m;
+    candidate->model.bike.backend_default_suspension = false;
     const auto options = candidate->equilibrium;
     auto setup = make_setup(std::move(*candidate));
     const auto result = settle(*setup, options);

@@ -32,6 +32,8 @@ struct SurfaceSpec {
     double mu_slide = 0.;
     double slip_stiffness_per_load = 0.;
     double stribeck_speed_mps = DEFAULT_STRIBECK_SPEED_MPS;
+    double crr_delta = 0.;
+    double load_sensitivity = 0.;
     std::string description{};
     void validate() const;
     [[nodiscard]] double mu(double sliding_speed_mps) const;
@@ -44,6 +46,7 @@ struct SurfaceSection {
     double start_m = 0.;
     double end_m = 0.;
     std::string surface;
+    double blend_m = 0.;
     void validate() const;
 };
 class SurfaceMap {

@@ -57,14 +57,83 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numbers>
 #include <ranges>
 #include <stdexcept>
 
 #include "../cblas_abi.hpp"
+#include "../contact/laws.hpp"
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
 
 namespace biketyre {
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) dimensional arguments follow the specified energy interface.
+    double casing_chord_integral_m2(double deflection_m, double casing_radius_m) noexcept {
+        const double d = std::max(deflection_m, 0.0);
+        const double rho = casing_radius_m;
+        if (d == 0.0 || rho <= 0.0) return 0.0;
+        if (d >= rho)
+            return 0.5 * std::numbers::pi * rho * rho + 2.0 * rho * (d - rho);
+        const double psi = 4.0 * std::asin(std::sqrt(d / (2.0 * rho)));
+        const double psi2 = psi * psi;
+        const double integral = psi < 0.02
+                ? psi * psi2 / 6.0 * (1.0 - psi2 / 20.0 + psi2 * psi2 / 840.0)
+                : psi - std::sin(psi);
+        return 0.5 * rho * rho * integral;
+    }
+
+    double ray_elastic_force_n(double deflection_m, const nativecfg::PneumaticTyreSpec &tyre,
+                               double ds_m) noexcept {
+        const double d = std::max(deflection_m, 0.0);
+        const double rho = 0.5 * tyre.casing_width_mm * 0.001;
+        const double chord = d >= rho ? 2.0 * rho : 2.0 * std::sqrt(d * (2.0 * rho - d));
+        return (tyre.area_factor * tyre.pressure_pa() * chord +
+                tyre.carcass_stiffness_n_mm2 * 1e6 * d) * ds_m;
+    }
+
+    double ray_elastic_energy_j(double deflection_m, const nativecfg::PneumaticTyreSpec &tyre,
+                                double ds_m) noexcept {
+        const double d = std::max(deflection_m, 0.0);
+        const double rho = 0.5 * tyre.casing_width_mm * 0.001;
+        return (tyre.area_factor * tyre.pressure_pa() * casing_chord_integral_m2(d, rho) +
+                0.5 * tyre.carcass_stiffness_n_mm2 * 1e6 * d * d) * ds_m;
+    }
+
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) arguments follow the specified state-energy interface.
+    double ray_maxwell_energy_j(double deflection_m, double elastic_prev_n, double maxwell_force_n,
+                                const nativecfg::PneumaticTyreSpec &tyre, double ds_m) noexcept {
+        const double gamma = tyre.rate_stiffening;
+        if (gamma <= 0.0) return 0.0;
+        const double d = std::max(deflection_m, 0.0);
+        const double xi = elastic_prev_n - maxwell_force_n / gamma;
+        double equilibrium = 0.0;
+        if (xi > 0.0) {
+            const double rho = 0.5 * tyre.casing_width_mm * 0.001;
+            const double cap = ray_elastic_force_n(rho, tyre, ds_m);
+            const double stiffness = tyre.carcass_stiffness_n_mm2 * 1e6 * ds_m;
+            if (xi >= cap) {
+                equilibrium = stiffness == 0.0 ? rho : rho + (xi - cap) / stiffness;
+            } else {
+                const double pressure = tyre.area_factor * tyre.pressure_pa();
+                double phi = std::asin(std::min(1.0, xi / (2.0 * pressure * rho * ds_m)));
+                for (int i = 0; i < 4; ++i) {
+                    const double sine = std::sin(phi);
+                    const double cosine = std::cos(phi);
+                    const double residual = (2.0 * pressure * rho * sine +
+                            tyre.carcass_stiffness_n_mm2 * 1e6 * rho * (1.0 - cosine)) * ds_m - xi;
+                    const double derivative = (2.0 * pressure * cosine +
+                            tyre.carcass_stiffness_n_mm2 * 1e6 * sine) * rho * ds_m;
+                    phi = std::clamp(phi - residual / derivative, 0.0, 0.5 * std::numbers::pi);
+                }
+                const double half_sin = std::sin(0.5 * phi);
+                equilibrium = 2.0 * rho * half_sin * half_sin;
+            }
+        }
+        return gamma * std::max(ray_elastic_energy_j(d, tyre, ds_m) +
+                (xi > 0.0 ? xi * equilibrium - ray_elastic_energy_j(equilibrium, tyre, ds_m) : 0.0) -
+                xi * d, 0.0);
+    }
+
     namespace {
         // carcass.py:17-19 — the oracle's literal conversion factors.
         inline constexpr double kBarToPa = 100000.0;
@@ -453,6 +522,7 @@ namespace biketyre {
         // Maxwell update has consumed them.
         const std::span<double> advected_a = out.scratch.subspan(0, n);
         const std::span<double> advected_b = out.scratch.subspan(n, n);
+        double maxwell_pre_j = 0.0, maxwell_post_j = 0.0;
         if (state.initialized_) {
             material_rate_loop(delta_m, state.delta_prev_m_,
                                omega_radps, dt_s, ring.dtheta_rad(),
@@ -469,6 +539,12 @@ namespace biketyre {
                         tyre.rate_stiffening *
                                 (out.elastic_force_n[i] -
                                  advected_a[i]);
+            for (std::size_t i = 0; i < n; ++i) {
+                maxwell_pre_j += ray_maxwell_energy_j(state.delta_prev_m_[i], state.elastic_prev_n_[i],
+                                                      state.maxwell_force_n_[i], tyre, ds_m);
+                maxwell_post_j += ray_maxwell_energy_j(state.delta_prev_m_[i], out.elastic_force_n[i],
+                                                       out.maxwell_force_n[i], tyre, ds_m);
+            }
         } else {
             std::ranges::fill(out.material_rate_mps, 0.0);
             std::ranges::fill(out.maxwell_force_n, 0.0);
@@ -482,6 +558,7 @@ namespace biketyre {
         const double rim_si = tyre.rim_stiffness_n_mm2 * kMm2ToM2;
         const std::span<double> &rim_overlap = advected_a;
         const std::span<double> &rim_energy_term = advected_b;
+        double hysteresis_loss_w = 0.0;
         for (std::size_t i = 0; i < n; ++i) {
             const double d = delta_m[i];
             const double overlap =
@@ -497,8 +574,9 @@ namespace biketyre {
                     tyre.loss_factor * out.elastic_force_n[i] * sign;
             const double rim_hysteresis =
                     tyre.loss_factor * rim_elastic * sign;
-            out.hysteresis_force_n[i] =
-                    carcass_hysteresis + rim_hysteresis;
+            out.hysteresis_force_n[i] = carcass_hysteresis;
+            hysteresis_loss_w += std::max((carcass_hysteresis + rim_hysteresis) *
+                                           out.material_rate_mps[i], 0.0);
             out.rim_force_n[i] = rim_elastic + rim_hysteresis;
             const double total = numeric::np_maximum(
                     out.elastic_force_n[i] + out.maxwell_force_n[i] +
@@ -527,6 +605,10 @@ namespace biketyre {
                 out.total_element_force_n);
         out.rim_energy_j =
                 0.5 * numeric::numpy_sum(rim_energy_term);
+        const double maxwell_delta = maxwell_pre_j - maxwell_post_j;
+        contactlaw::finite_result({hysteresis_loss_w, maxwell_pre_j, maxwell_post_j, maxwell_delta});
+        out.dissipated_power_w = hysteresis_loss_w + std::max(0.0, maxwell_delta) / dt_s;
+        contactlaw::finite_result({out.dissipated_power_w});
 
         // carcass.py:293-296 — contact patches and scaled lengths.
         out.patch_count =
@@ -593,6 +675,7 @@ namespace biketyre {
                 .force_z_n = 0.0,
                 .normal_load_n = 0.0,
                 .rim_energy_j = 0.0,
+                .dissipated_power_w = 0.0,
                 .rim_strike_active = false,
                 .rim_event = std::nullopt,
         };
@@ -605,6 +688,7 @@ namespace biketyre {
         result.force_z_n = out.force_z_n;
         result.normal_load_n = out.normal_load_n;
         result.rim_energy_j = out.rim_energy_j;
+        result.dissipated_power_w = out.dissipated_power_w;
         result.rim_strike_active = out.rim_strike_active;
         result.rim_event = out.rim_event;
         return result;

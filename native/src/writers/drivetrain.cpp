@@ -60,7 +60,7 @@ namespace drivetrain {
         // single-step landing still sits exactly on an endpoint.
         const double to_ratio = static_cast<double>(config.policies.gearing.front_teeth) /
                                 s.shifting.rear_teeth;
-        if (s.shifting.cut_remaining_s > 0.) {
+        if (shift_cut_active(s.shifting.cut_remaining_s)) {
             const double from_ratio =
                     static_cast<double>(config.policies.gearing.front_teeth) /
                     s.shifting.from_teeth;
@@ -200,7 +200,7 @@ namespace drivetrain {
         d.set(TelemetryField::gear_ratio,
               static_cast<double>(config_.policies.gearing.front_teeth) /
                   s.rear_teeth);
-        d.set(TelemetryField::shift_active, s.cut_remaining_s > 0.);
+        d.set(TelemetryField::shift_active, shift_cut_active(s.cut_remaining_s));
         d.set_label(TelemetryField::shift_direction,
                     engaged(telemetry_label(TelemetryField::shift_direction,
                                             s.direction)));
@@ -723,7 +723,7 @@ namespace drivetrain {
                 bank.snapshot.shift_time_s = data_->time;
             if (!geometric_hub_) {
                 double staged = applied;
-                if (shifting_scratch_.state().cut_remaining_s > 0.) {
+                if (shift_cut_active(shifting_scratch_.state().cut_remaining_s)) {
                     const double remaining =
                             shifting_scratch_.state().cut_remaining_s + in.dt;
                     // Each step retires the fraction dt/remaining of the

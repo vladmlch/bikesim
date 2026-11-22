@@ -234,7 +234,12 @@ Value track_value(const TrackSpec& track,bool identity){
     if(track.grade_profile){Value::Array knots;for(const auto& p:track.grade_profile->knots)knots.push_back(Value{Value::Array{detail::number(p[0]),detail::number(p[1])}});out.emplace_back("grade_profile",Value{Value::Object{{"knots",Value{std::move(knots)}}}});}
     if(!track.surface_sections.empty()){
         const auto mapping=track.surface_map();
-        Value::Array sections;for(const auto& s:mapping.sections())sections.push_back(Value{Value::Object{{"start_m",detail::number(s.start_m)},{"end_m",detail::number(s.end_m)},{"surface",Value{s.surface}}}});
+        Value::Array sections;
+        for(const auto& s:mapping.sections()){
+            Value::Object sec{{"start_m",detail::number(s.start_m)},{"end_m",detail::number(s.end_m)},{"surface",Value{s.surface}}};
+            if(s.blend_m!=0.)sec.emplace_back("blend_m",detail::number(s.blend_m));
+            sections.push_back(Value{std::move(sec)});
+        }
         out.emplace_back("surface_sections",Value{std::move(sections)});
     }
     Value::Array obstacles;for(const auto& o:track.sorted_obstacles())obstacles.push_back(obstacle_fields(o,identity));out.emplace_back("obstacles",Value{std::move(obstacles)});
@@ -415,8 +420,25 @@ for(const auto& o:hand)reserved.emplace_back(o.start_m(),o.end_m());
         grade.validate();track.grade_profile=std::move(grade);
     }
     if(const auto* values=detail::member(data,"surface_sections"))for(const auto& entry:bike::io::as_array(*values,"surface_sections")){
-        if(bike::io::as_object(entry,"surface section").size()!=3)throw TrackFileError("surface section needs start_m, end_m and surface");
-        SurfaceSection s{.start_m=bike::io::as_double(detail::required(entry,"start_m"),"surface.start_m"),.end_m=bike::io::as_double(detail::required(entry,"end_m"),"surface.end_m"),.surface=bike::io::as_string(detail::required(entry,"surface"),"surface.surface")};s.validate();track.surface_sections.push_back(std::move(s));
+        const auto& obj=bike::io::as_object(entry,"surface section");
+        for(const auto& [key,val]:obj){
+            (void)val;
+            if(key!="start_m"&&key!="end_m"&&key!="surface"&&key!="blend_m")
+                throw TrackFileError("surface section: unknown key '"+key+"'");
+        }
+        const auto* start_v=detail::member(entry,"start_m");
+        const auto* end_v=detail::member(entry,"end_m");
+        const auto* surf_v=detail::member(entry,"surface");
+        if(!start_v||!end_v||!surf_v)throw TrackFileError("surface section needs start_m, end_m and surface");
+        const auto* blend_v=detail::member(entry,"blend_m");
+        SurfaceSection s{
+            .start_m=bike::io::as_double(*start_v,"surface.start_m"),
+            .end_m=bike::io::as_double(*end_v,"surface.end_m"),
+            .surface=bike::io::as_string(*surf_v,"surface.surface"),
+            .blend_m=blend_v?bike::io::as_double(*blend_v,"surface.blend_m"):0.
+        };
+        try{s.validate();}catch(const std::invalid_argument& e){throw TrackFileError(e.what());}
+        track.surface_sections.push_back(std::move(s));
     }
     try{track.validate();}catch(const std::invalid_argument& e){throw TrackFileError(e.what());}return track;
 }

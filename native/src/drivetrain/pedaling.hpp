@@ -6,6 +6,8 @@
 #include <string_view>
 
 namespace drivetrain {
+    // Shared by the typed setter and the detached wire decoder.
+    void validate_pedaling_relations(const PedalingSnapshot &state);
     // Closed pedaling-mode domain — the ordinal doubles as the rider_mode
     // telemetry label index (rider_mode_labels in writer_types.hpp lists
     // the wire strings in the same order).

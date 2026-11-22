@@ -282,10 +282,12 @@ void checks_drive_reposition() {
         drivetrain::decode_drive_snapshot(input));
     bt::require(!state->pedaling.reposition.has_value(),
                 "the captured drive state carries no _reposition member");
+    state->pedaling.coasting = false;
+    state->pedaling.effort = 0.;
     state->pedaling.reposition = drivetrain::RepositionSnapshot{
         .crank_rad = .4, .wheel_rad = -1.25,
         .stall_elapsed_s = .62, .goal_rad = 1.,
-        .elapsed_s = .1, .cooldown_s = .25,
+        .elapsed_s = .1, .cooldown_s = 0.,
         .armed = false, .reason = 2};
     const bio::Value encoded = encode_back_drive(*state);
     const auto reparsed = std::make_unique<const drivetrain::DriveSnapshot>(
@@ -318,6 +320,10 @@ void checks_drive_reposition() {
     // Absent optional lanes ride the wire as explicit nulls.
     state->pedaling.reposition->stall_elapsed_s = std::nullopt;
     state->pedaling.reposition->goal_rad = std::nullopt;
+    state->pedaling.reposition->crank_rad = 0.;
+    state->pedaling.reposition->wheel_rad = 0.;
+    state->pedaling.reposition->cooldown_s = .25;
+    state->pedaling.reposition->reason = 0;
     const auto null_round = std::make_unique<const drivetrain::DriveSnapshot>(
         drivetrain::decode_drive_snapshot(encode_back_drive(*state)));
     bt::require(null_round->pedaling.reposition ==
@@ -338,7 +344,7 @@ void checks_drive_reposition() {
         return parse(doc);
     };
     const std::string good_wire =
-        R"({"crank_rad":0.4,"wheel_rad":-1.25,"stall_elapsed_s":0.62,"goal_rad":1.0,"elapsed_s":0.1,"cooldown_s":0.25,"armed":false,"reason":2})";
+        R"({"crank_rad":0.4,"wheel_rad":-1.25,"stall_elapsed_s":0.62,"goal_rad":1.0,"elapsed_s":0.1,"cooldown_s":0.0,"armed":false,"reason":2})";
     const auto swap = [&good_wire](std::string_view from,
                                    std::string_view to) {
         std::string wire = good_wire;
@@ -366,14 +372,14 @@ void checks_drive_reposition() {
              swap("\"reason\":2", "\"reason\":2.0"),
              // time lanes never go negative
              swap("\"elapsed_s\":0.1", "\"elapsed_s\":-0.1"),
-             swap("\"cooldown_s\":0.25", "\"cooldown_s\":-0.25"),
+             swap("\"cooldown_s\":0.0", "\"cooldown_s\":-0.25"),
              swap("\"stall_elapsed_s\":0.62", "\"stall_elapsed_s\":-0.62"),
              // finite-only reals, required and optional alike
              swap("\"goal_rad\":1.0", "\"goal_rad\":1e400"),
              swap("\"crank_rad\":0.4", "\"crank_rad\":1e400"),
              swap("\"wheel_rad\":-1.25", "\"wheel_rad\":1e400"),
              swap("\"elapsed_s\":0.1", "\"elapsed_s\":1e400"),
-             swap("\"cooldown_s\":0.25", "\"cooldown_s\":1e400"),
+             swap("\"cooldown_s\":0.0", "\"cooldown_s\":1e400"),
              swap("\"stall_elapsed_s\":0.62", "\"stall_elapsed_s\":1e400"),
              // wrong kinds on the closed lanes
              swap("\"armed\":false", R"("armed":"yes")"),

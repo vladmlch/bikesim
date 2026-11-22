@@ -1,0 +1,1840 @@
+{
+ "inspected_sha": "0502660dd14bd1021b3da90a61e20dcb1d5805a1",
+ "adjudication_rule": "compliance = max-severity across R1+R2 (cited violations stand); justification = strictest product-relevance mapped to {relevant, redundant, contrary_to_confirmed_goals, unresolved}; Stage 6 = parent verdict + fsm-map classification/disposition-hint policy",
+ "properties": [
+  {
+   "id": "P01a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/model/drivetrain.cpp:15-58",
+    "native/src/model/physical_topology.cpp:12-14",
+    "native/src/drivetrain/motor_clutch.cpp:8-16",
+    "native/src/drivetrain/transmission.hpp:29-289",
+    "native/src/drivetrain/transmission.cpp:68-147",
+    "native/src/writers/drivetrain.hpp:442-533"
+   ]
+  },
+  {
+   "id": "P01b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/model/drivetrain.cpp:15-58",
+    "native/src/model/physical_topology.cpp:12-14",
+    "native/src/drivetrain/motor_clutch.cpp:8-16",
+    "native/src/drivetrain/transmission.hpp:29-289",
+    "native/src/drivetrain/transmission.cpp:68-147",
+    "native/src/writers/drivetrain.hpp:442-533"
+   ]
+  },
+  {
+   "id": "P01c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/model/drivetrain.cpp:15-58",
+    "native/src/model/physical_topology.cpp:12-14",
+    "native/src/drivetrain/motor_clutch.cpp:8-16",
+    "native/src/drivetrain/transmission.hpp:29-289",
+    "native/src/drivetrain/transmission.cpp:68-147",
+    "native/src/writers/drivetrain.hpp:442-533"
+   ]
+  },
+  {
+   "id": "P02a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/drivetrain/stall_detector.hpp:13-17",
+    "native/src/config_types.hpp:66-74",
+    "native/src/config_types.hpp:76-82",
+    "native/src/drivetrain/pedaling.hpp:126",
+    "native/src/drivetrain/policy_set.hpp:14-18",
+    "native/src/writers/drivetrain.hpp:62-78"
+   ]
+  },
+  {
+   "id": "P02b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/drivetrain/stall_detector.hpp:13-17",
+    "native/src/config_types.hpp:66-74",
+    "native/src/config_types.hpp:76-82",
+    "native/src/drivetrain/pedaling.hpp:126",
+    "native/src/drivetrain/policy_set.hpp:14-18",
+    "native/src/writers/drivetrain.hpp:62-78"
+   ]
+  },
+  {
+   "id": "P03a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/config_types.hpp:51-59",
+    "native/src/drivetrain/pedaling.hpp:126",
+    "native/src/drivetrain/policy_set.hpp:61",
+    "native/src/writers/drivetrain.hpp:442",
+    "native/src/config_types.hpp:97-105",
+    "native/src/drivetrain/motor.hpp:99"
+   ]
+  },
+  {
+   "id": "P03b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "unresolved",
+   "evidence_citations": [
+    "native/src/config_types.hpp:51-59",
+    "native/src/drivetrain/pedaling.hpp:126",
+    "native/src/drivetrain/policy_set.hpp:61",
+    "native/src/writers/drivetrain.hpp:442",
+    "native/src/config_types.hpp:97-105",
+    "native/src/drivetrain/motor.hpp:99"
+   ]
+  },
+  {
+   "id": "P03c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/config_types.hpp:51-59",
+    "native/src/drivetrain/pedaling.hpp:126",
+    "native/src/drivetrain/policy_set.hpp:61",
+    "native/src/writers/drivetrain.hpp:442",
+    "native/src/config_types.hpp:97-105",
+    "native/src/drivetrain/motor.hpp:99"
+   ]
+  },
+  {
+   "id": "P04a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/config_types.hpp:84-93",
+    "native/src/drivetrain/shifting.hpp:179",
+    "native/src/drivetrain/policy_set.hpp:63",
+    "native/src/writers/drivetrain.hpp:502",
+    "native/src/writers/drivetrain.cpp:274-278",
+    "native/src/rider/launch_plan.hpp:40-53"
+   ]
+  },
+  {
+   "id": "P04b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/config_types.hpp:84-93",
+    "native/src/drivetrain/shifting.hpp:179",
+    "native/src/drivetrain/policy_set.hpp:63",
+    "native/src/writers/drivetrain.hpp:502",
+    "native/src/writers/drivetrain.cpp:274-278",
+    "native/src/rider/launch_plan.hpp:40-53"
+   ]
+  },
+  {
+   "id": "P04c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/config_types.hpp:84-93",
+    "native/src/drivetrain/shifting.hpp:179",
+    "native/src/drivetrain/policy_set.hpp:63",
+    "native/src/writers/drivetrain.hpp:502",
+    "native/src/writers/drivetrain.cpp:274-278",
+    "native/src/rider/launch_plan.hpp:40-53"
+   ]
+  },
+  {
+   "id": "P05a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:116-175",
+    "native/src/rider/launch_plan.hpp:51-106",
+    "native/src/rider/front_lift_reaction.hpp:48-112",
+    "native/src/rider/perception.hpp:42-83",
+    "native/src/rider/intent.hpp:132-182",
+    "native/src/rider/intent.hpp:265-333"
+   ]
+  },
+  {
+   "id": "P05b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:116-175",
+    "native/src/rider/launch_plan.hpp:51-106",
+    "native/src/rider/front_lift_reaction.hpp:48-112",
+    "native/src/rider/perception.hpp:42-83",
+    "native/src/rider/intent.hpp:132-182",
+    "native/src/rider/intent.hpp:265-333"
+   ]
+  },
+  {
+   "id": "P05c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:116-175",
+    "native/src/rider/launch_plan.hpp:51-106",
+    "native/src/rider/front_lift_reaction.hpp:48-112",
+    "native/src/rider/perception.hpp:42-83",
+    "native/src/rider/intent.hpp:132-182",
+    "native/src/rider/intent.hpp:265-333"
+   ]
+  },
+  {
+   "id": "P05d",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:116-175",
+    "native/src/rider/launch_plan.hpp:51-106",
+    "native/src/rider/front_lift_reaction.hpp:48-112",
+    "native/src/rider/perception.hpp:42-83",
+    "native/src/rider/intent.hpp:132-182",
+    "native/src/rider/intent.hpp:265-333"
+   ]
+  },
+  {
+   "id": "P06a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/rider/mode_search.cpp:9-34",
+    "native/src/contact/laws.hpp:28-38",
+    "native/src/rider/spindle_controller.hpp:489",
+    "native/src/rider/spindle_controller.cpp:1388",
+    "native/src/configuration/physical_config.hpp:437",
+    "native/src/rider/state_codec.cpp:774"
+   ]
+  },
+  {
+   "id": "P06b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/rider/mode_search.cpp:9-34",
+    "native/src/contact/laws.hpp:28-38",
+    "native/src/rider/spindle_controller.hpp:489",
+    "native/src/rider/spindle_controller.cpp:1388",
+    "native/src/configuration/physical_config.hpp:437",
+    "native/src/rider/state_codec.cpp:774"
+   ]
+  },
+  {
+   "id": "P06c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "unresolved",
+   "evidence_citations": [
+    "native/src/rider/mode_search.cpp:9-34",
+    "native/src/contact/laws.hpp:28-38",
+    "native/src/rider/spindle_controller.hpp:489",
+    "native/src/rider/spindle_controller.cpp:1388",
+    "native/src/configuration/physical_config.hpp:437",
+    "native/src/rider/state_codec.cpp:774"
+   ]
+  },
+  {
+   "id": "P07a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/runtime.cpp:816-828",
+    "native/src/runtime/step.cpp:2953-3012",
+    "native/src/cli/ride.cpp:120-152",
+    "native/src/viewer/ride.cpp:170-189",
+    "native/src/replay/session.cpp:213-253",
+    "native/src/initialization/research_startup.cpp:50-66"
+   ]
+  },
+  {
+   "id": "P07b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/runtime.cpp:816-828",
+    "native/src/runtime/step.cpp:2953-3012",
+    "native/src/cli/ride.cpp:120-152",
+    "native/src/viewer/ride.cpp:170-189",
+    "native/src/replay/session.cpp:213-253",
+    "native/src/initialization/research_startup.cpp:50-66"
+   ]
+  },
+  {
+   "id": "P08a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/engine_call.cpp:78",
+    "native/src/engine_call.cpp:66-74",
+    "native/src/engine_abi_312.hpp:15-17",
+    "native/src/engine_call.cpp:398-434",
+    "native/src/engine_call.cpp:483-776",
+    "native/src/writers/rider_contacts.cpp:1330-1344"
+   ]
+  },
+  {
+   "id": "P08b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/engine_call.cpp:78",
+    "native/src/engine_call.cpp:66-74",
+    "native/src/engine_abi_312.hpp:15-17",
+    "native/src/engine_call.cpp:398-434",
+    "native/src/engine_call.cpp:483-776",
+    "native/src/writers/rider_contacts.cpp:1330-1344"
+   ]
+  },
+  {
+   "id": "P08c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/engine_call.cpp:78",
+    "native/src/engine_call.cpp:66-74",
+    "native/src/engine_abi_312.hpp:15-17",
+    "native/src/engine_call.cpp:398-434",
+    "native/src/engine_call.cpp:483-776",
+    "native/src/writers/rider_contacts.cpp:1330-1344"
+   ]
+  },
+  {
+   "id": "P08d",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/engine_call.cpp:78",
+    "native/src/engine_call.cpp:66-74",
+    "native/src/engine_abi_312.hpp:15-17",
+    "native/src/engine_call.cpp:398-434",
+    "native/src/engine_call.cpp:483-776",
+    "native/src/writers/rider_contacts.cpp:1330-1344"
+   ]
+  },
+  {
+   "id": "P09",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/runtime.hpp:236",
+    "native/src/runtime/runtime.cpp:74-86",
+    "native/src/validation/runtime_access.cpp:12-17",
+    "native/src/runtime/research.cpp:14-28",
+    "native/src/runtime/runtime.cpp:74-90",
+    "native/src/validation/runtime_access.cpp:99-104"
+   ]
+  },
+  {
+   "id": "P10a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/status.hpp:41-59",
+    "native/src/runtime/status.hpp:42-49",
+    "native/src/runtime/status.cpp:186-219",
+    "native/src/runtime/accounting.cpp:739-740",
+    "native/src/runtime/accounting.cpp:436",
+    "native/src/runtime/runtime.cpp:580-584"
+   ]
+  },
+  {
+   "id": "P10b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/status.hpp:41-59",
+    "native/src/runtime/status.hpp:42-49",
+    "native/src/runtime/status.cpp:186-219",
+    "native/src/runtime/accounting.cpp:739-740",
+    "native/src/runtime/accounting.cpp:436",
+    "native/src/runtime/runtime.cpp:580-584"
+   ]
+  },
+  {
+   "id": "P10c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/status.hpp:41-59",
+    "native/src/runtime/status.hpp:42-49",
+    "native/src/runtime/status.cpp:186-219",
+    "native/src/runtime/accounting.cpp:739-740",
+    "native/src/runtime/accounting.cpp:436",
+    "native/src/runtime/runtime.cpp:580-584"
+   ]
+  },
+  {
+   "id": "P10d",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/runtime/status.hpp:41-59",
+    "native/src/runtime/status.hpp:42-49",
+    "native/src/runtime/status.cpp:186-219",
+    "native/src/runtime/accounting.cpp:739-740",
+    "native/src/runtime/accounting.cpp:436",
+    "native/src/runtime/runtime.cpp:580-584"
+   ]
+  },
+  {
+   "id": "P11",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/tests/research/test_bootstrap.cpp:523-556",
+    "native/tests/reference/test_native_viewer_snapshot.cpp:183-219",
+    "docs/RECORDING.md:72-75",
+    "docs/RECORDING.md:74-75"
+   ]
+  },
+  {
+   "id": "P12a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:239-284",
+    "docs/superpowers/plans/2026-11-16-audit-fixes.md:169",
+    "CMakeLists.txt:327-338",
+    "CMakeLists.txt:282-285",
+    "CMakeLists.txt:610-618",
+    "native/src/runtime/realtime_measurement.cpp:159-165"
+   ]
+  },
+  {
+   "id": "P12b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "holds",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:239-284",
+    "docs/superpowers/plans/2026-11-16-audit-fixes.md:169",
+    "CMakeLists.txt:327-338",
+    "CMakeLists.txt:282-285",
+    "CMakeLists.txt:610-618"
+   ]
+  },
+  {
+   "id": "P12c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakeLists.txt:239-284",
+    "docs/superpowers/plans/2026-11-16-audit-fixes.md:169",
+    "CMakeLists.txt:327-338",
+    "CMakeLists.txt:282-285",
+    "CMakeLists.txt:610-618",
+    "native/src/runtime/provider_images.cpp:133-145"
+   ]
+  },
+  {
+   "id": "P13",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/initialization/setup_owner.cpp:145-164",
+    "native/src/initialization/context.hpp:52-53",
+    "native/src/app/prepare.cpp:6-24",
+    "native/src/research/environment.cpp:62-69",
+    "native/src/app/physical_session.cpp:4-9",
+    "native/src/cli/settle.cpp:39-50"
+   ]
+  },
+  {
+   "id": "P14a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "docs/NATIVE_POLICIES.md:94",
+    "native/src/research/policy_session.cpp:200",
+    "native/src/runtime/research.cpp:356-359"
+   ]
+  },
+  {
+   "id": "P14b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "docs/NATIVE_POLICIES.md:94",
+    "native/src/research/policy_session.cpp:154-159",
+    "native/src/runtime/research_io.cpp:179-237",
+    "native/src/research/lifecycle.cpp:87",
+    "native/src/research/plugin_policy.cpp:76-80",
+    "native/src/runtime/research.cpp:624"
+   ]
+  },
+  {
+   "id": "P14c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "docs/NATIVE_POLICIES.md:94",
+    "native/src/research/policy_session.cpp:138",
+    "native/src/viewer/research.cpp:20",
+    "native/src/research/plugin_policy.cpp:102-104",
+    "native/tests/research/test_lifecycle.cpp:135-151"
+   ]
+  },
+  {
+   "id": "P14d",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "docs/NATIVE_POLICIES.md:94",
+    "native/src/research/policy_session.hpp:58-76",
+    "native/src/research/lifecycle.cpp:263-292",
+    "native/cmake/NativePhysicsResearch.cmake:48",
+    "native/src/viewer/ride.cpp:29",
+    "native/src/viewer/research.cpp:11-15"
+   ]
+  },
+  {
+   "id": "P15",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "AGENTS.md:1"
+   ]
+  },
+  {
+   "id": "P16",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/recording/capture.hpp:8-38",
+    "native/src/recording/publish.cpp:43",
+    "native/src/platform/files.cpp:111-112",
+    "native/src/recording/export.cpp:77",
+    "native/src/golden/episode.cpp:361-371",
+    "native/tests/recording/test_publish.cpp:88-96"
+   ]
+  },
+  {
+   "id": "P17a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/platform/signals.cpp:41-49",
+    "native/src/cli/research.cpp:142",
+    "native/src/research/lifecycle.cpp:223",
+    "native/src/recording/interrupt.cpp:6-15",
+    "native/src/cli/ride.cpp:67",
+    "native/src/cli/settle.cpp:41"
+   ]
+  },
+  {
+   "id": "P17b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/platform/signals.cpp:41-49",
+    "native/src/cli/research.cpp:142",
+    "native/src/research/lifecycle.cpp:223",
+    "native/src/recording/interrupt.cpp:6-15",
+    "native/src/cli/ride.cpp:67",
+    "native/src/cli/settle.cpp:41"
+   ]
+  },
+  {
+   "id": "P17c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/platform/signals.cpp:41-49",
+    "native/src/cli/research.cpp:142",
+    "native/src/research/lifecycle.cpp:223",
+    "native/src/recording/interrupt.cpp:6-15",
+    "native/src/cli/ride.cpp:67",
+    "native/src/cli/settle.cpp:41"
+   ]
+  },
+  {
+   "id": "P18",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/replay/input.cpp:203-207",
+    "native/src/replay/legacy.cpp:119-177",
+    "native/src/replay/session.cpp:74-92",
+    "native/src/cli/replay.cpp:83-122",
+    "native/src/viewer/ride.cpp:24-168",
+    "native/src/replay/session.cpp:95"
+   ]
+  },
+  {
+   "id": "P19",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "CMakePresets.json:53-59",
+    "docs/RIDE.md:94-97",
+    "docs/RIDE.md:98-104"
+   ]
+  },
+  {
+   "id": "P20a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/cli/batch.cpp:25-28",
+    "native/src/batch/sweep.cpp:38-48",
+    "native/tests/batch/test_plan.cpp:146-161",
+    "native/src/platform/process.cpp:240-245",
+    "native/tests/batch/test_plan.cpp:148-164",
+    "native/tests/platform/test_primitives.cpp:107-213"
+   ]
+  },
+  {
+   "id": "P20b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/cli/batch.cpp:25-28",
+    "native/src/batch/sweep.cpp:38-48",
+    "native/tests/batch/test_plan.cpp:146-161",
+    "native/src/platform/process.cpp:240-245",
+    "native/tests/batch/test_plan.cpp:148-164",
+    "native/tests/platform/test_primitives.cpp:107-213"
+   ]
+  },
+  {
+   "id": "P20c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/cli/batch.cpp:25-28",
+    "native/src/batch/sweep.cpp:38-48",
+    "native/tests/batch/test_plan.cpp:146-161",
+    "native/src/platform/process.cpp:240-245",
+    "native/tests/batch/test_plan.cpp:148-164",
+    "native/tests/platform/test_primitives.cpp:107-213"
+   ]
+  },
+  {
+   "id": "P21a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/io/hash.cpp:13-27",
+    "native/src/platform/files.cpp:207-223",
+    "native/src/engine_call.cpp:387",
+    "native/src/io/npy.cpp:143-150",
+    "native/src/random/noise_tape.cpp:98-114",
+    "native/src/research/rider_random.cpp:19-39"
+   ]
+  },
+  {
+   "id": "P21b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/io/hash.cpp:13-27",
+    "native/src/platform/files.cpp:207-223",
+    "native/src/engine_call.cpp:387",
+    "native/src/io/npy.cpp:143-150",
+    "native/src/random/noise_tape.cpp:98-114",
+    "native/src/research/rider_random.cpp:19-39"
+   ]
+  },
+  {
+   "id": "P21c",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/io/hash.cpp:13-27",
+    "native/src/platform/files.cpp:207-223",
+    "native/src/engine_call.cpp:387",
+    "native/src/io/npy.cpp:143-150",
+    "native/src/random/noise_tape.cpp:98-114",
+    "native/src/research/rider_random.cpp:19-39"
+   ]
+  },
+  {
+   "id": "P21d",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/io/hash.cpp:13-27",
+    "native/src/platform/files.cpp:207-223",
+    "native/src/engine_call.cpp:387",
+    "native/src/io/npy.cpp:143-150",
+    "native/src/random/noise_tape.cpp:98-114",
+    "native/src/research/rider_random.cpp:19-39"
+   ]
+  },
+  {
+   "id": "P22",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "AGENTS.md:1"
+   ]
+  },
+  {
+   "id": "P23",
+   "origin_stage": "R0",
+   "stages_completed": [
+    "R0",
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/writers/tire.cpp:620-621",
+    "native/src/writers/cruise.cpp:48-83",
+    "native/src/pneumatic/carcass.cpp:221-241",
+    "native/src/pneumatic/brush.cpp:371-390",
+    "native/src/pneumatic/model.cpp:36-52",
+    "native/src/pneumatic/geometry.cpp:309-339"
+   ]
+  },
+  {
+   "id": "P24a",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/tools/check_frontends.cpp:361-720",
+    "native/src/tools/check_contracts.cpp:106-471",
+    "native/src/tools/check_reports.cpp:297-313",
+    "tools/run_native_checks.sh:56-77",
+    "tools/run_tests.sh:117-120",
+    "tools/check_change.sh:48-50"
+   ]
+  },
+  {
+   "id": "P24b",
+   "origin_stage": "R1",
+   "stages_completed": [
+    "R1",
+    "R2",
+    "Rfinal"
+   ],
+   "compliance_verdict": "partially_violated",
+   "justification_verdict": "relevant",
+   "evidence_citations": [
+    "native/src/tools/check_frontends.cpp:361-720",
+    "native/src/tools/check_contracts.cpp:106-471",
+    "native/src/tools/check_reports.cpp:297-313",
+    "tools/run_native_checks.sh:56-77",
+    "tools/run_tests.sh:117-120",
+    "tools/check_change.sh:48-50"
+   ]
+  }
+ ],
+ "missing_requirements": [
+  "M1 \u2014 Reposition gating is split-brained (product-level): config validation demands `spindle` attachment, runtime demands `spindle` AND `motor_clutch`, and the stall reflex (P02b) inherits whichever path armed it. There is no single product statement of which configurations may legally reposition; simulation-decisions ruling #44 ties it to the one-way clutch physics, but the config boundary doesn't encode it (see C1). Missing requirement: a uniform `reposition_possible(config)` predicate applied at validate, decode, and runtime \u2014 one answer, not three.",
+  "M2 \u2014 Open product decisions carried by the registry itself: (a) P03b \u2014 whether `PedalingSnapshot::coasting` splits into cadence-cutoff latch vs coast-profile activation, or `stop_time_s` is retired \u2014 explicitly unresolved; current behavior is Python-oracle parity, an engineering artifact. (b) P14d \u2014 `PlaybackClock` (research/lifecycle.cpp:263-292) is defined with a seven-test contract but has no production caller found in `native/src` (only its own definition sites); the 'pace a viewer path OR mark parity-dead' decision is still open, and no comment marks it dead. (c) P22(c-2) \u2014 whether `drivetrain::validate` is a trusted-secondary validator or a defective omission is undecided. (d) P23(c) \u2014 whether `traction_limited` has a real producer or is intentionally reserved remains unverified in the code paths inspected.",
+  "M3 \u2014 Assist-hold state coherence has no declared product semantics: P03c wants `set_state` to reject incoherent holds, but the deeper question \u2014 is `hold_power_w>0 && hold_torque_nm<=0` physically meaningless (reject) or merely a degenerate zero-cap (accept-and-zero)? \u2014 is an unwritten product rule. The same for `release_hold_left_s>0` with both stored terms zero: reject vs treat-as-expired. C3 shows code treats them silently; the product decision is absent.",
+  "M4 \u2014 Reposition retry/abort policy missing: nothing states how many automatic stall-repositions are acceptable before the system should surface 'drivetrain jammed' as a terminal condition (G1). Real products would bound retries or escalate; here the only bound is the indirect balance/crash gate.",
+  "M5 \u2014 `pending_reposition_` restore semantics undocumented at product level: dropping a queued operator request on restore (G4) is coded as deliberate ('transient input') but no product requirement states whether an operator's reposition request should survive a checkpoint \u2014 for a replayed/checked episode the answer affects replay determinism (P18 records `rider_commands`; an operator reposition is NOT a rider command, so it escapes the evidence battery entirely).",
+  "M6 \u2014 `-6 N` rider-support rule scope is open (P06a): 'wired into PeriodAccounting/ModelStatus' vs 'scoped to ride-level acceptance gating' \u2014 the property itself offers both; which one is the product contract is unresolved.",
+  "M7 \u2014 `operator_stop_deferred` journaling scope (P17c): research journal emits it (lifecycle.cpp:241); the physical `bike-ride` frontend path was not found to journal the kind at all \u2014 the property's alternative ('or RECORDING.md scopes the kind to research journals only') is the operative leg, but the doc text ('the frontend never journals an interrupt it delivered immediately') is generic, not scoped \u2014 the scoping decision is implicit, not written.",
+  "M8 \u2014 GPU\u2194CPU numerical parity acceptance criteria: P23(d) pins JSON depth, worker-pool sync, and `gpu_ok` gating for batch runners, and P01a asserts `loss_j` semantics across CPU and GPU, but no property states the numerical tolerance/parity contract for GPU drivetrain vs native (bitwise? tolerance-based? per-step?) \u2014 the batch-runner machinery is specified without the comparison rule it exists to serve."
+ ],
+ "lineage": [
+  {
+   "from_id": "P01",
+   "to_ids": [
+    "P01a",
+    "P01b",
+    "P01c"
+   ],
+   "reason": "R1 found P01 mixes two confirmed physical invariants with a missing config guard and a transmission-restore contract; split per recommended_refinement",
+   "report": "reports/r1/P01.json"
+  },
+  {
+   "from_id": "P02",
+   "to_ids": [
+    "P02a",
+    "P02b"
+   ],
+   "reason": "R1 recommended splitting cross-boundary state-validity invariant from bounded-termination contract",
+   "report": "reports/r1/P02.json"
+  },
+  {
+   "from_id": "P03",
+   "to_ids": [
+    "P03a",
+    "P03b",
+    "P03c"
+   ],
+   "reason": "R1 recommended three enforceable contracts plus one tracked product decision",
+   "report": "reports/r1/P03.json"
+  },
+  {
+   "from_id": "P04",
+   "to_ids": [
+    "P04a",
+    "P04b",
+    "P04c"
+   ],
+   "reason": "R1 recommended three sharper properties aligned with confirmed requirements",
+   "report": "reports/r1/P04.json"
+  },
+  {
+   "from_id": "P05",
+   "to_ids": [
+    "P05a",
+    "P05b",
+    "P05c",
+    "P05d"
+   ],
+   "reason": "R1 recommended four implementation-accurate invariants covering restore/clamp defects",
+   "report": "reports/r1/P05.json"
+  },
+  {
+   "from_id": "P06",
+   "to_ids": [
+    "P06a",
+    "P06b",
+    "P06c"
+   ],
+   "reason": "R1 recommended three orthogonal properties aligned with product scope",
+   "report": "reports/r1/P06.json"
+  },
+  {
+   "from_id": "P07",
+   "to_ids": [
+    "P07a",
+    "P07b"
+   ],
+   "reason": "R1 found P07 violated and recommended splitting probe non-interference from brake-parity staging",
+   "report": "reports/r1/P07.json"
+  },
+  {
+   "from_id": "P08",
+   "to_ids": [
+    "P08a",
+    "P08b",
+    "P08c",
+    "P08d"
+   ],
+   "reason": "R1 recommended four scope-accurate sub-invariants covering the Stepper boundary gaps",
+   "report": "reports/r1/P08.json"
+  },
+  {
+   "from_id": "P10",
+   "to_ids": [
+    "P10a",
+    "P10b",
+    "P10c",
+    "P10d"
+   ],
+   "reason": "R1 recommended four sub-invariant contracts covering deserialization/rollback gaps",
+   "report": "reports/r1/P10.json"
+  },
+  {
+   "from_id": "P12",
+   "to_ids": [
+    "P12a",
+    "P12b",
+    "P12c"
+   ],
+   "reason": "R1 recommended three independently checkable properties since the mechanisms share no code",
+   "report": "reports/r1/P12.json"
+  },
+  {
+   "from_id": "P14",
+   "to_ids": [
+    "P14a",
+    "P14b",
+    "P14c",
+    "P14d"
+   ],
+   "reason": "R1 recommended four separately-verdicted properties: two holding contracts, two real violations, one dead-code clause",
+   "report": "reports/r1/P14.json"
+  },
+  {
+   "from_id": "P17",
+   "to_ids": [
+    "P17a",
+    "P17b",
+    "P17c"
+   ],
+   "reason": "R1 recommended splitting per subclause and per frontend (bike-ride exit-130 gap)",
+   "report": "reports/r1/P17.json"
+  },
+  {
+   "from_id": "P20",
+   "to_ids": [
+    "P20a",
+    "P20b",
+    "P20c"
+   ],
+   "reason": "R1 recommended independently checkable properties; found letter-level violations in (b),(c),(d)",
+   "report": "reports/r1/P20.json"
+  },
+  {
+   "from_id": "P21",
+   "to_ids": [
+    "P21a",
+    "P21b",
+    "P21c",
+    "P21d"
+   ],
+   "reason": "R1 recommended splitting the four-component bundle into per-component properties",
+   "report": "reports/r1/P21.json"
+  },
+  {
+   "from_id": "P24",
+   "to_ids": [
+    "P24a",
+    "P24b"
+   ],
+   "reason": "R1 recommended splitting into separately verifiable claims and tightening verdict semantics",
+   "report": "reports/r1/P24.json"
+  }
+ ],
+ "stage6_dispositions": [
+  {
+   "fsm_id": "FSM-001",
+   "disposition": "convert",
+   "rationale": "parent P02a partially_violated; map classification '`implicit`' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-002",
+   "disposition": "convert",
+   "rationale": "parent P02b partially_violated; map classification '`hybrid` (projects onto explicit output enums `pedalmode::coasting` and `coastreason::{repos...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-003",
+   "disposition": "convert",
+   "rationale": "parent P03b partially_violated; map classification '`hybrid` (emits explicit `pedalmode` and `coastreason` enums in `pedalingstate`, while persi...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-004",
+   "disposition": "investigate",
+   "rationale": "parent P04b violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-005",
+   "disposition": "convert",
+   "rationale": "parent P03c partially_violated; map classification '`implicit`' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-006",
+   "disposition": "investigate",
+   "rationale": "parent P01a partially violated; machine (Standalone Freehub Ratchet Machine (`Freehub` / `FreehubSnap) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-007",
+   "disposition": "simplify",
+   "rationale": "parent P01c partially_violated; map classification '`implicit`' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-008",
+   "disposition": "simplify",
+   "rationale": "parent P03c partially_violated; map classification '`implicit` (wire/snapshot protocol boundary owned in d01 by `state_codec.{hpp,cpp}` and `pol...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-009",
+   "disposition": "investigate",
+   "rationale": "parent P05d partially violated; machine (`LaunchPlan` Primary Standstill-Launch Lifecycle (`LaunchPha) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-010",
+   "disposition": "convert",
+   "rationale": "parent P04c partially_violated; map classification '`implicit` \u2014 encoded without an enum across five fields of `launchplan::state` (`bool shift_...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-011",
+   "disposition": "convert",
+   "rationale": "parent P05b partially_violated; map classification '`implicit` \u2014 encoded via sentinel counter `std::int64_t rise_ticks` (`-1` vs `>= 0`) coupled...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-012",
+   "disposition": "investigate",
+   "rationale": "parent P05b partially violated; machine (`FrontLiftReaction` Lifecycle & Criterion-B Lagged Hand-Unlo) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-013",
+   "disposition": "convert",
+   "rationale": "parent P05b partially_violated; map classification '`implicit` \u2014 integer-tick fifo delay line with pre-delivery / steady-delivery phases and ove...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-014",
+   "disposition": "convert",
+   "rationale": "parent P05b partially_violated; map classification '`implicit` \u2014 encoded via `config_.enabled`, `last_tick_step` (`-1` vs `k * period_steps_`), ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-015",
+   "disposition": "convert",
+   "rationale": "parent P05c partially_violated; map classification '`implicit` \u2014 encoded across `surge_budget_s_left_`, `time_s_`, `samples_` queue, `delayed_` ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-016",
+   "disposition": "convert",
+   "rationale": "parent P05c partially_violated; map classification '`implicit` \u2014 encoded across `lean_rad_`, `trim_rad_`, `load_samples_` queue, `delayed_load_s...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-017",
+   "disposition": "investigate",
+   "rationale": "parent P07a violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-018",
+   "disposition": "investigate",
+   "rationale": "parent P06b partially violated; machine (Flat-Pedal Foot-Slip Recovery FSM (`PedalRecoveryState`)) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-019",
+   "disposition": "investigate",
+   "rationale": "parent P07a violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-020",
+   "disposition": "investigate",
+   "rationale": "parent P06a partially violated; machine (Soft-Constraint Active-Set & Contact/Limit Mode-Search Autom) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-021",
+   "disposition": "investigate",
+   "rationale": "parent P08a partially violated; machine (Test-Only Thread-Local Allocation Fault-Injection & Activity) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-022",
+   "disposition": "convert",
+   "rationale": "parent P08a partially_violated; map classification 'implicit tls stack-disciplined protocol fsm + process-global callback provenance classifier' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-023",
+   "disposition": "convert",
+   "rationale": "parent P08c partially_violated; map classification 'implicit 3-axis product fsm (`health \u00d7 stagefreshness \u00d7 timecallbackcache`)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-024",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'implicit composite lifecycle & concurrency-exclusion fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-025",
+   "disposition": "investigate",
+   "rationale": "parent P07a violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-026",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'implicit 2-state speed-hysteresis latch (`disengaged` / `holding`) + 4-predicate brake merge...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-027",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'implicit 2-wheel independent hysteresis & slip-reseat latch fsm (`frontlatch \u00d7 rearlatch`)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-028",
+   "disposition": "convert",
+   "rationale": "parent P08d partially_violated; map classification 'implicit 2-state initialization latch (`empty` vs `holding`) + modular step divider' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-029",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'coupled implicit monotone-clock hold filter (`groundedfilter`) + discrete step-dropout count...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-030",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'implicit 6-phase temporal hysteresis & dual-latch fsm (implements simulation decision 14 & 2...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-031",
+   "disposition": "convert",
+   "rationale": "parent P09 partially_violated; map classification 'implicit monotone first-cause terminal latch (`upright` -> `crashed(cause)`)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-032",
+   "disposition": "convert",
+   "rationale": "parent P10a partially_violated; map classification 'implicit monotone interval ledger + sticky tri-state validity machine (`not_evaluated` -> `t...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-033",
+   "disposition": "convert",
+   "rationale": "parent P10b partially_violated; map classification 'implicit 3-state diagnostic warn-once / strict-rejection latch fsm (simulation decision 30)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-034",
+   "disposition": "convert",
+   "rationale": "parent P10c partially_violated; map classification 'implicit multi-stage transactional buffer/donor/commit pipeline + transport-mode degradation...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-035",
+   "disposition": "simplify",
+   "rationale": "parent P10c partially_violated; map classification 'explicit-mutex concurrent worker lifecycle & fifo sequence-matching protocol fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-036",
+   "disposition": "convert",
+   "rationale": "parent P10d partially_violated; map classification 'implicit 3-phase (`uninitialized` -> `active` -> `tapeexhausted`) monotone-clock delay queue...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-037",
+   "disposition": "convert",
+   "rationale": "parent P11 partially_violated; map classification 'implicit hierarchical fsm (atomic owner/reentrancy envelope + boolean/optional control-windo...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-038",
+   "disposition": "convert",
+   "rationale": "parent P11 partially_violated; map classification 'implicit coupled cursor / queue fsm (operating inside `researchepisode`, driven by `nativere...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-039",
+   "disposition": "convert",
+   "rationale": "parent P11 partially_violated; map classification 'implicit append-only monotonic-cursor fsm (`runtime::researchrecorder`)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-040",
+   "disposition": "investigate",
+   "rationale": "parent P11 partially violated; machine (`WheelieTracker` Hysteresis & Persistence Contact-State / Ep) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-041",
+   "disposition": "convert",
+   "rationale": "parent P12b holds; map classification 'implicit protocol + concrete driver fsm (`runtime::measurement::driver`, `nativedriver`, `me...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-042",
+   "disposition": "convert",
+   "rationale": "parent P12c partially_violated; map classification 'implicit sequential phase orchestrator ([realtime_command.cpp](file:///users/vladislav.molch...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-043",
+   "disposition": "convert",
+   "rationale": "parent P13 partially_violated; map classification 'implicit fsm** (object lifecycle + multi-stage pipeline spread across three coupled structs ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-044",
+   "disposition": "convert",
+   "rationale": "parent P13 partially_violated; map classification 'implicit ownership-handoff & cli session protocol** (spanning `app/prepare.*`, `app/physical...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-045",
+   "disposition": "convert",
+   "rationale": "parent P13 partially_violated; map classification 'implicit multi-phase solver & force-attachment fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-046",
+   "disposition": "convert",
+   "rationale": "parent P13 partially_violated; map classification 'implicit two-phase staging & atomic filesystem publication fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-047",
+   "disposition": "convert",
+   "rationale": "parent P13 partially_violated; map classification 'implicit artifact dispatch & two-stage state-transfer protocol' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-048",
+   "disposition": "convert",
+   "rationale": "parent P14c partially_violated; map classification 'implicit product fsm with an explicit internal operator-command tag (`enum class action : st...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-049",
+   "disposition": "investigate",
+   "rationale": "parent P14d violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-050",
+   "disposition": "convert",
+   "rationale": "parent P15 partially_violated; map classification 'implicit fsm (8 boolean/optional coordination latches + monotone `episode_id_` + `failurerep...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-051",
+   "disposition": "convert",
+   "rationale": "parent P15 partially_violated; map classification 'implicit raii + pointer-latch fsm (`library` + `instance` + `pluginpolicy`)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-052",
+   "disposition": "investigate",
+   "rationale": "parent P15 partially violated; machine (`TractionControlPolicy` Slip-Limit & Standstill-Release Hybr) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-053",
+   "disposition": "convert",
+   "rationale": "parent P15 partially_violated; map classification 'implicit fsm (`closed_`, `failed_`, `columns_.empty()`, `generation_`, `next_time_s_`, `rows...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-054",
+   "disposition": "investigate",
+   "rationale": "parent P16 partially violated; machine (`RunCapture` Launch Evidence & Finalization State Machine) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-055",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate** (monotone per-episode counter `next_id_` coupled with `runcapture::...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-056",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate** (`std::unique_ptr<runcapture> capture_` acting as `{unadapted, adap...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-057",
+   "disposition": "investigate",
+   "rationale": "parent P16 partially violated; machine (Two-Level Exclusive Publication, DuckDB Transaction/Appender) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-058",
+   "disposition": "investigate",
+   "rationale": "parent P17c violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-059",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate** (raii mode-dependent `database` + streaming `cursor::impl` chunk st...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-060",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate** (`{open (database_ != nullptr), closed (database_ == nullptr)}` gat...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-061",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate** (dual `std::atomic<bool>` reentrancy guard + runtime state precondi...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-062",
+   "disposition": "convert",
+   "rationale": "parent P16 partially_violated; map classification 'implicit fsm candidate (test support infrastructure)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-063",
+   "disposition": "convert",
+   "rationale": "parent P18 partially_violated; map classification 'implicit fsm** (multi-field boolean/optional/cursor/generation product state coordinated wit...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-064",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit fsm** (3 boolean flags `paused`, `initialized`, `rebase_pending` + discrete `scale`...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-065",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit 2-state estimator** (`std::optional<double> value_` + monotone clock/sim-time basel...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-066",
+   "disposition": "investigate",
+   "rationale": "parent P19 partially violated; machine (`InputState` Mode-Dependent Operator Latch & Speed-Scale Mac) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-067",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit orchestration fsm** (loop control state distributed across local flags `request_fra...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-068",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit fsm** (`is_closed`, `poisoned`, `frame.has_value()`, `graphics` + monotone `(genera...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-069",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit resource & fault-latch fsm** (process-global `context_count` + per-instance `regist...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-070",
+   "disposition": "convert",
+   "rationale": "parent P19 partially_violated; map classification 'implicit 2-state irreversible global latch** (mutex-guarded `std::optional<std::filesystem::...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-071",
+   "disposition": "investigate",
+   "rationale": "parent P20b violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-072",
+   "disposition": "convert",
+   "rationale": "parent P20a partially_violated; map classification 'implicit fsm** (concurrent parent-coordinator + worker-pool + per-job lifecycle coordinated ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-073",
+   "disposition": "investigate",
+   "rationale": "parent P20b violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-074",
+   "disposition": "investigate",
+   "rationale": "parent P17c violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-075",
+   "disposition": "investigate",
+   "rationale": "parent P17b violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-076",
+   "disposition": "convert",
+   "rationale": "parent P18 partially_violated; map classification 'implicit fsm** (two sub-machines in `cli/replay.cpp`: (a) `inspect` presentation cursor/gene...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-077",
+   "disposition": "convert",
+   "rationale": "parent P20c partially_violated; map classification 'implicit fsm** (stream protocol verifier over drained `physicalsampledata` intervals)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-078",
+   "disposition": "convert",
+   "rationale": "parent P20c partially_violated; map classification 'implicit fsm** (absorbing valid-prefix latch in `validprefix` + tri-state `{true, false, nul...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-079",
+   "disposition": "convert",
+   "rationale": "parent P20c partially_violated; map classification 'implicit fsms** (three temporal dwell/sequence classifiers over interval histories: `persist...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-080",
+   "disposition": "convert",
+   "rationale": "parent P20c partially_violated; map classification 'implicit fsm** (raii `std::atomic<bool>` compare-exchange lock `guard` + runtime lifecycle/s...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-081",
+   "disposition": "investigate",
+   "rationale": "parent P20b violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-082",
+   "disposition": "convert",
+   "rationale": "parent P20c partially_violated; map classification 'implicit fsm** (atomic staging-rename checkpoint lifecycle + pre/post source-tree sha-256 im...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-083",
+   "disposition": "convert",
+   "rationale": "parent P17a partially_violated; map classification 'implicit fsm candidate (raii scope object coupled to a process-global 16-slot lock-free regi...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-084",
+   "disposition": "convert",
+   "rationale": "parent P20a partially_violated; map classification 'implicit fsm candidate (multi-variable os subprocess, process-group signaling, and dual-pipe...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-085",
+   "disposition": "convert",
+   "rationale": "parent P21b partially_violated; map classification 'implicit fsm candidate (move-only os handle lifecycle with distinct silent-destructor vs thr...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-086",
+   "disposition": "convert",
+   "rationale": "parent P21a partially_violated; map classification 'implicit fsm candidate (streaming 64-byte block buffer + destructive finalizer **missing a `...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-087",
+   "disposition": "convert",
+   "rationale": "parent P21b partially_violated; map classification 'implicit fsm candidate (bounded-depth pushdown transducer over rapidjson's sax token stream)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-088",
+   "disposition": "investigate",
+   "rationale": "parent P21b partially violated; machine (Strict Base64 Quad/Padding Scanner (`b64_decode_strict`)) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-089",
+   "disposition": "convert",
+   "rationale": "parent P21b partially_violated; map classification 'implicit fsm candidate (transient format-decoding state machines)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-090",
+   "disposition": "convert",
+   "rationale": "parent P21c partially_violated; map classification 'implicit fsm candidate (persistent prng state machine combining move-only pimpl ownership wi...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-091",
+   "disposition": "convert",
+   "rationale": "parent P21c partially_violated; map classification 'implicit fsm candidate (monotonic child-index counter producing disjoint hierarchical spawn ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-092",
+   "disposition": "convert",
+   "rationale": "parent P21d partially_violated; map classification 'implicit fsm candidate (synchronous closed-call solver mode/status machine; explicitly `bike...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-093",
+   "disposition": "convert",
+   "rationale": "parent P21d partially_violated; map classification 'implicit fsm candidate (synchronous trf solver status machine + stateful `evaluator` residua...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-094",
+   "disposition": "investigate",
+   "rationale": "parent P21d partially violated; machine (Three-Valued Epistemic Linear Feasibility Pipeline (`linear_) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-095",
+   "disposition": "investigate",
+   "rationale": "parent P22 partially violated; machine (`BikeSuspensionSystem` & `SuperDeluxeDamper` Preset / Click ) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-096",
+   "disposition": "convert",
+   "rationale": "parent P22 partially_violated; map classification 'implicit two-phase builder/accumulator protocol (**phase 1: monotonic unique-key registratio...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-097",
+   "disposition": "convert",
+   "rationale": "parent P22 partially_violated; map classification 'implicit 2-state initialization protocol encoded via a floating-point `quiet_nan()` sentinel...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-098",
+   "disposition": "convert",
+   "rationale": "parent P22 partially_violated; map classification 'implicit fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-099",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit fsm (4-mode lifecycle encoded across `bool initialized_`, array zero-ness predicate...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-100",
+   "disposition": "investigate",
+   "rationale": "parent P23 partially violated; machine (Pneumatic Rim-Strike Event Tracker) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-101",
+   "disposition": "simplify",
+   "rationale": "parent P23 partially_violated; map classification 'implicit dynamic multi-slot & per-bristle fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-102",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit fsm (`brushstate` optional-group presence + geometric branch-continuity classifier ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-103",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit per-station 2-mode + stick/slide fsm (`stationstate` array of width `n \u2208 [16, 512]`...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-104",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit 4-aspect protocol fsm duplicated identically across `tirewriter` (`compliant_2d`), ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-105",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit 3-regime controller fsm (`cruisestate::engaged` + anti-windup saturation/traction h...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-106",
+   "disposition": "investigate",
+   "rationale": "parent P07a violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-107",
+   "disposition": "investigate",
+   "rationale": "parent P07a violated; named counterexamples must be resolved or the machine quarantined"
+  },
+  {
+   "fsm_id": "FSM-108",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit per-world fsm (`gpuworldstate` stepped in-place on cpu/cuda/metal)' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-109",
+   "disposition": "convert",
+   "rationale": "parent P23 partially_violated; map classification 'implicit concurrent coordination & double-buffered pipeline fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-110",
+   "disposition": "investigate",
+   "rationale": "parent P23 partially violated; machine (Iterative JSON Pushdown Validator (`detail::scan_value` in `) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-111",
+   "disposition": "convert",
+   "rationale": "parent P24a partially_violated; map classification 'implicit concurrent coordination fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-112",
+   "disposition": "convert",
+   "rationale": "parent P24a partially_violated; map classification 'implicit multi-phase orchestration & monotone-latch outcome fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-113",
+   "disposition": "investigate",
+   "rationale": "parent P24a partially violated; machine (Explicit Lexical Quote/Comment Scanner Mini-FSMs (`shlex_spl) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-114",
+   "disposition": "convert",
+   "rationale": "parent P24a partially_violated; map classification 'implicit pipeline/latch fsm + filesystem-backed multi-process coordination fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-115",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit resource lifecycle fsm gated by an unconditional top-level circuit breaker' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-116",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit two-phase commit / filesystem rollback transaction fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-117",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit persistent cache + staged-directory / marker-file fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-118",
+   "disposition": "convert",
+   "rationale": "parent P24a partially_violated; map classification 'implicit configure-time fail-closed qualification pipeline with persistent `cmakecache.txt` ...' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-119",
+   "disposition": "investigate",
+   "rationale": "parent P24a partially violated; machine (Artifact Relocation, Code-Signing & Staged Report Publicatio) needs follow-up on named gaps"
+  },
+  {
+   "fsm_id": "FSM-120",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-121",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-122",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit fsm' per fsm-map disposition guidance"
+  },
+  {
+   "fsm_id": "FSM-123",
+   "disposition": "convert",
+   "rationale": "parent P24b partially_violated; map classification 'implicit fsm' per fsm-map disposition guidance"
+  }
+ ]
+}

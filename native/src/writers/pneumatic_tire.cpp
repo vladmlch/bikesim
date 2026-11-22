@@ -32,6 +32,7 @@
 
 #include "../cblas_abi.hpp"
 #include "../config_validation.hpp"
+#include "../contact/laws.hpp"
 #include "../diag.hpp"
 #include "../engaged.hpp"
 #include "../engine_call.hpp"
@@ -40,7 +41,6 @@
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
 #include "../pneumatic/geometry.hpp"
-#include "pyfloat.hpp"
 
 #include <algorithm>
 #include <array>
@@ -279,7 +279,7 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     // default, the configured override and every section — sized once
     // so the patch-slot surface_name strings and the diagnostics'
     // surface field assign into capacity on the marked warm path.
-    std::size_t surface_capacity = surface_map_.surface.name.size();
+    std::size_t surface_capacity = std::max<std::size_t>(10, surface_map_.surface.name.size());
     if (pneu.surface.has_value())
         surface_capacity =
                 std::max(surface_capacity, pneu.surface->name.size());
@@ -292,6 +292,7 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     // prewarm, the clone banks' lazily-built engines are cold-path
     // allocation by design).
     jacp_.resize(model_access::kXYZ * nv);
+    jr_.resize(model_access::kXYZ * nv);
     tmp_.resize(nv);
     qfrc_out_.resize(nv);
     hit_r_.resize(n);
@@ -299,7 +300,6 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     hit_rx_.resize(n);
     hit_rz_.resize(n);
     energy_scratch_.resize(n);
-    shear_scratch_.resize(n);
     bristle_row_.resize(n);
     for (std::size_t s = 0; s < 2; ++s) {
         const nativecfg::PneumaticTyreSpec &spec =
@@ -716,22 +716,22 @@ void PneumaticTireWriter::intersect_at(
                              engaged(profile_), out);
 }
 
-// _radial_energy_j (pneumatic_tire_forces.py:57-66): elementwise
-// 0.5*k_c*δ²*ds + 0.5*k_rim*overlap²*ds folded by np.sum.
+// Air, carcass, Maxwell and rim elastic energy, summed over the rays.
 double PneumaticTireWriter::radial_energy_j(
         const biketyre::PneumaticTyreModel &tyre,
         std::span<const double> delta_m) const {
     const nativecfg::PneumaticTyreSpec &spec = tyre.tyre();
     const double ds_m =
             spec.outer_radius_mm * 0.001 * tyre.ring().dtheta_rad();
-    const double k_c = spec.carcass_stiffness_n_mm2 * 1000000.0;
     const double k_rim = spec.rim_stiffness_n_mm2 * 1000000.0;
     const double rim_m = spec.rim_strike_deflection_mm() * 0.001;
     for (std::size_t i = 0; i < delta_m.size(); ++i) {
         const double overlap =
                 numeric::np_maximum(delta_m[i] - rim_m, 0.0);
-        energy_scratch_[i] =
-                0.5 * k_c * delta_m[i] * delta_m[i] * ds_m +
+        const biketyre::CarcassState &state = tyre.carcass_state();
+        energy_scratch_[i] = biketyre::ray_elastic_energy_j(delta_m[i], spec, ds_m) +
+                (state.initialized() ? biketyre::ray_maxwell_energy_j(
+                        delta_m[i], state.elastic_prev_n()[i], state.maxwell_force_n()[i], spec, ds_m) : 0.0) +
                 0.5 * k_rim * overlap * overlap * ds_m;
     }
     return numeric::numpy_sum(
@@ -739,46 +739,13 @@ double PneumaticTireWriter::radial_energy_j(
                     .first(delta_m.size()));
 }
 
-// _shear_energy_j (pneumatic_tire_forces.py:305-330): committed-patch
-// bristle energy on the detailed tier; the outputs dict keyed by
-// (ray_start, ray_stop) misses unset ranges exactly like the oracle's
-// .get() returning None.
+// Stored shear is calculated during the patch step, at the same sampled
+// stiffness as the brush, and retained in the committed output.
 double PneumaticTireWriter::shear_energy_j(
         const biketyre::PneumaticTyreModel &tyre) const {
-    if (!discretised_)
-        return 0.0;
     double energy = 0.0;
-    for (const biketyre::PatchBrushState &state: tyre.patch_states()) {
-        if (!state.has_detailed)
-            continue;
-        // `outputs.get((start, stop))` — dict comprehension last-write-
-        // wins on a duplicated key: take the LAST matching patch.
-        const biketyre::TyrePatchOutput *patch = nullptr;
-        for (const biketyre::TyrePatchOutput &p:
-             tyre.last_outputs().patches())
-            if (p.ray_start == state.start && p.ray_stop == state.stop)
-                patch = &p;
-        if (patch == nullptr)
-            continue;
-        const double half_length_m = 0.5 * patch->contact_length_m;
-        if (!(half_length_m > 0.0))
-            continue;
-        const nativecfg::SurfaceSpec &surface = tirecommon::surface_at(
-                surface_map_, patch->centroid_world_m[0]);
-        const double k_px =
-                surface.slip_stiffness_per_load * patch->normal_load_n /
-                (2.0 * pyfloat::float_pow(half_length_m, 2.0));
-        const std::size_t elements = state.bristle_deflection_m.size();
-        const double dx_m =
-                2.0 * half_length_m / static_cast<double>(elements);
-        for (std::size_t i = 0; i < elements; ++i)
-            shear_scratch_[i] = state.bristle_deflection_m[i] *
-                                state.bristle_deflection_m[i];
-        energy += 0.5 * k_px * dx_m *
-                  numeric::numpy_sum(
-                          std::span<const double>(shear_scratch_)
-                                  .first(elements));
-    }
+    for (const biketyre::TyrePatchOutput &patch : tyre.last_outputs().patches())
+        energy += patch.shear_energy_j;
     return energy;
 }
 
@@ -913,6 +880,8 @@ void PneumaticTireWriter::evaluate_wheels(
     const nativecfg::PneumaticConfig &pneu = engaged(cfg_.pneumatic);
     const std::span<const mjtNum> xpos = model_access::readonly_buffer(
             d->xpos, model_access::kXYZ * m_->nbody);
+    const auto xmat = model_access::readonly_buffer(d->xmat, 9 * m_->nbody);
+    const auto qvel = model_access::readonly_buffer(d->qvel, m_->nv);
     double energy = 0.0, brush_loss = 0.0, radial_power = 0.0;
     static const TireDiagnostics empty_diagnostics{};
     // :368 — self.bodies.items() — front then rear, insertion order.
@@ -995,6 +964,35 @@ void PneumaticTireWriter::evaluate_wheels(
                         "wheel axis must be a finite 3D vector");
         snap.effective_radius_m =
                 effective_radius(snap.patches, hub);
+        double rolling_power_w = 0.0;
+        contactlaw::finite_result({outputs.normal_load_n, outputs.rolling_crr,
+                                   snap.effective_radius_m, outputs.carcass_dissipated_power_w});
+        if (outputs.normal_load_n > 0.0 && snap.effective_radius_m > 0.0 &&
+            outputs.rolling_crr > 0.0) {
+            const std::size_t b9 = 9 * static_cast<std::size_t>(body);
+            const Vec3 axis{xmat[b9 + 1], xmat[b9 + 4], xmat[b9 + 7]};
+            mj_jac(m_, d, nullptr, jr_.data(), hub.data(), body);
+            blas::dgemv(blas::Order::row_major, blas::Transpose::yes,
+                        model_access::kXYZ, nv_, 1.0, jr_.data(), nv_,
+                        axis.data(), 1, 0.0, tmp_.data(), 1);
+            const double omega_world = blas::ddot(nv_, tmp_.data(), 1, qvel.data(), 1);
+            const double moment = -outputs.rolling_crr * outputs.normal_load_n *
+                    snap.effective_radius_m * std::tanh(omega_world / tirecommon::kWheelRollingTaperRadps);
+            const double raw_power = -moment * omega_world;
+            contactlaw::finite_result({axis[0], axis[1], axis[2], omega_world, moment, raw_power});
+            rolling_power_w = std::max(0.0, raw_power);
+            for (std::size_t i = 0; i < nv; ++i) {
+                contactlaw::finite_result({tmp_[i]});
+                out[i] += moment * tmp_[i];
+            }
+            for (TirePatch &patch : snap.patches) {
+                const double weight = patch.normal_load_n / outputs.normal_load_n;
+                const Vec3 couple{axis[0] * moment * weight, axis[1] * moment * weight,
+                                  axis[2] * moment * weight};
+                contactlaw::finite_result({weight, couple[0], couple[1], couple[2]});
+                patch.couple_world_nm = couple;
+            }
+        }
         // :404-409 — a fresh intersect at the same hub feeds the
         // radial-energy and penetration channels; the shear fold reads
         // the committed brush state.
@@ -1090,38 +1088,25 @@ void PneumaticTireWriter::evaluate_wheels(
                 outputs.rim_event.has_value()
                         ? outputs.rim_event->absorbed_energy_j : 0.0;
         diag.pressure_bar = outputs.pressure_bar;
-        diag.dissipated_power_w = outputs.dissipated_power_w;
-        diag.brush_loss_j = brush_power_w * dt;
+        diag.dissipated_power_w = outputs.dissipated_power_w + rolling_power_w;
+        diag.brush_loss_j = (brush_power_w + rolling_power_w) * dt;
         diag.radial_energy_j = radial_energy;
         diag.shear_energy_j = shear_energy;
         diag.outside_material_load_range = false;
         diag.surface = surface_name;
+        contactlaw::finite_result({diag.dissipated_power_w, diag.brush_loss_j,
+                                   radial_energy, shear_energy});
         // :460-463 — the cross-side folds, sequential adds like
         // stored_energy's own pair.
         energy += radial_energy;
         energy += shear_energy;
-        brush_loss += brush_power_w * dt;
-        radial_power += outputs.dissipated_power_w - brush_power_w;
+        brush_loss += (brush_power_w + rolling_power_w) * dt;
+        radial_power += outputs.carcass_dissipated_power_w;
     }
     // :464-467 — the derived gates, inside the caller's try so a
     // non-finite fold still restores both models' state.
-    if (!std::ranges::all_of(out,
-                             [](double v) { return std::isfinite(v); }))
-        throw std::overflow_error(
-                "PneumaticTireForceApplier.qfrc: non-finite derived "
-                "array");
-    if (!std::isfinite(energy))
-        throw std::overflow_error(
-                "PneumaticTireForceApplier.energy: non-finite derived "
-                "value");
-    if (!std::isfinite(brush_loss))
-        throw std::overflow_error(
-                "PneumaticTireForceApplier.brush_loss: non-finite "
-                "derived value");
-    if (!std::isfinite(radial_power))
-        throw std::overflow_error(
-                "PneumaticTireForceApplier.radial_power: non-finite "
-                "derived value");
+    for (const double v : out) contactlaw::finite_result({v});
+    contactlaw::finite_result({energy, brush_loss, radial_power});
     energy_out = energy;
     brush_loss_out = brush_loss;
     radial_power_out = radial_power;

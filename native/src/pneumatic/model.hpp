@@ -38,6 +38,7 @@
 #include "brush.hpp"           // DiscretisedBrush, BrushResult
 #include "carcass.hpp"         // CarcassState, CarcassBuffers, RimStrikeEvent
 #include "geometry.hpp"        // RayRing, RayHitBuffers, RoadProfile
+#include "../writers/tire_common.hpp"
 
 namespace biketyre {
 
@@ -72,7 +73,7 @@ namespace biketyre {
         double sliding_speed_mps = 0.0, slip_speed_mps = 0.0;
         double friction_coefficient = 0.0;
         bool fully_sliding = false;
-        double dissipated_power_w = 0.0;
+        double dissipated_power_w = 0.0, shear_energy_j = 0.0, rolling_crr = 0.0;
     };
 
     // WheelOutputs (model.py:61-108) — last computed per-wheel tyre
@@ -94,7 +95,8 @@ namespace biketyre {
         bool fully_sliding = false;
         bool rim_strike_active = false;
         std::optional<RimStrikeEvent> rim_event;
-        double dissipated_power_w = 0.0;
+        double dissipated_power_w = 0.0, carcass_dissipated_power_w = 0.0,
+                rolling_crr = 0.0;
         bool coverage_event = false, airborne = true;
         // The oracle's Tuple[TyrePatchOutput, ...] — the live rows are
         // patch_slots[:patch_count]; the vector stays SIZED at the
@@ -335,6 +337,7 @@ namespace biketyre {
         WheelOutputs last_outputs_;
 
         // Construction-sized scratch — never escapes the class.
+        CarcassState airborne_carcass_scratch_;
         struct HitsScratch {
             std::vector<double> r_m, delta_m, road_x_m, road_z_m;
         } hits_scratch_;
@@ -347,6 +350,8 @@ namespace biketyre {
             CarcassBuffers buffers;
         } carcass_scratch_;
         std::vector<double> loss_scratch_;
+        std::vector<tirecommon::SurfaceSample> sample_scratch_;
+        nativecfg::SurfaceSpec surface_scratch_;
         std::vector<char> used_;
         std::vector<std::unique_ptr<DiscretisedBrush>> brushes_;
         WheelOutputs staging_;

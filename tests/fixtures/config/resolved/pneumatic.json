@@ -230,7 +230,7 @@
   },
   "resistance": {
     "cda_m2": 0.5,
-    "crr": 0.015,
+    "crr": 0.0,
     "point_body_m": {
       "$tuple": [
         0.0,
@@ -253,12 +253,30 @@
     "effort_cap_asphalt_nm": 60.0,
     "effort_cap_grade_nm": {
       "$tuple": [
-        1000.0
+        36.0,
+        15.0,
+        14.5,
+        13.2,
+        14.0,
+        15.5,
+        19.5,
+        18.5,
+        21.0,
+        20.0
       ]
     },
     "effort_cap_grades": {
       "$tuple": [
-        0.0
+        0.0,
+        0.05,
+        0.08,
+        0.1,
+        0.12,
+        0.13,
+        0.15,
+        0.2,
+        0.22,
+        0.25
       ]
     },
     "effort_cap_hardpack_nm": 60.0,

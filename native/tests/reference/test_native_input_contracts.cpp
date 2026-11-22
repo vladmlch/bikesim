@@ -17,12 +17,14 @@
 #include <string_view>
 #include <vector>
 
+#include "configuration/load.hpp"
 #include "configuration/model_config.hpp"
 #include "diag.hpp"
 #include "drivetrain_reference_support.hpp"
 #include "engine_call.hpp"
 #include "io/json.hpp"
 #include "model/builder.hpp"
+#include "runtime/project_config.hpp"
 #include "runtime/value_readers.hpp"
 #include "writer_config.hpp"
 #include "writers/resistance.hpp"
@@ -179,7 +181,8 @@ void scalar(bt::oracle::Node& golden, double value) {
         "drive", "cruise", "suspension", "brake", "resistance", "tire",
         "rider_contacts"};
     static const std::set<std::string> optional_nested{
-        "profile", "torque_curve", "surface_map", "grip_pair_force_limit_n"};
+        "profile", "torque_curve", "surface_map", "grip_pair_force_limit_n",
+        "crr_delta", "load_sensitivity", "blend_m"};
     for (const std::string_view mutation : {"unknown", "missing"}) {
         for (const auto& location : locations) {
             Value candidate = original;
@@ -751,6 +754,194 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
                     "wire preserves a valid free-form assist mode");
     }
 }
+
+[[gnu::noinline]] void test_stage_a_surface_wire_decode_and_validation() {
+    // 1. Wire decode defaults absent optional Stage A fields to 0.0 and reads present ones.
+    Value wire = resolved_wire();
+    {
+        const auto decoded = std::make_unique<nativecfg::WriterConfig>(nativecfg::decode(wire));
+        const auto& sm = decoded->tire.value().surface_map.value(); // NOLINT(bugprone-unchecked-optional-access)
+        bt::require(sm.surface.crr_delta == 0.0 && sm.surface.load_sensitivity == 0.0,
+                    "absent Stage A surface keys default to 0.0");
+        bt::require(sm.sections.at(0).blend_m == 0.0,
+                    "absent blend_m defaults to 0.0");
+    }
+    set(at(wire, {"tire", "surface_map", "surface"}), "crr_delta", real(0.0025));
+    set(at(wire, {"tire", "surface_map", "surface"}), "load_sensitivity", real(0.08));
+    set(at(wire, {"tire", "surface_map", "sections", "0"}), "blend_m", real(0.4));
+    {
+        const auto decoded = std::make_unique<nativecfg::WriterConfig>(nativecfg::decode(wire));
+        const auto& sm = decoded->tire.value().surface_map.value(); // NOLINT(bugprone-unchecked-optional-access)
+        bt::require(sm.surface.crr_delta == 0.0025 && sm.surface.load_sensitivity == 0.08 &&
+                        sm.sections.at(0).blend_m == 0.4,
+                    "present Stage A surface keys decode verbatim");
+        nativecfg::validate(sm);
+    }
+    // 2. Synchronized nativecfg::validate(SurfaceSpec) & nativecfg::validate(SurfaceMap).
+    const nativecfg::SurfaceSpec good_surf{
+        .name = "hardpack", .mu_peak = 0.8, .mu_slide = 0.6,
+        .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5,
+        .crr_delta = 0.0025, .load_sensitivity = 0.08};
+    bt::invalid([&] {
+        auto bad = good_surf; bad.crr_delta = -0.001;
+        nativecfg::validate(bad);
+    });
+    bt::invalid([&] {
+        auto bad = good_surf; bad.load_sensitivity = 0.51;
+        nativecfg::validate(bad);
+    });
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = good_surf,
+            .sections = {{.start_m = 0.2, .end_m = 5.0, .surface = good_surf, .blend_m = 0.6}}});
+    });
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = good_surf,
+            .sections = {{.start_m = 2.0, .end_m = 5.0, .surface = good_surf, .blend_m = 0.4},
+                         {.start_m = 5.0, .end_m = 9.0, .surface = good_surf, .blend_m = 0.8}}});
+    });
+    nativecfg::validate(nativecfg::SurfaceMap{
+        .surface = good_surf,
+        .sections = {{.start_m = 0.0, .end_m = 0.5, .surface = good_surf, .blend_m = 1.0},
+                     {.start_m = 0.5, .end_m = 5.0, .surface = good_surf, .blend_m = 1.0}}});
+}
+
+[[gnu::noinline]] void test_stage_a_surface_conditional_projection() {
+    // Conditional wire emission in project_writer_config: compliant_2d omits crr_delta
+    // and load_sensitivity; distributed_2d_reference and pneumatic emit nonzero values.
+    auto track = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+    track->surface = "hardpack";
+    track->surface_sections = {{.start_m = 5.0, .end_m = 10.0, .surface = "asphalt", .blend_m = 0.0},
+                               {.start_m = 12.0, .end_m = 18.0, .surface = "scree", .blend_m = 0.4}};
+    for (const auto& [backend, profile] : {
+             std::pair<std::string_view, std::string_view>{"compliant_2d", "config/viewer_physics_welded.toml"},
+             {"distributed_2d_reference", "config/viewer_physics_distributed.toml"},
+             {"pneumatic", "config/viewer_physics_pneumatic.toml"}}) {
+        auto req = std::make_unique<bike::model::BuildRequest>();
+        req->mode = "ride";
+        req->rider = bike::configuration::RiderSpecs{};
+        req->rider->variant = "articulated_planar";
+        req->physics = bike::configuration::load_physics(bt::fixture(profile));
+        req->field = bike::terrain::HeightFieldSpec::for_track(*track);
+        const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+        Value projected = runtime::project_writer_config(*req, *model, *track);
+        const auto& sm_obj = io::as_object(at(projected, {"tire", "surface_map", "surface"}), "sm.surface");
+        const auto& secs = io::as_array(at(projected, {"tire", "surface_map", "sections"}), "sm.sections");
+        const auto& sec0_obj = io::as_object(secs.at(0), "sec0");
+        const auto& sec0_surf = io::as_object(field(secs.at(0), "surface"), "sec0.surface");
+        const auto& sec1_obj = io::as_object(secs.at(1), "sec1");
+        bt::require(io::find_member(sec0_obj, "blend_m") == nullptr, "zero blend_m omitted on wire");
+        bt::require(io::find_member(sec1_obj, "blend_m") != nullptr, "positive blend_m emitted on wire");
+        if (backend == "compliant_2d") {
+            bt::require(sm_obj.size() == 5, "compliant_2d emits exact 5 surface keys");
+        } else {
+            bt::require(io::find_member(sm_obj, "crr_delta") != nullptr &&
+                            io::find_member(sm_obj, "load_sensitivity") != nullptr,
+                        "multipoint backends emit nonzero crr_delta and load_sensitivity");
+            bt::require(io::find_member(sec0_surf, "crr_delta") == nullptr &&
+                            io::find_member(sec0_surf, "load_sensitivity") != nullptr,
+                        "asphalt omits zero crr_delta and emits nonzero load_sensitivity");
+        }
+    }
+}
+
+[[gnu::noinline]] void test_stage_a_surface_map_order_and_gap_contracts() {
+    const auto base = bike::terrain::get_surface("hardpack");
+    const auto loose = bike::terrain::get_surface("loose");
+    const auto scree = bike::terrain::get_surface("scree");
+    auto to_nc = [](const bike::terrain::SurfaceSpec &s) {
+        return nativecfg::SurfaceSpec{
+            .name = s.name, .mu_peak = s.mu_peak, .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .crr_delta = s.crr_delta, .load_sensitivity = s.load_sensitivity};
+    };
+    // Overlap rejects even when the overlapping pair arrives unsorted.
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = to_nc(base),
+            .sections = {{.start_m = 20.0, .end_m = 25.0, .surface = to_nc(loose)},
+                         {.start_m = 10.0, .end_m = 22.0, .surface = to_nc(scree)}}});
+    });
+    // Gap smaller than 0.5 * (b_prev + b_next) rejects.
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = to_nc(base),
+            .sections = {{.start_m = 2.0, .end_m = 10.0, .surface = to_nc(loose), .blend_m = 1.0},
+                         {.start_m = 10.6, .end_m = 15.0, .surface = to_nc(scree), .blend_m = 0.6}}});
+    });
+    // Valid controls: the exact gap boundary accepts, and unsorted
+    // non-overlapping sections accept because validate orders sections
+    // internally before the interval checks.
+    nativecfg::validate(nativecfg::SurfaceMap{
+        .surface = to_nc(base),
+        .sections = {{.start_m = 2.0, .end_m = 5.0, .surface = to_nc(loose), .blend_m = 1.0},
+                     {.start_m = 6.0, .end_m = 10.0, .surface = to_nc(scree), .blend_m = 1.0}}});
+    nativecfg::validate(nativecfg::SurfaceMap{
+        .surface = to_nc(base),
+        .sections = {{.start_m = 20.0, .end_m = 25.0, .surface = to_nc(loose)},
+                     {.start_m = 10.0, .end_m = 15.0, .surface = to_nc(scree)}}});
+}
+
+[[gnu::noinline]] void test_stage_a_configured_pneumatic_surface_projection() {
+    auto track = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+    track->surface = "hardpack";
+    auto req = std::make_unique<bike::model::BuildRequest>();
+    req->mode = "ride";
+    req->rider = bike::configuration::RiderSpecs{};
+    req->rider->variant = "articulated_planar";
+    req->physics = bike::configuration::load_physics(bt::fixture("config/viewer_physics_pneumatic.toml"));
+    req->field = bike::terrain::HeightFieldSpec::for_track(*track);
+    req->physics->tires.surface_mode = "configured";
+    req->physics->tires.pneumatic.surface = "loose";
+    const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+    Value projected = runtime::project_writer_config(*req, *model, *track);
+    const auto& tire_obj = io::as_object(at(projected, {"tire"}), "tire");
+    bt::require(io::find_member(tire_obj, "surface_map") == nullptr,
+                "configured surface mode omits tire.surface_map");
+    Value& surf = at(projected, {"tire", "pneumatic", "surface"});
+    bt::require(io::as_string(field(surf, "name"), "pneumatic.surface.name") == "loose",
+                "configured pneumatic.surface projects the named registry surface");
+    const auto real_of = [&](std::string_view key) {
+        return vread::real(vread::Node{&field(surf, key)}, key);
+    };
+    const auto& loose = bike::terrain::get_surface("loose");
+    bt::require(real_of("mu_peak") == loose.mu_peak &&
+                    real_of("mu_slide") == loose.mu_slide &&
+                    real_of("slip_stiffness_per_load") == loose.slip_stiffness_per_load &&
+                    real_of("stribeck_speed_mps") == loose.stribeck_speed_mps &&
+                    real_of("crr_delta") == loose.crr_delta &&
+                    real_of("load_sensitivity") == loose.load_sensitivity,
+                "configured pneumatic.surface carries all six fields bitwise incl. Stage A");
+    // Configured mode without a resolved surface is a contract error.
+    req->physics->tires.pneumatic.surface.reset();
+    error<std::invalid_argument>(
+        [&] { (void)runtime::project_writer_config(*req, *model, *track); },
+        "pneumatic tires require surface_mode track or a named surface");
+}
+
+[[gnu::noinline]] void test_stage_a_negative_blend_rejected_by_projection() {
+    // track.validate() runs inside project_writer_config, so a negative
+    // blend_m on a direct C++ TrackSpec is rejected naming the field —
+    // it never reaches the emitter and cannot silently disappear.
+    auto track = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+    track->surface = "hardpack";
+    track->surface_sections = {
+        {.start_m = 5.0, .end_m = 10.0, .surface = "asphalt", .blend_m = -0.4}};
+    auto req = std::make_unique<bike::model::BuildRequest>();
+    req->mode = "ride";
+    req->rider = bike::configuration::RiderSpecs{};
+    req->rider->variant = "articulated_planar";
+    req->physics = bike::configuration::load_physics(bt::fixture("config/viewer_physics_welded.toml"));
+    // for_track() would validate the track first; size the field by length
+    // so the negative blend reaches project_writer_config's own gate.
+    req->field = bike::terrain::HeightFieldSpec::for_track_length(track->length_m);
+    const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+    error<std::invalid_argument>(
+        [&] { (void)runtime::project_writer_config(*req, *model, *track); },
+        "blend_m");
+}
 } // namespace
 
 // Each contract body is noinline so its by-value Value snapshots live in
@@ -782,5 +973,10 @@ int main() {
         test_scalar_conversion_memory_error_keeps_its_meaning();
         test_huge_integer_real_conversion_and_large_finite_control();
         test_wire_string_encoding_matches_native();
+        test_stage_a_surface_wire_decode_and_validation();
+        test_stage_a_surface_conditional_projection();
+        test_stage_a_surface_map_order_and_gap_contracts();
+        test_stage_a_configured_pneumatic_surface_projection();
+        test_stage_a_negative_blend_rejected_by_projection();
     });
 }

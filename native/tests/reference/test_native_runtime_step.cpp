@@ -8,10 +8,13 @@
 // tests/fixtures/ft2/<platform>/ride.
 #include "ft2_reference_support.hpp"
 #include "runtime_reference_support.hpp"
+#include "rider_control_reference_support.hpp"
 
 #include "diag.hpp"
 
 #include <array>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <memory>
 #include <utility>
@@ -23,6 +26,160 @@ namespace {
 using ft2_reference::consume_tree;
 using runtime_reference::bitwise_equal;
 using runtime_reference::require_bitwise;
+
+int joint_dof(const mjModel *model, const char *name) {
+    const int joint = mj_name2id(model, mjOBJ_JOINT, name);
+    bt::require(joint >= 0, "joint exists");
+    return model_access::readonly_buffer(model->jnt_dofadr, model->njnt)
+        [static_cast<std::size_t>(joint)];
+}
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+void test_probe_combined_brake_budget() {
+    const auto rig = rider_control_reference::pinned_rig([](auto &physics) {
+        physics.rider_launch.plan_enabled = false;
+        physics.seated_climb.enabled = false;
+        physics.drive.brake_ceiling_nm = 200.;
+        physics.drive.brake_hold_torque_nm = 400.;
+        physics.drive.brake_hold_stiffness_nm_rad = 1000.;
+    });
+    const auto *model = rig->stepper->model();
+    const auto *data = rig->stepper->data();
+    const auto front = static_cast<std::size_t>(joint_dof(model, "front_wheel_spin"));
+    const auto rear = static_cast<std::size_t>(joint_dof(model, "rear_wheel_spin"));
+    const auto qpos = model_access::mutable_buffer(data->qpos, model->nq);
+    const auto qposadr = model_access::readonly_buffer(model->jnt_qposadr, model->njnt);
+    const auto dofjnt = model_access::readonly_buffer(model->dof_jntid, model->nv);
+    const auto front_pos = static_cast<std::size_t>(qposadr[static_cast<std::size_t>(dofjnt[front])]);
+    const auto rear_pos = static_cast<std::size_t>(qposadr[static_cast<std::size_t>(dofjnt[rear])]);
+    const auto velocity = model_access::mutable_buffer(data->qvel, model->nv);
+    velocity[front] = 0.;
+    velocity[rear] = 0.;
+    rig->stepper->note_posvel_stale();
+    (void)rig->physical->advance_physics(.5, .75, std::nullopt, {});
+    const auto state = rig->physical->state();
+    bt::require(state.brake_latch.latch_front.has_value() &&
+                    state.brake_latch.latch_rear.has_value(),
+                "advancing at standstill latches both brakes");
+    qpos[front_pos] = state.brake_latch.latch_front.value_or(0.) + .2;
+    qpos[rear_pos] = state.brake_latch.latch_rear.value_or(0.) - .04;
+    velocity[front] = 0.;
+    velocity[rear] = 0.;
+    const auto friction = model_access::mutable_buffer(model->dof_frictionloss, model->nv);
+    friction[front] = 3.;
+    friction[rear] = 7.;
+    rig->stepper->note_posvel_stale();
+    rig->stepper->forward();
+    const auto probe = rig->physical->probe_step_inputs({}, .5, .75);
+    const auto it = std::ranges::find_if(probe.components, [](const auto &component) {
+        return component.first == "brake_hold";
+    });
+    bt::require(it != probe.components.end(), "probe publishes nonzero brake hold");
+    const auto &hold = it->second;
+    bt::require(std::abs(hold[front]) == 100.,
+                "hold torque above the ceiling is capped by demand");
+    bt::require(std::abs(hold[rear]) > 1.,
+                "rear wheel exercises a nonzero unsaturated hold");
+    bt::require(std::abs(probe.front_brake_bound_nm + std::abs(hold[front]) - 100.) < 1e-9 &&
+                std::abs(probe.rear_brake_bound_nm + std::abs(hold[rear]) - 150.) < 1e-9,
+                "probe exposes only the residual budget on both wheels");
+    bt::require(friction[front] == 3. && friction[rear] == 7. &&
+                !rig->stepper->posvel_fresh(),
+                "probe restores model bounds and invalidates changed cache");
+}
+
+void test_probe_includes_held_rollback() {
+    const auto rig = rider_control_reference::pinned_rig([](auto &physics) {
+        physics.rider_launch.plan_enabled = false;
+        physics.seated_climb.enabled = false;
+    });
+    const auto *model = rig->stepper->model();
+    const auto *data = rig->stepper->data();
+    const auto root = static_cast<std::size_t>(joint_dof(model, "root_x"));
+    model_access::mutable_buffer(data->qvel, model->nv)[root] = -.1;
+    rig->stepper->note_posvel_stale();
+    auto state = rig->physical->state();
+    state.rollback_hold = true;
+    rig->physical->restore(state);
+    const auto probe = rig->physical->probe_step_inputs({}, 0., 0.);
+    const double expected = rig->stepper->drive().config().brake_ceiling_nm;
+    bt::require(probe.front_brake_bound_nm == expected &&
+                    probe.rear_brake_bound_nm == expected,
+                "probe includes held rollback brakes in hysteresis band");
+    bt::require(rig->physical->state().rollback_hold,
+                "the peek preserves held hysteresis state");
+    state.rollback_hold = false;
+    rig->physical->restore(state);
+    const auto released = rig->physical->probe_step_inputs({}, 0., 0.);
+    bt::require(released.front_brake_bound_nm == 0. &&
+                    released.rear_brake_bound_nm == 0. &&
+                    !rig->physical->state().rollback_hold,
+                "the same speed does not newly engage rollback");
+}
+
+void test_probe_brake_purity_and_rollback() {
+    const auto rig = rider_control_reference::pinned_rig([](auto &physics) {
+        physics.rider_launch.plan_enabled = false;
+        physics.seated_climb.enabled = false;
+    });
+    const auto *model = rig->stepper->model();
+    const auto *data = rig->stepper->data();
+    const auto front = static_cast<std::size_t>(joint_dof(model, "front_wheel_spin"));
+    const auto rear = static_cast<std::size_t>(joint_dof(model, "rear_wheel_spin"));
+    const auto root = static_cast<std::size_t>(joint_dof(model, "root_x"));
+    const auto friction = model_access::mutable_buffer(model->dof_frictionloss, model->nv);
+    friction[front] = 3.;
+    friction[rear] = 7.;
+    model_access::mutable_buffer(data->qvel, model->nv)[root] = -.1;
+    rig->stepper->note_posvel_stale();
+    auto state = rig->physical->state();
+    state.rollback_hold = true;
+    rig->physical->restore(state);
+    rig->stepper->forward();
+    bt::require(rig->stepper->posvel_fresh(), "forward primes position cache");
+    const runtime::RideControl command;
+    const auto probe = rig->physical->probe_step_inputs(command, 0., 0.);
+    bt::require(friction[front] == 3. && friction[rear] == 7.,
+                "probe restores both model friction bounds");
+    bt::require(!rig->stepper->posvel_fresh(),
+                "probe does not mark stale model caches fresh");
+    bt::require(rig->physical->state().rollback_hold,
+                "probe does not mutate rollback hold");
+    bt::require(probe.front_brake_bound_nm > 0. &&
+                    probe.rear_brake_bound_nm > 0.,
+                "probe includes held rollback brakes in hysteresis band");
+    (void)rig->physical->advance_physics(0., 0., std::nullopt, command);
+    bt::require(friction[front] == probe.front_brake_bound_nm &&
+                    friction[rear] == probe.rear_brake_bound_nm,
+                "advance applies the probe's rollback brake bounds");
+
+    friction[front] = -0.;
+    friction[rear] = 0.;
+    std::vector<double> saved_friction(friction.begin(), friction.end());
+    rig->stepper->note_posvel_stale();
+    (void)rig->physical->probe_step_inputs(command, .5, .75);
+    bt::require(bitwise_equal(friction, saved_friction),
+                "probe preserves the entire friction array including signed zero");
+
+    // A finite crank rate that overflows cadence fails after brake.apply().
+    friction[front] = 3.;
+    friction[rear] = 7.;
+    const auto crank = static_cast<std::size_t>(joint_dof(model, "crank_spin"));
+    model_access::mutable_buffer(data->qvel, model->nv)[crank] = 1e308;
+    rig->stepper->note_posvel_stale();
+    bool threw = false;
+    try {
+        (void)rig->physical->probe_step_inputs(command, .5, .75);
+    } catch (const std::overflow_error &) {
+        threw = true;
+    }
+    bt::require(threw, "overflow reaches the post-brake failure path");
+    bt::require(friction[front] == 3. && friction[rear] == 7. &&
+                    !rig->stepper->posvel_fresh(),
+                "exception also restores bounds and leaves caches stale");
+}
+NATIVE_DIAG_POP
 
 constexpr std::string_view kNode =
     "native_runtime_step/";
@@ -318,6 +475,9 @@ NATIVE_DIAG_POP
 int main() {
     try {
         int failures = 0;
+        failures += bt::run(test_probe_combined_brake_budget);
+        failures += bt::run(test_probe_includes_held_rollback);
+        failures += bt::run(test_probe_brake_purity_and_rollback);
         failures += bt::run(
             test_physics_result_is_independent_of_call_chunks);
         failures += bt::run(test_reset_after_advance_replays_the_bootstrap);

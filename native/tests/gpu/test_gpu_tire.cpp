@@ -468,9 +468,10 @@ void test_airborne_effective_radius_zero(const fs::path &xml) {
     }
     for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
 
-    for (const nativecfg::TireConfig &cfg : {
-             bike::gpu::make_default_compliant_tire_config(),
-             bike::gpu::make_default_distributed_tire_config(64)}) {
+    std::vector<nativecfg::TireConfig> configs;
+    configs.push_back(bike::gpu::make_default_compliant_tire_config());
+    configs.push_back(bike::gpu::make_default_distributed_tire_config(64));
+    for (const nativecfg::TireConfig &cfg : configs) {
         const auto bundle_ptr = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
             fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom));
         const HostTyreUploadBundle &bundle = *bundle_ptr;
@@ -532,9 +533,10 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
     }
     for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
 
-    for (const nativecfg::TireConfig &cfg : {
-             bike::gpu::make_default_compliant_tire_config(),
-             bike::gpu::make_default_distributed_tire_config(64)}) {
+    std::vector<nativecfg::TireConfig> configs;
+    configs.push_back(bike::gpu::make_default_compliant_tire_config());
+    configs.push_back(bike::gpu::make_default_distributed_tire_config(64));
+    for (const nativecfg::TireConfig &cfg : configs) {
         const auto bundle_ptr = std::make_unique<HostTyreUploadBundle>(build_gpu_tyre_model(
             fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom));
         const HostTyreUploadBundle &bundle = *bundle_ptr;

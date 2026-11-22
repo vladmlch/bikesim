@@ -158,6 +158,157 @@ int bike_metal_launch_sp4_post_solve(
     const int *d_contact_efc_address,
     const int *d_contact_dim
 );
+
+int bike_metal_launch_sp4_m0_init(
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+);
+
+int bike_metal_launch_sp4_m0_pre_solve_and_begin(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    const float *d_site_xpos,
+    const float *d_subtree_com,
+    const float *d_body_subtreemass,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride,
+    float *d_qacc_warmstart,
+    int *out_any_needs_solve
+);
+
+int bike_metal_launch_sp4_m0_step(
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::gpu::GpuSp3WorldState *d_sp3_states,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart,
+    int *out_any_needs_solve
+);
+
+int bike_metal_launch_sp4_m0_post_solve(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+);
+
+int bike_metal_launch_sp4_energy_post_step(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const bike::gpu::GpuWorldState *d_world_states,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_ctrl,
+    const float *d_body_mass,
+    const float *d_xipos,
+    const float *d_gravity,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const float *d_efc_J,
+    const float *d_efc_force
+);
 #endif
 } // extern "C"
 
@@ -195,6 +346,28 @@ void require_bits_f32(float actual, float expected, std::string_view label) {
         throw std::runtime_error(std::format(
             "{}: 0-bit mismatch actual={} (0x{:08x}) expected={} (0x{:08x})",
             label, actual, a, expected, e));
+    }
+}
+
+void require_ulp_f32(
+    float actual,
+    float expected,
+    std::uint32_t max_ulp,
+    std::string_view label
+) {
+    if (actual == 0.0f && expected == 0.0f) {
+        return;
+    }
+    const std::int32_t a = std::bit_cast<std::int32_t>(actual);
+    const std::int32_t e = std::bit_cast<std::int32_t>(expected);
+    const bool same_sign = ((a < 0) == (e < 0));
+    const std::uint32_t ulp = same_sign
+        ? static_cast<std::uint32_t>(std::abs(a - e))
+        : std::numeric_limits<std::uint32_t>::max();
+    if (ulp > max_ulp && std::abs(actual - expected) > 1e-6f) {
+        throw std::runtime_error(std::format(
+            "{}: ULP mismatch actual={} expected={} ulp={} max_ulp={}",
+            label, actual, expected, ulp, max_ulp));
     }
 }
 
@@ -1158,6 +1331,614 @@ void test_failure_and_stride_guards(const TempSp4Models &models) {
     std::cout << "[test_failure_and_stride_guards] pitch_over + zero-stride checks passed\n";
 }
 
+[[gnu::noinline]] void test_sp4_m0_host_vs_metal_parity(const TempSp4Models &models) {
+    require(bike_gpu_sizeof_spindle_m0_scratch() ==
+                static_cast<int>(sizeof(bike::physics_core::SpindleM0Scratch<float>)),
+            "sizeof(SpindleM0Scratch<float>) mismatch");
+    require(bike_gpu_sizeof_pneumatic_scratch() ==
+                static_cast<int>(sizeof(bike::physics_core::GpuPneumaticStepScratch<float>)),
+            "sizeof(GpuPneumaticStepScratch<float>) mismatch");
+
+    const ModelPtr m13 = load_xml(models.xml13);
+    const auto idx = bike::gpu::assets::resolve_gpu_model_indices(m13.get());
+    const auto sp_params = std::make_unique<bike::physics_core::SpindleM2K2Params<float>>();
+    require(
+        bike::gpu::build_runner_spindle_params(
+            models.xml13.string().c_str(),
+            models.strength_json.string().c_str(),
+            models.envelope_json.string().c_str(),
+            1, sp_params.get()) == 0,
+        "m0 parity build_runner_spindle_params failed");
+    const auto tt = build_tyre_terrain(models.xml13, idx);
+    const auto base_cfg = build_sp4_sp3_config(m13.get());
+
+    DataPtr d0(mj_makeData(m13.get()), &mj_deleteData);
+    require(d0 != nullptr, "mj_makeData failed");
+    {
+        std::vector<double> qp;
+        std::vector<double> qv;
+        if (bike::gpu::assets::load_captured_initial_state(
+                models.xml13.string().c_str(), idx.nq, idx.nv, qp, qv) ==
+            bike::gpu::assets::AssetStatus::kOk) {
+            std::ranges::copy(qp, ma::mutable_buffer(d0->qpos, m13->nq, "qpos").begin());
+            std::ranges::copy(qv, ma::mutable_buffer(d0->qvel, m13->nv, "qvel").begin());
+        }
+        const auto d_qp = ma::mutable_buffer(d0->qpos, m13->nq, "qpos");
+        const auto d_qv = ma::mutable_buffer(d0->qvel, m13->nv, "qvel");
+        d_qp[to_index(idx.root_x_qpos)] = 2.0;
+        d_qv[to_index(idx.root_x_dof)] = 2.0;
+        d_qv[to_index(idx.crank_spin_dof)] = 6.0;
+    }
+    mj_fwdPosition(m13.get(), d0.get());
+    mj_fwdVelocity(m13.get(), d0.get());
+    mj_fwdActuation(m13.get(), d0.get());
+    mj_fwdAcceleration(m13.get(), d0.get());
+    mj_fwdConstraint(m13.get(), d0.get());
+
+    constexpr int kNworld = 8;
+    const std::size_t kNwU = to_index(kNworld);
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int nu = idx.nu;
+    const int nbody = idx.nbody;
+    const int njnt = to_int(m13->njnt);
+    const int nsite = to_int(m13->nsite);
+    const int ntendon = to_int(m13->ntendon);
+    const int tr_stride = 2 * ntendon;
+    const int nsd = to_int(m13->nsensordata);
+    const int nM = to_int(m13->nM);
+    const int njmax = std::max(1, d0->nefc);
+
+    std::vector<float> p_qpos, p_qvel, p_bias, p_qacc, p_xpos, p_xmat, p_xa, p_xx, p_site, p_sc, p_sm, p_M;
+    std::vector<float> p_tr, p_fl, p_sd, p_eJ, p_ef, p_bmass, p_xipos;
+    std::vector<int> p_et, p_eid, m_ra, m_rn, m_ci;
+    copy_cast(d0->qpos, to_index(nq), p_qpos);
+    copy_cast(d0->qvel, to_index(nv), p_qvel);
+    copy_cast(d0->qfrc_bias, to_index(nv), p_bias);
+    copy_cast(d0->qacc, to_index(nv), p_qacc);
+    copy_cast(d0->xpos, to_index(nbody) * 3U, p_xpos);
+    copy_cast(d0->xmat, to_index(nbody) * 9U, p_xmat);
+    copy_cast(d0->xanchor, to_index(njnt) * 3U, p_xa);
+    copy_cast(d0->xaxis, to_index(njnt) * 3U, p_xx);
+    copy_cast(d0->site_xpos, to_index(nsite) * 3U, p_site);
+    copy_cast(d0->subtree_com, to_index(nbody) * 3U, p_sc);
+    copy_cast(m13->body_subtreemass, to_index(nbody), p_sm);
+    copy_cast(m13->body_mass, to_index(nbody), p_bmass);
+    copy_cast(d0->xipos, to_index(nbody) * 3U, p_xipos);
+    copy_cast(d0->M, to_index(nM), p_M);
+    copy_cast(m13->tendon_range, to_index(tr_stride), p_tr);
+    copy_cast(m13->dof_frictionloss, to_index(nv), p_fl);
+    copy_cast(d0->sensordata, to_index(nsd), p_sd);
+    copy_cast(d0->efc_J, to_index(njmax) * to_index(nv), p_eJ);
+    copy_cast(d0->efc_force, to_index(njmax), p_ef);
+    copy_cast(d0->efc_type, to_index(njmax), p_et);
+    copy_cast(d0->efc_id, to_index(njmax), p_eid);
+    copy_cast(m13->M_rowadr, to_index(nv), m_ra);
+    copy_cast(m13->M_rownnz, to_index(nv), m_rn);
+    copy_cast(m13->M_colind, to_index(nM), m_ci);
+    std::array<float, 3> grav_f{
+        static_cast<float>(std::span{m13->opt.gravity}[0]),
+        static_cast<float>(std::span{m13->opt.gravity}[1]),
+        static_cast<float>(std::span{m13->opt.gravity}[2]),
+    };
+
+    const auto tile = [&](const auto &proto) {
+        using ElemT = typename std::decay_t<decltype(proto)>::value_type;
+        std::vector<ElemT> out(kNwU * proto.size());
+        for (int w = 0; w < kNworld; ++w) {
+            std::ranges::copy(proto, out.begin() + static_cast<std::ptrdiff_t>(to_index(w) * proto.size()));
+        }
+        return out;
+    };
+
+    std::vector<bike::gpu::GpuSp3Config> cfgs(kNwU, *base_cfg);
+    auto qpos_b = tile(p_qpos);
+    for (int w = 0; w < kNworld; ++w) {
+        cfgs[to_index(w)].tire_stiff_scale = 0.90f + 0.02f * static_cast<float>(w);
+        qpos_b[to_index(w) * to_index(nq) + to_index(idx.crank_spin_qpos)] += 0.05f * static_cast<float>(w);
+    }
+    const auto qvel_b = tile(p_qvel);
+    const auto bias_b = tile(p_bias);
+    const auto xpos_b = tile(p_xpos);
+    const auto xmat_b = tile(p_xmat);
+    const auto xa_b = tile(p_xa);
+    const auto xx_b = tile(p_xx);
+    const auto site_b = tile(p_site);
+    const auto sc_b = tile(p_sc);
+    const auto xipos_b = tile(p_xipos);
+    const auto M_b = tile(p_M);
+    const auto tr_b = tile(p_tr);
+    const auto fl_b = tile(p_fl);
+    const auto sd_b = tile(p_sd);
+    const auto eJ_b = tile(p_eJ);
+    const auto ef_b = tile(p_ef);
+    const auto et_b = tile(p_et);
+    const auto eid_b = tile(p_eid);
+    const std::vector<int> nefc_b(kNwU, d0->nefc);
+
+    std::vector<bike::gpu::GpuSp3WorldState> h_sp3(kNwU);
+    std::vector<bike::gpu::GpuSp4WorldState> h_sp4(kNwU);
+    std::vector<bike::physics_core::SpindleM0Scratch<float>> h_m0(kNwU);
+    std::vector<bike::gpu::GpuWorldState> h_ws(kNwU);
+    std::vector<float> h_qpos = qpos_b;
+    std::vector<float> h_qfrc(kNwU * to_index(nv), 0.0f);
+    std::vector<float> h_ctrl(kNwU * to_index(nu), 0.0f);
+    std::vector<float> h_tr = tr_b;
+    std::vector<float> h_fl = fl_b;
+    std::vector<float> h_ws_qacc(kNwU * to_index(nv), 0.0f);
+
+    require(
+        bike_gpu_launch_sp4_m0_init(
+            nullptr, kNworld, &idx, cfgs.data(), 1,
+            h_sp3.data(), h_sp4.data(), h_m0.data(), h_ws.data(), h_qpos.data(),
+            0.0f, ntendon, h_tr.data(), tr_stride) == 0,
+        "host m0 init failed");
+
+#if defined(__APPLE__)
+    const std::string gpu_src_dir = (repo_root() / "native" / "src" / "gpu").string();
+    require(bike_metal_init(gpu_src_dir.c_str()) == 0, "bike_metal_init failed");
+
+    std::vector<bike::gpu::GpuSp3WorldState> m_sp3(kNwU);
+    std::vector<bike::gpu::GpuSp4WorldState> m_sp4(kNwU);
+    std::vector<bike::physics_core::SpindleM0Scratch<float>> m_m0(kNwU);
+    std::vector<bike::gpu::GpuWorldState> m_ws(kNwU);
+    std::vector<float> m_qpos = qpos_b;
+    std::vector<float> m_qfrc(kNwU * to_index(nv), 0.0f);
+    std::vector<float> m_ctrl(kNwU * to_index(nu), 0.0f);
+    std::vector<float> m_tr = tr_b;
+    std::vector<float> m_fl = fl_b;
+    std::vector<float> m_ws_qacc(kNwU * to_index(nv), 0.0f);
+
+    require(
+        bike_metal_launch_sp4_m0_init(
+            kNworld, &idx, cfgs.data(), 1,
+            m_sp3.data(), m_sp4.data(), m_m0.data(), m_ws.data(), m_qpos.data(),
+            0.0f, ntendon, m_tr.data(), tr_stride) == 0,
+        "metal m0 init failed");
+#endif
+
+    int h_any_needs = 0;
+    require(
+        bike_gpu_launch_sp4_m0_pre_solve_and_begin(
+            nullptr, kNworld, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+            tt->terrain_f32.data(), tt->terrain_i32.data(),
+            cfgs.data(), 1, sp_params.get(), h_sp3.data(), h_sp4.data(), h_m0.data(), h_ws.data(),
+            h_qpos.data(), qvel_b.data(), bias_b.data(), xpos_b.data(), xmat_b.data(),
+            xa_b.data(), xx_b.data(), site_b.data(), sc_b.data(), p_sm.data(),
+            0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+            h_qfrc.data(), h_ctrl.data(), ntendon, h_tr.data(), tr_stride, h_fl.data(), nv,
+            h_ws_qacc.data(), &h_any_needs) == 0,
+        "host m0 pre_solve_and_begin failed");
+
+#if defined(__APPLE__)
+    int m_any_needs = 0;
+    require(
+        bike_metal_launch_sp4_m0_pre_solve_and_begin(
+            kNworld, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+            tt->terrain_f32.data(), tt->terrain_i32.data(),
+            cfgs.data(), 1, sp_params.get(), m_sp3.data(), m_sp4.data(), m_m0.data(), m_ws.data(),
+            m_qpos.data(), qvel_b.data(), bias_b.data(), xpos_b.data(), xmat_b.data(),
+            xa_b.data(), xx_b.data(), site_b.data(), sc_b.data(), p_sm.data(),
+            0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+            m_qfrc.data(), m_ctrl.data(), ntendon, m_tr.data(), tr_stride, m_fl.data(), nv,
+            m_ws_qacc.data(), &m_any_needs) == 0,
+        "metal m0 pre_solve_and_begin failed");
+    require(m_any_needs == h_any_needs, "metal vs host m0 begin any_needs_solve mismatch");
+#endif
+
+    // Drive multi-iteration Armijo Newton passes using live MuJoCo world 0 acceleration response.
+    std::vector<float> qacc_b(kNwU * to_index(nv), 0.0f);
+    std::vector<double> ws_saved(to_index(nv), 0.0);
+    std::ranges::copy(ma::readonly_buffer(d0->qacc_warmstart, m13->nv, "qacc_warmstart"),
+                      ws_saved.begin());
+
+    int iter = 0;
+    while (h_any_needs != 0 && iter < bike::physics_core::kM0MaxPasses) {
+        const auto d_ctrl = ma::mutable_buffer(d0->ctrl, m13->nu, "ctrl");
+        for (int i = 0; i < nu; ++i) {
+            d_ctrl[to_index(i)] = static_cast<mjtNum>(h_ctrl[to_index(i)]);
+        }
+        std::ranges::copy(ws_saved, ma::mutable_buffer(d0->qacc_warmstart, m13->nv, "qacc_warmstart").begin());
+        mj_fwdActuation(m13.get(), d0.get());
+        mj_fwdAcceleration(m13.get(), d0.get());
+        mj_fwdConstraint(m13.get(), d0.get());
+        copy_cast(d0->qacc, to_index(nv), p_qacc);
+        qacc_b = tile(p_qacc);
+
+        require(
+            bike_gpu_launch_sp4_m0_step(
+                nullptr, kNworld, nq, nv, nu, &idx, cfgs.data(), 1, h_sp3.data(),
+                sp_params.get(), h_sp4.data(), h_m0.data(),
+                h_qpos.data(), qvel_b.data(), bias_b.data(), qacc_b.data(),
+                0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+                h_ctrl.data(), h_ws_qacc.data(), &h_any_needs) == 0,
+            "host m0 step failed");
+#if defined(__APPLE__)
+        require(
+            bike_metal_launch_sp4_m0_step(
+                kNworld, nq, nv, nu, &idx, cfgs.data(), 1, m_sp3.data(),
+                sp_params.get(), m_sp4.data(), m_m0.data(),
+                m_qpos.data(), qvel_b.data(), bias_b.data(), qacc_b.data(),
+                0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+                m_ctrl.data(), m_ws_qacc.data(), &m_any_needs) == 0,
+            "metal m0 step failed");
+        require(m_any_needs == h_any_needs, "metal vs host m0 step any_needs_solve mismatch");
+        for (std::size_t i = 0; i < h_ctrl.size(); ++i) {
+            require_ulp_f32(m_ctrl[i], h_ctrl[i], 1U, "metal vs host m0 step ctrl");
+        }
+#endif
+        ++iter;
+    }
+    require(iter >= 2 && h_any_needs == 0,
+            "SpindleM0 parity rollout must converge after multiple Armijo Newton iterations");
+
+    require(
+        bike_gpu_launch_sp4_m0_post_solve(
+            nullptr, kNworld, kDtS, &idx, cfgs.data(), 1, sp_params.get(),
+            h_sp3.data(), h_sp4.data(), h_m0.data(), h_qpos.data(), qvel_b.data(),
+            xpos_b.data(), xmat_b.data(), xa_b.data(),
+            nsd, sd_b.data(), nefc_b.data(), njmax, nv,
+            et_b.data(), eid_b.data(), eJ_b.data(), ef_b.data(),
+            nullptr, 0, 1, nullptr, nullptr, nullptr, nullptr) == 0,
+        "host m0 post_solve failed");
+
+    require(
+        bike_gpu_launch_sp4_energy_post_step(
+            nullptr, kNworld, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+            tt->terrain_f32.data(), cfgs.data(), 1, sp_params.get(),
+            h_sp3.data(), h_sp4.data(), h_ws.data(),
+            0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+            h_qpos.data(), qvel_b.data(), h_ctrl.data(),
+            p_bmass.data(), xipos_b.data(), grav_f.data(),
+            nefc_b.data(), njmax, nv,
+            et_b.data(), eJ_b.data(), ef_b.data()) == 0,
+        "host m0 energy_post_step failed");
+
+#if defined(__APPLE__)
+    require(
+        bike_metal_launch_sp4_m0_post_solve(
+            kNworld, kDtS, &idx, cfgs.data(), 1, sp_params.get(),
+            m_sp3.data(), m_sp4.data(), m_m0.data(), m_qpos.data(), qvel_b.data(),
+            xpos_b.data(), xmat_b.data(), xa_b.data(),
+            nsd, sd_b.data(), nefc_b.data(), njmax, nv,
+            et_b.data(), eid_b.data(), eJ_b.data(), ef_b.data(),
+            nullptr, 0, 1, nullptr, nullptr, nullptr, nullptr) == 0,
+        "metal m0 post_solve failed");
+    require(
+        bike_metal_launch_sp4_energy_post_step(
+            kNworld, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+            tt->terrain_f32.data(), cfgs.data(), 1, sp_params.get(),
+            m_sp3.data(), m_sp4.data(), m_ws.data(),
+            0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_b.data(),
+            m_qpos.data(), qvel_b.data(), m_ctrl.data(),
+            p_bmass.data(), xipos_b.data(), grav_f.data(),
+            nefc_b.data(), njmax, nv,
+            et_b.data(), eJ_b.data(), ef_b.data()) == 0,
+        "metal m0 energy_post_step failed");
+
+    for (std::size_t i = 0; i < h_qfrc.size(); ++i) {
+        require_ulp_f32(m_qfrc[i], h_qfrc[i], 1U, "metal vs host m0 qfrc");
+    }
+    for (int w = 0; w < kNworld; ++w) {
+        const std::size_t wu = to_index(w);
+        require(m_sp4[wu].current_m0_passes == h_sp4[wu].current_m0_passes,
+                "metal vs host m0 pass count mismatch");
+        const std::span<const float> m_ht{m_sp4[wu].spindle.held_torques};
+        const std::span<const float> h_ht{h_sp4[wu].spindle.held_torques};
+        for (std::size_t k = 0; k < m_ht.size(); ++k) {
+            require_ulp_f32(m_ht[k], h_ht[k], 1U, "metal vs host m0 held_torques");
+        }
+        require_ulp_f32(m_sp4[wu].energy_residual_j, h_sp4[wu].energy_residual_j, 1U,
+                        "metal vs host energy_residual_j");
+        require_ulp_f32(m_sp4[wu].energy_scale_j, h_sp4[wu].energy_scale_j, 1U,
+                        "metal vs host energy_scale_j");
+    }
+#endif
+    std::cout << "[test_sp4_m0_host_vs_metal_parity] passed (iters=" << iter << ")\n";
+}
+
+[[gnu::noinline]] void test_sp4_m0_and_energy_contract_all_tyres(const TempSp4Models &models) {
+    struct BackendRun {
+        const char *label;
+        const char *physics_toml;
+        bike::physics_core::TyreBackendKind backend;
+        int station_count;
+    };
+    const std::array<BackendRun, 3> backends{{
+        {.label = "compliant_2d",
+         .physics_toml = "examples/research/viewer_physics_welded.toml",
+         .backend = bike::physics_core::TyreBackendKind::compliant_2d,
+         .station_count = 0},
+        {.label = "distributed_2d_reference",
+         .physics_toml = "examples/research/viewer_physics_distributed.toml",
+         .backend = bike::physics_core::TyreBackendKind::distributed_2d_reference,
+         .station_count = 64},
+        {.label = "pneumatic",
+         .physics_toml = "examples/research/viewer_physics_pneumatic.toml",
+         .backend = bike::physics_core::TyreBackendKind::pneumatic,
+         .station_count = 64},
+    }};
+
+    const fs::path root = repo_root();
+    const fs::path track_path = root / "tests" / "fixtures" / "tracks" / "flat.toml";
+    for (const auto &br : backends) {
+        const fs::path physics_path = root / br.physics_toml;
+        const auto spec = std::make_unique<bike::golden::StepClosureCaptureSpec>(
+            bike::golden::StepClosureCaptureSpec{
+                .physics = bike::configuration::load_physics(physics_path),
+                .track = bike::terrain::load_track(track_path),
+                .duration_s = std::nullopt,
+                .max_steps = std::size_t{1},
+                .seed_decimal = "0",
+                .physics_config_label = physics_path.filename().string(),
+                .track_label = "flat.toml",
+                .asset_root = physics_path.parent_path(),
+                .strict = false,
+            });
+        const auto bundle = bike::golden::capture_step_closure_bundle(*spec);
+        require(!bundle->rows.empty(), "capture_step_closure_bundle returned no rows");
+
+        const fs::path rollout_dir = models.dir / std::format("m0_{}", br.label);
+        fs::create_directories(rollout_dir);
+        const fs::path rollout_xml = rollout_dir / "model_12gears.xml";
+        write_text(rollout_xml, bundle->model_12gears_xml);
+        if (!bundle->hfield_data.empty()) {
+            std::ofstream ofs(rollout_dir / "hfield_data.bin", std::ios::binary);
+            require(ofs.is_open(), "open rollout hfield_data.bin");
+            for (const double v : bundle->hfield_data) {
+                const auto bytes = std::bit_cast<std::array<char, sizeof(double)>>(v);
+                ofs.write(bytes.data(), sizeof(double));
+            }
+            require(ofs.good(), "write rollout hfield_data.bin");
+        }
+
+        ModelPtr m = load_xml(rollout_xml);
+        require(bike::gpu::assets::load_hfield_bin(m.get(), rollout_xml.string().c_str()) ==
+                    bike::gpu::assets::AssetStatus::kOk,
+                "load m0 rollout hfield_data.bin failed");
+        DataPtr d(mj_makeData(m.get()), &mj_deleteData);
+        require(d != nullptr, "mj_makeData failed");
+        const auto idx = bike::gpu::assets::resolve_gpu_model_indices(m.get());
+        {
+            const auto &row0 = bundle->rows.front();
+            std::ranges::copy(row0.qpos, ma::mutable_buffer(d->qpos, m->nq, "qpos").begin());
+            std::ranges::copy(row0.qvel, ma::mutable_buffer(d->qvel, m->nv, "qvel").begin());
+            if (static_cast<int>(row0.qacc_warmstart.size()) == m->nv) {
+                std::ranges::copy(row0.qacc_warmstart,
+                                  ma::mutable_buffer(d->qacc_warmstart, m->nv, "qacc_warmstart").begin());
+            }
+        }
+
+        const auto sp_params = std::make_unique<bike::physics_core::SpindleM2K2Params<float>>();
+        require(
+            bike::gpu::build_runner_spindle_params(
+                rollout_xml.string().c_str(),
+                models.strength_json.string().c_str(),
+                models.envelope_json.string().c_str(),
+                1, sp_params.get()) == 0,
+            "m0 build_runner_spindle_params failed");
+
+        auto tt = std::make_unique<FlatTerrainAndTyre>();
+        {
+            int f32_count = 0;
+            int i32_count = 0;
+            require(
+                bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
+                    rollout_xml.string().c_str(),
+                    static_cast<int>(br.backend),
+                    br.station_count,
+                    static_cast<int>(bike::physics_core::SurfaceLabel::hardpack),
+                    &idx, &tt->tyre, &tt->terrain_desc,
+                    nullptr, &f32_count, nullptr, &i32_count) == 0 && f32_count > 0,
+                "m0 tyre/terrain size query failed");
+            tt->terrain_f32.resize(to_index(f32_count));
+            tt->terrain_i32.resize(to_index(std::max(1, i32_count)));
+            require(
+                bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
+                    rollout_xml.string().c_str(),
+                    static_cast<int>(br.backend),
+                    br.station_count,
+                    static_cast<int>(bike::physics_core::SurfaceLabel::hardpack),
+                    &idx, &tt->tyre, &tt->terrain_desc,
+                    tt->terrain_f32.data(), &f32_count,
+                    tt->terrain_i32.data(), &i32_count) == 0,
+                "m0 tyre/terrain fill failed");
+        }
+
+        const auto cfg = build_sp4_sp3_config(m.get());
+        cfg->suspension = bike::gpu::gpu_make_backend_default_suspension_params(br.backend);
+        cfg->resistance.crr = static_cast<float>(spec->physics.resistance.crr);
+        cfg->track_energy_ledger = 1;
+
+        const auto sp3_st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+        const auto sp4_st = std::make_unique<bike::gpu::GpuSp4WorldState>();
+        const auto m0_scratch = std::make_unique<bike::physics_core::SpindleM0Scratch<float>>();
+        const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+
+        const int nq = idx.nq;
+        const int nv = idx.nv;
+        const int nu = idx.nu;
+        const int nbody = idx.nbody;
+        const int njnt = to_int(m->njnt);
+        const int nsite = to_int(m->nsite);
+        const int ntendon = to_int(m->ntendon);
+        const int nM = to_int(m->nM);
+        const int nsd = to_int(m->nsensordata);
+
+        std::vector<float> qpos_f, qvel_f, bias_f, qacc_f, xpos_f, xmat_f, xa_f, xx_f, site_f, sc_f, sm_f, bmass_f, xipos_f, M_f;
+        std::vector<float> qfrc_f(to_index(nv), 0.0f);
+        std::vector<float> ctrl_f(to_index(nu), 0.0f);
+        std::vector<float> tr_f, fl_f, sd_f, eJ_f, ef_f;
+        std::vector<float> ws_qacc_f(to_index(nv), 0.0f);
+        std::vector<int> et_i, eid_i, m_ra, m_rn, m_ci;
+        copy_cast(d->qpos, to_index(nq), qpos_f);
+        copy_cast(m->body_subtreemass, to_index(nbody), sm_f);
+        copy_cast(m->body_mass, to_index(nbody), bmass_f);
+        copy_cast(m->tendon_range, 2U * to_index(ntendon), tr_f);
+        copy_cast(m->dof_frictionloss, to_index(nv), fl_f);
+        copy_cast(m->M_rowadr, to_index(nv), m_ra);
+        copy_cast(m->M_rownnz, to_index(nv), m_rn);
+        copy_cast(m->M_colind, to_index(nM), m_ci);
+        std::array<float, 3> grav_f{
+            static_cast<float>(std::span{m->opt.gravity}[0]),
+            static_cast<float>(std::span{m->opt.gravity}[1]),
+            static_cast<float>(std::span{m->opt.gravity}[2]),
+        };
+
+        const float x0 = qpos_f[to_index(idx.root_x_qpos)];
+        require(
+            bike_gpu_launch_sp4_m0_init(
+                nullptr, 1, &idx, cfg.get(), 0,
+                sp3_st.get(), sp4_st.get(), m0_scratch.get(), ws.get(),
+                qpos_f.data(), 0.0f, ntendon, tr_f.data(), 2 * ntendon) == 0,
+            "m0 rollout init failed");
+        {
+            const auto m_tr = ma::mutable_buffer(m->tendon_range, 2 * m->ntendon, "tendon_range");
+            for (int i = 0; i < 2 * ntendon; ++i) {
+                m_tr[to_index(i)] = static_cast<mjtNum>(tr_f[to_index(i)]);
+            }
+        }
+
+        std::vector<double> ws_saved(to_index(nv), 0.0);
+        constexpr int kSteps = 400;
+        for (int step = 0; step < kSteps; ++step) {
+            mj_fwdPosition(m.get(), d.get());
+            mj_fwdVelocity(m.get(), d.get());
+
+            copy_cast(d->qpos, to_index(nq), qpos_f);
+            copy_cast(d->qvel, to_index(nv), qvel_f);
+            copy_cast(d->qfrc_bias, to_index(nv), bias_f);
+            copy_cast(d->xpos, to_index(nbody) * 3U, xpos_f);
+            copy_cast(d->xmat, to_index(nbody) * 9U, xmat_f);
+            copy_cast(d->xanchor, to_index(njnt) * 3U, xa_f);
+            copy_cast(d->xaxis, to_index(njnt) * 3U, xx_f);
+            copy_cast(d->site_xpos, to_index(nsite) * 3U, site_f);
+            copy_cast(d->subtree_com, to_index(nbody) * 3U, sc_f);
+            copy_cast(d->M, to_index(nM), M_f);
+            copy_cast(m->tendon_range, 2U * to_index(ntendon), tr_f);
+            copy_cast(m->dof_frictionloss, to_index(nv), fl_f);
+
+            int any_needs = 0;
+            require(
+                bike_gpu_launch_sp4_m0_pre_solve_and_begin(
+                    nullptr, 1, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+                    tt->terrain_f32.data(), tt->terrain_i32.data(),
+                    cfg.get(), 0, sp_params.get(),
+                    sp3_st.get(), sp4_st.get(), m0_scratch.get(), ws.get(),
+                    qpos_f.data(), qvel_f.data(), bias_f.data(), xpos_f.data(), xmat_f.data(),
+                    xa_f.data(), xx_f.data(), site_f.data(), sc_f.data(), sm_f.data(),
+                    0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
+                    qfrc_f.data(), ctrl_f.data(), ntendon, tr_f.data(), 2 * ntendon,
+                    fl_f.data(), nv, ws_qacc_f.data(), &any_needs) == 0,
+                "m0 rollout begin failed");
+
+            {
+                const auto d_qf = ma::mutable_buffer(d->qfrc_applied, m->nv, "qfrc_applied");
+                const auto m_tr = ma::mutable_buffer(m->tendon_range, 2 * m->ntendon, "tendon_range");
+                const auto m_fl = ma::mutable_buffer(m->dof_frictionloss, m->nv, "dof_frictionloss");
+                for (int i = 0; i < nv; ++i) {
+                    d_qf[to_index(i)] = static_cast<mjtNum>(qfrc_f[to_index(i)]);
+                    m_fl[to_index(i)] = static_cast<mjtNum>(fl_f[to_index(i)]);
+                }
+                for (int i = 0; i < 2 * ntendon; ++i) {
+                    m_tr[to_index(i)] = static_cast<mjtNum>(tr_f[to_index(i)]);
+                }
+            }
+            mj_makeConstraint(m.get(), d.get());
+            mj_island(m.get(), d.get());
+            mj_projectConstraint(m.get(), d.get());
+            mj_referenceConstraint(m.get(), d.get());
+
+            std::ranges::copy(ma::readonly_buffer(d->qacc_warmstart, m->nv, "qacc_warmstart"),
+                              ws_saved.begin());
+            int pass = 0;
+            while (true) {
+                if (pass > 0) {
+                    std::ranges::copy(ws_saved,
+                                      ma::mutable_buffer(d->qacc_warmstart, m->nv, "qacc_warmstart").begin());
+                }
+                const auto d_ctrl = ma::mutable_buffer(d->ctrl, m->nu, "ctrl");
+                for (int i = 0; i < nu; ++i) {
+                    d_ctrl[to_index(i)] = static_cast<mjtNum>(ctrl_f[to_index(i)]);
+                }
+                mj_fwdActuation(m.get(), d.get());
+                mj_fwdAcceleration(m.get(), d.get());
+                mj_fwdConstraint(m.get(), d.get());
+                if (any_needs == 0 || pass >= bike::physics_core::kM0MaxPasses) {
+                    break;
+                }
+                copy_cast(d->qacc, to_index(nv), qacc_f);
+                require(
+                    bike_gpu_launch_sp4_m0_step(
+                        nullptr, 1, nq, nv, nu, &idx, cfg.get(), 0, sp3_st.get(),
+                        sp_params.get(), sp4_st.get(), m0_scratch.get(),
+                        qpos_f.data(), qvel_f.data(), bias_f.data(), qacc_f.data(),
+                        0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
+                        ctrl_f.data(), ws_qacc_f.data(), &any_needs) == 0,
+                    "m0 rollout step failed");
+                ++pass;
+            }
+
+            mj_sensorAcc(m.get(), d.get());
+            mj_step2(m.get(), d.get());
+
+            copy_cast(d->qpos, to_index(nq), qpos_f);
+            copy_cast(d->qvel, to_index(nv), qvel_f);
+            copy_cast(d->sensordata, to_index(nsd), sd_f);
+            copy_cast(d->efc_type, to_index(std::max(1, d->nefc)), et_i);
+            copy_cast(d->efc_id, to_index(std::max(1, d->nefc)), eid_i);
+            copy_cast(d->efc_J, to_index(std::max(1, d->nefc)) * to_index(nv), eJ_f);
+            copy_cast(d->efc_force, to_index(std::max(1, d->nefc)), ef_f);
+
+            require(
+                bike_gpu_launch_sp4_m0_post_solve(
+                    nullptr, 1, kDtS, &idx, cfg.get(), 0, sp_params.get(),
+                    sp3_st.get(), sp4_st.get(), m0_scratch.get(),
+                    qpos_f.data(), qvel_f.data(), xpos_f.data(), xmat_f.data(), xa_f.data(),
+                    nsd, sd_f.data(), &d->nefc, std::max(1, d->nefc), nv,
+                    et_i.data(), eid_i.data(), eJ_f.data(), ef_f.data(),
+                    nullptr, 0, 1, nullptr, nullptr, nullptr, nullptr) == 0,
+                "m0 rollout post_solve failed");
+
+            {
+                const auto d_qp = ma::mutable_buffer(d->qpos, m->nq, "qpos");
+                for (int i = 0; i < nq; ++i) {
+                    require(std::isfinite(qpos_f[to_index(i)]), "nonfinite qpos in m0 rollout");
+                    d_qp[to_index(i)] = static_cast<mjtNum>(qpos_f[to_index(i)]);
+                }
+            }
+            mj_fwdPosition(m.get(), d.get());
+            copy_cast(d->xipos, to_index(nbody) * 3U, xipos_f);
+            copy_cast(d->M, to_index(nM), M_f);
+
+            require(
+                bike_gpu_launch_sp4_energy_post_step(
+                    nullptr, 1, kDtS, &idx, &tt->tyre, &tt->terrain_desc,
+                    tt->terrain_f32.data(), cfg.get(), 0, sp_params.get(),
+                    sp3_st.get(), sp4_st.get(), ws.get(),
+                    0, nM, m_ra.data(), m_rn.data(), m_ci.data(), M_f.data(),
+                    qpos_f.data(), qvel_f.data(), ctrl_f.data(),
+                    bmass_f.data(), xipos_f.data(), grav_f.data(),
+                    &d->nefc, std::max(1, d->nefc), nv,
+                    et_i.data(), eJ_f.data(), ef_f.data()) == 0,
+                "m0 rollout energy_post_step failed");
+        }
+
+        const float dist = sp4_st->end_root_x_m - x0;
+        std::cout << "[test_sp4_m0_and_energy_contract:" << br.label << "] max_m0_passes="
+                  << sp4_st->max_m0_passes_used << " dist=" << dist
+                  << " max_rel_energy_residual=" << sp4_st->max_rel_energy_residual
+                  << " energy_contract_ok=" << static_cast<int>(sp4_st->energy_contract_ok) << '\n';
+        require(sp4_st->max_m0_passes_used >= 2,
+                "SpindleM0 rollout must use multi-iteration Newton passes");
+        require(sp3_st->energy_ledger.initialized != 0 && sp3_st->energy_ledger.step_count >= kSteps - 1,
+                "GpuEnergyLedger must advance across rollout steps");
+        require(sp4_st->energy_contract_ok == 1 && sp4_st->max_rel_energy_residual <= 0.05f,
+                "GpuEnergyLedger contract must hold (max_rel_energy_residual <= 0.05)");
+        require(dist > 0.05f, "SpindleM0 rollout must travel forward");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -1167,6 +1948,8 @@ int main() {
         test_failure_and_stride_guards(models);
         test_host_vs_metal_and_multiworld_isolation(models);
         test_short_closed_loop_rollout(models);
+        test_sp4_m0_host_vs_metal_parity(models);
+        test_sp4_m0_and_energy_contract_all_tyres(models);
         std::cout << "ALL bike_test_gpu_sp4_closed_loop tests PASSED\n";
         return 0;
     } catch (const std::exception &ex) {

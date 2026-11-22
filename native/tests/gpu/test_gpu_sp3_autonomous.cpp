@@ -1620,6 +1620,374 @@ void test_sp3_assist_coast_gate_and_launch_preload(const TempSp3Models &models) 
               << " launch_phase=" << static_cast<int>(st_launch->sp3.intent.launch.phase) << '\n';
 }
 
+[[gnu::noinline]] void test_sp3_cruise_and_ride_program(const TempSp3Models &models) {
+    ModelPtr m13 = load_xml(models.xml13);
+    const auto idx13 = resolve_model_indices(m13.get());
+    const auto tt13 = build_tyre_terrain_from_xml(models.xml13, idx13);
+    const int nv13 = to_int(m13->nv);
+    const int nt13 = to_int(m13->ntendon);
+    const int nsd13 = to_int(m13->nsensordata);
+
+    // 1. Cruise controller (cruise_enabled = 1): engages when grounded & below target speed, suppressed when braking.
+    {
+        const auto cfg = build_sp3_config_for_model(m13.get());
+        cfg->intent.enabled = 0;
+        cfg->shifting.enabled = 0;
+        cfg->cruise_enabled = 1;
+        cfg->cruise.target_speed_kmh = 25.0f;
+        cfg->cruise.kp_nm_per_mps = 40.0f;
+        cfg->cruise.ki_nm_per_mps_s = 10.0f;
+        cfg->cruise.torque_ceiling_nm = 120.0f;
+
+        DataPtr d(nullptr, &mj_deleteData);
+        build_riding_initial_state(m13.get(), idx13, {.speed_mps = 4.5, .crank_omega_rad_s = 6.0}, d);
+        auto b = snapshot_mj_to_float(m13.get(), d.get());
+        const auto st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+        const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+        require(bike_gpu_launch_sp3_init(
+                    nullptr, 1, &idx13, cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), 0.0f, nt13, b.tendon_range.data(), 2 * nt13) == 0,
+                "cruise init failed");
+
+        for (int step = 0; step < 6; ++step) {
+            b = snapshot_mj_to_float(m13.get(), d.get());
+            require(bike_gpu_launch_sp3_pre_solve(
+                        nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                        tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                        cfg.get(), 0, st.get(), ws.get(),
+                        b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                        b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                        nt13, b.tendon_range.data(), 2 * nt13,
+                        b.dof_frictionloss.data(), nv13) == 0,
+                    "cruise pre_solve failed");
+            write_pre_solve_back_to_mj(m13.get(), d.get(), b);
+            mj_step(m13.get(), d.get());
+            b = snapshot_mj_to_float(m13.get(), d.get());
+            require(bike_gpu_launch_sp3_post_solve(
+                        nullptr, 1, kDtS, &idx13, cfg.get(), 0, st.get(),
+                        b.qpos.data(), b.qvel.data(), b.xmat.data(),
+                        nsd13, b.sensordata.data(),
+                        b.nefc.data(), std::max(1, d->nefc), nv13,
+                        b.efc_type.data(), b.efc_id.data(), b.efc_J.data(), b.efc_force.data(),
+                        b.nacon.data(), std::max(1, d->ncon), 4,
+                        b.contact_worldid.data(), b.contact_geom.data(),
+                        b.contact_efc_address.data(), b.contact_dim.data()) == 0,
+                    "cruise post_solve failed");
+        }
+        require(st->cruise.engaged != 0 && st->last_cruise_torque_nm > 1.0f,
+                "Cruise (cruise_enabled=1) must engage and apply positive rear wheel torque below target speed");
+
+        cfg->caller_braking = 1;
+        b = snapshot_mj_to_float(m13.get(), d.get());
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "cruise braking pre_solve failed");
+        require(st->last_cruise_torque_nm == 0.0f,
+                "Cruise torque must zero when braking");
+    }
+
+    // 2. RideProgram (program_enabled = 1): step segment + linear ramp segment.
+    {
+        const auto cfg = build_sp3_config_for_model(m13.get());
+        cfg->intent.enabled = 0;
+        cfg->shifting.enabled = 0;
+        cfg->pedaling.effort_slew_nm_s = 100000.0f;
+        cfg->program_enabled = 1;
+        cfg->ride_program.segment_count = 2;
+        cfg->ride_program.reaction_delay_s = 0.0f;
+        const std::span segs(cfg->ride_program.segments);
+        segs[0].t_end_s = 0.01f;
+        segs[0].channel_mask =
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque) |
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_front_brake);
+        segs[0].human_torque_nm = 32.0f;
+        segs[0].front_brake = 0.25f;
+
+        segs[1].t_end_s = 0.02f;
+        segs[1].channel_mask =
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::has_human_torque) |
+            static_cast<bike::physics_core::u32>(bike::physics_core::GpuProgramChannelMask::linear_ramp);
+        segs[1].human_torque_nm = 52.0f;
+
+        DataPtr d(nullptr, &mj_deleteData);
+        build_riding_initial_state(m13.get(), idx13, {.speed_mps = 3.0, .crank_omega_rad_s = 6.0}, d);
+        auto b = snapshot_mj_to_float(m13.get(), d.get());
+        const auto st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+        const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+        require(bike_gpu_launch_sp3_init(
+                    nullptr, 1, &idx13, cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), 0.0f, nt13, b.tendon_range.data(), 2 * nt13) == 0,
+                "ride_program init failed");
+
+        // Segment 0 step override at t = 0.0 s (step_index = 0).
+        st->step_index = 0;
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "ride_program seg0 pre_solve failed");
+        require(std::abs(st->pedaling.effort - 32.0f) <= 1e-3f &&
+                    std::abs(st->last_brakes.final_front - 0.25f) <= 1e-4f,
+                "RideProgram step segment must override human_torque_nm and front_brake");
+
+        // Segment 1 linear ramp midpoint at t = 0.015 s (step_index = 12).
+        st->step_index = 12;
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "ride_program seg1 ramp pre_solve failed");
+        require(std::abs(st->pedaling.effort - 42.0f) <= 1e-2f &&
+                    st->last_brakes.final_front == 0.0f,
+                "RideProgram linear_ramp segment must interpolate human_torque_nm to midpoint (42 Nm)");
+    }
+    std::cout << "[test_sp3_cruise_and_ride_program] passed\n";
+}
+
+[[gnu::noinline]] void test_sp3_decision11_static_brake(const TempSp3Models &models) {
+    ModelPtr m13 = load_xml(models.xml13);
+    const auto idx13 = resolve_model_indices(m13.get());
+    const auto tt13 = build_tyre_terrain_from_xml(models.xml13, idx13);
+    const int nv13 = to_int(m13->nv);
+    const int nt13 = to_int(m13->ntendon);
+
+    const auto cfg = build_sp3_config_for_model(m13.get());
+    cfg->intent.enabled = 0;
+    cfg->shifting.enabled = 0;
+    cfg->static_brake_ceiling_nm = 200.0f;
+    cfg->brake_hold.torque_nm = 200.0f;
+    cfg->brake_hold.stiffness_nm_rad = 20000.0f;
+    cfg->brake_hold.damping_nms_rad = 10.0f;
+    cfg->caller_front_brake = 1.0f;
+    cfg->caller_rear_brake = 0.5f;
+
+    DataPtr d(nullptr, &mj_deleteData);
+    build_riding_initial_state(m13.get(), idx13, {.speed_mps = 0.0, .crank_omega_rad_s = 0.0}, d);
+    auto b = snapshot_mj_to_float(m13.get(), d.get());
+    const auto st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+    const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+    require(bike_gpu_launch_sp3_init(
+                nullptr, 1, &idx13, cfg.get(), 0, st.get(), ws.get(),
+                b.qpos.data(), 0.0f, nt13, b.tendon_range.data(), 2 * nt13) == 0,
+            "static_brake init failed");
+
+    // Step 0 engages brake hold latches at standstill.
+    require(bike_gpu_launch_sp3_pre_solve(
+                nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                cfg.get(), 0, st.get(), ws.get(),
+                b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                nt13, b.tendon_range.data(), 2 * nt13,
+                b.dof_frictionloss.data(), nv13) == 0,
+            "static_brake step 0 failed");
+    require(st->sp3.monitors.brake.latch_front != 0 && st->sp3.monitors.brake.latch_rear != 0,
+            "Decision 11 brake hold latches must engage at standstill");
+
+    // Displace wheel angles while latched so hold_nm > 0 and verify dof_frictionloss is reduced by |hold_nm|.
+    b.qpos[to_index(idx13.front_wheel_spin_qpos)] += 0.005f; // |hold| ~ 100 Nm
+    b.qpos[to_index(idx13.rear_wheel_spin_qpos)] += 0.002f;  // |hold| ~ 40 Nm
+    require(bike_gpu_launch_sp3_pre_solve(
+                nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                cfg.get(), 0, st.get(), ws.get(),
+                b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                nt13, b.tendon_range.data(), 2 * nt13,
+                b.dof_frictionloss.data(), nv13) == 0,
+            "static_brake step 1 failed");
+
+    const float front_hold = std::abs(st->last_front_hold_nm);
+    const float rear_hold = std::abs(st->last_rear_hold_nm);
+    const float front_fl = b.dof_frictionloss[to_index(idx13.front_wheel_spin_dof)];
+    const float rear_fl = b.dof_frictionloss[to_index(idx13.rear_wheel_spin_dof)];
+    require(front_hold > 90.0f && rear_hold > 30.0f,
+            "displaced latched wheels must produce non-trivial hold torque");
+    require(front_hold + front_fl <= cfg->static_brake_ceiling_nm * 1.0f + 1e-3f &&
+                std::abs((front_hold + front_fl) - 200.0f) <= 1e-2f,
+            "Decision 11 front dof_frictionloss must equal max(0, ceiling*demand - |hold_nm|)");
+    require(rear_hold + rear_fl <= cfg->static_brake_ceiling_nm * 0.5f + 1e-3f &&
+                std::abs((rear_hold + rear_fl) - 100.0f) <= 1e-2f,
+            "Decision 11 rear dof_frictionloss must equal max(0, ceiling*demand - |hold_nm|)");
+    std::cout << "[test_sp3_decision11_static_brake] front=(" << front_hold << "+" << front_fl
+              << ") rear=(" << rear_hold << "+" << rear_fl << ")\n";
+}
+
+[[gnu::noinline]] void test_sp3_stall_control_clock_and_freeze_on_crash(const TempSp3Models &models) {
+    ModelPtr m13 = load_xml(models.xml13);
+    const auto idx13 = resolve_model_indices(m13.get());
+    const auto tt13 = build_tyre_terrain_from_xml(models.xml13, idx13);
+    const int nv13 = to_int(m13->nv);
+    const int nt13 = to_int(m13->ntendon);
+    const int nsd13 = to_int(m13->nsensordata);
+
+    // 1. StallDetector / reposition_on_stall
+    {
+        const auto cfg = build_sp3_config_for_model(m13.get());
+        cfg->apply_direct_crank_torque = 0;
+        cfg->intent.enabled = 0;
+        cfg->shifting.enabled = 0;
+        cfg->caller_human_torque_nm = 30.0f;
+        cfg->pedaling.reposition_on_stall = 1;
+        cfg->pedaling.reposition_min_effort_nm = 20.0f;
+        cfg->pedaling.reposition_stall_window_ticks = 6;
+        cfg->pedaling.reposition_stall_progress_rad = 0.5f;
+
+        DataPtr d(nullptr, &mj_deleteData);
+        build_riding_initial_state(m13.get(), idx13, {.speed_mps = 0.0, .crank_omega_rad_s = 0.0}, d);
+        auto b = snapshot_mj_to_float(m13.get(), d.get());
+        b.qpos[to_index(idx13.crank_spin_qpos)] = 0.7f;
+        const auto st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+        const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+        require(bike_gpu_launch_sp3_init(
+                    nullptr, 1, &idx13, cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), 0.0f, nt13, b.tendon_range.data(), 2 * nt13) == 0,
+                "stall init failed");
+
+        for (int s = 0; s < 10; ++s) {
+            st->step_index = s;
+            require(bike_gpu_launch_sp3_pre_solve(
+                        nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                        tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                        cfg.get(), 0, st.get(), ws.get(),
+                        b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                        b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                        nt13, b.tendon_range.data(), 2 * nt13,
+                        b.dof_frictionloss.data(), nv13) == 0,
+                    "stall pre_solve failed");
+        }
+        require(st->stall_reposition.has_goal == 1 && st->stall_reposition.reason == 2,
+                "StallDetector with reposition_on_stall=1 must trigger stall reposition goal (reason=2)");
+    }
+
+    // 2. ControlClock (control_period_steps > 1) + freeze_on_crash = 1
+    {
+        const auto cfg = build_sp3_config_for_model(m13.get());
+        cfg->intent.enabled = 0;
+        cfg->shifting.enabled = 0;
+        cfg->control_period_steps = 4;
+        cfg->cruise_enabled = 1;
+        cfg->cruise.target_speed_kmh = 30.0f;
+        cfg->cruise.kp_nm_per_mps = 40.0f;
+        cfg->cruise.ki_nm_per_mps_s = 10.0f;
+        cfg->cruise.torque_ceiling_nm = 120.0f;
+        cfg->freeze_on_crash = 1;
+
+        DataPtr d(nullptr, &mj_deleteData);
+        build_riding_initial_state(m13.get(), idx13, {.speed_mps = 4.0, .crank_omega_rad_s = 6.0}, d);
+        auto b = snapshot_mj_to_float(m13.get(), d.get());
+        const auto st = std::make_unique<bike::gpu::GpuSp3WorldState>();
+        const auto ws = std::make_unique<bike::gpu::GpuWorldState>();
+        require(bike_gpu_launch_sp3_init(
+                    nullptr, 1, &idx13, cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), 0.0f, nt13, b.tendon_range.data(), 2 * nt13) == 0,
+                "clock/freeze init failed");
+        st->last_wheel_grounded[1] = 1;
+        st->sp3.monitors.grounded[1].value = 1;
+
+        st->step_index = 0;
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "control_clock step 0 failed");
+        const float tq0 = st->last_cruise_torque_nm;
+        require(tq0 > 1.0f, "control_clock step 0 cruise torque must be positive");
+
+        b.qvel[to_index(idx13.root_x_dof)] = 6.5f;
+        for (int s = 1; s <= 3; ++s) {
+            st->step_index = s;
+            require(bike_gpu_launch_sp3_pre_solve(
+                        nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                        tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                        cfg.get(), 0, st.get(), ws.get(),
+                        b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                        b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                        nt13, b.tendon_range.data(), 2 * nt13,
+                        b.dof_frictionloss.data(), nv13) == 0,
+                    "control_clock off-tick failed");
+            require(st->last_cruise_torque_nm == tq0,
+                    "ControlClock must hold cruise torque between control_period_steps=4 ticks");
+        }
+        st->step_index = 4;
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "control_clock tick 4 failed");
+        require(st->last_cruise_torque_nm < tq0,
+                "ControlClock must update cruise torque on step_index=4");
+
+        // Trigger pitch_over crash -> freeze_on_crash = 1 freezes world state.
+        b.qpos[to_index(idx13.root_pitch_qpos)] = 2.0f;
+        require(bike_gpu_launch_sp3_post_solve(
+                    nullptr, 1, kDtS, &idx13, cfg.get(), 0, st.get(),
+                    b.qpos.data(), b.qvel.data(), b.xmat.data(),
+                    nsd13, b.sensordata.data(),
+                    b.nefc.data(), 1, nv13,
+                    b.efc_type.data(), b.efc_id.data(), b.efc_J.data(), b.efc_force.data(),
+                    b.nacon.data(), 1, 4,
+                    b.contact_worldid.data(), b.contact_geom.data(),
+                    b.contact_efc_address.data(), b.contact_dim.data()) == 0,
+                "crash post_solve failed");
+        require(st->frozen == 1 && bike_gpu_sp3_state_has_failure(st.get()) == 1,
+                "freeze_on_crash=1 must latch frozen=1 on pitch_over");
+        const int frozen_step = st->step_index;
+        std::ranges::fill(b.qfrc, 7.5f);
+        std::ranges::fill(b.ctrl, 3.5f);
+        require(bike_gpu_launch_sp3_pre_solve(
+                    nullptr, 1, kDtS, &idx13, &tt13->tyre, &tt13->terrain_desc,
+                    tt13->terrain_f32.data(), tt13->terrain_i32.data(),
+                    cfg.get(), 0, st.get(), ws.get(),
+                    b.qpos.data(), b.qvel.data(), b.xpos.data(), b.xmat.data(),
+                    b.xanchor.data(), b.xaxis.data(), b.qfrc.data(), b.ctrl.data(),
+                    nt13, b.tendon_range.data(), 2 * nt13,
+                    b.dof_frictionloss.data(), nv13) == 0,
+                "frozen pre_solve failed");
+        for (const float v : b.qfrc) {
+            require(v == 0.0f, "frozen pre_solve must zero qfrc");
+        }
+        for (const float v : b.ctrl) {
+            require(v == 0.0f, "frozen pre_solve must zero ctrl");
+        }
+        require(bike_gpu_launch_sp3_post_solve(
+                    nullptr, 1, kDtS, &idx13, cfg.get(), 0, st.get(),
+                    b.qpos.data(), b.qvel.data(), b.xmat.data(),
+                    nsd13, b.sensordata.data(),
+                    b.nefc.data(), 1, nv13,
+                    b.efc_type.data(), b.efc_id.data(), b.efc_J.data(), b.efc_force.data(),
+                    b.nacon.data(), 1, 4,
+                    b.contact_worldid.data(), b.contact_geom.data(),
+                    b.contact_efc_address.data(), b.contact_dim.data()) == 0,
+                "frozen post_solve failed");
+        require(st->step_index == frozen_step,
+                "frozen post_solve must keep step_index unchanged");
+    }
+    std::cout << "[test_sp3_stall_control_clock_and_freeze_on_crash] passed\n";
+}
+
 } // namespace
 
 int main() {
@@ -1630,6 +1998,9 @@ int main() {
         test_2pi_epoch_rebasing_invariance(models);
         test_host_vs_metal_and_multiworld_isolation(models);
         test_sp3_assist_coast_gate_and_launch_preload(models);
+        test_sp3_cruise_and_ride_program(models);
+        test_sp3_decision11_static_brake(models);
+        test_sp3_stall_control_clock_and_freeze_on_crash(models);
         std::cout << "[bike_test_gpu_sp3_autonomous] ALL PASSED\n";
         return 0;
     } catch (const std::exception &ex) {

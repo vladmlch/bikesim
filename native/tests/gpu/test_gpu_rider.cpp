@@ -45,7 +45,7 @@ constexpr std::size_t to_index(int field) {
     return static_cast<std::size_t>(field);
 }
 
-void test_soft_edge_parity_and_zero_damping() {
+[[gnu::noinline]] void test_soft_edge_parity_and_zero_damping() {
     const GpuRiderParams rp = gpu_make_default_rider_params();
     const GpuModelIndices idx{};
 
@@ -53,8 +53,14 @@ void test_soft_edge_parity_and_zero_damping() {
 
     const std::span<const float> lo(rp.envelope.lower);
     const std::span<const float> hi(rp.envelope.upper);
-    const std::span<const int> qp_adr(rp.envelope.qpos_adrs);
-    const std::span<const int> dof_adr(rp.envelope.dof_adrs);
+    const std::span<const int> env_qp(rp.envelope.qpos_adrs);
+    const std::span<const int> env_dof(rp.envelope.dof_adrs);
+    for (int j = 0; j < kNumRiderJoints; ++j) {
+        require(env_qp[to_index(j)] == -1 && env_dof[to_index(j)] == -1,
+                "default rider envelope uses -1 sentinel for qpos_adrs/dof_adrs");
+    }
+    const std::span<const int> qp_adr(idx.rider_qpos);
+    const std::span<const int> dof_adr(idx.rider_dof);
 
     std::array<float, kMaxNq> qpos_a{};
     std::array<float, kMaxNv> qvel_a{};
@@ -169,8 +175,50 @@ void test_bounds_guards() {
             "envelope rejects out-of-bounds qpos index");
 }
 
-constexpr std::array<TestCase, 3> cases{{
+[[gnu::noinline]] void test_envelope_sentinel_fallback_and_override() {
+    const GpuModelIndices idx{};
+    const std::span<const int> idx_qp(idx.rider_qpos);
+    const std::span<const int> idx_dof(idx.rider_dof);
+
+    // 1. Default -1 sentinel falls back to idx.rider_qpos[j] / idx.rider_dof[j].
+    GpuRiderParams rp_fallback = gpu_make_default_rider_params();
+    const std::span<const float> lo(rp_fallback.envelope.lower);
+    std::array<float, kMaxNq> qpos_fb{};
+    std::array<float, kMaxNv> qfrc_fb{};
+    qpos_fb[to_index(idx_qp[0])] = lo[0] + 0.02f;
+    float e_fb = 0.0f;
+    require(gpu_write_rider_envelope_qfrc(
+                rp_fallback, idx, qpos_fb.data(), qfrc_fb.data(), &e_fb) == Status::ok,
+            "envelope -1 sentinel fallback succeeds");
+    require(qfrc_fb[to_index(idx_dof[0])] > 0.1f && e_fb > 0.0f,
+            "envelope -1 sentinel fallback writes torque at idx.rider_dof[0]");
+
+    // 2. Explicit qpos_adrs >= 0 / dof_adrs >= 0 overrides idx.rider_qpos / idx.rider_dof.
+    GpuRiderParams rp_override = rp_fallback;
+    const int custom_qp = 2;
+    const int custom_dof = 3;
+    require(custom_qp != idx_qp[0] && custom_dof != idx_dof[0],
+            "custom override indices distinct from idx.rider_qpos/dof[0]");
+    std::span<int>(rp_override.envelope.qpos_adrs)[0] = custom_qp;
+    std::span<int>(rp_override.envelope.dof_adrs)[0] = custom_dof;
+
+    std::array<float, kMaxNq> qpos_ov{};
+    std::array<float, kMaxNv> qfrc_ov{};
+    qpos_ov[to_index(custom_qp)] = lo[0] + 0.02f;
+    qpos_ov[to_index(idx_qp[0])] = 0.0f;
+    float e_ov = 0.0f;
+    require(gpu_write_rider_envelope_qfrc(
+                rp_override, idx, qpos_ov.data(), qfrc_ov.data(), &e_ov) == Status::ok,
+            "envelope explicit override succeeds");
+    require_near(qfrc_ov[to_index(custom_dof)], qfrc_fb[to_index(idx_dof[0])], 1e-6f,
+                 "explicit qpos_adrs/dof_adrs override writes expected torque to custom dof");
+    require_near(qfrc_ov[to_index(idx_dof[0])], 0.0f, 1e-7f,
+                 "explicit override leaves default idx.rider_dof[0] untouched");
+}
+
+constexpr std::array<TestCase, 4> cases{{
     {.name = "soft_edge_parity_and_zero_damping", .run = test_soft_edge_parity_and_zero_damping},
+    {.name = "envelope_sentinel_fallback_and_override", .run = test_envelope_sentinel_fallback_and_override},
     {.name = "passive_legs_and_upper_body_posture", .run = test_passive_legs_and_upper_body_posture},
     {.name = "bounds_guards", .run = test_bounds_guards},
 }};

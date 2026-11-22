@@ -244,9 +244,26 @@ Value tire(const mdl::BuildRequest& request,
             if (s.blend_m != 0.) sec.emplace_back("blend_m", real(s.blend_m));
             sections.push_back(Value{std::move(sec)});
         }
-        set(out, "surface_map", Value{Object{
-            {"surface", surface(trn::get_surface(track.surface), include_stage_a)},
-            {"sections", Value{std::move(sections)}}}});
+        Object map{{"surface", surface(trn::get_surface(track.surface), include_stage_a)},
+            {"sections", Value{std::move(sections)}}};
+        // Stage C obstacle-local micro spans (Spec §3.2): preparation-time
+        // generation only. compliant_2d consumes no tire surface map, so the
+        // member is omitted there exactly like crr_delta/load_sensitivity;
+        // an empty list is omitted too, keeping the Stage A JSON shape.
+        if (include_stage_a) {
+            Array micro;
+            for (const auto& o : track.sorted_obstacles()) {
+                for (const auto& span : o.micro_surface_spans()) {
+                    Object row{{"start_m", real(span.start_m)},
+                        {"end_m", real(span.end_m)},
+                        {"surface", surface(trn::get_obstacle_surface(span.surface), include_stage_a)}};
+                    if (span.blend_m != 0.) row.emplace_back("blend_m", real(span.blend_m));
+                    micro.push_back(Value{std::move(row)});
+                }
+            }
+            if (!micro.empty()) map.emplace_back("micro_spans", Value{std::move(micro)});
+        }
+        set(out, "surface_map", Value{std::move(map)});
     }
     if (tires.backend == "distributed_2d_reference") {
         const auto& d = tires.distributed;

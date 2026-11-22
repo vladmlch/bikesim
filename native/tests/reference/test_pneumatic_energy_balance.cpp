@@ -1,5 +1,8 @@
+#include "allocation_faults.hpp"
 #include "configuration/load.hpp"
+#include "model/builder.hpp"
 #include "model/rider_geometry.hpp"
+#include "model_access.hpp"
 #include "pneumatic/carcass.hpp"
 #include "pneumatic/model.hpp"
 #include "pneumatic_tire_fixture.hpp"
@@ -11,6 +14,7 @@
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "terrain/trackfile.hpp"
+#include "writers/distributed_tire.hpp"
 #include "writers/pneumatic_tire.hpp"
 #include "writers/tire_common.hpp"
 
@@ -19,6 +23,7 @@
 #include <bit>
 #include <cmath>
 #include <cstdint>
+#include <format>
 #include <limits>
 #include <memory>
 #include <vector>
@@ -751,6 +756,553 @@ void same_model_state(const biketyre::PneumaticTyreModel &a, const biketyre::Pne
                 "60 m mixed-surface pneumatic ride satisfies energy_quality <= 0.05");
 }
 
+// ---- Stage C: Roots obstacle carrying wet_wood micro spans (Spec §3) -------
+
+// The dispatch-pinned roots geometry: four 0.45 m roots over a 4 m
+// section starting at x = 12 m, each wrapped in a wet_wood micro span
+// with a 2 cm Hermite collar, on a flat hardpack track. The track comes
+// through the same TOML pipeline the production setup consumes.
+[[nodiscard]] bike::terrain::TrackSpec stage_c_roots_track() {
+    return bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
+            "name = \"stage_c_roots\"\nlength_m = 40.0\nsurface = \"hardpack\"\n"
+            "grade_profile = { knots = [[0.0, 0.0], [40.0, 0.0]] }\n"
+            "[[obstacles]]\ntype = \"roots\"\nstart_m = 12.0\nn_bumps = 4\n"
+            "height_m = 0.035\nwidth_m = 0.45\nsection_length_m = 4.0\n"
+            "jitter = 0.1\nseed = 7\n"
+            "surface = \"wet_wood\"\nsurface_blend_m = 0.02\n"));
+}
+
+[[nodiscard]] nativecfg::SurfaceSpec wet_wood_spec() {
+    const bike::terrain::SurfaceSpec &s =
+            bike::terrain::get_obstacle_surface("wet_wood");
+    return {.name = s.name, .mu_peak = s.mu_peak, .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .crr_delta = s.crr_delta, .load_sensitivity = s.load_sensitivity};
+}
+
+// Two wet_wood lenses inside the flat stands' [-2, 2] road window:
+// every crossing is hardpack -> wet_wood -> hardpack with 2 cm collars.
+// `sorted` controls the authored wire order — SurfaceMap validation
+// accepts either, and the writers sort at construction.
+[[nodiscard]] nativecfg::SurfaceMap stage_c_writer_map(bool sorted = true) {
+    const nativecfg::SurfaceSpec wood = wet_wood_spec();
+    nativecfg::SurfaceMap map{.surface = surface("hardpack"), .sections = {}};
+    map.micro_spans = {
+            {.start_m = 0.50, .end_m = 0.70, .blend_m = 0.02, .surface = wood},
+            {.start_m = 0.95, .end_m = 1.15, .blend_m = 0.02,
+             .surface = wood}};
+    if (!sorted) std::ranges::reverse(map.micro_spans);
+    return map;
+}
+
+struct StageCDataDeleter {
+    void operator()(mjData *data) const noexcept {
+        if (data != nullptr) mj_deleteData(data);
+    }
+};
+
+struct StageCStand {
+    bike::model::ModelOwner model;
+    std::unique_ptr<mjData, StageCDataDeleter> data;
+    explicit StageCStand(std::string_view xml)
+        : model(bike::model::compile_mjcf(xml)),
+          data(engine::make_data(model.get())) {
+        engine::forward(model.get(), data.get());
+    }
+};
+
+[[nodiscard]] std::unique_ptr<StageCStand> stage_c_flat_stand(double dt) {
+    const std::string xml =
+            R"(<mujoco><compiler angle="radian"/><option timestep=")" +
+            std::format("{:.17g}", dt) +
+            R"(" gravity="0 0 0" integrator="Euler"/>
+      <asset><hfield name="road" nrow="2" ncol="801" size="2 1 0.01 0.2"/></asset>
+      <worldbody>
+        <geom name="terrain" type="hfield" hfield="road" pos="0 0 0" contype="0" conaffinity="0"/>
+        <body name="front_wheel" pos="0 0 0.37">
+          <joint name="root_x" type="slide" axis="1 0 0"/>
+          <joint name="root_z" type="slide" axis="0 0 1"/>
+          <joint name="front_wheel_spin" type="hinge" axis="0 1 0"/>
+          <inertial mass="2.4" pos="0 0 0" diaginertia="0.15 0.30 0.15"/>
+          <geom name="geom_front_contact" type="cylinder" size="0.37 0.025"
+                euler="1.5707963267948966 0 0" contype="0" conaffinity="0" mass="0"/>
+        </body>
+        <body name="rear_wheel" pos="0 0 2.0">
+          <geom name="geom_rear_contact" type="sphere" size="0.37" contype="0" conaffinity="0"/>
+        </body>
+      </worldbody>
+    </mujoco>)";
+    return std::make_unique<StageCStand>(xml);
+}
+
+[[nodiscard]] nativecfg::TireConfig
+stage_c_distributed_config(nativecfg::SurfaceMap surface_map, int station_count,
+                           double tire_mu) {
+    const nativecfg::HingeDensity density{
+        .knots_m = {0.0, 0.004, 0.012},
+        .stiffness_n_m = {300000.0, 0.0, 0.0},
+        .damping_ns_m = 0.0,
+        .loss_factor = 0.05,
+        .hysteresis_rate_eps_mps = 0.01,
+        .provenance = "synthetic density; not fitted or measured",
+    };
+    const nativecfg::DistributedMaterial mat{
+        .density = density,
+        .fitting_dataset_id = "none-synthetic",
+        .valid_load_range_n = {0.0, 2000.0},
+        .valid_deflection_range_m = {0.0, 0.04},
+        .calibration_status = "experimental_unvalidated",
+    };
+    nativecfg::TireConfig cfg;
+    cfg.backend = "distributed_2d_reference";
+    cfg.surface_mode = "track";
+    cfg.front = {.material = std::nullopt, .tangent_k_n_m = 20000.0,
+                 .mu = tire_mu, .relaxation_length_m = 0.2};
+    cfg.rear = cfg.front;
+    cfg.significant_delta_m = 0.0001;
+    cfg.significance_fraction = 0.05;
+    cfg.distinct_normal_deg = 20.0;
+    cfg.surface_map = std::move(surface_map);
+    cfg.distributed = nativecfg::DistributedConfig{
+        .station_count = station_count,
+        .density = density,
+        .front = mat,
+        .rear = mat,
+    };
+    return cfg;
+}
+
+[[nodiscard]] double stage_c_solve_depth(const StageCStand &stand,
+                                         DistributedTireWriter &tire,
+                                         double dt, double target_load_n) {
+    const auto *m = stand.model.get();
+    auto *d = stand.data.get();
+    const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+    const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+    std::ranges::fill(qpos, 0.0);
+    std::ranges::fill(qvel, 0.0);
+    double lo = 1e-7, hi = 0.06;
+    for (int iter = 0; iter < 60; ++iter) {
+        const double mid = 0.5 * (lo + hi);
+        qpos[1] = -mid;
+        engine::forward(m, d);
+        const double fz = tire.probe_qfrc(d, dt)[1];
+        if (fz < target_load_n) lo = mid; else hi = mid;
+    }
+    qpos[1] = 0.0;
+    engine::forward(m, d);
+    return 0.5 * (lo + hi);
+}
+
+// Recorded-interval friction trace, one per wheel: the minimum loaded
+// friction_coefficient sampled while the wheel axis crossed each wet_wood
+// span and the maximum sampled in the hardpack gaps between roots. Bins
+// follow the recorded wheel_axis_m; only loaded, non-airborne rows count,
+// so a skipped contact never masquerades as a friction dip.
+struct StageCWireFriction {
+    std::array<double, 4> wood_min{1e9, 1e9, 1e9, 1e9};
+    std::array<double, 3> gap_max{};
+    std::array<int, 4> wood_samples{};
+    std::array<int, 3> gap_samples{};
+
+    void observe(const runtime::WireObject &wheel,
+                 const std::vector<bike::terrain::Obstacle::MicroSpan> &spans) {
+        namespace sw = runtime::sample_wire;
+        if (sw::boolean(sw::required(wheel, "airborne"))) return;
+        if (sw::number(sw::required(wheel, "normal_load_n")) <= 1.0) return;
+        const auto &axis = sw::array(sw::required(wheel, "wheel_axis_m"));
+        const double x = sw::number(axis[0]);
+        const std::string &surface_name =
+                sw::string(sw::required(wheel, "surface"));
+        const double mu =
+                sw::number(sw::required(wheel, "friction_coefficient"));
+        for (std::size_t i = 0; i < spans.size(); ++i) {
+            const auto &span = spans[i];
+            if (x >= span.start_m + 0.5 * span.blend_m &&
+                x < span.end_m - 0.5 * span.blend_m &&
+                surface_name == "wet_wood") {
+                wood_min[i] = std::min(wood_min[i], mu);
+                ++wood_samples[i];
+            }
+            if (i + 1 < spans.size() &&
+                x >= span.end_m + 0.5 * span.blend_m &&
+                x < spans[i + 1].start_m - 0.5 * spans[i + 1].blend_m &&
+                surface_name == "hardpack") {
+                gap_max[i] = std::max(gap_max[i], mu);
+                ++gap_samples[i];
+            }
+        }
+    }
+    void check() const {
+        for (std::size_t i = 0; i < gap_samples.size(); ++i)
+            bt::require(gap_samples[i] > 0,
+                        "loaded contact sampled in every dirt gap");
+        for (std::size_t i = 0; i < wood_samples.size(); ++i) {
+            bt::require(wood_samples[i] > 0,
+                        "loaded contact sampled on every root");
+            if (i > 0)
+                bt::require(wood_min[i] < gap_max[i - 1],
+                            "friction drops from preceding gap onto root");
+            if (i < gap_samples.size())
+                bt::require(wood_min[i] < gap_max[i],
+                            "friction recovers from root into next gap");
+        }
+    }
+};
+
+[[gnu::noinline]] void test_roots_wet_wood_micro_span_ride_energy_gate() {
+    namespace research = bike::research;
+    namespace sw = runtime::sample_wire;
+    const auto root =
+            bt::oracle::root().parent_path().parent_path().parent_path();
+    const bike::terrain::TrackSpec track = stage_c_roots_track();
+    bt::require(track.obstacles.size() == 1,
+                "roots track carries the roots obstacle");
+    const auto spans = track.obstacles.front().micro_surface_spans();
+    bt::require(spans.size() == 4,
+                "roots obstacle generates four micro spans");
+
+    // The production Stage A harness — prepare_environment +
+    // NativeRideRuntime, whose PhysicalStep trapezoidal qvel_mid
+    // accounting feeds research::energy_quality — at both pneumatic
+    // tiers. The detailed tier needs the 0.25 ms step; the 1.25 ms
+    // physics control period then stays five whole steps (dispatch:
+    // timestep_s = 0.00025, period_s = 0.00125).
+    for (const std::string_view tier_name : {"fast", "detailed"}) {
+        auto owner = std::make_unique<research::ResearchRequest>();
+        auto &request = *owner;
+        request.setup.model.physics = bike::configuration::load_physics(
+                root / "examples/research/viewer_physics_pneumatic.toml");
+        if (tier_name == "detailed") {
+            request.setup.model.physics->timestep_s = 0.00025;
+            request.setup.model.physics->control_period_s = 0.00125;
+            request.setup.model.physics->tires.pneumatic.tier = "detailed";
+        }
+        request.setup.model.mode = "ride";
+        request.setup.model.crank_joint = true;
+        request.setup.model.rider =
+                bike::model::rider_from_args("articulated_planar");
+        request.setup.track = track;
+        request.experiment.duration_s = 18.0;
+        request.experiment.record_decimation = 1;
+        request.experiment.stop_on_model_violation = true;
+        request.experiment.control_period_s =
+                request.setup.model.physics->research.control_period_s;
+        request.experiment.actuator_delay_s =
+                request.setup.model.physics->research.actuator_delay_s;
+        request.sensors.delivery.latency_s =
+                request.setup.model.physics->research.sensor_latency_s;
+        request.sensors.delivery.maximum_age_s =
+                request.setup.model.physics->research.sensor_maximum_age_s;
+        request.sensors.sample_period_s = 0.005;
+        auto prepared = research::prepare_environment(std::move(owner));
+        const auto period = prepared->bootstrap.config.control_steps;
+        const auto max_steps = prepared->bootstrap.config.max_steps;
+        auto rt = std::make_unique<runtime::NativeRideRuntime>(
+                std::move(prepared->bootstrap.ride));
+        // The rear hub trails the frame origin by about half a metre:
+        // stopping at x = 19 m carries both wheels past the last root,
+        // whose micro span ends near 15.4 m.
+        while (!rt->snapshot().outcome.has_value() &&
+               rt->snapshot().step < max_steps) {
+            const auto result =
+                    rt->advance(rt->snapshot().step + period,
+                                runtime::RideControl{}, 0., 0., std::nullopt);
+            if (!rt->recorded_intervals().empty() &&
+                rt->recorded_intervals().back()->qpos[0] >= 19.0)
+                break;
+            if (result.reason == "outcome") break;
+        }
+        const auto snapshot = rt->snapshot();
+        bt::require(!snapshot.first_failure.has_value(),
+                    "roots ride has no first failure");
+        const auto rows = rt->recorded_intervals();
+        bt::require(!rows.empty() && rows.back()->qpos[0] >= 17.0,
+                    "normal rider carries both wheels past the roots");
+        std::array<StageCWireFriction, 2> friction;
+        for (const auto &row : rows) {
+            bt::require(research::model_violations(*row).empty(),
+                        "no model violations on the roots ride");
+            const auto &tires =
+                    sw::object(sw::required(row->channels, "tires"));
+            for (std::size_t s = 0; s < 2; ++s) {
+                const auto &wheel = sw::object(sw::required(
+                        tires, s == 0 ? "front" : "rear"));
+                bt::require(sw::number(sw::required(
+                                    wheel, "dissipated_power_w")) >= 0.0,
+                            "nonnegative tire power on roots");
+                bt::require(sw::number(sw::required(
+                                    wheel, "brush_loss_j")) >= 0.0,
+                            "nonnegative brush loss on roots");
+                friction[s].observe(wheel, spans);
+            }
+        }
+        for (const auto &trace : friction) trace.check();
+        const auto &energy =
+                sw::object(sw::required(rows.back()->channels, "energy"));
+        const auto eq = research::energy_quality(energy, 0.05);
+        bt::require(eq.acceptable && eq.residual_ratio <= 0.05,
+                    "roots micro-span ride satisfies energy_quality <= 0.05");
+    }
+}
+
+// The committed try_compute_into warm path over a micro-span crossing
+// performs zero heap allocations for both backends; the surface-name
+// buffers are reserved to >= 16 chars at construction (Spec §3.3).
+[[gnu::noinline]] void test_micro_span_writer_zero_allocation() {
+    const nativecfg::SurfaceMap map = stage_c_writer_map();
+    for (const std::string_view tier_name : {"fast", "detailed"}) {
+        constexpr double dt = 0.00005;
+        bt::pneumatic::Rig rig(tier_name, dt, 0.008);
+        auto cfg = bt::pneumatic::configuration(tier_name);
+        cfg.surface_mode = "track";
+        if (!cfg.pneumatic.has_value())
+            throw std::logic_error("fixture needs pneumatic configuration");
+        cfg.pneumatic->surface.reset();
+        const auto x_grid = bike::geometry::detail::np_linspace(-1.0, 4.0, 1001);
+        cfg.pneumatic->profile = {
+                .x0_m = x_grid.front(), .dx_m = x_grid[1] - x_grid[0],
+                .z_m = std::vector<double>(x_grid.size(), 0.0)};
+        cfg.surface_map = map;
+        rig.tire = std::make_unique<PneumaticTireWriter>(
+                rig.engine.model.get(), rig.engine.data.get(), cfg);
+        bt::require(rig.tire->diagnostic_storage()[0].surface.capacity() >=
+                            std::size_t{16} &&
+                        rig.tire->diagnostic_storage()[1].surface.capacity() >=
+                            std::size_t{16},
+                    "micro-span track reserves >= 16 surface-name capacity");
+
+        const auto *m = rig.engine.model.get();
+        auto *d = rig.engine.data.get();
+        const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+        const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+        const auto applied = model_access::mutable_buffer(
+                d->qfrc_applied, m->nv, "qfrc_applied");
+        qpos[0] = -0.2;
+        qvel[0] = 2.0;
+        qvel[1] = 0.0;
+        qvel[2] = 2.0 / (bt::pneumatic::front_radius() - 0.002);
+        qvel[3] = 0.0;
+        engine::forward(m, d);
+        std::vector<double> out(static_cast<std::size_t>(m->nv), 0.0);
+        // Settle carcass and brush on the hardpack approach before the
+        // measured window opens.
+        for (int step = 0; step < 4000 && qpos[0] < 0.2; ++step) {
+            bt::require(rig.tire->try_compute_into(d, dt, out) ==
+                                CoreStatus::ok,
+                        "warmup try_compute_into succeeds");
+            std::ranges::copy(out, applied.begin());
+            engine::step(m, d);
+            engine::forward(m, d);
+        }
+        bt::require(qpos[0] <= 0.2, "warmup stays on the hardpack approach");
+        bool saw_wood = false, saw_dirt_after = false;
+        {
+            allocation_counter::reset();
+            for (int step = 0; step < 30000 && qpos[0] < 1.4; ++step) {
+                bt::require(rig.tire->try_compute_into(d, dt, out) ==
+                                    CoreStatus::ok,
+                            "measured try_compute_into succeeds");
+                const std::string &name =
+                        rig.tire->diagnostic_storage()[0].surface;
+                if (name == "wet_wood") saw_wood = true;
+                if (saw_wood && qpos[0] > 1.2 && name == "hardpack")
+                    saw_dirt_after = true;
+                std::ranges::copy(out, applied.begin());
+                engine::step(m, d);
+                engine::forward(m, d);
+                bt::require(rig.tire->brush_loss_step_j() >= 0.0 &&
+                                rig.tire->radial_dissipation_power_w() >= 0.0,
+                            "nonnegative dissipation across micro spans");
+            }
+            bt::require(allocation_counter::count() == std::size_t{0},
+                        "try_compute_into warm path allocates nothing over "
+                        "micro spans");
+            bt::require(qpos[0] >= 1.4,
+                        "pneumatic wheel rolls across all micro spans");
+        }
+        bt::require(saw_wood && saw_dirt_after,
+                    "wheel crossed wet_wood inside the measured window");
+    }
+
+    // DistributedTireWriter leg: the same micro-span map under an applied
+    // 480 N load on the flat stand.
+    {
+        constexpr double dt = 0.0001;
+        constexpr int stations = 64;
+        constexpr double load = 480.0;
+        auto ws = stage_c_flat_stand(dt);
+        const auto *m = ws->model.get();
+        auto *d = ws->data.get();
+        auto tire = std::make_unique<DistributedTireWriter>(
+                m, d, stage_c_distributed_config(map, stations, 2.0));
+        const double depth = stage_c_solve_depth(*ws, *tire, dt, load);
+        const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+        const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+        const auto applied = model_access::mutable_buffer(
+                d->qfrc_applied, m->nv, "qfrc_applied");
+        qpos[0] = 0.05;
+        qpos[1] = -depth;
+        qpos[2] = 0.0;
+        qvel[0] = 2.0;
+        qvel[1] = 0.0;
+        qvel[2] = 2.0 / (0.37 - depth);
+        engine::forward(m, d);
+        std::vector<double> out(static_cast<std::size_t>(m->nv), 0.0);
+        bool saw_wood = false, saw_dirt_after = false;
+        {
+            allocation_counter::reset();
+            for (int step = 0; step < 20000 && qpos[0] < 1.4; ++step) {
+                bt::require(tire->try_compute_into(d, dt, out) ==
+                                    CoreStatus::ok,
+                            "distributed try_compute_into succeeds");
+                // stored_energy keeps its oracle-pinned side-major
+                // radial-then-shear fold (distributed_tire_forces.py
+                // :117-129); elastic_energy_j folds radial+shear per side
+                // inside accumulate (:204-214). Both orders are pinned by
+                // the oracle, so multi-station states differ by binary64
+                // ULPs — the parity bound is 1e-12, never a relaxed
+                // shared order.
+                bt::require(std::abs(tire->stored_energy(d) -
+                                     tire->elastic_energy_j()) <= 1e-12,
+                            "distributed stored-energy parity within 1e-12");
+                const std::string &name =
+                        tire->diagnostic_storage()[0].surface;
+                if (name == "wet_wood") saw_wood = true;
+                if (saw_wood && qpos[0] > 1.2 && name == "hardpack")
+                    saw_dirt_after = true;
+                std::ranges::copy(out, applied.begin());
+                applied[1] -= load;
+                engine::step(m, d);
+                engine::forward(m, d);
+                bt::require(tire->brush_loss_step_j() >= 0.0 &&
+                                tire->radial_dissipation_power_w() >= 0.0,
+                            "nonnegative distributed dissipation");
+            }
+            bt::require(allocation_counter::count() == std::size_t{0},
+                        "distributed try_compute_into allocates nothing "
+                        "over micro spans");
+            bt::require(qpos[0] >= 1.4,
+                        "distributed wheel rolls across all micro spans");
+        }
+        bt::require(saw_wood && saw_dirt_after,
+                    "distributed wheel crossed wet_wood inside the window");
+    }
+}
+
+// Unsorted-wire regression (ruling 3): SurfaceMap validation accepts a
+// micro_spans list in any order; both writers sort at construction, so
+// an unsorted wire must behave bitwise-identically to pre-sorted spans.
+// The config factories confine each TireConfig to the ctor call — two
+// live copies of the wide config struct would exceed the test frame.
+[[nodiscard]] nativecfg::TireConfig stage_c_pneumatic_cfg(bool sorted) {
+    auto cfg = bt::pneumatic::configuration("fast");
+    cfg.surface_mode = "track";
+    if (!cfg.pneumatic.has_value())
+        throw std::logic_error("fixture needs pneumatic configuration");
+    cfg.pneumatic->surface.reset();
+    cfg.surface_map = stage_c_writer_map(sorted);
+    return cfg;
+}
+
+[[gnu::noinline]] void test_micro_span_unsorted_wire_equivalent() {
+    {
+        constexpr double dt = 0.0001;
+        bt::pneumatic::Rig rig("fast", dt, 0.008);
+        const auto sorted = std::make_unique<PneumaticTireWriter>(
+                rig.engine.model.get(), rig.engine.data.get(),
+                stage_c_pneumatic_cfg(true));
+        const auto unsorted = std::make_unique<PneumaticTireWriter>(
+                rig.engine.model.get(), rig.engine.data.get(),
+                stage_c_pneumatic_cfg(false));
+        const auto *m = rig.engine.model.get();
+        auto *d = rig.engine.data.get();
+        const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+        const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+        qvel[0] = 2.0;
+        qvel[2] = 2.0 / (bt::pneumatic::front_radius() - 0.002);
+        std::vector<double> a(static_cast<std::size_t>(m->nv), 0.0),
+                b(static_cast<std::size_t>(m->nv), 0.0);
+        // Approach, both collars, span interiors, gap interior and the
+        // hardpack beyond — every eval_surface branch.
+        for (const double x : {0.30, 0.49, 0.51, 0.60, 0.69, 0.71, 0.80,
+                               0.94, 1.05, 1.16, 1.30}) {
+            qpos[0] = x;
+            d->time += dt;
+            engine::forward(m, d);
+            bt::require(sorted->try_compute_into(d, dt, a) == CoreStatus::ok,
+                        "sorted writer computes");
+            bt::require(unsorted->try_compute_into(d, dt, b) == CoreStatus::ok,
+                        "unsorted writer computes");
+            bitwise_equal(a, b);
+            bt::require(sorted->stored_energy(d) ==
+                            unsorted->stored_energy(d) &&
+                            sorted->elastic_energy_j() ==
+                                    unsorted->elastic_energy_j(),
+                        "unsorted wire energies bitwise identical");
+            for (std::size_t s = 0; s < 2; ++s) {
+                const TireDiagnostics &da = sorted->diagnostic_storage()[s];
+                const TireDiagnostics &db = unsorted->diagnostic_storage()[s];
+                bt::require(da.surface == db.surface &&
+                                da.friction_coefficient ==
+                                        db.friction_coefficient &&
+                                da.normal_load_n == db.normal_load_n &&
+                                da.shear_energy_j == db.shear_energy_j &&
+                                da.radial_energy_j == db.radial_energy_j,
+                            "unsorted wire diagnostics bitwise identical");
+            }
+        }
+    }
+
+    {
+        constexpr double dt = 0.0001;
+        constexpr double load = 480.0;
+        auto ws = stage_c_flat_stand(dt);
+        const auto *m = ws->model.get();
+        auto *d = ws->data.get();
+        auto sorted = std::make_unique<DistributedTireWriter>(
+                m, d, stage_c_distributed_config(
+                             stage_c_writer_map(true), 64, 2.0));
+        const double depth = stage_c_solve_depth(*ws, *sorted, dt, load);
+        auto unsorted = std::make_unique<DistributedTireWriter>(
+                m, d, stage_c_distributed_config(
+                             stage_c_writer_map(false), 64, 2.0));
+        const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+        const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+        qpos[1] = -depth;
+        qvel[0] = 2.0;
+        qvel[2] = 2.0 / (0.37 - depth);
+        std::vector<double> a(static_cast<std::size_t>(m->nv), 0.0),
+                b(static_cast<std::size_t>(m->nv), 0.0);
+        for (const double x : {0.30, 0.60, 0.80, 1.05, 1.30}) {
+            qpos[0] = x;
+            d->time += dt;
+            engine::forward(m, d);
+            bt::require(sorted->try_compute_into(d, dt, a) == CoreStatus::ok,
+                        "sorted distributed writer computes");
+            bt::require(unsorted->try_compute_into(d, dt, b) ==
+                                CoreStatus::ok,
+                        "unsorted distributed writer computes");
+            bitwise_equal(a, b);
+            bt::require(sorted->elastic_energy_j() ==
+                            unsorted->elastic_energy_j(),
+                        "unsorted distributed wire energy bitwise identical");
+            for (std::size_t s = 0; s < 2; ++s) {
+                const TireDiagnostics &da = sorted->diagnostic_storage()[s];
+                const TireDiagnostics &db = unsorted->diagnostic_storage()[s];
+                bt::require(da.surface == db.surface &&
+                                da.friction_coefficient ==
+                                        db.friction_coefficient &&
+                                da.normal_load_n == db.normal_load_n &&
+                                da.shear_energy_j == db.shear_energy_j &&
+                                da.radial_energy_j == db.radial_energy_j,
+                            "unsorted distributed diagnostics identical");
+            }
+        }
+    }
+}
+
 } // namespace
 
 // bt::run catches exceptions from the test body and reports failure.
@@ -769,6 +1321,9 @@ int main() {
         test_brush_shear_energy_matches_element_stiffness();
         test_pneumatic_surface_name_storage_survives_reset();
         test_pneumatic_crr_overflow_atomicity();
+        test_roots_wet_wood_micro_span_ride_energy_gate();
+        test_micro_span_writer_zero_allocation();
+        test_micro_span_unsorted_wire_equivalent();
         test_pneumatic_world_rolling_moment_no_caliper_reaction();
         test_pneumatic_boundary_crossing_smoothness_and_stored_energy();
         test_pneumatic_60m_mixed_surface_ride_energy_gate();

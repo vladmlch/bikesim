@@ -75,7 +75,12 @@ bike_add_reference_test(pneumatic_tire_config ENGINE
 bike_add_reference_test(pneumatic_tire_forces ENGINE
   SOURCES test_pneumatic_tire_forces.cpp LIBRARIES bike_app LABELS t52 tyre)
 bike_add_reference_test(pneumatic_energy_balance ENGINE
-  SOURCES test_pneumatic_energy_balance.cpp LIBRARIES bike_app bike_validation bike_golden LABELS t52 tyre)
+  SOURCES test_pneumatic_energy_balance.cpp
+    $<TARGET_OBJECTS:bike_test_allocation_faults>
+  # bike_validation alone: it PUBLIC-links bike_cli, whose dependency chain
+  # already supplies bike_golden -> bike_app. Repeating either name here
+  # put the same archives on the link line twice and ld warned about it.
+  LIBRARIES bike_validation LABELS t52 tyre)
 bike_add_reference_test(pneumatic_tire_oracle ENGINE
   SOURCES test_pneumatic_tire_oracle.cpp LIBRARIES bike_app LABELS t52 tyre golden)
 # 3.12a pneumatic kernel oracle ports (T52 batch) — replay the frozen
@@ -129,8 +134,12 @@ bike_add_reference_test(native_tire ENGINE
   SOURCES test_native_tire.cpp LIBRARIES bike_app bike_random
   bike_golden LABELS t52 tyre golden slow)
 bike_add_reference_test(native_distributed_tire ENGINE
-  SOURCES test_native_distributed_tire.cpp LIBRARIES bike_app
-  bike_random bike_golden bike_test_initial_state_record
+  # bike_app and bike_random arrive transitively (bike_golden -> bike_app
+  # -> bike_random and bike_test_initial_state_record -> bike_app).
+  # Listing them before bike_test_initial_state_record made CMake emit
+  # the archives twice for static-link resolution and ld warned about it.
+  SOURCES test_native_distributed_tire.cpp LIBRARIES
+  bike_test_initial_state_record bike_golden
   LABELS t52 tyre golden slow)
 bike_add_reference_test(native_clock_contracts ENGINE
   SOURCES test_native_clock_contracts.cpp LIBRARIES bike_app bike_random LABELS t52 runtime golden)

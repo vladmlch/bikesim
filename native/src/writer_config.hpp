@@ -468,11 +468,20 @@ namespace nativecfg {
             }
             if (name == "tire.surface_map") {
                 constexpr auto required = keys("surface", "sections");
-                constexpr auto optional = keys();
+                constexpr auto optional = keys("micro_spans");
                 exact_at(d, required, optional, d.path);
                 return;
             }
             if (name == "tire.surface_map.sections") {
+                constexpr auto required = keys("start_m", "end_m", "surface");
+                constexpr auto optional = keys("blend_m");
+                exact_at(d, required, optional, d.path);
+                return;
+            }
+            // Stage C obstacle-local micro-span rows mirror the section row
+            // contract; the nested .surface dict is checked by the shared
+            // ".surface" suffix rule above.
+            if (name == "tire.surface_map.micro_spans") {
                 constexpr auto required = keys("start_m", "end_m", "surface");
                 constexpr auto optional = keys("blend_m");
                 exact_at(d, required, optional, d.path);
@@ -852,6 +861,34 @@ namespace nativecfg {
                             section_path + ".surface"),
                         .blend_m = opt_num(sec, "blend_m", 0.0),
                     });
+                }
+                // Stage C obstacle-local micro spans — optional, closed
+                // row keys, nested SurfaceSpec resolved like section
+                // surfaces (Spec §3.2).
+                if (sm.contains("micro_spans")) {
+                    const N raw_spans = req(sm, "micro_spans");
+                    const auto spans = sequence(
+                        raw_spans, "config.tire.surface_map.micro_spans");
+                    std::size_t span_index = 0;
+                    for (std::size_t i = 0; i < spans.size(); ++i) {
+                        const N item = spans.at(i);
+                        if (!item.is_mapping())
+                            throw std::invalid_argument(
+                                "native config: 'tire.surface_map.micro_spans' "
+                                "entries must be dicts");
+                        const std::string span_path = "tire.surface_map.micro_spans." + std::to_string(span_index++);
+                        const Dict<N> row{.value = item,
+                                          .path = "config." + span_path};
+                        section_keys(row, "tire.surface_map.micro_spans");
+                        map.micro_spans.push_back({
+                            .start_m = req_f64(row, "start_m"),
+                            .end_m = req_f64(row, "end_m"),
+                            .blend_m = opt_num(row, "blend_m", 0.0),
+                            .surface = surface_spec_from_dict(
+                                req_dict(row, "surface"),
+                                span_path + ".surface"),
+                        });
+                    }
                 }
                 c.surface_map = std::move(map);
             }

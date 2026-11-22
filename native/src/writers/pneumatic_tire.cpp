@@ -229,6 +229,8 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
         surface_map_ = *cfg_.surface_map;
         std::ranges::sort(surface_map_.sections, {},
                           [](const auto &sec) { return sec.start_m; });
+        std::ranges::sort(surface_map_.micro_spans, {},
+                          [](const auto &span) { return span.start_m; });
     } else {
         throw std::invalid_argument(
             "pneumatic tires need a track surface map or a configured "
@@ -276,16 +278,22 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
     const std::size_t n = static_cast<std::size_t>(n_rays_);
     const std::size_t nv = static_cast<std::size_t>(nv_);
     // The longest surface name the per-tick path can meet — the map's
-    // default, the configured override and every section — sized once
-    // so the patch-slot surface_name strings and the diagnostics'
-    // surface field assign into capacity on the marked warm path.
-    std::size_t surface_capacity = std::max<std::size_t>(10, surface_map_.surface.name.size());
+    // default, the configured override, every section and every Stage C
+    // micro span — sized once so the patch-slot surface_name strings and
+    // the diagnostics' surface field assign into capacity on the marked
+    // warm path. The floor rises to 16: "polished_rock" is the longest
+    // registry label a micro span can emit even when every map name is
+    // short.
+    std::size_t surface_capacity = std::max<std::size_t>(16, surface_map_.surface.name.size());
     if (pneu.surface.has_value())
         surface_capacity =
                 std::max(surface_capacity, pneu.surface->name.size());
     for (const auto &sec: surface_map_.sections)
         surface_capacity =
                 std::max(surface_capacity, sec.surface.name.size());
+    for (const auto &span: surface_map_.micro_spans)
+        surface_capacity =
+                std::max(surface_capacity, span.surface.name.size());
     // :118-121 — the velocity/Jacobian scratch and the live tyre pair —
     // plus the two clone banks the rollback and probe paths evaluate
     // through (all six are construction-sized; only the live models

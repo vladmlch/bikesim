@@ -190,6 +190,8 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
         surface_map_ = *cfg_.surface_map;
         std::ranges::sort(surface_map_->sections, {},
                           [](const auto &sec) { return sec.start_m; });
+        std::ranges::sort(surface_map_->micro_spans, {},
+                          [](const auto &span) { return span.start_m; });
     }
     // :40 — SignedProfile over the compiled terrain cross-section.
     profile_.emplace(biketyre::compiled_profile_vertices(m_, d, "terrain"));
@@ -281,14 +283,22 @@ DistributedTireWriter::DistributedTireWriter(const mjModel *m,
     const std::size_t calibration_capacity = std::max(
             dist.front.calibration_status.size(),
             dist.rear.calibration_status.size());
-    // Reserve the longest surface label so the commit assign never allocates.
-    std::size_t surface_capacity = std::string_view("configured").size();
+    // Reserve the longest surface label so the commit assign never
+    // allocates. Stage C raises the floor to 16: eval_surface can return
+    // micro-surface names (e.g. "polished_rock") longer than any macro
+    // label, and the reserve must hold even when the map names only short
+    // defaults.
+    std::size_t surface_capacity =
+            std::max<std::size_t>(16, std::string_view("configured").size());
     if (surface_map_.has_value()) {
         surface_capacity =
                 std::max(surface_capacity, surface_map_->surface.name.size());
         for (const auto &sec : surface_map_->sections)
             surface_capacity =
                     std::max(surface_capacity, sec.surface.name.size());
+        for (const auto &span : surface_map_->micro_spans)
+            surface_capacity =
+                    std::max(surface_capacity, span.surface.name.size());
     }
     for (std::size_t s = 0; s < 2; ++s) {
         snapshot_stage_[s].patches.reserve(n);

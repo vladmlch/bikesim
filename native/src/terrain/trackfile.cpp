@@ -227,6 +227,14 @@ Value obstacle_fields(const Obstacle& obstacle,bool identity){
         else if constexpr(std::is_same_v<T,SteppedClimb>){Value::Array steps;for(const auto& row:s.steps)steps.push_back(Value{Value::Array{detail::number(row[0]),detail::number(row[1])}});out.emplace_back("steps",Value{std::move(steps)});PUT(transition_m);}
 #undef PUT
     },obstacle.shape);
+    // Stage C obstacle-local micro-surface (Spec §3.2): emitted only when
+    // authored, so unmarked obstacles keep their exact Stage A field sets
+    // and track_sha identities. The integer-token pass below still applies
+    // to surface_blend_m when it was authored as an integer.
+    if(!obstacle.surface.empty()){
+        out.emplace_back("surface",Value{obstacle.surface});
+        out.emplace_back("surface_blend_m",detail::field_value(obstacle.surface_blend_m));
+    }
     if(!identity)for(auto& [key,value]:out)if(std::ranges::find(obstacle.integer_scalar_fields,key)!=obstacle.integer_scalar_fields.end()){
         const double v=bike::io::as_double(value,key);if(std::trunc(v)==v)value={bike::io::Number{detail::gd::py_fixed(v,0)}};
     }
@@ -319,6 +327,10 @@ Obstacle obstacle_from_dict(const Value& entry,std::size_t index){
         else if(key.ends_with("_mm")){target=std::format("{}_m",key.substr(0,key.size()-3));value=scaled(original);}
         if(std::ranges::find(seen,target)!=seen.end())throw TrackFileError(std::format("{}: '{}' given twice (metres and millimetres?)",where,target));
         seen.push_back(target);bool known=false;
+        // Stage C obstacle-local micro-surface keys live on Obstacle itself,
+        // not on the shape variant, so they are read before the visit.
+        if(target=="surface"){result.surface=bike::io::as_string(value,std::format("{}.surface",where));known=true;}
+        if(target=="surface_blend_m"){result.surface_blend_m=float_value(value,std::format("{}.surface_blend_m",where));known=true;}
         std::visit([&](auto& s){
 #define READ(name) if constexpr(requires{s.name;}){if(target==#name){detail::read_field(s.name,value,std::format("{}.{}",where,target));known=true;}}
             READ(start_m) READ(height_m) READ(ledge_length_m) READ(depth_m) READ(hole_length_m)

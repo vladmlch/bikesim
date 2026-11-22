@@ -942,6 +942,183 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         [&] { (void)runtime::project_writer_config(*req, *model, *track); },
         "blend_m");
 }
+
+[[gnu::noinline]] void test_stage_c_micro_span_wire_decode_and_validation() {
+    const nativecfg::SurfaceSpec wood{
+        .name = "wet_wood", .mu_peak = 0.25, .mu_slide = 0.18,
+        .slip_stiffness_per_load = 9.0, .stribeck_speed_mps = 4.5,
+        .crr_delta = 0.0030, .load_sensitivity = 0.12};
+    const auto surf_wire = [&](std::string_view name) {
+        return io::parse_json(std::string(
+                "{\"name\":\"") + std::string(name) +
+                "\",\"mu_peak\":0.25,\"mu_slide\":0.18,"
+                "\"slip_stiffness_per_load\":9.0,\"stribeck_speed_mps\":4.5,"
+                "\"crr_delta\":0.003,\"load_sensitivity\":0.12}");
+    };
+    // 1. micro_spans decodes as optional rows: blend_m defaults to 0.0,
+    //    a present blend_m decodes verbatim, the nested SurfaceSpec is
+    //    resolved like section surfaces.
+    const Value span_wood{Value::Object{{"start_m", real(2.0)},
+                                        {"end_m", real(3.0)},
+                                        {"surface", surf_wire("wet_wood")}}};
+    const Value span_mud{Value::Object{{"start_m", real(4.0)},
+                                       {"end_m", real(5.0)},
+                                       {"blend_m", real(0.02)},
+                                       {"surface", surf_wire("mud_lens")}}};
+    Value wire = resolved_wire();
+    set(member(member(wire, "tire"), "surface_map"), "micro_spans",
+        Value{Value::Array{span_wood, span_mud}});
+    {
+        const auto decoded = std::make_unique<nativecfg::WriterConfig>(nativecfg::decode(wire));
+        const auto& sm = decoded->tire.value().surface_map.value(); // NOLINT(bugprone-unchecked-optional-access)
+        bt::require(sm.micro_spans.size() == 2,
+                    "tire.surface_map.micro_spans decodes both rows");
+        bt::require(sm.micro_spans[0].start_m == 2.0 && sm.micro_spans[0].end_m == 3.0 &&
+                        sm.micro_spans[0].blend_m == 0.0 &&
+                        sm.micro_spans[0].surface.name == "wet_wood",
+                    "absent blend_m defaults to 0.0, surface spec decodes");
+        bt::require(sm.micro_spans[1].blend_m == 0.02 &&
+                        sm.micro_spans[1].surface.name == "mud_lens",
+                    "present blend_m decodes verbatim");
+        nativecfg::validate(sm);
+    }
+    // 2. Closed-key row contract: an unknown key inside a micro_spans row is
+    //    rejected at decode with its field path.
+    const Value bogus_row{Value::Object{{"start_m", real(2.0)},
+                                        {"end_m", real(3.0)},
+                                        {"surface", surf_wire("wet_wood")},
+                                        {"depth_m", real(0.1)}}};
+    Value bogus = resolved_wire();
+    set(member(member(bogus, "tire"), "surface_map"), "micro_spans",
+        Value{Value::Array{bogus_row}});
+    bt::invalid([&] { (void)nativecfg::decode(bogus); });
+    // 3. nativecfg::validate(SurfaceMap) micro-span rules.
+    const nativecfg::SurfaceSpec dirt{
+        .name = "hardpack", .mu_peak = 0.8, .mu_slide = 0.6,
+        .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5,
+        .crr_delta = 0.0025, .load_sensitivity = 0.08};
+    // Blend wider than the span it wraps.
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = dirt, .micro_spans = {
+                {.start_m = 2.0, .end_m = 2.1, .blend_m = 0.4, .surface = wood}}});
+    });
+    // Expanded collar reaching below x = 0.
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = dirt, .micro_spans = {
+                {.start_m = 0.05, .end_m = 0.4, .blend_m = 0.2, .surface = wood}}});
+    });
+    // Expanded collars of adjacent micro spans overlap.
+    bt::invalid([&] {
+        nativecfg::validate(nativecfg::SurfaceMap{
+            .surface = dirt, .micro_spans = {
+                {.start_m = 2.0, .end_m = 2.3, .blend_m = 0.4, .surface = wood},
+                {.start_m = 2.3, .end_m = 2.6, .blend_m = 0.4, .surface = wood}}});
+    });
+    // Zero-blend touching spans accept; a micro span may sit inside a macro
+    // section (independent overlay).
+    nativecfg::validate(nativecfg::SurfaceMap{
+        .surface = dirt,
+        .sections = {{.start_m = 0.0, .end_m = 10.0, .surface = dirt, .blend_m = 0.4}},
+        .micro_spans = {
+            {.start_m = 2.0, .end_m = 2.3, .blend_m = 0.0, .surface = wood},
+            {.start_m = 2.3, .end_m = 2.6, .blend_m = 0.0, .surface = wood}}});
+}
+
+[[gnu::noinline]] void test_stage_c_obstacle_micro_span_projection() {
+    // A Roots obstacle authored wet_wood projects one micro span per bump;
+    // compliant_2d and surfaces without marked obstacles emit no micro_spans
+    // member at all so the Stage A JSON shape stays unchanged.
+    auto track = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+    track->surface = "hardpack";
+    track->obstacles = {bike::terrain::Obstacle{
+        .shape = bike::terrain::Roots{.start_m = 10.0, .n_bumps = 4,
+                                     .height_m = 0.05, .width_m = 0.16,
+                                     .section_length_m = 4.0, .jitter = 0.1,
+                                     .seed = "7"},
+        .surface = "wet_wood", .surface_blend_m = 0.02}};
+    const auto n_bumps = std::get<bike::terrain::Roots>(
+            track->obstacles[0].shape).bump_centres_m().size();
+    for (const auto& [backend, profile] : {
+             std::pair<std::string_view, std::string_view>{"compliant_2d", "config/viewer_physics_welded.toml"},
+             {"distributed_2d_reference", "config/viewer_physics_distributed.toml"},
+             {"pneumatic", "config/viewer_physics_pneumatic.toml"}}) {
+        auto req = std::make_unique<bike::model::BuildRequest>();
+        req->mode = "ride";
+        req->rider = bike::configuration::RiderSpecs{};
+        req->rider->variant = "articulated_planar";
+        req->physics = bike::configuration::load_physics(bt::fixture(profile));
+        req->field = bike::terrain::HeightFieldSpec::for_track(*track);
+        const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+        Value projected = runtime::project_writer_config(*req, *model, *track);
+        const auto& sm_obj = io::as_object(at(projected, {"tire", "surface_map"}), "surface_map");
+        const auto* spans = io::find_member(sm_obj, "micro_spans");
+        if (backend == "compliant_2d") {
+            bt::require(spans == nullptr,
+                        "compliant_2d omits tire.surface_map.micro_spans");
+            continue;
+        }
+        bt::require(spans != nullptr,
+                    "track-mode backends emit tire.surface_map.micro_spans");
+        const auto& rows = io::as_array(*spans, "micro_spans");
+        bt::require(rows.size() == n_bumps,
+                    "one micro span row per root bump");
+        for (std::size_t i = 0; i < rows.size(); ++i) {
+            const auto& row = io::as_object(rows[i], "micro_span");
+            const auto name = io::as_string(
+                    field(field(rows[i], "surface"), "name"), "surface.name");
+            bt::require(name == "wet_wood",
+                        "micro span surface resolves wet_wood");
+            bt::require(io::find_member(row, "blend_m") != nullptr,
+                        "positive span blend_m emitted on wire");
+            if (i != 0) {
+                bt::require(vread::real(vread::Node{&field(rows[i], "start_m")}, "start_m") >
+                                vread::real(vread::Node{&field(rows[i - 1], "end_m")}, "end_m"),
+                            "projected root spans are ordered and disjoint");
+            }
+        }
+        // The projected wire decodes and validates as a WriterConfig.
+        (void)nativecfg::decode(projected);
+    }
+    // No marked obstacles -> no micro_spans member anywhere.
+    {
+        auto clean = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+        clean->surface = "hardpack";
+        auto req = std::make_unique<bike::model::BuildRequest>();
+        req->mode = "ride";
+        req->rider = bike::configuration::RiderSpecs{};
+        req->rider->variant = "articulated_planar";
+        req->physics = bike::configuration::load_physics(
+                bt::fixture("config/viewer_physics_pneumatic.toml"));
+        req->field = bike::terrain::HeightFieldSpec::for_track(*clean);
+        const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+        Value projected = runtime::project_writer_config(*req, *model, *clean);
+        const auto& sm_obj = io::as_object(at(projected, {"tire", "surface_map"}), "surface_map");
+        bt::require(io::find_member(sm_obj, "micro_spans") == nullptr,
+                    "unmarked track keeps the Stage A surface_map JSON shape");
+    }
+    // A bogus obstacle surface name is rejected by track.validate() inside
+    // project_writer_config — it never reaches the emitter.
+    {
+        auto bad = std::make_unique<bike::terrain::TrackSpec>(bike::terrain::flat(30.0));
+        bad->obstacles = {bike::terrain::Obstacle{
+            .shape = bike::terrain::Bump{.start_m = 5.0, .height_m = 0.05,
+                                        .bump_length_m = 0.4},
+            .surface = "dry_dirt"}};
+        auto req = std::make_unique<bike::model::BuildRequest>();
+        req->mode = "ride";
+        req->rider = bike::configuration::RiderSpecs{};
+        req->rider->variant = "articulated_planar";
+        req->physics = bike::configuration::load_physics(
+                bt::fixture("config/viewer_physics_welded.toml"));
+        req->field = bike::terrain::HeightFieldSpec::for_track_length(bad->length_m);
+        const auto model = bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+        error<std::invalid_argument>(
+            [&] { (void)runtime::project_writer_config(*req, *model, *bad); },
+            "surface");
+    }
+}
 } // namespace
 
 // Each contract body is noinline so its by-value Value snapshots live in
@@ -974,6 +1151,8 @@ int main() {
         test_huge_integer_real_conversion_and_large_finite_control();
         test_wire_string_encoding_matches_native();
         test_stage_a_surface_wire_decode_and_validation();
+        test_stage_c_micro_span_wire_decode_and_validation();
+        test_stage_c_obstacle_micro_span_projection();
         test_stage_a_surface_conditional_projection();
         test_stage_a_surface_map_order_and_gap_contracts();
         test_stage_a_configured_pneumatic_surface_projection();

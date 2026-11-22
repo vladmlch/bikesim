@@ -588,8 +588,11 @@ bool schema_entry(std::string_view name, std::string_view &required,
           "stribeck_speed_mps",
           .optional = "crr_delta load_sensitivity"}},
         {.name = "tire.surface_map", .entry = {.required = "surface sections",
-          .optional = ""}},
+          .optional = "micro_spans"}},
         {.name = "tire.surface_map.sections", .entry = {.required = "start_m end_m surface",
+          .optional = "blend_m"}},
+        // Stage C obstacle-local micro-span rows mirror the section rows.
+        {.name = "tire.surface_map.micro_spans", .entry = {.required = "start_m end_m surface",
           .optional = "blend_m"}},
         {.name = "drive", .entry =
          {.required = "gearing pedaling shifting assist "
@@ -950,7 +953,7 @@ void validate_mapping(const Value &value, const std::string &name,
             (key == "gearing" || key == "pedaling" || key == "shifting" ||
              key == "assist"))
             nested = "drive." + key;
-        if (key == "sections" || key == "paths") {
+        if (key == "sections" || key == "paths" || key == "micro_spans") {
             std::size_t index = 0;
             for (const Value &row : wire_sequence(item, child))
                 validate_mapping(row, nested,

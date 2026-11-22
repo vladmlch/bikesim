@@ -60,6 +60,26 @@ void TrackSpec::validate() const {
     const auto ordered=sorted_obstacles();
     for(const auto& o:ordered){o.validate();if(o.start_m()<0.||o.end_m()>length_m)throw std::invalid_argument("track '"+name+"': "+o.label()+" falls outside the track");}
     for(std::size_t i=1;i<ordered.size();++i)if(ordered[i].start_m()<ordered[i-1].end_m())throw std::invalid_argument("track '"+name+"': obstacles may not overlap");
+    // Stage C (Spec §3.2): every generated micro span carries a collar no
+    // wider than the span itself (end - start >= surface_blend_m), its
+    // expanded interval [s - b/2, e + b/2] must lie inside the track, and
+    // no two expanded intervals may overlap. Spans arrive ordered because
+    // sorted_obstacles() is non-overlapping and each obstacle emits its
+    // spans in layout order.
+    double collar_hi=-std::numeric_limits<double>::max();
+    for(const auto& o:ordered) {
+        for(const auto& span:o.micro_surface_spans()) {
+            if(span.end_m-span.start_m<span.blend_m)
+                throw std::invalid_argument("track '"+name+"': "+o.label()+" micro span narrower than surface_blend_m");
+            const double lo=span.start_m-.5*span.blend_m;
+            const double hi=span.end_m+.5*span.blend_m;
+            if(lo<0.||hi>length_m)
+                throw std::invalid_argument("track '"+name+"': "+o.label()+" micro span collar falls outside the track");
+            if(lo<collar_hi)
+                throw std::invalid_argument("track '"+name+"': obstacle micro span collars overlap");
+            collar_hi=hi;
+        }
+    }
 }
 std::vector<double> build_profile(const TrackSpec& track,std::span<const double> x) {
     track.validate();for(double const v:x)detail::finite(v,"build_profile.x");

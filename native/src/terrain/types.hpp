@@ -41,6 +41,13 @@ struct SurfaceSpec {
 };
 [[nodiscard]] std::vector<std::string> available_surfaces();
 [[nodiscard]] const SurfaceSpec& get_surface(std::string_view name);
+// Stage C local obstacle micro-surfaces (Spec §3.1): five obstacle-local
+// materials (dry_wood, wet_wood, polished_rock, wet_rock, mud_lens) kept out
+// of the five-name macro registry so SurfaceLabel and Stage A surface
+// contracts stay unchanged. `get_obstacle_surface` resolves the ten-name
+// obstacle domain — every macro name plus every micro name.
+[[nodiscard]] std::vector<std::string> available_micro_surfaces();
+[[nodiscard]] const SurfaceSpec& get_obstacle_surface(std::string_view name);
 
 struct SurfaceSection {
     double start_m = 0.;
@@ -131,6 +138,21 @@ struct Obstacle {
     // Source dataclasses retain authored integer tokens in geometric fields.
     // This preserves their source-compatible TOML rendering after a typed read.
     std::vector<std::string> integer_scalar_fields{};
+    // Stage C obstacle-local micro-surface overlay (Spec §3.2): a non-empty
+    // name resolves through get_obstacle_surface() (the ten-name obstacle
+    // domain); surface_blend_m is the finite nonnegative width of the
+    // Hermite collar centered on each generated span edge. Both serialize
+    // only when surface is non-empty, keeping unmarked tracks unchanged.
+    std::string surface{};
+    double surface_blend_m = 0.0;
+    // A generated sub-interval [start_m, end_m) of the obstacle plus its
+    // collar width and the local material name — preparation-phase output
+    // for SurfaceMap::micro_spans; never used on runtime hot paths.
+    struct MicroSpan {
+        double start_m{}, end_m{}, blend_m{};
+        std::string surface{};
+    };
+    [[nodiscard]] std::vector<MicroSpan> micro_surface_spans() const;
     [[nodiscard]] std::string_view kind() const;
     [[nodiscard]] double start_m() const;
     void set_start_m(double value);

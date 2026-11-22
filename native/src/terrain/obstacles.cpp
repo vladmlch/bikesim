@@ -190,6 +190,61 @@ void Obstacle::validate() const {
             if(s.waviness<1.||s.waviness>4.)throw std::invalid_argument("RoadRoughness.waviness must lie in [1,4]");
         }
     },shape);
+    // Stage C obstacle-local micro-surface (Spec §3.2): a marked obstacle
+    // resolves its name through the ten-name obstacle domain and carries a
+    // finite nonnegative collar width; a blend without a surface is a
+    // configuration error rather than a silent default.
+    if(!surface.empty()) {
+        detail::finite(surface_blend_m,"Obstacle.surface_blend_m");
+        detail::nonnegative(surface_blend_m,"Obstacle.surface_blend_m");
+        (void)get_obstacle_surface(surface);
+    } else if(surface_blend_m!=0.) {
+        throw std::invalid_argument("Obstacle.surface_blend_m requires Obstacle.surface");
+    }
+}
+std::vector<Obstacle::MicroSpan> Obstacle::micro_surface_spans() const {
+    // Spec §3.2 — preparation-phase generation only (project_config); the
+    // runtime hot path never calls this. Emitted spans are ordered by the
+    // obstacle's own layout and are pairwise non-overlapping on a valid
+    // track (TrackSpec::validate checks the expanded collars).
+    if(surface.empty()) return {};
+    validate();
+    const double origin=start_m();
+    std::vector<MicroSpan> out;
+    const auto push=[&](double lo,double hi) {
+        out.push_back({.start_m=origin+lo,.end_m=origin+hi,
+                       .blend_m=surface_blend_m,.surface=surface});
+    };
+    std::visit([&](const auto& s) {
+        using T=std::decay_t<decltype(s)>;
+        if constexpr(std::is_same_v<T,Roots>) {
+            // One width_m-wide span per root; the gaps between roots keep
+            // the base SurfaceMap material.
+            const double half=.5*s.width_m;
+            for(const double centre:s.bump_centres_m()) push(centre-half,centre+half);
+        } else if constexpr(std::is_same_v<T,Pothole>||std::is_same_v<T,SlopedPothole>||
+                            std::is_same_v<T,BowlPothole>||std::is_same_v<T,GOut>) {
+            // The bottom 60% of the hole/dip carries the mud lens.
+            const double L=length(s);
+            push(.2*L,.8*L);
+        } else if constexpr(std::is_same_v<T,RockGarden>) {
+            // Runs of consecutive node segments whose both ends rise above
+            // the datum are the exposed rock crests.
+            const auto [x,z]=s.nodes();
+            bool open=false;
+            double run_lo=0.;
+            for(std::size_t i=0;i+1<x.size();++i) {
+                const bool crest=z[i]>0.&&z[i+1]>0.;
+                if(crest&&!open){run_lo=x[i];open=true;}
+                if(!crest&&open){push(run_lo,x[i]);open=false;}
+            }
+            if(open) push(run_lo,x.back());
+        } else {
+            const double L=length(s);
+            if(L>0.) push(0.,L);
+        }
+    },shape);
+    return out;
 }
 std::vector<double> Obstacle::elevation(std::span<const double> points) const {
     validate(); for(double const x:points) detail::finite(x,"Obstacle.local_x");

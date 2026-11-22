@@ -271,11 +271,23 @@ namespace nativecfg {
         double blend_m{};
     };
 
+    // MicroSurfaceSpan — Stage C obstacle-local material overlay (Spec
+    // §3.2): a half-open material interval [start_m, end_m) whose surface
+    // blends with the underlying base sample inside Hermite collars of
+    // half-width blend_m/2 centered on each edge.
+    struct MicroSurfaceSpan {
+        double start_m{}, end_m{}, blend_m{};
+        SurfaceSpec surface;
+    };
+
     // SurfaceMap (terrain/surface.py:160-206): a default material plus sorted
     // non-overlapping sections; `at` scans sections then falls back to default.
+    // Stage C adds sorted, non-overlapping obstacle-local micro spans layered
+    // over the base map; an empty list keeps the Stage A JSON wire unchanged.
     struct SurfaceMap {
         SurfaceSpec surface;
         std::vector<SurfaceSection> sections{};
+        std::vector<MicroSurfaceSpan> micro_spans{};
     };
 
     // HingeDensity (physics/distributed_tire.py:12-29) — radial stiffness as

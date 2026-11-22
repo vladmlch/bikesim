@@ -3,6 +3,7 @@
 // smoothstep continuity, origin-opening section rule, uniform-span fast path,
 // and C1 load-sensitive Stribeck friction.
 #include "support/fixture_test.hpp"
+#include "terrain/trackfile.hpp"
 #include "terrain/types.hpp"
 #include "writers/tire_common.hpp"
 
@@ -571,6 +572,336 @@ void test_load_sensitivity_factor_and_sample_mu() {
     }
 }
 
+// ---- Stage C: obstacle micro-surfaces (Spec §3) ---------------------------
+
+[[nodiscard]] nativecfg::SurfaceSpec cfg_obstacle_surface(std::string_view name) {
+    const bike::terrain::SurfaceSpec &s =
+            bike::terrain::get_obstacle_surface(name);
+    return {
+        .name = s.name,
+        .mu_peak = s.mu_peak,
+        .mu_slide = s.mu_slide,
+        .slip_stiffness_per_load = s.slip_stiffness_per_load,
+        .stribeck_speed_mps = s.stribeck_speed_mps,
+        .crr_delta = s.crr_delta,
+        .load_sensitivity = s.load_sensitivity,
+    };
+}
+
+void test_micro_surface_registry_and_obstacle_lookup() {
+    namespace t = bike::terrain;
+    // The ten-name obstacle domain: the five macro surfaces plus five local
+    // micro surfaces, all sharing stribeck_speed_mps = 4.5 (Spec §3.1).
+    bt::require(t::available_micro_surfaces() ==
+                    std::vector<std::string>{"dry_wood", "wet_wood",
+                                             "polished_rock", "wet_rock",
+                                             "mud_lens"},
+                "micro registry carries the exact five names in order");
+    bt::require(t::available_surfaces() ==
+                    std::vector<std::string>{"asphalt", "hardpack", "loose",
+                                             "wet", "scree"},
+                "macro registry keeps the exact five names");
+    struct Row {
+        const char *name;
+        double mu_peak, mu_slide, c_k, crr, k_z;
+    };
+    const std::array<Row, 5> rows{{
+        {"dry_wood", .45, .35, 11., .0020, .08},
+        {"wet_wood", .25, .18, 9., .0030, .12},
+        {"polished_rock", .60, .45, 14., .0010, .06},
+        {"wet_rock", .30, .20, 12., .0020, .08},
+        {"mud_lens", .28, .20, 5., .0100, .15}}};
+    for (const auto &r : rows) {
+        const auto &s = t::get_obstacle_surface(r.name);
+        bt::require(s.name == r.name && s.mu_peak == r.mu_peak &&
+                        s.mu_slide == r.mu_slide &&
+                        s.slip_stiffness_per_load == r.c_k &&
+                        s.stribeck_speed_mps == 4.5 &&
+                        s.crr_delta == r.crr && s.load_sensitivity == r.k_z,
+                    "micro surface carries its calibrated spec values");
+        s.validate();
+    }
+    for (const char *name :
+         {"asphalt", "hardpack", "loose", "wet", "scree"}) {
+        bt::require(&t::get_obstacle_surface(name) == &t::get_surface(name),
+                    "obstacle lookup resolves macro names to the same registry spec");
+    }
+    bt::invalid([] { (void)t::get_surface("wet_wood"); });
+    bt::invalid([] { (void)t::get_obstacle_surface("dry_dirt"); });
+}
+
+void test_obstacle_micro_surface_spans() {
+    namespace t = bike::terrain;
+    // Roots: one span per bump, width_m wide, gaps keep the base surface.
+    t::Obstacle roots{.shape = t::Roots{.start_m = 10., .n_bumps = 5,
+                                       .height_m = .08, .width_m = .25,
+                                       .section_length_m = 7., .jitter = .35,
+                                       .seed = "2029"},
+                      .surface = "wet_wood", .surface_blend_m = .02};
+    const auto centres =
+            std::get<t::Roots>(roots.shape).bump_centres_m();
+    const auto spans = roots.micro_surface_spans();
+    bt::require(spans.size() == centres.size(),
+                "one micro span per root bump");
+    for (std::size_t i = 0; i < spans.size(); ++i) {
+        bt::require(spans[i].start_m == 10. + centres[i] - .125 &&
+                        spans[i].end_m == 10. + centres[i] + .125 &&
+                        spans[i].blend_m == .02 &&
+                        spans[i].surface == "wet_wood",
+                    "root span wraps its bump centre with the obstacle blend");
+        if (i != 0)
+            bt::require(spans[i].start_m > spans[i - 1].end_m,
+                        "inter-root gaps keep the base surface");
+    }
+    // Pothole family and g_out: the bottom 60 percent of the interval.
+    t::Obstacle hole{.shape = t::Pothole{.start_m = 20., .depth_m = .18,
+                                        .hole_length_m = .6},
+                     .surface = "mud_lens"};
+    const auto pit = hole.micro_surface_spans();
+    bt::require(pit.size() == 1 && pit[0].start_m == 20. + .2 * .6 &&
+                    pit[0].end_m == 20. + .8 * .6 && pit[0].blend_m == 0. &&
+                    pit[0].surface == "mud_lens",
+                "pothole mud lens covers the bottom 60 percent");
+    t::Obstacle gout{.shape = t::GOut{.start_m = 40., .depth_m = .35,
+                                     .dip_length_m = 5.},
+                     .surface = "wet_rock"};
+    const auto dip = gout.micro_surface_spans();
+    bt::require(dip.size() == 1 && dip[0].start_m == 40. + .2 * 5. &&
+                    dip[0].end_m == 40. + .8 * 5. &&
+                    dip[0].surface == "wet_rock",
+                "g_out mud lens covers the bottom 60 percent");
+    // Every other non-zero-length obstacle overlays its whole interval.
+    t::Obstacle ledge{.shape = t::Bump{.start_m = 30., .height_m = .05,
+                                      .bump_length_m = .4},
+                      .surface = "polished_rock"};
+    const auto shelf = ledge.micro_surface_spans();
+    bt::require(shelf.size() == 1 && shelf[0].start_m == 30. &&
+                    shelf[0].end_m == 30. + .4 &&
+                    shelf[0].surface == "polished_rock",
+                "plain obstacle spans its whole interval");
+    // An unmarked obstacle generates nothing.
+    bt::require(t::Obstacle{.shape = t::Bump{}}.micro_surface_spans().empty(),
+                "unmarked obstacle carries no micro spans");
+    // Obstacle-level domain checks.
+    t::Obstacle neg = roots;
+    neg.surface_blend_m = -.01;
+    bt::invalid([&] { neg.validate(); });
+    const t::Obstacle stray{.shape = t::Bump{.start_m = 5., .height_m = .05,
+                                            .bump_length_m = .4},
+                            .surface_blend_m = .1};
+    bt::invalid([&] { stray.validate(); });
+    t::Obstacle bogus = roots;
+    bogus.surface = "dry_dirt";
+    bt::invalid([&] { bogus.validate(); });
+    // A macro name is a legal obstacle surface (obstacle lookup is ten-name).
+    t::Obstacle macro = roots;
+    macro.surface = "scree";
+    macro.validate();
+    bt::require(macro.micro_surface_spans().front().surface == "scree",
+                "macro surface name resolves as an obstacle overlay");
+
+    // Track-level validation over the generated spans.
+    t::TrackSpec control = t::flat(60.);
+    control.obstacles.push_back(roots);
+    control.validate();
+    // Collar wider than the span it wraps.
+    t::TrackSpec fat_blend = t::flat(60.);
+    t::Obstacle fat = roots;
+    fat.surface_blend_m = .5;
+    fat_blend.obstacles.push_back(fat);
+    bt::invalid([&] { fat_blend.validate(); });
+    // Expanded collars of adjacent obstacles must not overlap.
+    t::Obstacle left{.shape = t::Bump{.start_m = 30., .height_m = .05,
+                                     .bump_length_m = .5},
+                     .surface = "dry_wood", .surface_blend_m = .4};
+    t::Obstacle right{.shape = t::Bump{.start_m = 30.5, .height_m = .05,
+                                      .bump_length_m = .5},
+                      .surface = "wet_rock", .surface_blend_m = .4};
+    t::TrackSpec overlap = t::flat(60.);
+    overlap.obstacles = {left, right};
+    bt::invalid([&] { overlap.validate(); });
+    // Same adjacency with zero blends only touches — a valid control.
+    t::Obstacle sharp_l = left, sharp_r = right;
+    sharp_l.surface_blend_m = 0.;
+    sharp_r.surface_blend_m = 0.;
+    overlap.obstacles = {sharp_l, sharp_r};
+    overlap.validate();
+    // The expanded span must fit inside the track.
+    t::TrackSpec off_track = t::flat(30.);
+    t::Obstacle edge{.shape = t::Bump{.start_m = 29.7, .height_m = .05,
+                                     .bump_length_m = .3},
+                     .surface = "wet_wood", .surface_blend_m = .2};
+    off_track.obstacles.push_back(edge);
+    bt::invalid([&] { off_track.validate(); });
+
+    // TOML read: `surface`/`surface_blend_m` are obstacle-level keys.
+    const auto parsed = t::track_from_dict(t::parse_track_toml(
+            "name='micro'\nlength_m=20\n[[obstacles]]\ntype='roots'\n"
+            "start_m=5\nn_bumps=3\nheight_m=0.06\nwidth_m=0.2\n"
+            "section_length_m=6\njitter=0.1\nseed=9\nsurface='wet_wood'\n"
+            "surface_blend_m=0.02\n"));
+    bt::require(parsed.obstacles.size() == 1 &&
+                    parsed.obstacles[0].surface == "wet_wood" &&
+                    parsed.obstacles[0].surface_blend_m == .02,
+                "track TOML carries obstacle surface keys");
+    // TOML write: marked obstacles emit both keys; unmarked emit neither,
+    // so existing tracks keep byte-identical serialization.
+    const auto fields = t::obstacle_to_dict(roots);
+    bool saw_surface = false, saw_blend = false;
+    for (const auto &[key, value] :
+         bike::io::as_object(fields, "obstacle")) {
+        saw_surface = saw_surface || key == "surface";
+        saw_blend = saw_blend || key == "surface_blend_m";
+    }
+    bt::require(saw_surface && saw_blend,
+                "marked obstacle emits surface and surface_blend_m");
+    for (const auto &[key, value] :
+         bike::io::as_object(t::obstacle_to_dict(t::Obstacle{.shape = t::Bump{}}),
+                             "obstacle")) {
+        bt::require(key != "surface" && key != "surface_blend_m",
+                    "unmarked obstacle emits no micro-surface keys");
+    }
+    // Full-dump round trip preserves the authored surface fields.
+    const auto dumped = t::dump_track(parsed);
+    bt::require(dumped.find("surface") != std::string::npos &&
+                    t::dump_track(t::track_from_dict(t::parse_track_toml(dumped))) == dumped,
+                "obstacle micro-surface keys round-trip through TOML");
+    // An unknown obstacle surface name is rejected at the track boundary.
+    bt::invalid([&] {
+        (void)t::track_from_dict(t::parse_track_toml(
+                "name='bad'\nlength_m=10\n[[obstacles]]\ntype='pothole'\n"
+                "start_m=2\nhole_length_m=0.5\ndepth_m=0.1\n"
+                "surface='dry_dirt'\n"));
+    });
+}
+
+void test_eval_surface_micro_span_collars() {
+    const nativecfg::SurfaceSpec hardpack = cfg_surface("hardpack");
+    const nativecfg::SurfaceSpec scree = cfg_surface("scree");
+    const nativecfg::SurfaceSpec wood = cfg_obstacle_surface("wet_wood");
+    const nativecfg::SurfaceSpec dry_wood = cfg_obstacle_surface("dry_wood");
+
+    // wet_wood span [4.0, 5.0] blend 0.4 on hardpack; a zero-blend dry_wood
+    // span [10.5, 11.5) inside a scree section [10, 20) blend 0.4.
+    const nativecfg::SurfaceMap map{
+        .surface = hardpack,
+        .sections = {
+            {.start_m = 10.0, .end_m = 20.0, .surface = scree, .blend_m = 0.4},
+        },
+        .micro_spans = {
+            {.start_m = 4.0, .end_m = 5.0, .blend_m = 0.4, .surface = wood},
+            {.start_m = 10.5, .end_m = 11.5, .blend_m = 0.0, .surface = dry_wood},
+        },
+    };
+    const auto wood_sample = tirecommon::sample_from_spec(wood);
+    const auto dry_sample = tirecommon::sample_from_spec(dry_wood);
+    const auto hardpack_sample = tirecommon::sample_from_spec(hardpack);
+    const auto scree_sample = tirecommon::sample_from_spec(scree);
+
+    // Away from every span: the hardpack base and the scree section rule.
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 3.0),
+                               hardpack_sample),
+                "outside micro spans the base surface evaluates pure");
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 10.3),
+                               scree_sample),
+                "scree section pure outside the embedded micro span");
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 12.0),
+                               scree_sample),
+                "scree section pure after the embedded micro span");
+
+    // Pure micro core [s + b/2, e - b/2): the span spec bitwise, canonical
+    // name borrowed from the span's own spec storage inside the map.
+    for (const double x : {4.2, 4.3, 4.5, 4.7, 4.79}) {
+        const auto got = tirecommon::eval_surface(map, x);
+        bt::require(sample_bits_eq(got, wood_sample) &&
+                        got.name.data() == map.micro_spans[0].surface.name.data(),
+                    "pure micro core returns the span spec bitwise");
+    }
+    for (const double x : {10.5, 11.0, 11.499}) {
+        const auto got = tirecommon::eval_surface(map, x);
+        bt::require(sample_bits_eq(got, dry_sample) &&
+                        got.name.data() == map.micro_spans[1].surface.name.data(),
+                    "zero-blend micro span evaluates pure inside [s, e)");
+    }
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 11.5),
+                               scree_sample),
+                "zero-blend span is half-open: x = e evaluates the section");
+
+    // Left Hermite collar (3.8, 4.2) centred at start_m = 4.0.
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 3.8),
+                               hardpack_sample),
+                "left collar outer edge is pure base");
+    {
+        const auto mid = tirecommon::eval_surface(map, 4.0);
+        bt::require(bits_eq(mid.mu_peak, 0.5 * (hardpack.mu_peak + wood.mu_peak)) &&
+                        bits_eq(mid.crr_delta,
+                                0.5 * (hardpack.crr_delta + wood.crr_delta)) &&
+                        mid.name == "wet_wood",
+                    "collar centre blends 50/50 and takes the micro name");
+        const auto quarter = tirecommon::eval_surface(map, 3.9);
+        bt::require(std::abs(quarter.mu_peak -
+                             (0.84375 * hardpack.mu_peak + 0.15625 * wood.mu_peak)) < 1e-15,
+                    "Hermite quarter point weights match t^2(3-2t)");
+    }
+    // Right Hermite collar (4.8, 5.2) centred at end_m = 5.0.
+    {
+        const auto mid = tirecommon::eval_surface(map, 5.0);
+        bt::require(bits_eq(mid.mu_peak, 0.5 * (wood.mu_peak + hardpack.mu_peak)) &&
+                        mid.name == "hardpack",
+                    "right collar centre blends 50/50 and takes the base name");
+        const auto quarter = tirecommon::eval_surface(map, 5.1);
+        bt::require(std::abs(quarter.mu_slide -
+                             (0.15625 * wood.mu_slide + 0.84375 * hardpack.mu_slide)) < 1e-15,
+                    "right collar quarter point matches 27/32 base weight");
+    }
+    bt::require(sample_bits_eq(tirecommon::eval_surface(map, 5.2),
+                               hardpack_sample),
+                "right collar outer edge is pure base");
+    // C1 zero-slope at all four collar edges.
+    for (const double edge : {3.8, 4.2, 4.8, 5.2})
+        require_c1_edge(map, edge);
+
+    // uniform_surface_for_span: pure micro core -> the span's SurfaceSpec.
+    bt::require(tirecommon::uniform_surface_for_span(map, 4.25, 4.75) ==
+                    &map.micro_spans[0].surface,
+                "span inside the micro core returns &micro_span.surface");
+    bt::require(tirecommon::uniform_surface_for_span(map, 10.5, 11.5) ==
+                    nullptr,
+                "span reaching the half-open micro end returns nullptr");
+    bt::require(tirecommon::uniform_surface_for_span(map, 10.6, 11.4) ==
+                    &map.micro_spans[1].surface,
+                "span inside the sharp micro interval returns &micro_span.surface");
+    bt::require(tirecommon::uniform_surface_for_span(map, 10.5, 10.5) ==
+                    &map.micro_spans[1].surface,
+                "point at sharp micro start uses the micro surface");
+    // Collar or boundary contact -> nullptr.
+    bt::require(tirecommon::uniform_surface_for_span(map, 3.95, 4.2) ==
+                    nullptr,
+                "span touching the left collar returns nullptr");
+    bt::require(tirecommon::uniform_surface_for_span(map, 4.95, 5.05) ==
+                    nullptr,
+                "span touching the right collar returns nullptr");
+    bt::require(tirecommon::uniform_surface_for_span(map, 4.0, 4.0) ==
+                    nullptr,
+                "degenerate span on the collar centre returns nullptr");
+    // Gaps and pure macro regions keep their Stage A answers.
+    bt::require(tirecommon::uniform_surface_for_span(map, 3.0, 3.5) ==
+                    &map.surface,
+                "gap before the micro span returns &map.surface");
+    bt::require(tirecommon::uniform_surface_for_span(map, 5.2, 6.0) ==
+                    &map.surface,
+                "gap after the micro span returns &map.surface");
+    bt::require(tirecommon::uniform_surface_for_span(map, 10.4, 10.6) ==
+                    nullptr,
+                "span reaching into the sharp micro interval returns nullptr");
+    bt::require(tirecommon::uniform_surface_for_span(map, 10.25, 10.45) ==
+                    &map.sections[0].surface,
+                "pure scree interior beside the micro span returns &sec.surface");
+    bt::require(tirecommon::uniform_surface_for_span(map, 9.9, 10.1) ==
+                    nullptr,
+                "section-transition window still returns nullptr");
+}
+
 } // namespace
 
 int main() {
@@ -581,5 +912,8 @@ int main() {
         test_origin_section_has_no_left_transition();
         test_uniform_surface_for_span();
         test_load_sensitivity_factor_and_sample_mu();
+        test_micro_surface_registry_and_obstacle_lookup();
+        test_obstacle_micro_surface_spans();
+        test_eval_surface_micro_span_collars();
     });
 }

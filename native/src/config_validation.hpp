@@ -380,37 +380,71 @@ namespace nativecfg {
             validation::nonnegative(section.blend_m, sp + ".blend_m");
             validate(section.surface, sp + ".surface");
         }
-        if (n == 0) return;
-        std::vector<std::size_t> order(n);
-        for (std::size_t i = 0; i < n; ++i) order[i] = i;
-        std::ranges::stable_sort(order, {}, [&](std::size_t idx) { return map.sections[idx].start_m; });
-        for (std::size_t k = 0; k < n; ++k) {
-            const auto &sec = map.sections[order[k]];
-            const std::string sp = p + ".sections." + std::to_string(order[k]);
-            double b_left = 0.0;
-            if (k == 0) {
-                if (sec.start_m > 0.0) {
-                    b_left = sec.blend_m;
-                    if (sec.start_m < 0.5 * b_left)
-                        throw std::invalid_argument(sp + ".blend_m: transition extends before x = 0");
-                }
-            } else {
-                const auto &prev = map.sections[order[k - 1]];
-                if (sec.start_m < prev.end_m)
-                    throw std::invalid_argument(p + ": overlapping sections");
-                if (sec.start_m == prev.end_m) {
-                    if (prev.blend_m != sec.blend_m)
-                        throw std::invalid_argument(sp + ".blend_m: adjacent sections must have equal blend_m");
-                    b_left = sec.blend_m;
+        if (n != 0) {
+            std::vector<std::size_t> order(n);
+            for (std::size_t i = 0; i < n; ++i) order[i] = i;
+            std::ranges::stable_sort(order, {}, [&](std::size_t idx) { return map.sections[idx].start_m; });
+            for (std::size_t k = 0; k < n; ++k) {
+                const auto &sec = map.sections[order[k]];
+                const std::string sp = p + ".sections." + std::to_string(order[k]);
+                double b_left = 0.0;
+                if (k == 0) {
+                    if (sec.start_m > 0.0) {
+                        b_left = sec.blend_m;
+                        if (sec.start_m < 0.5 * b_left)
+                            throw std::invalid_argument(sp + ".blend_m: transition extends before x = 0");
+                    }
                 } else {
-                    if (sec.start_m - prev.end_m < 0.5 * prev.blend_m + 0.5 * sec.blend_m)
-                        throw std::invalid_argument(sp + ".blend_m: transition windows overlap across gap");
-                    b_left = sec.blend_m;
+                    const auto &prev = map.sections[order[k - 1]];
+                    if (sec.start_m < prev.end_m)
+                        throw std::invalid_argument(p + ": overlapping sections");
+                    if (sec.start_m == prev.end_m) {
+                        if (prev.blend_m != sec.blend_m)
+                            throw std::invalid_argument(sp + ".blend_m: adjacent sections must have equal blend_m");
+                        b_left = sec.blend_m;
+                    } else {
+                        if (sec.start_m - prev.end_m < 0.5 * prev.blend_m + 0.5 * sec.blend_m)
+                            throw std::invalid_argument(sp + ".blend_m: transition windows overlap across gap");
+                        b_left = sec.blend_m;
+                    }
                 }
+                const double b_right = sec.blend_m;
+                if (sec.end_m - sec.start_m < 0.5 * b_left + 0.5 * b_right)
+                    throw std::invalid_argument(sp + ".blend_m: section shorter than transition half-widths");
             }
-            const double b_right = sec.blend_m;
-            if (sec.end_m - sec.start_m < 0.5 * b_left + 0.5 * b_right)
-                throw std::invalid_argument(sp + ".blend_m: section shorter than transition half-widths");
+        }
+        // Stage C obstacle-local micro spans (Spec §3.2): per-row checks
+        // first, then sorted-order interval rules mirroring the section
+        // pass — collar no wider than the span it wraps, expanded collar
+        // never reaching below x = 0, and pairwise non-overlapping expanded
+        // intervals. A micro span may sit inside a macro section; the
+        // overlay composes on top of the section sample at eval time.
+        const std::size_t m = map.micro_spans.size();
+        for (std::size_t i = 0; i < m; ++i) {
+            const auto &span = map.micro_spans[i];
+            const std::string sp = p + ".micro_spans." + std::to_string(i);
+            validation::nonnegative(span.start_m, sp + ".start_m");
+            validation::finite(span.end_m, sp + ".end_m");
+            if (span.start_m >= span.end_m) throw std::invalid_argument(sp + ": unordered interval");
+            validation::nonnegative(span.blend_m, sp + ".blend_m");
+            if (span.end_m - span.start_m < span.blend_m)
+                throw std::invalid_argument(sp + ".blend_m: collar wider than span");
+            if (span.start_m < 0.5 * span.blend_m)
+                throw std::invalid_argument(sp + ".blend_m: collar extends before x = 0");
+            validate(span.surface, sp + ".surface");
+        }
+        if (m != 0) {
+            std::vector<std::size_t> span_order(m);
+            for (std::size_t i = 0; i < m; ++i) span_order[i] = i;
+            std::ranges::stable_sort(span_order, {}, [&](std::size_t idx) { return map.micro_spans[idx].start_m; });
+            for (std::size_t k = 1; k < m; ++k) {
+                const auto &prev = map.micro_spans[span_order[k - 1]];
+                const auto &span = map.micro_spans[span_order[k]];
+                if (span.start_m - 0.5 * span.blend_m < prev.end_m + 0.5 * prev.blend_m)
+                    throw std::invalid_argument(p + ".micro_spans." +
+                                                std::to_string(span_order[k]) +
+                                                ": expanded collars overlap");
+            }
         }
     }
     // TyreSpecs.__post_init__ (tyre.py:83-109): positive geometry,

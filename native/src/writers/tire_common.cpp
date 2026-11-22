@@ -111,6 +111,51 @@ namespace {
                     w_l * left.load_sensitivity + s * right.load_sensitivity,
         };
     }
+
+    // Stage C twin of same_surface_spec for evaluated samples (Spec §3.3):
+    // identical field-wise comparison so the collar shortcut takes the same
+    // branch an all-equal spec pair would.
+    [[nodiscard]] bool
+    same_sample(const tirecommon::SurfaceSample &a,
+                const tirecommon::SurfaceSample &b) noexcept {
+        return a.name == b.name &&
+               a.mu_peak == b.mu_peak &&
+               a.mu_slide == b.mu_slide &&
+               a.slip_stiffness_per_load == b.slip_stiffness_per_load &&
+               a.stribeck_speed_mps == b.stribeck_speed_mps &&
+               a.crr_delta == b.crr_delta &&
+               a.load_sensitivity == b.load_sensitivity;
+    }
+
+    // Stage C twin of blend_specs for samples: the micro-span collar mixes
+    // the already-evaluated base sample (macro default/section/transition
+    // composition) with the span's own spec, using the identical C1 Hermite
+    // expression, clamp and operation order — so a span whose spec equals
+    // the base collapses to the canonical name exactly like a same-surface
+    // macro boundary.
+    [[nodiscard]] tirecommon::SurfaceSample
+    blend_samples(const tirecommon::SurfaceSample &left,
+                  const tirecommon::SurfaceSample &right,
+                  double x_b, double width_m, double x_m) noexcept {
+        const tirecommon::SurfaceSample &canonical = x_m < x_b ? left : right;
+        if (same_sample(left, right))
+            return canonical;
+        const double t = std::clamp(0.5 + (x_m - x_b) / width_m, 0.0, 1.0);
+        const double s = t * t * (3.0 - 2.0 * t);
+        const double w_l = 1.0 - s;
+        return {
+            .name = canonical.name,
+            .mu_peak = w_l * left.mu_peak + s * right.mu_peak,
+            .mu_slide = w_l * left.mu_slide + s * right.mu_slide,
+            .slip_stiffness_per_load = w_l * left.slip_stiffness_per_load +
+                                       s * right.slip_stiffness_per_load,
+            .stribeck_speed_mps = w_l * left.stribeck_speed_mps +
+                                  s * right.stribeck_speed_mps,
+            .crr_delta = w_l * left.crr_delta + s * right.crr_delta,
+            .load_sensitivity =
+                    w_l * left.load_sensitivity + s * right.load_sensitivity,
+        };
+    }
 } // namespace
 
 namespace tirecommon {
@@ -172,9 +217,42 @@ namespace tirecommon {
                     }
                     return false;
                 });
-        if (matched)
-            return blended;
-        return sample_from_spec(pure_surface_at(map, x_m));
+        const SurfaceSample base =
+                matched ? blended
+                        : sample_from_spec(pure_surface_at(map, x_m));
+        // Stage C obstacle-local overlay (Spec §3.3). micro_spans are
+        // start_m-sorted with non-overlapping expanded intervals
+        // [start-blend/2, end+blend/2]. Writers sort spans after validation;
+        // direct callers must supply sorted spans. A binary search on the
+        // expanded left edge isolates the candidate in O(log M), without
+        // allocation.
+        const auto &spans = map.micro_spans;
+        if (spans.empty())
+            return base;
+        const auto it = std::ranges::upper_bound(
+                spans, x_m, {},
+                [](const nativecfg::MicroSurfaceSpan &span) {
+                    return span.start_m - 0.5 * span.blend_m;
+                });
+        if (it == spans.begin())
+            return base;
+        const nativecfg::MicroSurfaceSpan &span = it[-1];
+        const double half = 0.5 * span.blend_m;
+        if (x_m >= span.end_m + half)
+            return base;
+        // x_m lies inside the expanded interval [start-half, end+half):
+        // left collar blends base->micro about start_m, the pure core
+        // [start+half, end-half) is the micro material itself, and the
+        // right collar blends micro->base about end_m. blend_m == 0 makes
+        // every collar a zero-width boundary: the guards below then route
+        // [start, end) to the pure core without dividing by zero.
+        const SurfaceSample micro = sample_from_spec(span.surface);
+        if (x_m < span.start_m + half)
+            return blend_samples(base, micro, span.start_m, span.blend_m,
+                                 x_m);
+        if (x_m < span.end_m - half)
+            return micro;
+        return blend_samples(micro, base, span.end_m, span.blend_m, x_m);
     }
 
     // NOLINTBEGIN(bugprone-easily-swappable-parameters)
@@ -187,6 +265,42 @@ namespace tirecommon {
             throw std::invalid_argument(
                     "uniform_surface_for_span requires finite x_min_m <= x_max_m");
         }
+        // Stage C micro-span overlay (Spec §3.3): a query range that meets
+        // any expanded interval [start-blend/2, end+blend/2) without lying
+        // inside its pure core [start+blend/2, end-blend/2) is not uniform
+        // -> nullptr. A range wholly inside a pure core is uniform on the
+        // span's own spec, whichever macro material sits underneath.
+        const auto &spans = map.micro_spans;
+        if (!spans.empty()) {
+            const auto it = std::ranges::upper_bound(
+                    spans, x_min_m, {},
+                    [](const nativecfg::MicroSurfaceSpan &span) {
+                        return span.start_m - 0.5 * span.blend_m;
+                    });
+            const std::size_t first =
+                    (it == spans.begin())
+                            ? 0
+                            : static_cast<std::size_t>(it - spans.begin() - 1);
+            for (std::size_t i = first; i < spans.size(); ++i) {
+                const nativecfg::MicroSurfaceSpan &span = spans[i];
+                const double half = 0.5 * span.blend_m;
+                if (x_max_m < span.start_m - half)
+                    break;
+                if (span.end_m + half <= x_min_m)
+                    continue;
+                // The pure core is the closed [start+half, end-half]:
+                // both collar-edge points evaluate to the pure micro
+                // material. The extra x_max < end guard keeps the blend_m
+                // == 0 core half-open — end_m itself is already outside
+                // [start, end).
+                if (x_min_m >= span.start_m + half &&
+                    x_max_m <= span.end_m - half &&
+                    x_max_m < span.end_m)
+                    return &span.surface;
+                return nullptr;
+            }
+        }
+
         const std::size_t n = map.sections.size();
         if (n == 0)
             return &map.surface;

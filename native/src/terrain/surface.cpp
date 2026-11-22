@@ -18,6 +18,18 @@ const std::array<SurfaceSpec,5> registry{{
     {.name="wet",.mu_peak=.50,.mu_slide=.40,.slip_stiffness_per_load=10.,.stribeck_speed_mps=4.5,.crr_delta=.0035,.load_sensitivity=.12,.description="wet dirt"},
     {.name="scree",.mu_peak=.45,.mu_slide=.38,.slip_stiffness_per_load=4.5,.stribeck_speed_mps=4.5,.crr_delta=.0080,.load_sensitivity=.15,.description="alpine scree: loose rock debris over bedrock"}
 }};
+// Stage C calibrated 5-name obstacle-local micro-surface registry (Spec
+// §3.1): wood/rock/mud patches worn by individual obstacles. Kept outside
+// the macro registry — available_surfaces()/get_surface() and the rider's
+// SurfaceLabel domain keep exactly their five Stage A names.
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) same startup-table contract as the macro registry above
+const std::array<SurfaceSpec,5> micro_registry{{
+    {.name="dry_wood",.mu_peak=.45,.mu_slide=.35,.slip_stiffness_per_load=11.,.stribeck_speed_mps=4.5,.crr_delta=.0020,.load_sensitivity=.08,.description="dry wood on a boardwalk or root shelf"},
+    {.name="wet_wood",.mu_peak=.25,.mu_slide=.18,.slip_stiffness_per_load=9.,.stribeck_speed_mps=4.5,.crr_delta=.0030,.load_sensitivity=.12,.description="wet roots or slick wood"},
+    {.name="polished_rock",.mu_peak=.60,.mu_slide=.45,.slip_stiffness_per_load=14.,.stribeck_speed_mps=4.5,.crr_delta=.0010,.load_sensitivity=.06,.description="polished rock face on a ledge"},
+    {.name="wet_rock",.mu_peak=.30,.mu_slide=.20,.slip_stiffness_per_load=12.,.stribeck_speed_mps=4.5,.crr_delta=.0020,.load_sensitivity=.08,.description="wet rock or slick stone"},
+    {.name="mud_lens",.mu_peak=.28,.mu_slide=.20,.slip_stiffness_per_load=5.,.stribeck_speed_mps=4.5,.crr_delta=.0100,.load_sensitivity=.15,.description="mud lens pooled in a pothole or dip"}
+}};
 }
 void SurfaceSpec::validate() const {
     detail::positive(mu_peak,"SurfaceSpec.mu_peak");
@@ -48,6 +60,16 @@ std::vector<std::string> available_surfaces() {
 const SurfaceSpec& get_surface(std::string_view name) {
     for(const auto& s:registry) if(s.name==name) return s;
     throw std::invalid_argument("unknown surface '"+std::string(name)+"'; available: asphalt, hardpack, loose, wet, scree");
+}
+std::vector<std::string> available_micro_surfaces() {
+    std::vector<std::string> out; out.reserve(micro_registry.size());
+    for(const auto& s:micro_registry) out.push_back(s.name);
+    return out;
+}
+const SurfaceSpec& get_obstacle_surface(std::string_view name) {
+    for(const auto& s:micro_registry) if(s.name==name) return s;
+    for(const auto& s:registry) if(s.name==name) return s;
+    throw std::invalid_argument("unknown obstacle surface '"+std::string(name)+"'; available: asphalt, hardpack, loose, wet, scree, dry_wood, wet_wood, polished_rock, wet_rock, mud_lens");
 }
 void SurfaceSection::validate() const {
     detail::finite(start_m,"SurfaceSection.start_m"); detail::finite(end_m,"SurfaceSection.end_m");

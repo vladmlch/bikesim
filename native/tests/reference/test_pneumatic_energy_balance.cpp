@@ -837,6 +837,7 @@ struct StageCStand {
 }
 
 [[nodiscard]] nativecfg::TireConfig
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) helper signature keeps cfg-field order
 stage_c_distributed_config(nativecfg::SurfaceMap surface_map, int station_count,
                            double tire_mu) {
     const nativecfg::HingeDensity density{
@@ -875,6 +876,7 @@ stage_c_distributed_config(nativecfg::SurfaceMap surface_map, int station_count,
 
 [[nodiscard]] double stage_c_solve_depth(const StageCStand &stand,
                                          DistributedTireWriter &tire,
+                                         // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) signature keeps probe order
                                          double dt, double target_load_n) {
     const auto *m = stand.model.get();
     auto *d = stand.data.get();
@@ -935,8 +937,8 @@ struct StageCWireFriction {
         }
     }
     void check() const {
-        for (std::size_t i = 0; i < gap_samples.size(); ++i)
-            bt::require(gap_samples[i] > 0,
+        for (const int samples : gap_samples)
+            bt::require(samples > 0,
                         "loaded contact sampled in every dirt gap");
         for (std::size_t i = 0; i < wood_samples.size(); ++i) {
             bt::require(wood_samples[i] > 0,
@@ -1209,7 +1211,7 @@ struct StageCWireFriction {
 [[gnu::noinline]] void test_micro_span_unsorted_wire_equivalent() {
     {
         constexpr double dt = 0.0001;
-        bt::pneumatic::Rig rig("fast", dt, 0.008);
+        const bt::pneumatic::Rig rig("fast", dt, 0.008);
         const auto sorted = std::make_unique<PneumaticTireWriter>(
                 rig.engine.model.get(), rig.engine.data.get(),
                 stage_c_pneumatic_cfg(true));

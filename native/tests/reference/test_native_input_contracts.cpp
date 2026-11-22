@@ -949,11 +949,11 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
         .slip_stiffness_per_load = 9.0, .stribeck_speed_mps = 4.5,
         .crr_delta = 0.0030, .load_sensitivity = 0.12};
     const auto surf_wire = [&](std::string_view name) {
-        return io::parse_json(std::string(
-                "{\"name\":\"") + std::string(name) +
-                "\",\"mu_peak\":0.25,\"mu_slide\":0.18,"
-                "\"slip_stiffness_per_load\":9.0,\"stribeck_speed_mps\":4.5,"
-                "\"crr_delta\":0.003,\"load_sensitivity\":0.12}");
+        return io::parse_json(std::string(R"({"name":")") +
+                std::string(name) +
+                R"(","mu_peak":0.25,"mu_slide":0.18,)"
+                R"("slip_stiffness_per_load":9.0,"stribeck_speed_mps":4.5,)"
+                R"("crr_delta":0.003,"load_sensitivity":0.12})");
     };
     // 1. micro_spans decodes as optional rows: blend_m defaults to 0.0,
     //    a present blend_m decodes verbatim, the nested SurfaceSpec is

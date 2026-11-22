@@ -606,11 +606,11 @@ void test_micro_surface_registry_and_obstacle_lookup() {
         double mu_peak, mu_slide, c_k, crr, k_z;
     };
     const std::array<Row, 5> rows{{
-        {"dry_wood", .45, .35, 11., .0020, .08},
-        {"wet_wood", .25, .18, 9., .0030, .12},
-        {"polished_rock", .60, .45, 14., .0010, .06},
-        {"wet_rock", .30, .20, 12., .0020, .08},
-        {"mud_lens", .28, .20, 5., .0100, .15}}};
+        {.name = "dry_wood", .mu_peak = .45, .mu_slide = .35, .c_k = 11., .crr = .0020, .k_z = .08},
+        {.name = "wet_wood", .mu_peak = .25, .mu_slide = .18, .c_k = 9., .crr = .0030, .k_z = .12},
+        {.name = "polished_rock", .mu_peak = .60, .mu_slide = .45, .c_k = 14., .crr = .0010, .k_z = .06},
+        {.name = "wet_rock", .mu_peak = .30, .mu_slide = .20, .c_k = 12., .crr = .0020, .k_z = .08},
+        {.name = "mud_lens", .mu_peak = .28, .mu_slide = .20, .c_k = 5., .crr = .0100, .k_z = .15}}};
     for (const auto &r : rows) {
         const auto &s = t::get_obstacle_surface(r.name);
         bt::require(s.name == r.name && s.mu_peak == r.mu_peak &&
@@ -654,7 +654,7 @@ void test_obstacle_micro_surface_spans() {
                         "inter-root gaps keep the base surface");
     }
     // Pothole family and g_out: the bottom 60 percent of the interval.
-    t::Obstacle hole{.shape = t::Pothole{.start_m = 20., .depth_m = .18,
+    const t::Obstacle hole{.shape = t::Pothole{.start_m = 20., .depth_m = .18,
                                         .hole_length_m = .6},
                      .surface = "mud_lens"};
     const auto pit = hole.micro_surface_spans();
@@ -662,7 +662,7 @@ void test_obstacle_micro_surface_spans() {
                     pit[0].end_m == 20. + .8 * .6 && pit[0].blend_m == 0. &&
                     pit[0].surface == "mud_lens",
                 "pothole mud lens covers the bottom 60 percent");
-    t::Obstacle gout{.shape = t::GOut{.start_m = 40., .depth_m = .35,
+    const t::Obstacle gout{.shape = t::GOut{.start_m = 40., .depth_m = .35,
                                      .dip_length_m = 5.},
                      .surface = "wet_rock"};
     const auto dip = gout.micro_surface_spans();
@@ -671,7 +671,7 @@ void test_obstacle_micro_surface_spans() {
                     dip[0].surface == "wet_rock",
                 "g_out mud lens covers the bottom 60 percent");
     // Every other non-zero-length obstacle overlays its whole interval.
-    t::Obstacle ledge{.shape = t::Bump{.start_m = 30., .height_m = .05,
+    const t::Obstacle ledge{.shape = t::Bump{.start_m = 30., .height_m = .05,
                                       .bump_length_m = .4},
                       .surface = "polished_rock"};
     const auto shelf = ledge.micro_surface_spans();
@@ -711,10 +711,10 @@ void test_obstacle_micro_surface_spans() {
     fat_blend.obstacles.push_back(fat);
     bt::invalid([&] { fat_blend.validate(); });
     // Expanded collars of adjacent obstacles must not overlap.
-    t::Obstacle left{.shape = t::Bump{.start_m = 30., .height_m = .05,
+    const t::Obstacle left{.shape = t::Bump{.start_m = 30., .height_m = .05,
                                      .bump_length_m = .5},
                      .surface = "dry_wood", .surface_blend_m = .4};
-    t::Obstacle right{.shape = t::Bump{.start_m = 30.5, .height_m = .05,
+    const t::Obstacle right{.shape = t::Bump{.start_m = 30.5, .height_m = .05,
                                       .bump_length_m = .5},
                       .surface = "wet_rock", .surface_blend_m = .4};
     t::TrackSpec overlap = t::flat(60.);
@@ -728,7 +728,7 @@ void test_obstacle_micro_surface_spans() {
     overlap.validate();
     // The expanded span must fit inside the track.
     t::TrackSpec off_track = t::flat(30.);
-    t::Obstacle edge{.shape = t::Bump{.start_m = 29.7, .height_m = .05,
+    const t::Obstacle edge{.shape = t::Bump{.start_m = 29.7, .height_m = .05,
                                      .bump_length_m = .3},
                      .surface = "wet_wood", .surface_blend_m = .2};
     off_track.obstacles.push_back(edge);

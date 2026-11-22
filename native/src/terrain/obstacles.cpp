@@ -55,12 +55,51 @@ template<class T> auto make_nodes(const T& o) {
     if(peak>0.) for(double& value:shaped) value=value*(o.amplitude_m/peak);
     return std::pair{std::move(x),std::move(shaped)};
 }
+// ISO 8608 harmonic synthesis: M cosine modes with NumpyRng phases uniform on
+// [0, 2*pi) and amplitudes ~ n^(-waviness/2) over the spatial-frequency band
+// [max(1/section_length, 0.2), 1/(2*correlation_length)] cycles/metre. The
+// edge taper matches make_nodes; the untapered interior RMS — not the peak —
+// is normalized to amplitude_m/3 so the level is section-length invariant.
+std::pair<std::vector<double>,std::vector<double>> iso8608_nodes(const RoadRoughness& o) {
+    detail::positive(o.correlation_length_m,"RoadRoughness.correlation_length_m");
+    detail::nonnegative(o.section_length_m,"RoadRoughness.section_length_m");
+    if(o.spectrum!="gaussian"&&o.spectrum!="iso8608")throw std::invalid_argument("RoadRoughness.spectrum: expected 'gaussian' or 'iso8608'");
+    detail::finite(o.waviness,"RoadRoughness.waviness");
+    if(o.waviness<1.||o.waviness>4.)throw std::invalid_argument("RoadRoughness.waviness must lie in [1,4]");
+    const double spacing=o.correlation_length_m/2.;
+    const auto n=detail::count(std::max(std::ceil(o.section_length_m/spacing)+1.,4.),"RoadRoughness.nodes");
+    auto x=detail::gd::np_linspace(0.,o.section_length_m,n);
+    constexpr std::size_t modes=64;
+    const double n_min=std::max(o.section_length_m>0.?1./o.section_length_m:0.,0.2);
+    const double n_max=1./(2.*o.correlation_length_m);
+    const double dn=n_max>n_min?(n_max-n_min)/static_cast<double>(modes-1):0.;
+    bike::random::NumpyRng rng(o.seed,{});
+    std::vector<double> freq(modes),phase(modes),weight(modes);
+    rng.uniform(0.,2.*pi,phase);
+    for(std::size_t m=0;m<modes;++m){freq[m]=n_min+static_cast<double>(m)*dn;weight[m]=std::pow(freq[m],-.5*o.waviness);}
+    const double taper_len=std::min(o.correlation_length_m*2.,o.section_length_m/2.);
+    std::vector<double> z(n,0.);
+    for(std::size_t i=0;i<n;++i) {
+        double sum=0.;
+        for(std::size_t m=0;m<modes;++m)sum+=weight[m]*numeric::np_cos(2.*pi*freq[m]*x[i]+phase[m]);
+        double taper=1.;
+        if(x[i]<taper_len)taper=.5*(1.-numeric::np_cos(pi*x[i]/taper_len));
+        if(x[i]>o.section_length_m-taper_len)taper=.5*(1.-numeric::np_cos(pi*(o.section_length_m-x[i])/taper_len));
+        z[i]=sum*taper;
+    }
+    double sumsq=0.;std::size_t interior=0;
+    for(std::size_t i=0;i<n;++i)if(x[i]>=taper_len&&x[i]<=o.section_length_m-taper_len){sumsq+=z[i]*z[i];++interior;}
+    if(interior==0){for(double const v:z)sumsq+=v*v;interior=n;}
+    const double rms=interior>0?std::sqrt(sumsq/static_cast<double>(interior)):0.;
+    if(rms>0.)for(double& v:z)v*=o.amplitude_m/3./rms;
+    return {std::move(x),std::move(z)};
+}
 template<class T> double length(const T& s) {
     if constexpr(std::is_same_v<T,SquareEdge>) return s.ledge_length_m;
     else if constexpr(std::is_same_v<T,Pothole> || std::is_same_v<T,SlopedPothole> || std::is_same_v<T,BowlPothole>) return s.hole_length_m;
     else if constexpr(std::is_same_v<T,Washboard>) return s.wavelength_m*static_cast<double>(s.n_waves);
     else if constexpr(std::is_same_v<T,GOut>) return s.dip_length_m;
-    else if constexpr(std::is_same_v<T,Drop>) return s.ramp_m;
+    else if constexpr(std::is_same_v<T,Drop>||std::is_same_v<T,StepUp>) return s.ramp_m;
     else if constexpr(std::is_same_v<T,Kicker>) return s.ramp_m+s.gap_m+s.landing_m;
     else if constexpr(std::is_same_v<T,Roots> || faceted<T>) return s.section_length_m;
     else if constexpr(std::is_same_v<T,Bump>) return s.bump_length_m;
@@ -95,9 +134,13 @@ std::vector<double> Roots::bump_centres_m() const {
     return out;
 }
 std::pair<std::vector<double>,std::vector<double>> RockGarden::nodes() const { return make_nodes(*this); }
-std::pair<std::vector<double>,std::vector<double>> RoadRoughness::nodes() const { return make_nodes(*this); }
+std::pair<std::vector<double>,std::vector<double>> RoadRoughness::nodes() const {
+    if(spectrum=="gaussian")return make_nodes(*this);
+    if(spectrum=="iso8608")return iso8608_nodes(*this);
+    throw std::invalid_argument("RoadRoughness.spectrum: expected 'gaussian' or 'iso8608'");
+}
 std::string_view Obstacle::kind() const {
-    constexpr std::array<std::string_view,14> names{"SquareEdge","Pothole","Washboard","GOut","Drop","Kicker","Roots","RockGarden","Bump","TrapezoidBump","SlopedPothole","BowlPothole","RoadRoughness","SteppedClimb"};
+    constexpr std::array<std::string_view,15> names{"SquareEdge","Pothole","Washboard","GOut","Drop","Kicker","Roots","RockGarden","Bump","TrapezoidBump","SlopedPothole","BowlPothole","RoadRoughness","SteppedClimb","StepUp"};
     return names.at(shape.index());
 }
 double Obstacle::start_m() const { return std::visit([](const auto& s){return s.start_m;},shape); }
@@ -109,6 +152,7 @@ double Obstacle::datum_shift_m() const {
         using T=std::decay_t<decltype(s)>;
         if constexpr(std::is_same_v<T,Drop>) return -s.height_m;
         else if constexpr(std::is_same_v<T,Kicker>) return -s.landing_drop_m();
+        else if constexpr(std::is_same_v<T,StepUp>) return s.height_m;
         else if constexpr(std::is_same_v<T,SteppedClimb>) {
             double total=0.,previous=0.;
             for(const auto& step:s.steps) { const double g=step[0]/100.; total+=s.transition_m*(previous+g)*.5+step[1]*g; previous=g; }
@@ -133,6 +177,12 @@ void Obstacle::validate() const {
         if constexpr(std::is_same_v<T,Roots>) { detail::finite(s.width_m,"Roots.width_m"); detail::nonnegative(s.jitter,"Roots.jitter"); if(s.n_bumps<=0) throw std::invalid_argument("Roots.n_bumps must be positive"); }
         if constexpr(std::is_same_v<T,Washboard>) { detail::positive(s.wavelength_m,"Washboard.wavelength_m"); if(s.n_waves<0) throw std::invalid_argument("Washboard.n_waves must be nonnegative"); }
         if constexpr(std::is_same_v<T,SteppedClimb>) { detail::finite(s.transition_m,"SteppedClimb.transition_m"); for(const auto& step:s.steps) {detail::finite(step[0],"SteppedClimb.grade_pct");detail::finite(step[1],"SteppedClimb.length_m");} }
+        if constexpr(std::is_same_v<T,StepUp>) { detail::positive(s.height_m,"StepUp.height_m"); detail::positive(s.ramp_m,"StepUp.ramp_m"); }
+        if constexpr(std::is_same_v<T,RoadRoughness>) {
+            if(s.spectrum!="gaussian"&&s.spectrum!="iso8608")throw std::invalid_argument("RoadRoughness.spectrum: expected 'gaussian' or 'iso8608'");
+            detail::finite(s.waviness,"RoadRoughness.waviness");
+            if(s.waviness<1.||s.waviness>4.)throw std::invalid_argument("RoadRoughness.waviness must lie in [1,4]");
+        }
     },shape);
 }
 std::vector<double> Obstacle::elevation(std::span<const double> points) const {
@@ -186,6 +236,10 @@ std::vector<double> Obstacle::elevation(std::span<const double> points) const {
                     const double edge=s.effective_edge_m(); double z=-s.depth_m;
                     if(edge>0.) { if(x<edge) z=-s.depth_m*(x/edge); if(x>s.hole_length_m-edge) z=-s.depth_m*((s.hole_length_m-x)/edge); }
                     out[i]=detail::gd::np_clip_scalar(z,-s.depth_m,0.);
+                } else if constexpr(std::is_same_v<T,StepUp>) {
+                    // C1 cosine ramp on [0, ramp_m); the deck past the ramp is
+                    // carried by datum_shift_m, so the local profile holds h.
+                    if(s.ramp_m>0.)out[i]=x<s.ramp_m?s.height_m*.5*(1.-numeric::np_cos(pi*x/s.ramp_m)):s.height_m;
                 }
             }
         }

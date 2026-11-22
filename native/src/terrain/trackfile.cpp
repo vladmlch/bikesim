@@ -180,6 +180,7 @@ Obstacle resolve(const Value& entry,std::size_t index){
     if(type=="roots")return {.shape=Roots{}};
     if(type=="rock_garden")return {.shape=RockGarden{}};
     if(type=="roughness")return {.shape=RoadRoughness{}};
+    if(type=="step_up")return {.shape=StepUp{}};
     throw TrackFileError(where+": unknown type '"+type+"'");
 }
 std::string_view length_field(const Obstacle& obstacle){
@@ -190,6 +191,7 @@ std::string_view length_field(const Obstacle& obstacle){
         else if constexpr(std::is_same_v<T,SquareEdge>)return "ledge_length_m";
         else if constexpr(std::is_same_v<T,GOut>)return "dip_length_m";
         else if constexpr(std::is_same_v<T,Roots>||std::is_same_v<T,RockGarden>||std::is_same_v<T,RoadRoughness>)return "section_length_m";
+        else if constexpr(std::is_same_v<T,StepUp>)return "ramp_m";
         else return "";
     },obstacle.shape);
 }
@@ -197,9 +199,11 @@ Value obstacle_fields(const Obstacle& obstacle,bool identity){
     Value::Object out;
     if(identity)out.emplace_back("class",Value{std::string(obstacle.kind())});
     else{
+        if(std::holds_alternative<SteppedClimb>(obstacle.shape))throw TrackFileError("obstacle type SteppedClimb has no track-file representation");
         const auto index=obstacle.shape.index();
-        constexpr std::array<std::string_view,13> tags{"square_edge","pothole","washboard","g_out","drop","kicker","roots","rock_garden","bump","bump","pothole","pothole","roughness"};
-        if(index>=tags.size())throw TrackFileError("obstacle type SteppedClimb has no track-file representation");
+        // tags[13] is unreachable: SteppedClimb threw above. StepUp is index 14.
+        constexpr std::array<std::string_view,15> tags{"square_edge","pothole","washboard","g_out","drop","kicker","roots","rock_garden","bump","bump","pothole","pothole","roughness","","step_up"};
+        if(index>=tags.size())throw TrackFileError("obstacle type "+std::string(obstacle.kind())+" has no track-file representation");
         out.emplace_back("type",Value{std::string(tags[index])});
         if(index==1||index==10||index==11)out.emplace_back("edge",Value{std::string(index==1?"sharp":index==10?"sloped":"bowl")});
         if(index==8||index==9)out.emplace_back("shape",Value{std::string(index==8?"cosine":"trapezoid")});
@@ -212,10 +216,11 @@ Value obstacle_fields(const Obstacle& obstacle,bool identity){
         else if constexpr(std::is_same_v<T,Pothole>||std::is_same_v<T,BowlPothole>){PUT(depth_m);PUT(hole_length_m);}
         else if constexpr(std::is_same_v<T,Washboard>){PUT(amplitude_m);PUT(wavelength_m);PUT(n_waves);}
         else if constexpr(std::is_same_v<T,GOut>){PUT(depth_m);PUT(dip_length_m);}
-        else if constexpr(std::is_same_v<T,Drop>){PUT(height_m);PUT(ramp_m);}
+        else if constexpr(std::is_same_v<T,Drop>||std::is_same_v<T,StepUp>){PUT(height_m);PUT(ramp_m);}
         else if constexpr(std::is_same_v<T,Kicker>){PUT(height_m);PUT(ramp_m);PUT(gap_m);PUT(landing_angle_deg);PUT(landing_m);}
         else if constexpr(std::is_same_v<T,Roots>){PUT(n_bumps);PUT(height_m);PUT(width_m);PUT(section_length_m);PUT(jitter);out.emplace_back("seed",detail::seed_value(s.seed));}
-        else if constexpr(std::is_same_v<T,RockGarden>||std::is_same_v<T,RoadRoughness>){PUT(section_length_m);PUT(amplitude_m);PUT(correlation_length_m);out.emplace_back("seed",detail::seed_value(s.seed));}
+        else if constexpr(std::is_same_v<T,RockGarden>){PUT(section_length_m);PUT(amplitude_m);PUT(correlation_length_m);out.emplace_back("seed",detail::seed_value(s.seed));}
+        else if constexpr(std::is_same_v<T,RoadRoughness>){PUT(section_length_m);PUT(amplitude_m);PUT(correlation_length_m);if(s.spectrum!="gaussian")out.emplace_back("spectrum",Value{s.spectrum});if(s.waviness!=2.0)out.emplace_back("waviness",detail::number(s.waviness));out.emplace_back("seed",detail::seed_value(s.seed));}
         else if constexpr(std::is_same_v<T,Bump>){PUT(height_m);PUT(bump_length_m);}
         else if constexpr(std::is_same_v<T,TrapezoidBump>){PUT(height_m);PUT(ramp_m);PUT(plateau_m);}
         else if constexpr(std::is_same_v<T,SlopedPothole>){PUT(depth_m);PUT(hole_length_m);PUT(edge_m);}
@@ -320,7 +325,7 @@ Obstacle obstacle_from_dict(const Value& entry,std::size_t index){
             READ(amplitude_m) READ(wavelength_m) READ(n_waves) READ(dip_length_m) READ(ramp_m)
             READ(gap_m) READ(landing_angle_deg) READ(landing_m) READ(n_bumps) READ(width_m)
             READ(section_length_m) READ(jitter) READ(correlation_length_m) READ(bump_length_m)
-            READ(plateau_m) READ(edge_m)
+            READ(plateau_m) READ(edge_m) READ(spectrum) READ(waviness)
 #undef READ
             if constexpr(requires{s.seed;})if(target=="seed"){s.seed=seed_of(value,std::format("{}.seed",where));known=true;}
         },result.shape);
@@ -383,10 +388,10 @@ std::vector<Obstacle> carve_roughness(std::vector<Obstacle> obstacles){
         for(const auto& p:pieces)if(p.b-p.a>=.5){
             double length=rounded(p.b-p.a,6);bool integer_length=p.integer_a&&p.integer_b;
             while(p.a+length>p.b){length=rounded(length-1e-6,6);integer_length=false;}
-            Obstacle part{.shape=RoadRoughness{.start_m=p.a,.section_length_m=length,.amplitude_m=seg.amplitude_m,.correlation_length_m=seg.correlation_length_m,.seed=p.seed}};
+            Obstacle part{.shape=RoadRoughness{.start_m=p.a,.section_length_m=length,.amplitude_m=seg.amplitude_m,.correlation_length_m=seg.correlation_length_m,.seed=p.seed,.spectrum=seg.spectrum,.waviness=seg.waviness}};
             if(p.integer_a)part.integer_scalar_fields.emplace_back("start_m");
             if(integer_length)part.integer_scalar_fields.emplace_back("section_length_m");
-            for(auto name:{"amplitude_m","correlation_length_m"})if(integer_field(base,name))part.integer_scalar_fields.emplace_back(name);
+            for(auto name:{"amplitude_m","correlation_length_m","waviness"})if(integer_field(base,name))part.integer_scalar_fields.emplace_back(name);
             carved.push_back(std::move(part));
         }
     }

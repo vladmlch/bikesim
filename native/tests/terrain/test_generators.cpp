@@ -9,7 +9,11 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <numbers>
+#include <span>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace {
 namespace t=bike::terrain;
@@ -178,6 +182,100 @@ void materials_and_contacts(){
     bt::require(t::concave_span_deg(t::RockGarden{.start_m=0.,.section_length_m=8.,.amplitude_m=.07,.correlation_length_m=.45,.seed="5"})>=20.,"source dirty rock seed detected");
     bt::require(t::concave_span_deg(t::RockGarden{.start_m=0.,.section_length_m=8.,.amplitude_m=.07,.correlation_length_m=.45,.seed="0"})<20.,"source clean rock seed accepted");
 }
+void step_up_and_iso8608(){
+    // StepUp: a C1 cosine ramp that permanently lifts the datum, unlike the
+    // two-sided SquareEdge block.
+    const t::Obstacle step{.shape=t::StepUp{.start_m=5.,.height_m=.08,.ramp_m=.40}};
+    bt::require(step.kind()==std::string_view("StepUp"),"step up reports its own kind");
+    exact(step.length_m(),.40,"step up length is its ramp");
+    bt::require(std::abs(step.end_m()-5.40)<1e-12,"step up end station");
+    exact(step.datum_shift_m(),.08,"step up lifts the downstream datum");
+    const auto ez=step.elevation(std::array{0.,.1,.2,.3,.4,.5,1.});
+    exact(ez[0],0.,"step foot is flush with the approach");
+    bt::require(std::abs(ez[1]-.011716)<1e-6,"step ramp quarter point");
+    bt::require(std::abs(ez[2]-.04)<1e-12,"step ramp midpoint is half height");
+    bt::require(std::abs(ez[3]-.068284)<1e-6,"step ramp three-quarter point");
+    bt::require(std::abs(ez[4]-.08)<1e-12&&std::abs(ez[5]-.08)<1e-12&&std::abs(ez[6]-.08)<1e-12,"step deck holds past the ramp");
+    bt::invalid([]{const t::Obstacle o{.shape=t::StepUp{.start_m=0.,.height_m=0.,.ramp_m=.4}};o.validate();});
+    bt::invalid([]{const t::Obstacle o{.shape=t::StepUp{.start_m=0.,.height_m=.06,.ramp_m=0.}};o.validate();});
+    bt::invalid([]{const t::Obstacle o{.shape=t::StepUp{.start_m=0.,.height_m=.06,.ramp_m=-.1}};o.validate();});
+    auto track=t::flat(20.);track.obstacles={{.shape=t::StepUp{.start_m=5.,.height_m=.08,.ramp_m=.40}}};
+    const auto pz=t::build_profile(track,std::array{4.99,5.,5.2,5.4,6.});
+    exact(pz[0],0.,"approach before the step stays on datum");
+    exact(pz[1],0.,"step foot is flush in the profile");
+    bt::require(std::abs(pz[2]-.04)<1e-12,"profile midpoint of the ramp");
+    bt::require(std::abs(pz[3]-.08)<1e-12&&std::abs(pz[4]-.08)<1e-12,"deck lifted by datum and stays lifted");
+    exact(track.datum_shift_m(),.08,"track datum picks up the step lift");
+    bt::require(track.markers().size()==1&&track.markers().front().second=="StepUp@5m","step marker label");
+    // Curvature gate: ramp_m >= pi*sqrt(0.5*height*radius).
+    auto gentle=t::flat(20.);gentle.obstacles={{.shape=t::StepUp{.start_m=5.,.height_m=.08,.ramp_m=.45}}};
+    bt::require(t::single_contact_hazards(gentle,t::FRONT_WHEEL_RADIUS_M).empty(),"gentle step ramp passes the wheel curvature gate");
+    auto sharp=t::flat(20.);sharp.obstacles={{.shape=t::StepUp{.start_m=5.,.height_m=.08,.ramp_m=.15}}};
+    const auto hazards=t::single_contact_hazards(sharp,t::FRONT_WHEEL_RADIUS_M);
+    bt::require(hazards.size()==1&&hazards.front().starts_with("StepUp@5m"),"sharp step ramp reports a hazard");
+    // SteppedClimb curvature replaces the unconditional rejection.
+    bt::require(t::single_contact_hazards(t::climb_steps()).empty(),"gentle stepped transitions pass the curvature gate");
+    auto tight=t::flat(120.);tight.obstacles={{.shape=t::SteppedClimb{.start_m=15.,.steps={{5.,15.},{20.,15.}},.transition_m=.05}}};
+    bt::require(!t::single_contact_hazards(tight).empty(),"tight stepped transition reports a hazard");
+    auto abrupt=t::flat(120.);abrupt.obstacles={{.shape=t::SteppedClimb{.start_m=15.,.steps={{5.,15.},{10.,15.}},.transition_m=0.}}};
+    bt::require(!t::single_contact_hazards(abrupt).empty(),"zero-length stepped transition reports a hazard");
+}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) x/z spans and lo/hi bounds mirror the sampled-profile call shape
+double interior_rms(std::span<const double> x,std::span<const double> z,double lo,double hi){
+    double sum=0.;std::size_t n=0;
+    for(std::size_t i=0;i<x.size();++i)if(x[i]>=lo&&x[i]<=hi){sum+=z[i]*z[i];++n;}
+    return n>0?std::sqrt(sum/static_cast<double>(n)):std::numeric_limits<double>::quiet_NaN();
+}
+// NOLINTNEXTLINE(bugprone-easily-swappable-parameters) x/z spans mirror the sampled-profile call shape
+double psd_loglog_slope(std::span<const double> x,std::span<const double> z){
+    // Hann-windowed direct DFT at log-spaced frequencies inside the excited
+    // band; least-squares slope of log10(power) vs log10(f).
+    const std::size_t n=z.size();double mean=0.;
+    for(double const v:z)mean+=v;
+    mean/=static_cast<double>(n);
+    std::vector<double> w(n);for(std::size_t i=0;i<n;++i)w[i]=.5*(1.-std::cos(2.*std::numbers::pi*static_cast<double>(i)/static_cast<double>(n-1)));
+    constexpr int bins=24;constexpr double f_lo=.3,f_hi=2.2;
+    double sx=0.,sy=0.,sxx=0.,sxy=0.;
+    for(int k=0;k<bins;++k){
+        const double f=f_lo*std::pow(f_hi/f_lo,static_cast<double>(k)/static_cast<double>(bins-1));
+        double re=0.,im=0.;
+        for(std::size_t j=0;j<n;++j){const double a=-2.*std::numbers::pi*f*x[j];const double d=(z[j]-mean)*w[j];re+=d*std::cos(a);im+=d*std::sin(a);}
+        const double lx=std::log10(f),ly=std::log10(re*re+im*im);
+        sx+=lx;sy+=ly;sxx+=lx*lx;sxy+=lx*ly;
+    }
+    const double nf=static_cast<double>(bins);
+    return (nf*sxy-sx*sy)/(nf*sxx-sx*sx);
+}
+void iso8608_roughness(){
+    const t::RoadRoughness probe{.start_m=0.,.section_length_m=40.,.amplitude_m=.03,.correlation_length_m=.20,.seed="0",.spectrum="iso8608",.waviness=2.};
+    bt::require(probe.spectrum=="iso8608"&&probe.waviness==2.,"iso8608 fields on the record");
+    for(const double length:{20.,40.,80.}){
+        const t::RoadRoughness rough{.start_m=0.,.section_length_m=length,.amplitude_m=.03,.correlation_length_m=.20,.seed="0",.spectrum="iso8608",.waviness=2.};
+        const auto [x,z]=rough.nodes();
+        bt::require(x.size()==z.size()&&x.size()>2,"iso8608 node grid");
+        const double hi=std::min(35.,length-5.);
+        const double rms=interior_rms(x,z,5.,hi);
+        bt::require(std::abs(rms-.01)<=.0025,"iso8608 interior RMS is length invariant on a "+std::to_string(length)+" m section");
+    }
+    const t::RoadRoughness wide{.start_m=0.,.section_length_m=80.,.amplitude_m=.03,.correlation_length_m=.20,.seed="0",.spectrum="iso8608",.waviness=2.};
+    const auto [x,z]=wide.nodes();
+    const auto repeat=wide.nodes();
+    bt::require(repeat.second==z,"iso8608 synthesis is seed deterministic");
+    std::vector<double> xs,zs;for(std::size_t i=0;i<x.size();++i)if(x[i]>=5.&&x[i]<=35.){xs.push_back(x[i]);zs.push_back(z[i]);}
+    const double slope=psd_loglog_slope(xs,zs);
+    bt::require(slope>=-2.5&&slope<=-1.5,"iso8608 PSD log-log slope tracks waviness");
+    const t::RoadRoughness narrow{.start_m=0.,.section_length_m=20.,.amplitude_m=.03,.correlation_length_m=.20,.seed="0",.spectrum="iso8608",.waviness=2.};
+    const auto [nx,nz]=narrow.nodes();
+    std::vector<double> nxs,nzs;for(std::size_t i=0;i<nx.size();++i)if(nx[i]>=5.&&nx[i]<=15.){nxs.push_back(nx[i]);nzs.push_back(nz[i]);}
+    const double narrow_slope=psd_loglog_slope(nxs,nzs);
+    bt::require(narrow_slope>=-2.5&&narrow_slope<=-1.5,"iso8608 PSD slope holds on a 20 m section");
+    const t::RoadRoughness gauss{.start_m=0.,.section_length_m=10.,.amplitude_m=.003,.correlation_length_m=.2,.seed="0"};
+    bt::require(gauss.spectrum=="gaussian"&&gauss.waviness==2.,"gaussian defaults preserved");
+    bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.spectrum="bogus"}};o.validate();});
+    bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.spectrum="iso8608",.waviness=.5}};o.validate();});
+    bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.waviness=4.5}};o.validate();});
+    bt::invalid([]{const t::Obstacle o{.shape=t::RoadRoughness{.spectrum="iso8608",.waviness=.5}};(void)o.elevation(std::array{0.});});
+}
 void immutable_profiles(){
     for(const auto& name:t::available_presets()){
         const auto stem="tracks/preset_"+name;
@@ -190,4 +288,4 @@ void immutable_profiles(){
     }
 }
 }
-int main(){return bt::run([]{profile_boundaries();grade_and_field();obstacles_and_wheelpath();materials_and_contacts();immutable_profiles();});}
+int main(){return bt::run([]{profile_boundaries();grade_and_field();obstacles_and_wheelpath();materials_and_contacts();step_up_and_iso8608();iso8608_roughness();immutable_profiles();});}

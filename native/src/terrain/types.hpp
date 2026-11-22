@@ -107,6 +107,11 @@ struct BowlPothole { double start_m=0., depth_m=.080, hole_length_m=.500; };
 struct RoadRoughness {
     double start_m=0., section_length_m=10., amplitude_m=.003, correlation_length_m=.200;
     std::string seed="0";
+    // "gaussian" keeps the legacy smoothed-noise spectrum bitwise identical;
+    // "iso8608" synthesizes a harmonic sum with a power-law PSD instead.
+    // Declared after seed so the positional five-argument aggregate init in
+    // terrain/alpine.cpp::faceted binds identically for RockGarden/RoadRoughness.
+    std::string spectrum="gaussian"; double waviness=2.0;
     [[nodiscard]] std::pair<std::vector<double>,std::vector<double>> nodes() const;
 };
 struct SteppedClimb {
@@ -114,11 +119,14 @@ struct SteppedClimb {
     std::vector<Point> steps{{5.,15.},{10.,15.},{15.,15.},{20.,15.},{25.,15.}};
     double transition_m=3.;
 };
+// True step-up ledge: a C1 cosine ramp that permanently lifts the datum by
+// height_m (the road stays on the new level; no rear drop like SquareEdge).
+struct StepUp { double start_m=0., height_m=.060, ramp_m=.120; };
 
 struct Obstacle {
     using Shape = std::variant<SquareEdge,Pothole,Washboard,GOut,Drop,Kicker,Roots,
                                RockGarden,Bump,TrapezoidBump,SlopedPothole,
-                               BowlPothole,RoadRoughness,SteppedClimb>;
+                               BowlPothole,RoadRoughness,SteppedClimb,StepUp>;
     Shape shape;
     // Source dataclasses retain authored integer tokens in geometric fields.
     // This preserves their source-compatible TOML rendering after a typed read.

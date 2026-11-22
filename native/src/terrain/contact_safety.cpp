@@ -40,6 +40,17 @@ std::vector<std::string> single_contact_hazards(const TrackSpec& track,double ra
         }else if constexpr(std::is_same_v<T,BowlPothole>||std::is_same_v<T,GOut>){
             const double limit=max_bowl_depth_m(obstacle.length_m(),radius);
             if(o.depth_m>limit+1e-9)out.push_back(obstacle.label()+": depth "+detail::gd::py_fixed(o.depth_m,3)+" m > "+detail::gd::py_fixed(limit,3)+" m");
+        }else if constexpr(std::is_same_v<T,StepUp>){
+            // z''(0) = pi^2*h/(2*ramp^2) <= 1/radius  <=>  ramp >= pi*sqrt(h*radius/2)
+            const double need=std::numbers::pi*std::sqrt(.5*o.height_m*radius);
+            if(o.ramp_m<need-1e-9)out.push_back(obstacle.label()+": ramp "+detail::gd::py_fixed(o.ramp_m,3)+" m < "+detail::gd::py_fixed(need,3)+" m");
+        }else if constexpr(std::is_same_v<T,SteppedClimb>){
+            // Worst quintic-transition curvature 3*|dg|/(2*tlen) <= 1/radius,
+            // dg the dimensionless grade change step[i]/100 - previous.
+            double dg_max=0.,previous=0.;
+            for(const auto& step:o.steps){const double g=step[0]/100.;dg_max=std::max(dg_max,std::abs(g-previous));previous=g;}
+            if(o.transition_m<=0.||1.5*dg_max/o.transition_m>1./radius+1e-9)
+                out.push_back(obstacle.label()+": stepped transition cannot be ridden by a "+detail::gd::py_fixed(radius,3)+" m wheel");
         }else out.push_back(obstacle.label()+": "+std::string(obstacle.kind())+" has faces the 2D tyre cannot ride");
     },obstacle.shape);
     return out;

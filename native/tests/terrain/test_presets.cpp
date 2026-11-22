@@ -4,9 +4,12 @@
 #include "terrain/trackfile.hpp"
 #include "io/hash.hpp"
 #include "io/json.hpp"
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <string>
+#include <utility>
+#include <vector>
 
 namespace {
 namespace t=bike::terrain;namespace io=bike::io;
@@ -118,11 +121,60 @@ void generators(){
     const auto safe=t::alpine_scree();bt::require(t::single_contact_hazards(safe).empty(),"default alpine obeys one-support geometry");
     bt::require(!t::single_contact_hazards(t::alpine_rocky()).empty(),"rocky preset preserves multi-contact opt-in");
 }
+void spectral_serialization(){
+    const auto step=t::track_from_dict(toml("name='step'\nlength_m=20\n[[obstacles]]\ntype='step_up'\nstart_m=5.0\nheight_m=0.08\nramp_m=0.40\n"));
+    const auto& ledge=std::get<t::StepUp>(step.obstacles[0].shape);
+    bt::require(ledge.start_m==5.&&ledge.height_m==0.08&&ledge.ramp_m==0.4,"step_up fields parse from TOML");
+    const auto step_dump=t::dump_track(step);
+    bt::require(step_dump.find("type = \"step_up\"")!=std::string::npos,"step_up dumps its type tag");
+    bt::require(t::dump_track(t::track_from_dict(toml(step_dump)))==step_dump,"step_up TOML round trip");
+    bt::require(io::canonical_json(t::identity_value(step)).find("StepUp")!=std::string::npos,"step up enters track identity");
+    bt::require(t::dump_track(step).find("ramp_m = 0.4")!=std::string::npos,"step up dumps its ramp length");
+    const auto rough=t::track_from_dict(toml("name='rough'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\namplitude_m=0.03\ncorrelation_length_m=0.2\nspectrum='iso8608'\nwaviness=2.5\nseed=7\n"));
+    const auto& rr=std::get<t::RoadRoughness>(rough.obstacles[0].shape);
+    bt::require(rr.spectrum=="iso8608"&&rr.waviness==2.5,"iso8608 spectrum fields parse");
+    const auto rough_dump=t::dump_track(rough);
+    bt::require(rough_dump.find("spectrum = \"iso8608\"")!=std::string::npos&&rough_dump.find("waviness = 2.5")!=std::string::npos,"non-default spectrum fields dump");
+    bt::require(t::dump_track(t::track_from_dict(toml(rough_dump)))==rough_dump,"iso8608 roughness TOML round trip");
+    bt::require(io::canonical_json(t::identity_value(rough)).find("iso8608")!=std::string::npos,"iso8608 spectrum enters track identity");
+    const auto plain=t::track_from_dict(toml("name='plain'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\namplitude_m=0.03\ncorrelation_length_m=0.2\nseed=7\n"));
+    const auto plain_dump=t::dump_track(plain);
+    bt::require(plain_dump.find("spectrum")==std::string::npos&&plain_dump.find("waviness")==std::string::npos,"default gaussian fields omitted from TOML");
+    const auto plain_identity=io::canonical_json(t::identity_value(plain));
+    bt::require(plain_identity.find("spectrum")==std::string::npos&&plain_identity.find("waviness")==std::string::npos,"default gaussian fields omitted from identity");
+    const auto w2=t::track_from_dict(toml("name='w2'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\namplitude_m=0.03\ncorrelation_length_m=0.2\nspectrum='iso8608'\nseed=7\n"));
+    const auto w2_dump=t::dump_track(w2);
+    bt::require(w2_dump.find("spectrum = \"iso8608\"")!=std::string::npos&&w2_dump.find("waviness")==std::string::npos,"waviness 2.0 omitted while spectrum kept");
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='bad'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\nspectrum='bogus'\nseed=7\n"));});
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='bad'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\nwaviness=0.5\nseed=7\n"));});
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='bad'\nlength_m=60\n[[obstacles]]\ntype='roughness'\nstart_m=4\nsection_length_m=40\nwaviness=4.5\nseed=7\n"));});
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='bad'\nlength_m=20\n[[obstacles]]\ntype='step_up'\nstart_m=5\nheight_m=0.08\nramp_m=0.4\nbogus=1\n"));});
+    bt::invalid([&]{(void)t::track_from_dict(toml("name='bad'\nlength_m=20\n[[obstacles]]\ntype='step_up'\nstart_m=5\nheight_m=0.08\nramp_m=0.4\nspectrum='iso8608'\n"));});
+}
 void examples_and_oracles(){
     auto root=bt::fixture("tracks/flat.toml");for(int i=0;i<4;++i)root=root.parent_path();
+    // Optional spectral fields must leave every shipped track's canonical
+    // identity bitwise identical; the digests below were captured on the
+    // pre-change serialization and pin that contract.
+    const std::array<std::pair<std::string_view,std::string_view>,5> identity_digests{{
+        {"rough_uphill","3c518b7aa48716c2c7731c18483423c7fff883bf659250d0643583dac4de3d78"},
+        {"rough_uphill_extreme","a8c51fb261b1866b44fca5895fcb42a16d413b9c8e438140248a3d6e894d3d4f"},
+        {"rough_uphill_savage","1158c7a440363d33acdaae059e9962b62cb2a5a5389dd80352f93bb30ff046be"},
+        {"alpine_scree","03dcdfa597e7511903ae22fb613c1a1998fd358e0af8d6767d015dc7b214dcf6"},
+        {"alpine_rocky","1d5cd4059995f4b0388e4af0ce850765ffd092ea30e8122b04fac772c5d91f7a"}}};
+    std::vector<std::pair<std::string_view,std::string>> shipped;
     for(const auto name:{"rough_uphill","rough_uphill_extreme","rough_uphill_savage","alpine_scree","alpine_rocky"}){
         const auto track=t::load_track(root/"examples"/"research"/(std::string(name)+".toml"));
         bt::require(t::dump_track(t::track_from_dict(toml(t::dump_track(track))))==t::dump_track(track),"all authored example tracks roundtrip");
+        const auto identity=io::canonical_json(t::identity_value(track));
+        bt::require(identity.find("spectrum")==std::string::npos&&identity.find("waviness")==std::string::npos,"shipped track "+std::string(name)+" identity carries no spectral keys");
+        shipped.emplace_back(name,hash(identity));
+    }
+    std::string actuals;for(const auto& [n,d]:shipped){actuals+=n;actuals+='=';actuals+=d;actuals+=';';}
+    for(const auto& [name,digest]:shipped){
+        const auto expected=std::ranges::find_if(identity_digests,[name](const auto& e){return e.first==name;});
+        std::string message="shipped track ";message+=name;message+=" identity digest ";message+=digest;message+="; all=";message+=actuals;
+        bt::require(expected!=identity_digests.end()&&digest==expected->second,message);
     }
     
     bt::golden_text("tracks/rough_uphill_savage.canonical.toml",t::dump_track(t::load_track(bt::fixture("tracks/rough_uphill_savage.toml"))));
@@ -136,4 +188,4 @@ void examples_and_oracles(){
     bt::invalid([]{(void)t::load_track(bt::fixture("tracks/unknown_obstacle.toml"));});bt::invalid([]{(void)t::load_track(bt::fixture("tracks/degenerate.toml"));});
 }
 }
-int main(){return bt::run([]{schemas();carving_and_placement();integer_seeds();generators();examples_and_oracles();});}
+int main(){return bt::run([]{schemas();carving_and_placement();integer_seeds();generators();spectral_serialization();examples_and_oracles();});}

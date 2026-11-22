@@ -7,6 +7,7 @@
 #else
 #include "batch_step.hpp"
 #include "sp3_autonomous_step.hpp"
+#include "sp4_closed_loop_step.hpp"
 #endif
 
 #include <mujoco/mujoco.h>
@@ -14,7 +15,13 @@
 #import <Metal/Metal.h>
 
 #include "model_assets.hpp"
+#include "runner_spindle_setup.hpp"
 #include "runner_tyre_setup.hpp"
+#if defined(BIKE_GPU_STANDALONE_RUNNER)
+#include "standalone_mujoco_shim.hpp"
+#else
+#include "../engine_call.hpp"
+#endif
 namespace assets = bike::gpu::assets;
 
 #include <algorithm>
@@ -117,9 +124,11 @@ std::string build_msl_shader_source(const std::string &gpu_src_dir) {
         "../physics_core/shifting.hpp",
         "../physics_core/pedaling.hpp",
         "../physics_core/assist.hpp",
+        "../physics_core/spindle_m2k2.hpp",
         "common.hpp",
         "batch_step.hpp",
         "sp3_autonomous_step.hpp",
+        "sp4_closed_loop_step.hpp",
     };
 
     std::string combined = R"MSL(
@@ -1050,6 +1059,833 @@ kernel void bike_gpu_sp3_post_solve_metal_kernel(
         contact_efc_address_batch, has_contact_dim, contact_dim_batch);
 }
 )MSL";
+    combined += R"MSL(
+inline void bike_metal_sp4_init_impl(
+    int w,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    device bike::gpu::GpuSp4WorldState *sp4_states,
+    int has_world_states,
+    device bike::gpu::GpuWorldState *world_states,
+    int has_qpos,
+    device const float *qpos_batch,
+    float init_grade,
+    int ntendon,
+    int has_tendon_range,
+    device float *tendon_range_batch,
+    int tendon_range_world_stride
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx, ntendon) ||
+        configs == nullptr || sp3_states == nullptr || sp4_states == nullptr) {
+        return;
+    }
+    const long w64 = static_cast<long>(w);
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device bike::gpu::GpuWorldState *ws_w =
+        (has_world_states != 0 && world_states != nullptr)
+            ? &world_states[w]
+            : static_cast<device bike::gpu::GpuWorldState *>(nullptr);
+    device const float *qpos_w =
+        (has_qpos != 0 && qpos_batch != nullptr)
+            ? (qpos_batch + w64 * idx.nq)
+            : static_cast<device const float *>(nullptr);
+    device float *tr_w = static_cast<device float *>(nullptr);
+    if (has_tendon_range != 0 && tendon_range_batch != nullptr && ntendon > 0) {
+        if (tendon_range_world_stride >= 2 * ntendon) {
+            tr_w = tendon_range_batch + w64 * tendon_range_world_stride;
+        } else if (tendon_range_world_stride == 0 && w == 0) {
+            tr_w = tendon_range_batch;
+        } else {
+            return;
+        }
+    }
+    (void)bike::gpu::gpu_sp4_init_world(
+        idx, cfg_w, &sp3_states[w], &sp4_states[w], ws_w, qpos_w, init_grade, ntendon, tr_w);
+}
+
+inline void bike_metal_sp4_pre_solve_and_pass0_impl(
+    int w,
+    float dt_s,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::physics_core::GpuTyreModel *tyre_model,
+    thread const bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    device const float *terrain_f32,
+    device const bike::physics_core::i32 *terrain_i32,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    device bike::gpu::GpuSp4WorldState *sp4_states,
+    device bike::gpu::GpuWorldState *world_states,
+    device const float *qpos_batch,
+    device const float *qvel_batch,
+    device const float *qfrc_bias_batch,
+    device const float *xpos_batch,
+    device const float *xmat_batch,
+    device const float *xanchor_batch,
+    device const float *xaxis_batch,
+    device const float *site_xpos_batch,
+    device const float *subtree_com_batch,
+    int has_body_subtreemass,
+    device const float *body_subtreemass,
+    int qM_row_stride,
+    int M_world_stride,
+    device const int *M_rowadr,
+    device const int *M_rownnz,
+    device const int *M_colind,
+    device const float *d_M_batch,
+    device float *qfrc_batch,
+    device float *ctrl_batch,
+    int ntendon,
+    int has_tendon_range,
+    device float *tendon_range_batch,
+    int tendon_range_world_stride,
+    int has_dof_frictionloss,
+    device float *dof_frictionloss_batch,
+    int dof_frictionloss_world_stride,
+    int has_qacc_warmstart,
+    device float *qacc_warmstart_batch
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx, ntendon) || tyre_model == nullptr ||
+        configs == nullptr || spindle_params == nullptr ||
+        sp3_states == nullptr || sp4_states == nullptr || world_states == nullptr ||
+        M_world_stride <= 0) {
+        return;
+    }
+    float qpos_w[bike::gpu::kMaxNq];
+    float qvel_w[bike::gpu::kMaxNv];
+    float qfrc_w[bike::gpu::kMaxNv];
+    float ctrl_w[bike::gpu::kMaxNu];
+
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int nu = idx.nu;
+    const long w64 = static_cast<long>(w);
+
+    device const float *qpos_src = qpos_batch + w64 * nq;
+    device const float *qvel_src = qvel_batch + w64 * nv;
+    for (int i = 0; i < nq; ++i) qpos_w[i] = qpos_src[i];
+    for (int i = 0; i < nv; ++i) qvel_w[i] = qvel_src[i];
+
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device float *tendon_w = static_cast<device float *>(nullptr);
+    if (has_tendon_range != 0 && tendon_range_batch != nullptr && ntendon > 0) {
+        if (tendon_range_world_stride >= 2 * ntendon) {
+            tendon_w = tendon_range_batch + w64 * tendon_range_world_stride;
+        } else if (tendon_range_world_stride == 0 && w == 0) {
+            tendon_w = tendon_range_batch;
+        } else {
+            return;
+        }
+    }
+    device float *fl_w = static_cast<device float *>(nullptr);
+    if (has_dof_frictionloss != 0 && dof_frictionloss_batch != nullptr) {
+        if (dof_frictionloss_world_stride >= nv) {
+            fl_w = dof_frictionloss_batch + w64 * dof_frictionloss_world_stride;
+        } else if (dof_frictionloss_world_stride == 0 && w == 0) {
+            fl_w = dof_frictionloss_batch;
+        } else {
+            return;
+        }
+    }
+    device const float *submass_ptr =
+        (has_body_subtreemass != 0 && body_subtreemass != nullptr)
+            ? body_subtreemass
+            : static_cast<device const float *>(nullptr);
+    device float *ws_w =
+        (has_qacc_warmstart != 0 && qacc_warmstart_batch != nullptr)
+            ? (qacc_warmstart_batch + w64 * nv)
+            : static_cast<device float *>(nullptr);
+
+    const bike::physics_core::Status st = bike::gpu::gpu_sp4_pre_solve_and_pass0_world(
+        w,
+        dt_s,
+        idx,
+        tyre_model,
+        terrain_desc,
+        terrain_f32,
+        terrain_i32,
+        cfg_w,
+        spindle_params,
+        &sp3_states[w],
+        &sp4_states[w],
+        world_states[w].compliant_wheels,
+        &world_states[w].distributed_wheels[0][0],
+        qpos_w,
+        qvel_w,
+        qfrc_bias_batch + w64 * nv,
+        xpos_batch + w64 * idx.nbody * 3,
+        xmat_batch + w64 * idx.nbody * 9,
+        xanchor_batch + w64 * tyre_model->njnt * 3,
+        xaxis_batch + w64 * tyre_model->njnt * 3,
+        site_xpos_batch + w64 * spindle_params->nsite * 3,
+        subtree_com_batch + w64 * idx.nbody * 3,
+        submass_ptr,
+        qM_row_stride,
+        M_rowadr,
+        M_rownnz,
+        M_colind,
+        d_M_batch + w64 * M_world_stride,
+        qfrc_w,
+        ctrl_w,
+        ntendon,
+        tendon_w,
+        fl_w,
+        ws_w);
+    if (st != bike::physics_core::Status::ok) {
+        return;
+    }
+
+    device float *qfrc_dst = qfrc_batch + w64 * nv;
+    device float *ctrl_dst = ctrl_batch + w64 * nu;
+    for (int i = 0; i < nv; ++i) qfrc_dst[i] = qfrc_w[i];
+    for (int i = 0; i < nu; ++i) ctrl_dst[i] = ctrl_w[i];
+}
+
+inline void bike_metal_sp4_pass_stage_impl(
+    int stage,
+    int w,
+    int nq,
+    int nv,
+    int nu,
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params,
+    device bike::gpu::GpuSp4WorldState *sp4_states,
+    device const float *qpos_batch,
+    device const float *qvel_batch,
+    device const float *qfrc_bias_batch,
+    device const float *qacc_batch,
+    int qM_row_stride,
+    int M_world_stride,
+    device const int *M_rowadr,
+    device const int *M_rownnz,
+    device const int *M_colind,
+    device const float *d_M_batch,
+    device float *ctrl_batch,
+    int has_qacc_warmstart,
+    device float *qacc_warmstart_batch
+) {
+    if (spindle_params == nullptr || sp4_states == nullptr || M_world_stride <= 0) {
+        return;
+    }
+    const long w64 = static_cast<long>(w);
+    device float *ws_w =
+        (has_qacc_warmstart != 0 && qacc_warmstart_batch != nullptr)
+            ? (qacc_warmstart_batch + w64 * nv)
+            : static_cast<device float *>(nullptr);
+    if (stage == 1) {
+        (void)bike::gpu::gpu_sp4_pass1_world(
+            spindle_params, &sp4_states[w],
+            qpos_batch + w64 * nq, qvel_batch + w64 * nv,
+            qfrc_bias_batch + w64 * nv, qacc_batch + w64 * nv,
+            qM_row_stride, M_rowadr, M_rownnz, M_colind,
+            d_M_batch + w64 * M_world_stride, ctrl_batch + w64 * nu, ws_w);
+    } else if (stage == 2) {
+        (void)bike::gpu::gpu_sp4_pass2_world(
+            spindle_params, &sp4_states[w],
+            qpos_batch + w64 * nq, qvel_batch + w64 * nv,
+            qfrc_bias_batch + w64 * nv, qacc_batch + w64 * nv,
+            qM_row_stride, M_rowadr, M_rownnz, M_colind,
+            d_M_batch + w64 * M_world_stride, ctrl_batch + w64 * nu, ws_w);
+    } else if (stage == 3) {
+        (void)bike::gpu::gpu_sp4_pass3_world(
+            spindle_params, &sp4_states[w],
+            qpos_batch + w64 * nq, qvel_batch + w64 * nv,
+            qfrc_bias_batch + w64 * nv, qacc_batch + w64 * nv,
+            qM_row_stride, M_rowadr, M_rownnz, M_colind,
+            d_M_batch + w64 * M_world_stride, ctrl_batch + w64 * nu, ws_w);
+    }
+}
+
+inline void bike_metal_sp4_post_solve_impl(
+    int w,
+    float dt_s,
+    thread const bike::gpu::GpuModelIndices &idx,
+    device const bike::gpu::GpuSp3Config *configs,
+    int per_world_config,
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params,
+    device bike::gpu::GpuSp3WorldState *sp3_states,
+    device bike::gpu::GpuSp4WorldState *sp4_states,
+    device float *qpos_batch,
+    device const float *qvel_batch,
+    int has_xpos,
+    device const float *xpos_batch,
+    device const float *xmat_batch,
+    int has_xanchor,
+    device const float *xanchor_batch,
+    int has_sensordata,
+    int nsensordata,
+    device const float *sensordata_batch,
+    int has_efc,
+    device const int *nefc_batch,
+    int njmax,
+    int efc_J_row_stride,
+    device const int *efc_type_batch,
+    device const int *efc_id_batch,
+    device const float *efc_J_batch,
+    device const float *efc_force_batch,
+    int has_contacts,
+    device const int *nacon_batch,
+    int nconmax,
+    int contact_efc_stride,
+    int has_contact_worldid,
+    device const int *contact_worldid_batch,
+    device const int *contact_geom_batch,
+    device const int *contact_efc_address_batch,
+    int has_contact_dim,
+    device const int *contact_dim_batch
+) {
+    if (!bike::gpu::gpu_validate_model_indices(idx) || configs == nullptr ||
+        spindle_params == nullptr || sp3_states == nullptr || sp4_states == nullptr) {
+        return;
+    }
+    const long w64 = static_cast<long>(w);
+    device const bike::gpu::GpuSp3Config *cfg_w = &configs[per_world_config ? w : 0];
+    device const float *sd_w =
+        (has_sensordata != 0 && sensordata_batch != nullptr && nsensordata > 0)
+            ? (sensordata_batch + w64 * nsensordata)
+            : static_cast<device const float *>(nullptr);
+    int nefc_w = 0;
+    device const int *efc_type_w = static_cast<device const int *>(nullptr);
+    device const int *efc_id_w = static_cast<device const int *>(nullptr);
+    device const float *efc_J_w = static_cast<device const float *>(nullptr);
+    device const float *efc_force_w = static_cast<device const float *>(nullptr);
+    if (has_efc != 0 && nefc_batch != nullptr && njmax > 0) {
+        nefc_w = nefc_batch[w];
+        if (nefc_w < 0) nefc_w = 0;
+        if (nefc_w > njmax) nefc_w = njmax;
+        efc_type_w = (efc_type_batch != nullptr) ? (efc_type_batch + w64 * njmax)
+                                                 : static_cast<device const int *>(nullptr);
+        efc_id_w = (efc_id_batch != nullptr) ? (efc_id_batch + w64 * njmax)
+                                             : static_cast<device const int *>(nullptr);
+        efc_force_w = (efc_force_batch != nullptr) ? (efc_force_batch + w64 * njmax)
+                                                   : static_cast<device const float *>(nullptr);
+        efc_J_w = (efc_J_batch != nullptr && efc_J_row_stride > 0)
+                      ? (efc_J_batch + w64 * static_cast<long>(njmax) * efc_J_row_stride)
+                      : static_cast<device const float *>(nullptr);
+    }
+    int ncon_or_total = 0;
+    device const int *c_wid = static_cast<device const int *>(nullptr);
+    device const int *c_geom = static_cast<device const int *>(nullptr);
+    device const int *c_adr = static_cast<device const int *>(nullptr);
+    device const int *c_dim = static_cast<device const int *>(nullptr);
+    if (has_contacts != 0 && nacon_batch != nullptr && nconmax > 0) {
+        if (has_contact_worldid != 0 && contact_worldid_batch != nullptr) {
+            ncon_or_total = nacon_batch[0];
+            if (ncon_or_total < 0) ncon_or_total = 0;
+            if (ncon_or_total > nconmax) ncon_or_total = nconmax;
+            c_wid = contact_worldid_batch;
+            c_geom = contact_geom_batch;
+            c_adr = contact_efc_address_batch;
+            c_dim = (has_contact_dim != 0) ? contact_dim_batch
+                                           : static_cast<device const int *>(nullptr);
+        } else {
+            ncon_or_total = nacon_batch[w];
+            if (ncon_or_total < 0) ncon_or_total = 0;
+            if (ncon_or_total > nconmax) ncon_or_total = nconmax;
+            c_geom = (contact_geom_batch != nullptr) ? (contact_geom_batch + w64 * 2 * nconmax)
+                                                     : static_cast<device const int *>(nullptr);
+            c_adr = (contact_efc_address_batch != nullptr)
+                        ? (contact_efc_address_batch + w64 * nconmax * contact_efc_stride)
+                        : static_cast<device const int *>(nullptr);
+            c_dim = (has_contact_dim != 0 && contact_dim_batch != nullptr)
+                        ? (contact_dim_batch + w64 * nconmax)
+                        : static_cast<device const int *>(nullptr);
+        }
+    }
+    const int nj = spindle_params->njnt;
+    device const float *xpos_w =
+        (has_xpos != 0 && xpos_batch != nullptr)
+            ? (xpos_batch + w64 * idx.nbody * 3)
+            : static_cast<device const float *>(nullptr);
+    device const float *xanchor_w =
+        (has_xanchor != 0 && xanchor_batch != nullptr && nj > 0)
+            ? (xanchor_batch + w64 * nj * 3)
+            : static_cast<device const float *>(nullptr);
+
+    (void)bike::gpu::gpu_sp4_post_solve_world(
+        w,
+        dt_s,
+        idx,
+        cfg_w,
+        spindle_params,
+        &sp3_states[w],
+        &sp4_states[w],
+        qpos_batch + w64 * idx.nq,
+        qvel_batch + w64 * idx.nv,
+        xpos_w,
+        xmat_batch + w64 * idx.nbody * 9,
+        xanchor_w,
+        nsensordata,
+        sd_w,
+        nefc_w,
+        efc_J_row_stride,
+        efc_type_w,
+        efc_id_w,
+        efc_J_w,
+        efc_force_w,
+        ncon_or_total,
+        contact_efc_stride,
+        c_wid,
+        c_geom,
+        c_adr,
+        c_dim);
+}
+
+)MSL";
+    combined += R"MSL(
+struct BikeWpSp4InitArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::gpu::GpuSp3Config *configs;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device bike::gpu::GpuSp4WorldState *sp4_states;
+    device bike::gpu::GpuWorldState *world_states;
+    device const float *qpos;
+    device float *tendon_range;
+    int nworld;
+    int per_world_config;
+    float init_grade;
+    int ntendon;
+    int tendon_range_world_stride;
+    int has_world_states;
+    int has_qpos;
+    int has_tendon_range;
+};
+
+struct BikeWpSp4PreSolveArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::physics_core::GpuTyreModel *tyre_model;
+    device const bike::physics_core::GpuTerrainTableDesc *terrain_desc;
+    device const float *terrain_f32;
+    device const bike::physics_core::i32 *terrain_i32;
+    device const bike::gpu::GpuSp3Config *configs;
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device bike::gpu::GpuSp4WorldState *sp4_states;
+    device bike::gpu::GpuWorldState *world_states;
+    device const float *qpos;
+    device const float *qvel;
+    device const float *qfrc_bias;
+    device const float *xpos;
+    device const float *xmat;
+    device const float *xanchor;
+    device const float *xaxis;
+    device const float *site_xpos;
+    device const float *subtree_com;
+    device const float *body_subtreemass;
+    device const int *M_rowadr;
+    device const int *M_rownnz;
+    device const int *M_colind;
+    device const float *d_M;
+    device float *qfrc_applied;
+    device float *ctrl;
+    device float *tendon_range;
+    device float *dof_frictionloss;
+    device float *qacc_warmstart;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int qM_row_stride;
+    int M_world_stride;
+    int ntendon;
+    int tendon_range_world_stride;
+    int dof_frictionloss_world_stride;
+    int has_body_subtreemass;
+    int has_tendon_range;
+    int has_dof_frictionloss;
+    int has_qacc_warmstart;
+};
+
+struct BikeWpSp4PassArgs {
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params;
+    device bike::gpu::GpuSp4WorldState *sp4_states;
+    device const float *qpos;
+    device const float *qvel;
+    device const float *qfrc_bias;
+    device const float *qacc;
+    device const int *M_rowadr;
+    device const int *M_rownnz;
+    device const int *M_colind;
+    device const float *d_M;
+    device float *ctrl;
+    device float *qacc_warmstart;
+    int nworld;
+    int nq;
+    int nv;
+    int nu;
+    int qM_row_stride;
+    int M_world_stride;
+    int has_qacc_warmstart;
+};
+
+struct BikeWpSp4PostSolveArgs {
+    device const bike::gpu::GpuModelIndices *idx;
+    device const bike::gpu::GpuSp3Config *configs;
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params;
+    device bike::gpu::GpuSp3WorldState *sp3_states;
+    device bike::gpu::GpuSp4WorldState *sp4_states;
+    device float *qpos;
+    device const float *qvel;
+    device const float *xpos;
+    device const float *xmat;
+    device const float *xanchor;
+    device const float *sensordata;
+    device const int *nefc;
+    device const int *efc_type;
+    device const int *efc_id;
+    device const float *efc_J;
+    device const float *efc_force;
+    device const int *nacon;
+    device const int *contact_worldid;
+    device const int *contact_geom;
+    device const int *contact_efc_address;
+    device const int *contact_dim;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int nsensordata;
+    int njmax;
+    int efc_J_row_stride;
+    int nconmax;
+    int contact_efc_stride;
+    int has_xpos;
+    int has_xanchor;
+    int has_sensordata;
+    int has_efc;
+    int has_contacts;
+    int has_contact_worldid;
+    int has_contact_dim;
+};
+
+kernel void bike_wp_sp4_init_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4InitArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    bike_metal_sp4_init_impl(
+        w, idx, args->configs, args->per_world_config,
+        args->sp3_states, args->sp4_states,
+        args->has_world_states, args->world_states,
+        args->has_qpos, args->qpos, args->init_grade, args->ntendon,
+        args->has_tendon_range, args->tendon_range, args->tendon_range_world_stride);
+}
+
+kernel void bike_wp_sp4_pre_solve_and_pass0_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4PreSolveArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld || args->terrain_desc == nullptr) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    const bike::physics_core::GpuTerrainTableDesc terrain_desc = *(args->terrain_desc);
+    bike_metal_sp4_pre_solve_and_pass0_impl(
+        w, args->dt_s, idx, args->tyre_model, terrain_desc, args->terrain_f32, args->terrain_i32,
+        args->configs, args->per_world_config, args->spindle_params,
+        args->sp3_states, args->sp4_states, args->world_states,
+        args->qpos, args->qvel, args->qfrc_bias,
+        args->xpos, args->xmat, args->xanchor, args->xaxis,
+        args->site_xpos, args->subtree_com, args->has_body_subtreemass, args->body_subtreemass,
+        args->qM_row_stride, args->M_world_stride,
+        args->M_rowadr, args->M_rownnz, args->M_colind, args->d_M,
+        args->qfrc_applied, args->ctrl,
+        args->ntendon, args->has_tendon_range, args->tendon_range, args->tendon_range_world_stride,
+        args->has_dof_frictionloss, args->dof_frictionloss, args->dof_frictionloss_world_stride,
+        args->has_qacc_warmstart, args->qacc_warmstart);
+}
+
+kernel void bike_wp_sp4_pass1_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4PassArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    bike_metal_sp4_pass_stage_impl(
+        1, w, args->nq, args->nv, args->nu,
+        args->spindle_params, args->sp4_states,
+        args->qpos, args->qvel, args->qfrc_bias, args->qacc,
+        args->qM_row_stride, args->M_world_stride,
+        args->M_rowadr, args->M_rownnz, args->M_colind, args->d_M, args->ctrl,
+        args->has_qacc_warmstart, args->qacc_warmstart);
+}
+
+kernel void bike_wp_sp4_pass2_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4PassArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    bike_metal_sp4_pass_stage_impl(
+        2, w, args->nq, args->nv, args->nu,
+        args->spindle_params, args->sp4_states,
+        args->qpos, args->qvel, args->qfrc_bias, args->qacc,
+        args->qM_row_stride, args->M_world_stride,
+        args->M_rowadr, args->M_rownnz, args->M_colind, args->d_M, args->ctrl,
+        args->has_qacc_warmstart, args->qacc_warmstart);
+}
+
+kernel void bike_wp_sp4_pass3_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4PassArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    bike_metal_sp4_pass_stage_impl(
+        3, w, args->nq, args->nv, args->nu,
+        args->spindle_params, args->sp4_states,
+        args->qpos, args->qvel, args->qfrc_bias, args->qacc,
+        args->qM_row_stride, args->M_world_stride,
+        args->M_rowadr, args->M_rownnz, args->M_colind, args->d_M, args->ctrl,
+        args->has_qacc_warmstart, args->qacc_warmstart);
+}
+
+kernel void bike_wp_sp4_post_solve_kernel(
+    constant ulong *bounds_buf [[buffer(0)]],
+    constant BikeWpSp4PostSolveArgs *args [[buffer(1)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    (void)bounds_buf;
+    const int w = static_cast<int>(gid);
+    if (w >= args->nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx =
+        (args->idx != nullptr) ? *(args->idx) : bike::gpu::GpuModelIndices{};
+    bike_metal_sp4_post_solve_impl(
+        w, args->dt_s, idx, args->configs, args->per_world_config, args->spindle_params,
+        args->sp3_states, args->sp4_states,
+        args->qpos, args->qvel, args->has_xpos, args->xpos, args->xmat,
+        args->has_xanchor, args->xanchor,
+        args->has_sensordata, args->nsensordata, args->sensordata,
+        args->has_efc, args->nefc, args->njmax, args->efc_J_row_stride,
+        args->efc_type, args->efc_id, args->efc_J, args->efc_force,
+        args->has_contacts, args->nacon, args->nconmax, args->contact_efc_stride,
+        args->has_contact_worldid, args->contact_worldid, args->contact_geom,
+        args->contact_efc_address, args->has_contact_dim, args->contact_dim);
+}
+
+struct BikeMetalSp4InitScalars {
+    bike::gpu::GpuModelIndices idx;
+    int nworld;
+    int per_world_config;
+    float init_grade;
+    int ntendon;
+    int tendon_range_world_stride;
+    int has_world_states;
+    int has_qpos;
+    int has_tendon_range;
+};
+
+struct BikeMetalSp4PreSolveScalars {
+    bike::gpu::GpuModelIndices idx;
+    bike::physics_core::GpuTerrainTableDesc terrain_desc;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int has_body_subtreemass;
+    int qM_row_stride;
+    int M_world_stride;
+    int ntendon;
+    int has_tendon_range;
+    int tendon_range_world_stride;
+    int has_dof_frictionloss;
+    int dof_frictionloss_world_stride;
+    int has_qacc_warmstart;
+};
+
+struct BikeMetalSp4PassScalars {
+    int stage;
+    int nworld;
+    int nq;
+    int nv;
+    int nu;
+    int qM_row_stride;
+    int M_world_stride;
+    int has_qacc_warmstart;
+};
+
+struct BikeMetalSp4PostSolveScalars {
+    bike::gpu::GpuModelIndices idx;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int has_xpos;
+    int has_xanchor;
+    int has_sensordata;
+    int nsensordata;
+    int has_efc;
+    int njmax;
+    int efc_J_row_stride;
+    int has_contacts;
+    int nconmax;
+    int contact_efc_stride;
+    int has_contact_worldid;
+    int has_contact_dim;
+};
+
+kernel void bike_gpu_sp4_init_metal_kernel(
+    constant BikeMetalSp4InitScalars &sc [[buffer(0)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(1)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(2)]],
+    device bike::gpu::GpuSp4WorldState *sp4_states [[buffer(3)]],
+    device bike::gpu::GpuWorldState *world_states [[buffer(4)]],
+    device const float *qpos_batch [[buffer(5)]],
+    device float *tendon_range_batch [[buffer(6)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= sc.nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = sc.idx;
+    bike_metal_sp4_init_impl(
+        w, idx, configs, sc.per_world_config, sp3_states, sp4_states,
+        sc.has_world_states, world_states, sc.has_qpos, qpos_batch, sc.init_grade,
+        sc.ntendon, sc.has_tendon_range, tendon_range_batch, sc.tendon_range_world_stride);
+}
+
+kernel void bike_gpu_sp4_pre_solve_and_pass0_metal_kernel(
+    constant BikeMetalSp4PreSolveScalars &sc [[buffer(0)]],
+    device const bike::physics_core::GpuTyreModel *tyre_model [[buffer(1)]],
+    device const float *terrain_f32 [[buffer(2)]],
+    device const bike::physics_core::i32 *terrain_i32 [[buffer(3)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(4)]],
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params [[buffer(5)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(6)]],
+    device bike::gpu::GpuSp4WorldState *sp4_states [[buffer(7)]],
+    device bike::gpu::GpuWorldState *world_states [[buffer(8)]],
+    device const float *qpos_batch [[buffer(9)]],
+    device const float *qvel_batch [[buffer(10)]],
+    device const float *qfrc_bias_batch [[buffer(11)]],
+    device const float *xpos_batch [[buffer(12)]],
+    device const float *xmat_batch [[buffer(13)]],
+    device const float *xanchor_batch [[buffer(14)]],
+    device const float *xaxis_batch [[buffer(15)]],
+    device const float *site_xpos_batch [[buffer(16)]],
+    device const float *subtree_com_batch [[buffer(17)]],
+    device const float *body_subtreemass [[buffer(18)]],
+    device const int *M_rowadr [[buffer(19)]],
+    device const int *M_rownnz [[buffer(20)]],
+    device const int *M_colind [[buffer(21)]],
+    device const float *d_M_batch [[buffer(22)]],
+    device float *qfrc_batch [[buffer(23)]],
+    device float *ctrl_batch [[buffer(24)]],
+    device float *tendon_range_batch [[buffer(25)]],
+    device float *dof_frictionloss_batch [[buffer(26)]],
+    device float *qacc_warmstart_batch [[buffer(27)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= sc.nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = sc.idx;
+    const bike::physics_core::GpuTerrainTableDesc td = sc.terrain_desc;
+    bike_metal_sp4_pre_solve_and_pass0_impl(
+        w, sc.dt_s, idx, tyre_model, td, terrain_f32, terrain_i32,
+        configs, sc.per_world_config, spindle_params, sp3_states, sp4_states, world_states,
+        qpos_batch, qvel_batch, qfrc_bias_batch,
+        xpos_batch, xmat_batch, xanchor_batch, xaxis_batch,
+        site_xpos_batch, subtree_com_batch, sc.has_body_subtreemass, body_subtreemass,
+        sc.qM_row_stride, sc.M_world_stride, M_rowadr, M_rownnz, M_colind, d_M_batch,
+        qfrc_batch, ctrl_batch, sc.ntendon, sc.has_tendon_range, tendon_range_batch,
+        sc.tendon_range_world_stride, sc.has_dof_frictionloss, dof_frictionloss_batch,
+        sc.dof_frictionloss_world_stride, sc.has_qacc_warmstart, qacc_warmstart_batch);
+}
+
+kernel void bike_gpu_sp4_pass_stage_metal_kernel(
+    constant BikeMetalSp4PassScalars &sc [[buffer(0)]],
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params [[buffer(1)]],
+    device bike::gpu::GpuSp4WorldState *sp4_states [[buffer(2)]],
+    device const float *qpos_batch [[buffer(3)]],
+    device const float *qvel_batch [[buffer(4)]],
+    device const float *qfrc_bias_batch [[buffer(5)]],
+    device const float *qacc_batch [[buffer(6)]],
+    device const int *M_rowadr [[buffer(7)]],
+    device const int *M_rownnz [[buffer(8)]],
+    device const int *M_colind [[buffer(9)]],
+    device const float *d_M_batch [[buffer(10)]],
+    device float *ctrl_batch [[buffer(11)]],
+    device float *qacc_warmstart_batch [[buffer(12)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= sc.nworld) {
+        return;
+    }
+    bike_metal_sp4_pass_stage_impl(
+        sc.stage, w, sc.nq, sc.nv, sc.nu,
+        spindle_params, sp4_states,
+        qpos_batch, qvel_batch, qfrc_bias_batch, qacc_batch,
+        sc.qM_row_stride, sc.M_world_stride, M_rowadr, M_rownnz, M_colind, d_M_batch,
+        ctrl_batch, sc.has_qacc_warmstart, qacc_warmstart_batch);
+}
+
+kernel void bike_gpu_sp4_post_solve_metal_kernel(
+    constant BikeMetalSp4PostSolveScalars &sc [[buffer(0)]],
+    device const bike::gpu::GpuSp3Config *configs [[buffer(1)]],
+    device const bike::physics_core::SpindleM2K2Params<float> *spindle_params [[buffer(2)]],
+    device bike::gpu::GpuSp3WorldState *sp3_states [[buffer(3)]],
+    device bike::gpu::GpuSp4WorldState *sp4_states [[buffer(4)]],
+    device float *qpos_batch [[buffer(5)]],
+    device const float *qvel_batch [[buffer(6)]],
+    device const float *xpos_batch [[buffer(7)]],
+    device const float *xmat_batch [[buffer(8)]],
+    device const float *xanchor_batch [[buffer(9)]],
+    device const float *sensordata_batch [[buffer(10)]],
+    device const int *nefc_batch [[buffer(11)]],
+    device const int *efc_type_batch [[buffer(12)]],
+    device const int *efc_id_batch [[buffer(13)]],
+    device const float *efc_J_batch [[buffer(14)]],
+    device const float *efc_force_batch [[buffer(15)]],
+    device const int *nacon_batch [[buffer(16)]],
+    device const int *contact_worldid_batch [[buffer(17)]],
+    device const int *contact_geom_batch [[buffer(18)]],
+    device const int *contact_efc_address_batch [[buffer(19)]],
+    device const int *contact_dim_batch [[buffer(20)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    const int w = static_cast<int>(gid);
+    if (w >= sc.nworld) {
+        return;
+    }
+    const bike::gpu::GpuModelIndices idx = sc.idx;
+    bike_metal_sp4_post_solve_impl(
+        w, sc.dt_s, idx, configs, sc.per_world_config, spindle_params,
+        sp3_states, sp4_states, qpos_batch, qvel_batch,
+        sc.has_xpos, xpos_batch, xmat_batch, sc.has_xanchor, xanchor_batch,
+        sc.has_sensordata, sc.nsensordata, sensordata_batch,
+        sc.has_efc, nefc_batch, sc.njmax, sc.efc_J_row_stride,
+        efc_type_batch, efc_id_batch, efc_J_batch, efc_force_batch,
+        sc.has_contacts, nacon_batch, sc.nconmax, sc.contact_efc_stride,
+        sc.has_contact_worldid, contact_worldid_batch, contact_geom_batch,
+        contact_efc_address_batch, sc.has_contact_dim, contact_dim_batch);
+}
+)MSL";
     return combined;
 }
 
@@ -1086,6 +1922,65 @@ bool wait_command_buffer_ok(id<MTLCommandBuffer> cb, const char *caller) {
     return true;
 }
 
+struct BikeMetalSp4InitScalars {
+    bike::gpu::GpuModelIndices idx;
+    int nworld;
+    int per_world_config;
+    float init_grade;
+    int ntendon;
+    int tendon_range_world_stride;
+    int has_world_states;
+    int has_qpos;
+    int has_tendon_range;
+};
+
+struct BikeMetalSp4PreSolveScalars {
+    bike::gpu::GpuModelIndices idx;
+    bike::physics_core::GpuTerrainTableDesc terrain_desc;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int has_body_subtreemass;
+    int qM_row_stride;
+    int M_world_stride;
+    int ntendon;
+    int has_tendon_range;
+    int tendon_range_world_stride;
+    int has_dof_frictionloss;
+    int dof_frictionloss_world_stride;
+    int has_qacc_warmstart;
+};
+
+struct BikeMetalSp4PassScalars {
+    int stage;
+    int nworld;
+    int nq;
+    int nv;
+    int nu;
+    int qM_row_stride;
+    int M_world_stride;
+    int has_qacc_warmstart;
+};
+
+struct BikeMetalSp4PostSolveScalars {
+    bike::gpu::GpuModelIndices idx;
+    int nworld;
+    float dt_s;
+    int per_world_config;
+    int has_xpos;
+    int has_xanchor;
+    int has_sensordata;
+    int nsensordata;
+    int has_efc;
+    int njmax;
+    int efc_J_row_stride;
+    int has_contacts;
+    int nconmax;
+    int contact_efc_stride;
+    int has_contact_worldid;
+    int has_contact_dim;
+};
+
 struct MetalWritersContext {
     id<MTLDevice> device = nil;
     id<MTLCommandQueue> queue = nil;
@@ -1096,11 +1991,17 @@ struct MetalWritersContext {
     id<MTLComputePipelineState> pso_sp3_init = nil;
     id<MTLComputePipelineState> pso_sp3_pre_solve = nil;
     id<MTLComputePipelineState> pso_sp3_post_solve = nil;
+    id<MTLComputePipelineState> pso_sp4_init = nil;
+    id<MTLComputePipelineState> pso_sp4_pre_solve = nil;
+    id<MTLComputePipelineState> pso_sp4_pass_stage = nil;
+    id<MTLComputePipelineState> pso_sp4_post_solve = nil;
     bool ok = false;
 
     bool init(const std::string &gpu_src_dir) {
         if (ok && pso_1thread != nil && pso_init_states != nil &&
-            pso_sp3_init != nil && pso_sp3_pre_solve != nil && pso_sp3_post_solve != nil) {
+            pso_sp3_init != nil && pso_sp3_pre_solve != nil && pso_sp3_post_solve != nil &&
+            pso_sp4_init != nil && pso_sp4_pre_solve != nil &&
+            pso_sp4_pass_stage != nil && pso_sp4_post_solve != nil) {
             return true;
         }
         device = MTLCreateSystemDefaultDevice();
@@ -1136,7 +2037,12 @@ struct MetalWritersContext {
         id<MTLFunction> fn_sp3_init = [library newFunctionWithName:@"bike_gpu_sp3_init_metal_kernel"];
         id<MTLFunction> fn_sp3_pre = [library newFunctionWithName:@"bike_gpu_sp3_pre_solve_metal_kernel"];
         id<MTLFunction> fn_sp3_post = [library newFunctionWithName:@"bike_gpu_sp3_post_solve_metal_kernel"];
-        if (!fn_init || !fn1 || !fn_wp1 || !fn_sp3_init || !fn_sp3_pre || !fn_sp3_post) {
+        id<MTLFunction> fn_sp4_init = [library newFunctionWithName:@"bike_gpu_sp4_init_metal_kernel"];
+        id<MTLFunction> fn_sp4_pre = [library newFunctionWithName:@"bike_gpu_sp4_pre_solve_and_pass0_metal_kernel"];
+        id<MTLFunction> fn_sp4_pass = [library newFunctionWithName:@"bike_gpu_sp4_pass_stage_metal_kernel"];
+        id<MTLFunction> fn_sp4_post = [library newFunctionWithName:@"bike_gpu_sp4_post_solve_metal_kernel"];
+        if (!fn_init || !fn1 || !fn_wp1 || !fn_sp3_init || !fn_sp3_pre || !fn_sp3_post ||
+            !fn_sp4_init || !fn_sp4_pre || !fn_sp4_pass || !fn_sp4_post) {
             std::cerr << "[MetalWritersContext] Failed to look up MSL kernel functions\n";
             return false;
         }
@@ -1147,8 +2053,13 @@ struct MetalWritersContext {
         pso_sp3_init = [device newComputePipelineStateWithFunction:fn_sp3_init error:&err];
         pso_sp3_pre_solve = [device newComputePipelineStateWithFunction:fn_sp3_pre error:&err];
         pso_sp3_post_solve = [device newComputePipelineStateWithFunction:fn_sp3_post error:&err];
+        pso_sp4_init = [device newComputePipelineStateWithFunction:fn_sp4_init error:&err];
+        pso_sp4_pre_solve = [device newComputePipelineStateWithFunction:fn_sp4_pre error:&err];
+        pso_sp4_pass_stage = [device newComputePipelineStateWithFunction:fn_sp4_pass error:&err];
+        pso_sp4_post_solve = [device newComputePipelineStateWithFunction:fn_sp4_post error:&err];
         if (!pso_init_states || !pso_1thread || !pso_step_writers_fused ||
-            !pso_sp3_init || !pso_sp3_pre_solve || !pso_sp3_post_solve) {
+            !pso_sp3_init || !pso_sp3_pre_solve || !pso_sp3_post_solve ||
+            !pso_sp4_init || !pso_sp4_pre_solve || !pso_sp4_pass_stage || !pso_sp4_post_solve) {
             std::cerr << "[MetalWritersContext] PSO error:\n"
                       << (err ? [[err localizedDescription] UTF8String] : "unknown Metal error")
                       << '\n';
@@ -1893,7 +2804,7 @@ int bike_metal_run_hybrid_sweep(
 
     bike::gpu::ResolvedRunnerTyre resolved_tyre{};
     {
-        mjData *d_init = mj_makeData(m_base);
+        mjData *d_init = engine::make_data(m_base);
         const std::span<mjtNum> d_init_qpos = boundary_span(d_init->qpos, to_index(nq));
         const std::span<mjtNum> d_init_qvel = boundary_span(d_init->qvel, to_index(nv));
         for (std::size_t i = 0; i < to_index(nq); ++i) {
@@ -1902,7 +2813,7 @@ int bike_metal_run_hybrid_sweep(
         for (std::size_t i = 0; i < to_index(nv); ++i) {
             d_init_qvel[i] = static_cast<mjtNum>(qvel0[i]);
         }
-        mj_forward(m_base, d_init);
+        engine::forward(m_base, d_init);
         const int rc_tyre = bike::gpu::resolve_runner_tyre_and_terrain(
             m_base,
             d_init,
@@ -2011,9 +2922,9 @@ int bike_metal_run_hybrid_sweep(
                     break;
                 }
                 const std::size_t wu = to_index(w);
-                mjData *d_w = mj_makeData(m_t);
+                mjData *d_w = engine::make_data(m_t);
                 world_data[wu] = d_w;
-                mj_resetData(m_t, d_w);
+                engine::reset_data(m_t, d_w);
                 const std::span<mjtNum> d_qpos = boundary_span(d_w->qpos, to_index(nq));
                 const std::span<mjtNum> d_qvel = boundary_span(d_w->qvel, to_index(nv));
                 const std::span<const mjtNum> d_xpos = boundary_span(d_w->xpos, to_index(nbody3));
@@ -2026,7 +2937,7 @@ int bike_metal_run_hybrid_sweep(
                 for (std::size_t i = 0; i < to_index(nv); ++i) {
                     d_qvel[i] = static_cast<mjtNum>(qvel0[i]);
                 }
-                mj_forward(m_t, d_w);
+                engine::forward(m_t, d_w);
 
                 const std::span<float> qp = qpos_v.subspan(wu * to_index(nq), to_index(nq));
                 const std::span<float> qv = qvel_v.subspan(wu * to_index(nv), to_index(nv));
@@ -2144,8 +3055,8 @@ int bike_metal_run_hybrid_sweep(
                 t_tendon_range[ft + 1] = static_cast<mjtNum>(tendon_v[tw + ft + 1]);
             }
         }
-        mj_step(m_t, d_t);
-        mj_kinematics(m_t, d_t);
+        engine::step(m_t, d_t);
+        engine::kinematics(m_t, d_t);
 
         const std::span<float> qp = qpos_v.subspan(wu * to_index(nq), to_index(nq));
         const std::span<float> qv = qvel_v.subspan(wu * to_index(nv), to_index(nv));
@@ -2418,6 +3329,27 @@ int bike_metal_build_tyre_and_terrain(
 ) {
     return bike::gpu::build_runner_tyre_and_terrain_buffers(
         xml_path, backend_kind, station_count, d_idx,
+        out_tyre_model, out_terrain_desc,
+        out_terrain_f32, io_f32_count,
+        out_terrain_i32, io_i32_count
+    );
+}
+
+int bike_metal_build_tyre_and_terrain_for_surface(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    int surface_label,
+    const bike::gpu::GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+) {
+    return bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
+        xml_path, backend_kind, station_count, surface_label, d_idx,
         out_tyre_model, out_terrain_desc,
         out_terrain_f32, io_f32_count,
         out_terrain_i32, io_i32_count
@@ -2971,6 +3903,824 @@ int bike_metal_launch_sp3_post_solve(
         std::ranges::copy(
             boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
             boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_qpos contents]), qpos_elems),
+            boundary_span(d_qpos, qpos_elems).begin());
+    }
+    return 0;
+}
+
+int bike_metal_build_spindle_params(
+    const char *xml_path,
+    const char *strength_json_path,
+    const char *envelope_json_path,
+    int control_period_steps,
+    bike::physics_core::SpindleM2K2Params<float> *out_params
+) {
+    return bike::gpu::build_runner_spindle_params(
+        xml_path, strength_json_path, envelope_json_path, control_period_steps, out_params);
+}
+
+int bike_metal_sizeof_sp4_world_state() {
+    return static_cast<int>(sizeof(bike::gpu::GpuSp4WorldState));
+}
+
+int bike_metal_sizeof_spindle_params() {
+    return static_cast<int>(sizeof(bike::physics_core::SpindleM2K2Params<float>));
+}
+
+int bike_metal_launch_sp4_init(
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+) {
+    if (nworld <= 0 || ntendon < 0 || tendon_range_world_stride < 0 ||
+        d_idx == nullptr || d_sp3_configs == nullptr ||
+        d_sp3_states == nullptr || d_sp4_states == nullptr ||
+        !std::isfinite(init_grade)) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val, ntendon)) {
+        return -1;
+    }
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t n_cfg = per_world_config ? nworld_u : 1ULL;
+    const int has_ws = (d_world_states != nullptr) ? 1 : 0;
+    const int has_qp = (d_qpos != nullptr) ? 1 : 0;
+    const int has_tr =
+        (d_tendon_range != nullptr && ntendon > 0 &&
+         (tendon_range_world_stride >= 2 * ntendon ||
+          (tendon_range_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    if (d_tendon_range != nullptr && ntendon > 0 && has_tr == 0) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp4_init) {
+        return -2;
+    }
+    @autoreleasepool {
+        const auto opt = MTLResourceStorageModeShared;
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:n_cfg * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:opt];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_sp4 = [ctx.device newBufferWithBytes:d_sp4_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp4WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_ws = has_ws
+            ? [ctx.device newBufferWithBytes:d_world_states
+                                       length:nworld_u * sizeof(bike::gpu::GpuWorldState)
+                                      options:opt]
+            : [ctx.device newBufferWithLength:sizeof(bike::gpu::GpuWorldState) options:opt];
+        const std::size_t qp_elems = nworld_u * to_index(idx_val.nq);
+        id<MTLBuffer> b_qp = has_qp
+            ? [ctx.device newBufferWithBytes:d_qpos length:qp_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        const std::size_t tr_elems = has_tr
+            ? ((tendon_range_world_stride > 0) ? nworld_u * to_index(tendon_range_world_stride)
+                                               : to_index(2 * ntendon))
+            : 4U;
+        id<MTLBuffer> b_tr = has_tr
+            ? [ctx.device newBufferWithBytes:d_tendon_range length:tr_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        if (!b_cfg || !b_sp3 || !b_sp4 || !b_ws || !b_qp || !b_tr) {
+            return -3;
+        }
+        BikeMetalSp4InitScalars sc{};
+        sc.idx = idx_val;
+        sc.nworld = nworld;
+        sc.per_world_config = per_world_config;
+        sc.init_grade = init_grade;
+        sc.ntendon = ntendon;
+        sc.tendon_range_world_stride = tendon_range_world_stride;
+        sc.has_world_states = has_ws;
+        sc.has_qpos = has_qp;
+        sc.has_tendon_range = has_tr;
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp4_init];
+        [enc setBytes:&sc length:sizeof(sc) atIndex:0];
+        [enc setBuffer:b_cfg offset:0 atIndex:1];
+        [enc setBuffer:b_sp3 offset:0 atIndex:2];
+        [enc setBuffer:b_sp4 offset:0 atIndex:3];
+        [enc setBuffer:b_ws offset:0 atIndex:4];
+        [enc setBuffer:b_qp offset:0 atIndex:5];
+        [enc setBuffer:b_tr offset:0 atIndex:6];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp4_init")) {
+            return -4;
+        }
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
+            boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp4WorldState *>([b_sp4 contents]), nworld_u),
+            boundary_span(d_sp4_states, nworld_u).begin());
+        if (has_ws) {
+            std::ranges::copy(
+                boundary_span(static_cast<const bike::gpu::GpuWorldState *>([b_ws contents]), nworld_u),
+                boundary_span(d_world_states, nworld_u).begin());
+        }
+        if (has_tr) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_tr contents]), tr_elems),
+                boundary_span(d_tendon_range, tr_elems).begin());
+        }
+    }
+    return 0;
+}
+
+int bike_metal_launch_sp4_pre_solve_and_pass0(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    const float *d_site_xpos,
+    const float *d_subtree_com,
+    const float *d_body_subtreemass,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride,
+    float *d_qacc_warmstart
+) {
+    if (nworld <= 0 || dt_s <= 0.0f || !std::isfinite(dt_s) ||
+        d_idx == nullptr || d_tyre_model == nullptr || d_terrain_desc == nullptr ||
+        d_sp3_configs == nullptr || d_spindle_params == nullptr ||
+        d_sp3_states == nullptr || d_sp4_states == nullptr || d_world_states == nullptr ||
+        d_qpos == nullptr || d_qvel == nullptr || d_qfrc_bias == nullptr ||
+        d_xpos == nullptr || d_xmat == nullptr || d_xanchor == nullptr ||
+        d_xaxis == nullptr || d_site_xpos == nullptr || d_subtree_com == nullptr ||
+        d_M_or_qM == nullptr || d_qfrc_applied == nullptr || d_ctrl == nullptr ||
+        M_world_stride <= 0 || ntendon < 0 ||
+        tendon_range_world_stride < 0 || dof_frictionloss_world_stride < 0) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val, ntendon) ||
+        !bike::physics_core::validate_spindle_m2k2_params(d_spindle_params)) {
+        return -1;
+    }
+    if (bike::gpu::validate_host_tyre_and_terrain(
+            d_tyre_model, idx_val.nq, idx_val.nv, idx_val.nbody,
+            d_terrain_desc, d_terrain_f32, d_terrain_i32) != 0) {
+        return -1;
+    }
+    const int has_tr =
+        (d_tendon_range != nullptr && ntendon > 0 &&
+         (tendon_range_world_stride >= 2 * ntendon ||
+          (tendon_range_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    if (d_tendon_range != nullptr && ntendon > 0 && has_tr == 0) {
+        return -1;
+    }
+    const int has_fl =
+        (d_dof_frictionloss != nullptr &&
+         (dof_frictionloss_world_stride >= idx_val.nv ||
+          (dof_frictionloss_world_stride == 0 && nworld == 1)))
+            ? 1
+            : 0;
+    if (d_dof_frictionloss != nullptr && has_fl == 0) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp4_pre_solve) {
+        return -2;
+    }
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t n_cfg = per_world_config ? nworld_u : 1ULL;
+    const std::size_t f32_cnt = std::max<std::size_t>(1U, to_index(d_terrain_desc->f32_count));
+    const std::size_t i32_cnt = std::max<std::size_t>(1U, to_index(d_terrain_desc->i32_count));
+    const std::size_t qpos_elems = nworld_u * to_index(idx_val.nq);
+    const std::size_t nv_elems = nworld_u * to_index(idx_val.nv);
+    const std::size_t nu_elems = nworld_u * to_index(idx_val.nu);
+    const std::size_t xpos_elems = nworld_u * to_index(idx_val.nbody) * 3ULL;
+    const std::size_t xmat_elems = nworld_u * to_index(idx_val.nbody) * 9ULL;
+    const std::size_t j3_elems = nworld_u * to_index(d_tyre_model->njnt) * 3ULL;
+    const std::size_t site_elems = nworld_u * to_index(d_spindle_params->nsite) * 3ULL;
+    const std::size_t m_elems = nworld_u * to_index(M_world_stride);
+    const std::size_t tr_elems = has_tr
+        ? ((tendon_range_world_stride > 0) ? nworld_u * to_index(tendon_range_world_stride)
+                                           : to_index(2 * ntendon))
+        : 4U;
+    const std::size_t fl_elems = has_fl
+        ? ((dof_frictionloss_world_stride > 0) ? nworld_u * to_index(dof_frictionloss_world_stride)
+                                               : to_index(idx_val.nv))
+        : 4U;
+    const int has_submass = (d_body_subtreemass != nullptr) ? 1 : 0;
+    const int is_sparse = (qM_row_stride == 0 && d_M_rowadr != nullptr &&
+                           d_M_rownnz != nullptr && d_M_colind != nullptr)
+                              ? 1
+                              : 0;
+    if (qM_row_stride == 0 && is_sparse == 0) {
+        return -1;
+    }
+    std::size_t colind_cnt = 1U;
+    if (is_sparse != 0) {
+        const auto ra = boundary_span(d_M_rowadr, to_index(idx_val.nv));
+        const auto rn = boundary_span(d_M_rownnz, to_index(idx_val.nv));
+        for (std::size_t r = 0; r < ra.size(); ++r) {
+            if (ra[r] < 0 || rn[r] < 0 || rn[r] > idx_val.nv) {
+                return -1;
+            }
+            const std::size_t end_idx = to_index(ra[r]) + to_index(rn[r]);
+            if (end_idx > colind_cnt) {
+                colind_cnt = end_idx;
+            }
+        }
+    }
+
+    @autoreleasepool {
+        const auto opt = MTLResourceStorageModeShared;
+        id<MTLBuffer> b_tyre = [ctx.device newBufferWithBytes:d_tyre_model
+                                                       length:sizeof(bike::physics_core::GpuTyreModel)
+                                                      options:opt];
+        id<MTLBuffer> b_tf32 = (d_terrain_desc->f32_count > 0 && d_terrain_f32 != nullptr)
+            ? [ctx.device newBufferWithBytes:d_terrain_f32 length:f32_cnt * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_ti32 = (d_terrain_desc->i32_count > 0 && d_terrain_i32 != nullptr)
+            ? [ctx.device newBufferWithBytes:d_terrain_i32
+                                       length:i32_cnt * sizeof(bike::physics_core::i32)
+                                      options:opt]
+            : [ctx.device newBufferWithLength:sizeof(bike::physics_core::i32) * 4U options:opt];
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:n_cfg * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:opt];
+        id<MTLBuffer> b_sparams = [ctx.device newBufferWithBytes:d_spindle_params
+                                                          length:sizeof(bike::physics_core::SpindleM2K2Params<float>)
+                                                         options:opt];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_sp4 = [ctx.device newBufferWithBytes:d_sp4_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp4WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_ws = [ctx.device newBufferWithBytes:d_world_states
+                                                     length:nworld_u * sizeof(bike::gpu::GpuWorldState)
+                                                    options:opt];
+        id<MTLBuffer> b_qp = [ctx.device newBufferWithBytes:d_qpos length:qpos_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_qv = [ctx.device newBufferWithBytes:d_qvel length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_bias = [ctx.device newBufferWithBytes:d_qfrc_bias length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xp = [ctx.device newBufferWithBytes:d_xpos length:xpos_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xm = [ctx.device newBufferWithBytes:d_xmat length:xmat_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xa = [ctx.device newBufferWithBytes:d_xanchor length:j3_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xx = [ctx.device newBufferWithBytes:d_xaxis length:j3_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_sp = [ctx.device newBufferWithBytes:d_site_xpos length:site_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_sc = [ctx.device newBufferWithBytes:d_subtree_com length:xpos_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_sm = has_submass
+            ? [ctx.device newBufferWithBytes:d_body_subtreemass
+                                       length:to_index(idx_val.nbody) * sizeof(float)
+                                      options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_ra = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_rowadr length:to_index(idx_val.nv) * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_rn = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_rownnz length:to_index(idx_val.nv) * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_ci = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_colind length:colind_cnt * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_M = [ctx.device newBufferWithBytes:d_M_or_qM length:m_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_qfrc = [ctx.device newBufferWithBytes:d_qfrc_applied length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_ctrl = [ctx.device newBufferWithBytes:d_ctrl length:nu_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_tr = has_tr
+            ? [ctx.device newBufferWithBytes:d_tendon_range length:tr_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_fl = has_fl
+            ? [ctx.device newBufferWithBytes:d_dof_frictionloss length:fl_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        const int has_ws = (d_qacc_warmstart != nullptr) ? 1 : 0;
+        id<MTLBuffer> b_ws_qacc = has_ws
+            ? [ctx.device newBufferWithBytes:d_qacc_warmstart length:nv_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        if (!b_tyre || !b_tf32 || !b_ti32 || !b_cfg || !b_sparams || !b_sp3 || !b_sp4 || !b_ws ||
+            !b_qp || !b_qv || !b_bias || !b_xp || !b_xm || !b_xa || !b_xx || !b_sp || !b_sc ||
+            !b_sm || !b_ra || !b_rn || !b_ci || !b_M || !b_qfrc || !b_ctrl || !b_tr || !b_fl ||
+            !b_ws_qacc) {
+            return -3;
+        }
+        BikeMetalSp4PreSolveScalars sc{};
+        sc.idx = idx_val;
+        sc.terrain_desc = *d_terrain_desc;
+        sc.nworld = nworld;
+        sc.dt_s = dt_s;
+        sc.per_world_config = per_world_config;
+        sc.has_body_subtreemass = has_submass;
+        sc.qM_row_stride = qM_row_stride;
+        sc.M_world_stride = M_world_stride;
+        sc.ntendon = ntendon;
+        sc.has_tendon_range = has_tr;
+        sc.tendon_range_world_stride = tendon_range_world_stride;
+        sc.has_dof_frictionloss = has_fl;
+        sc.dof_frictionloss_world_stride = dof_frictionloss_world_stride;
+        sc.has_qacc_warmstart = has_ws;
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp4_pre_solve];
+        [enc setBytes:&sc length:sizeof(sc) atIndex:0];
+        [enc setBuffer:b_tyre offset:0 atIndex:1];
+        [enc setBuffer:b_tf32 offset:0 atIndex:2];
+        [enc setBuffer:b_ti32 offset:0 atIndex:3];
+        [enc setBuffer:b_cfg offset:0 atIndex:4];
+        [enc setBuffer:b_sparams offset:0 atIndex:5];
+        [enc setBuffer:b_sp3 offset:0 atIndex:6];
+        [enc setBuffer:b_sp4 offset:0 atIndex:7];
+        [enc setBuffer:b_ws offset:0 atIndex:8];
+        [enc setBuffer:b_qp offset:0 atIndex:9];
+        [enc setBuffer:b_qv offset:0 atIndex:10];
+        [enc setBuffer:b_bias offset:0 atIndex:11];
+        [enc setBuffer:b_xp offset:0 atIndex:12];
+        [enc setBuffer:b_xm offset:0 atIndex:13];
+        [enc setBuffer:b_xa offset:0 atIndex:14];
+        [enc setBuffer:b_xx offset:0 atIndex:15];
+        [enc setBuffer:b_sp offset:0 atIndex:16];
+        [enc setBuffer:b_sc offset:0 atIndex:17];
+        [enc setBuffer:b_sm offset:0 atIndex:18];
+        [enc setBuffer:b_ra offset:0 atIndex:19];
+        [enc setBuffer:b_rn offset:0 atIndex:20];
+        [enc setBuffer:b_ci offset:0 atIndex:21];
+        [enc setBuffer:b_M offset:0 atIndex:22];
+        [enc setBuffer:b_qfrc offset:0 atIndex:23];
+        [enc setBuffer:b_ctrl offset:0 atIndex:24];
+        [enc setBuffer:b_tr offset:0 atIndex:25];
+        [enc setBuffer:b_fl offset:0 atIndex:26];
+        [enc setBuffer:b_ws_qacc offset:0 atIndex:27];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp4_pre_solve_and_pass0")) {
+            return -4;
+        }
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
+            boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp4WorldState *>([b_sp4 contents]), nworld_u),
+            boundary_span(d_sp4_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuWorldState *>([b_ws contents]), nworld_u),
+            boundary_span(d_world_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_qfrc contents]), nv_elems),
+            boundary_span(d_qfrc_applied, nv_elems).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_ctrl contents]), nu_elems),
+            boundary_span(d_ctrl, nu_elems).begin());
+        if (has_tr) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_tr contents]), tr_elems),
+                boundary_span(d_tendon_range, tr_elems).begin());
+        }
+        if (has_fl) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_fl contents]), fl_elems),
+                boundary_span(d_dof_frictionloss, fl_elems).begin());
+        }
+    }
+    return 0;
+}
+
+namespace {
+
+int bike_metal_launch_sp4_pass_stage(
+    int stage,
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart
+) {
+    if (nworld <= 0 || nq <= 0 || nv <= 0 || nu < 0 || M_world_stride <= 0 ||
+        d_spindle_params == nullptr || d_sp4_states == nullptr ||
+        d_qpos == nullptr || d_qvel == nullptr || d_qfrc_bias == nullptr ||
+        d_qacc == nullptr || d_M_or_qM == nullptr || d_ctrl == nullptr ||
+        !bike::physics_core::validate_spindle_m2k2_params(d_spindle_params)) {
+        return -1;
+    }
+    const int is_sparse = (qM_row_stride == 0 && d_M_rowadr != nullptr &&
+                           d_M_rownnz != nullptr && d_M_colind != nullptr)
+                              ? 1
+                              : 0;
+    if (qM_row_stride == 0 && is_sparse == 0) {
+        return -1;
+    }
+    std::size_t colind_cnt = 1U;
+    if (is_sparse != 0) {
+        const auto ra = boundary_span(d_M_rowadr, to_index(nv));
+        const auto rn = boundary_span(d_M_rownnz, to_index(nv));
+        for (std::size_t r = 0; r < ra.size(); ++r) {
+            if (ra[r] < 0 || rn[r] < 0 || rn[r] > nv) {
+                return -1;
+            }
+            const std::size_t end_idx = to_index(ra[r]) + to_index(rn[r]);
+            if (end_idx > colind_cnt) {
+                colind_cnt = end_idx;
+            }
+        }
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp4_pass_stage) {
+        return -2;
+    }
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t qpos_elems = nworld_u * to_index(nq);
+    const std::size_t nv_elems = nworld_u * to_index(nv);
+    const std::size_t nu_elems = nworld_u * to_index(nu);
+    const std::size_t m_elems = nworld_u * to_index(M_world_stride);
+    @autoreleasepool {
+        const auto opt = MTLResourceStorageModeShared;
+        id<MTLBuffer> b_sparams = [ctx.device newBufferWithBytes:d_spindle_params
+                                                          length:sizeof(bike::physics_core::SpindleM2K2Params<float>)
+                                                         options:opt];
+        id<MTLBuffer> b_sp4 = [ctx.device newBufferWithBytes:d_sp4_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp4WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_qp = [ctx.device newBufferWithBytes:d_qpos length:qpos_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_qv = [ctx.device newBufferWithBytes:d_qvel length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_bias = [ctx.device newBufferWithBytes:d_qfrc_bias length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_qacc = [ctx.device newBufferWithBytes:d_qacc length:nv_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_ra = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_rowadr length:to_index(nv) * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_rn = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_rownnz length:to_index(nv) * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_ci = is_sparse
+            ? [ctx.device newBufferWithBytes:d_M_colind length:colind_cnt * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_M = [ctx.device newBufferWithBytes:d_M_or_qM length:m_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_ctrl = [ctx.device newBufferWithBytes:d_ctrl length:nu_elems * sizeof(float) options:opt];
+        const int has_ws = (d_qacc_warmstart != nullptr) ? 1 : 0;
+        id<MTLBuffer> b_ws = has_ws
+            ? [ctx.device newBufferWithBytes:d_qacc_warmstart length:nv_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        if (!b_sparams || !b_sp4 || !b_qp || !b_qv || !b_bias || !b_qacc ||
+            !b_ra || !b_rn || !b_ci || !b_M || !b_ctrl || !b_ws) {
+            return -3;
+        }
+        BikeMetalSp4PassScalars sc{};
+        sc.stage = stage;
+        sc.nworld = nworld;
+        sc.nq = nq;
+        sc.nv = nv;
+        sc.nu = nu;
+        sc.qM_row_stride = qM_row_stride;
+        sc.M_world_stride = M_world_stride;
+        sc.has_qacc_warmstart = has_ws;
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp4_pass_stage];
+        [enc setBytes:&sc length:sizeof(sc) atIndex:0];
+        [enc setBuffer:b_sparams offset:0 atIndex:1];
+        [enc setBuffer:b_sp4 offset:0 atIndex:2];
+        [enc setBuffer:b_qp offset:0 atIndex:3];
+        [enc setBuffer:b_qv offset:0 atIndex:4];
+        [enc setBuffer:b_bias offset:0 atIndex:5];
+        [enc setBuffer:b_qacc offset:0 atIndex:6];
+        [enc setBuffer:b_ra offset:0 atIndex:7];
+        [enc setBuffer:b_rn offset:0 atIndex:8];
+        [enc setBuffer:b_ci offset:0 atIndex:9];
+        [enc setBuffer:b_M offset:0 atIndex:10];
+        [enc setBuffer:b_ctrl offset:0 atIndex:11];
+        [enc setBuffer:b_ws offset:0 atIndex:12];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp4_pass_stage")) {
+            return -4;
+        }
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp4WorldState *>([b_sp4 contents]), nworld_u),
+            boundary_span(d_sp4_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const float *>([b_ctrl contents]), nu_elems),
+            boundary_span(d_ctrl, nu_elems).begin());
+        if (has_ws) {
+            std::ranges::copy(
+                boundary_span(static_cast<const float *>([b_ws contents]), nv_elems),
+                boundary_span(d_qacc_warmstart, nv_elems).begin());
+        }
+    }
+    return 0;
+}
+
+} // namespace
+
+int bike_metal_launch_sp4_pass1(
+    int nworld, int nq, int nv, int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos, const float *d_qvel, const float *d_qfrc_bias, const float *d_qacc,
+    int qM_row_stride, int M_world_stride,
+    const int *d_M_rowadr, const int *d_M_rownnz, const int *d_M_colind,
+    const float *d_M_or_qM, float *d_ctrl, float *d_qacc_warmstart
+) {
+    return bike_metal_launch_sp4_pass_stage(
+        1, nworld, nq, nv, nu, d_spindle_params, d_sp4_states,
+        d_qpos, d_qvel, d_qfrc_bias, d_qacc,
+        qM_row_stride, M_world_stride, d_M_rowadr, d_M_rownnz, d_M_colind,
+        d_M_or_qM, d_ctrl, d_qacc_warmstart);
+}
+
+int bike_metal_launch_sp4_pass2(
+    int nworld, int nq, int nv, int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos, const float *d_qvel, const float *d_qfrc_bias, const float *d_qacc,
+    int qM_row_stride, int M_world_stride,
+    const int *d_M_rowadr, const int *d_M_rownnz, const int *d_M_colind,
+    const float *d_M_or_qM, float *d_ctrl, float *d_qacc_warmstart
+) {
+    return bike_metal_launch_sp4_pass_stage(
+        2, nworld, nq, nv, nu, d_spindle_params, d_sp4_states,
+        d_qpos, d_qvel, d_qfrc_bias, d_qacc,
+        qM_row_stride, M_world_stride, d_M_rowadr, d_M_rownnz, d_M_colind,
+        d_M_or_qM, d_ctrl, d_qacc_warmstart);
+}
+
+int bike_metal_launch_sp4_pass3(
+    int nworld, int nq, int nv, int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos, const float *d_qvel, const float *d_qfrc_bias, const float *d_qacc,
+    int qM_row_stride, int M_world_stride,
+    const int *d_M_rowadr, const int *d_M_rownnz, const int *d_M_colind,
+    const float *d_M_or_qM, float *d_ctrl, float *d_qacc_warmstart
+) {
+    return bike_metal_launch_sp4_pass_stage(
+        3, nworld, nq, nv, nu, d_spindle_params, d_sp4_states,
+        d_qpos, d_qvel, d_qfrc_bias, d_qacc,
+        qM_row_stride, M_world_stride, d_M_rowadr, d_M_rownnz, d_M_colind,
+        d_M_or_qM, d_ctrl, d_qacc_warmstart);
+}
+
+int bike_metal_launch_sp4_post_solve(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+) {
+    if (nworld <= 0 || dt_s <= 0.0f || !std::isfinite(dt_s) ||
+        d_idx == nullptr || d_sp3_configs == nullptr || d_spindle_params == nullptr ||
+        d_sp3_states == nullptr || d_sp4_states == nullptr ||
+        d_qpos == nullptr || d_qvel == nullptr || d_xmat == nullptr ||
+        nsensordata < 0 || njmax < 0 || efc_J_row_stride < 0 || nconmax < 0 ||
+        contact_efc_stride < 0 || (nconmax > 0 && contact_efc_stride == 0)) {
+        return -1;
+    }
+    const bike::gpu::GpuModelIndices idx_val = *d_idx;
+    if (!bike::gpu::gpu_validate_model_indices(idx_val)) {
+        return -1;
+    }
+    MetalWritersContext &ctx = get_metal_ctx();
+    if (!ctx.ok || !ctx.pso_sp4_post_solve) {
+        return -2;
+    }
+    const std::size_t nworld_u = to_index(nworld);
+    const std::size_t n_cfg = per_world_config ? nworld_u : 1ULL;
+    const std::size_t qpos_elems = nworld_u * to_index(idx_val.nq);
+    const std::size_t qvel_elems = nworld_u * to_index(idx_val.nv);
+    const std::size_t xpos_elems = nworld_u * to_index(idx_val.nbody) * 3ULL;
+    const std::size_t xmat_elems = nworld_u * to_index(idx_val.nbody) * 9ULL;
+    const int nj = d_spindle_params->njnt;
+    const int has_xp = (d_xpos != nullptr) ? 1 : 0;
+    const int has_xa = (d_xanchor != nullptr && nj > 0) ? 1 : 0;
+    const std::size_t xa_elems = has_xa ? (nworld_u * to_index(nj) * 3ULL) : 4U;
+    const int has_sd = (d_sensordata != nullptr && nsensordata > 0) ? 1 : 0;
+    const int has_efc = (d_nefc != nullptr && njmax > 0) ? 1 : 0;
+    const int has_con =
+        (d_nacon != nullptr && nconmax > 0 && d_contact_geom != nullptr &&
+         d_contact_efc_address != nullptr)
+            ? 1
+            : 0;
+    const int has_cwid = (has_con != 0 && d_contact_worldid != nullptr) ? 1 : 0;
+    const int has_cdim = (has_con != 0 && d_contact_dim != nullptr) ? 1 : 0;
+
+    @autoreleasepool {
+        const auto opt = MTLResourceStorageModeShared;
+        id<MTLBuffer> b_cfg = [ctx.device newBufferWithBytes:d_sp3_configs
+                                                      length:n_cfg * sizeof(bike::gpu::GpuSp3Config)
+                                                     options:opt];
+        id<MTLBuffer> b_sp = [ctx.device newBufferWithBytes:d_spindle_params
+                                                     length:sizeof(bike::physics_core::SpindleM2K2Params<float>)
+                                                    options:opt];
+        id<MTLBuffer> b_sp3 = [ctx.device newBufferWithBytes:d_sp3_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp3WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_sp4 = [ctx.device newBufferWithBytes:d_sp4_states
+                                                      length:nworld_u * sizeof(bike::gpu::GpuSp4WorldState)
+                                                     options:opt];
+        id<MTLBuffer> b_qpos = [ctx.device newBufferWithBytes:d_qpos length:qpos_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_qvel = [ctx.device newBufferWithBytes:d_qvel length:qvel_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xp = has_xp
+            ? [ctx.device newBufferWithBytes:d_xpos length:xpos_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_xmat = [ctx.device newBufferWithBytes:d_xmat length:xmat_elems * sizeof(float) options:opt];
+        id<MTLBuffer> b_xa = has_xa
+            ? [ctx.device newBufferWithBytes:d_xanchor length:xa_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_sd = has_sd
+            ? [ctx.device newBufferWithBytes:d_sensordata
+                                       length:nworld_u * to_index(nsensordata) * sizeof(float)
+                                      options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        const std::size_t efc_elems = has_efc ? (nworld_u * to_index(njmax)) : 4U;
+        const std::size_t eJ_elems =
+            (has_efc && d_efc_J != nullptr && efc_J_row_stride > 0)
+                ? (efc_elems * to_index(efc_J_row_stride))
+                : 4U;
+        id<MTLBuffer> b_nefc = has_efc
+            ? [ctx.device newBufferWithBytes:d_nefc length:nworld_u * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_et = (has_efc && d_efc_type != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_type length:efc_elems * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_eid = (has_efc && d_efc_id != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_id length:efc_elems * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_eJ = (has_efc && d_efc_J != nullptr && efc_J_row_stride > 0)
+            ? [ctx.device newBufferWithBytes:d_efc_J length:eJ_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+        id<MTLBuffer> b_ef = (has_efc && d_efc_force != nullptr)
+            ? [ctx.device newBufferWithBytes:d_efc_force length:efc_elems * sizeof(float) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(float) * 4U options:opt];
+
+        const std::size_t nacon_cnt = has_con ? (has_cwid ? 1U : nworld_u) : 4U;
+        const std::size_t con_tot =
+            has_con ? (has_cwid ? to_index(nconmax) : (nworld_u * to_index(nconmax))) : 4U;
+        id<MTLBuffer> b_nacon = has_con
+            ? [ctx.device newBufferWithBytes:d_nacon length:nacon_cnt * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_cwid = has_cwid
+            ? [ctx.device newBufferWithBytes:d_contact_worldid length:con_tot * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_cgeom = has_con
+            ? [ctx.device newBufferWithBytes:d_contact_geom length:con_tot * 2U * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_cadr = has_con
+            ? [ctx.device newBufferWithBytes:d_contact_efc_address
+                                       length:con_tot * to_index(contact_efc_stride) * sizeof(int)
+                                      options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+        id<MTLBuffer> b_cdim = has_cdim
+            ? [ctx.device newBufferWithBytes:d_contact_dim length:con_tot * sizeof(int) options:opt]
+            : [ctx.device newBufferWithLength:sizeof(int) * 4U options:opt];
+
+        if (!b_cfg || !b_sp || !b_sp3 || !b_sp4 || !b_qpos || !b_qvel || !b_xp || !b_xmat ||
+            !b_xa || !b_sd || !b_nefc || !b_et || !b_eid || !b_eJ || !b_ef ||
+            !b_nacon || !b_cwid || !b_cgeom || !b_cadr || !b_cdim) {
+            return -3;
+        }
+        BikeMetalSp4PostSolveScalars sc{};
+        sc.idx = idx_val;
+        sc.nworld = nworld;
+        sc.dt_s = dt_s;
+        sc.per_world_config = per_world_config;
+        sc.has_xpos = has_xp;
+        sc.has_xanchor = has_xa;
+        sc.has_sensordata = has_sd;
+        sc.nsensordata = nsensordata;
+        sc.has_efc = has_efc;
+        sc.njmax = njmax;
+        sc.efc_J_row_stride = efc_J_row_stride;
+        sc.has_contacts = has_con;
+        sc.nconmax = nconmax;
+        sc.contact_efc_stride = contact_efc_stride;
+        sc.has_contact_worldid = has_cwid;
+        sc.has_contact_dim = has_cdim;
+
+        id<MTLCommandBuffer> cb = [ctx.queue commandBuffer];
+        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+        [enc setComputePipelineState:ctx.pso_sp4_post_solve];
+        [enc setBytes:&sc length:sizeof(sc) atIndex:0];
+        [enc setBuffer:b_cfg offset:0 atIndex:1];
+        [enc setBuffer:b_sp offset:0 atIndex:2];
+        [enc setBuffer:b_sp3 offset:0 atIndex:3];
+        [enc setBuffer:b_sp4 offset:0 atIndex:4];
+        [enc setBuffer:b_qpos offset:0 atIndex:5];
+        [enc setBuffer:b_qvel offset:0 atIndex:6];
+        [enc setBuffer:b_xp offset:0 atIndex:7];
+        [enc setBuffer:b_xmat offset:0 atIndex:8];
+        [enc setBuffer:b_xa offset:0 atIndex:9];
+        [enc setBuffer:b_sd offset:0 atIndex:10];
+        [enc setBuffer:b_nefc offset:0 atIndex:11];
+        [enc setBuffer:b_et offset:0 atIndex:12];
+        [enc setBuffer:b_eid offset:0 atIndex:13];
+        [enc setBuffer:b_eJ offset:0 atIndex:14];
+        [enc setBuffer:b_ef offset:0 atIndex:15];
+        [enc setBuffer:b_nacon offset:0 atIndex:16];
+        [enc setBuffer:b_cwid offset:0 atIndex:17];
+        [enc setBuffer:b_cgeom offset:0 atIndex:18];
+        [enc setBuffer:b_cadr offset:0 atIndex:19];
+        [enc setBuffer:b_cdim offset:0 atIndex:20];
+        const NSUInteger total_threads = static_cast<NSUInteger>(nworld);
+        const NSUInteger tg = std::min<NSUInteger>(64, std::max<NSUInteger>(1, total_threads));
+        [enc dispatchThreads:MTLSizeMake(total_threads, 1, 1)
+       threadsPerThreadgroup:MTLSizeMake(tg, 1, 1)];
+        [enc endEncoding];
+        [cb commit];
+        if (!wait_command_buffer_ok(cb, "bike_metal_launch_sp4_post_solve")) {
+            return -4;
+        }
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp3WorldState *>([b_sp3 contents]), nworld_u),
+            boundary_span(d_sp3_states, nworld_u).begin());
+        std::ranges::copy(
+            boundary_span(static_cast<const bike::gpu::GpuSp4WorldState *>([b_sp4 contents]), nworld_u),
+            boundary_span(d_sp4_states, nworld_u).begin());
         std::ranges::copy(
             boundary_span(static_cast<const float *>([b_qpos contents]), qpos_elems),
             boundary_span(d_qpos, qpos_elems).begin());

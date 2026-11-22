@@ -763,7 +763,7 @@ if(BUILD_TESTING)
   endif()
   bike_add_gpu_unit_test(bike_test_gpu_batch_runners ${_bike_gpu_runner_sources})
   target_link_libraries(bike_test_gpu_batch_runners PRIVATE
-    bike_gpu_kernels bike_tyre_upload Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
   bike_rewrite_mujoco_load_name(bike_test_gpu_batch_runners "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE
@@ -777,12 +777,33 @@ if(BUILD_TESTING)
   endif()
   bike_add_gpu_unit_test(bike_test_gpu_sp3_autonomous ${_bike_gpu_sp3_sources})
   target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
-    bike_gpu_kernels bike_tyre_upload bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
   bike_rewrite_mujoco_load_name(bike_test_gpu_sp3_autonomous "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
       "-framework Metal" "-framework Foundation")
   endif()
+
+  set(_bike_gpu_sp4_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_sp4_closed_loop.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_sp4_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_sp4_closed_loop ${_bike_gpu_sp4_sources})
+  target_link_libraries(bike_test_gpu_sp4_closed_loop PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(bike_test_gpu_sp4_closed_loop "${BIKE_DEP_mujoco_LIBRARY}")
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_sp4_closed_loop PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
+  bike_add_gpu_unit_test(sp4_s1s4_cpu_acceptance
+    "${_bike_native_tests_dir}/gpu/test_sp4_s1s4_cpu_acceptance.cpp")
+  set_tests_properties(sp4_s1s4_cpu_acceptance PROPERTIES LABELS "gpu;slow")
+  target_link_libraries(sp4_s1s4_cpu_acceptance PRIVATE
+    bike_validation bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(sp4_s1s4_cpu_acceptance "${BIKE_DEP_mujoco_LIBRARY}")
 
   # Subproject 1 Stage 1 gate: 4 × 30 s golden episode digests. Registered at
   # root scope (outside native/tests/recording/) so the test binary links only

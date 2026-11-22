@@ -25,12 +25,14 @@ All shared headers use `BIKE_HD` (`__host__ __device__ __forceinline__` on CUDA,
 |---|---|
 | `../physics_core/tyre_gpu_step.hpp` | Single-source tri-target (Host, CUDA, Metal MSL) step for both `compliant_2d` and `distributed_2d_reference` wheel backends (`gpu_step_both_wheels_tyre`) plus `GpuTerrainTableDesc` validation. |
 | `../physics_core/{suspension,resistance,brake_hold,joint_envelope,ratchet}.hpp` | Single-source tri-target (Host, CUDA, Metal MSL) force-law headers for suspension (`eval_suspension`), rolling/aero resistance (`eval_resistance`), brake hold (`eval_brake_hold_wheel` / `apply_static_brake`), rider joint ROM envelope (`eval_rider_joint_envelope`), and dual ratchets (`ratchet_prepare_bound` / `fill_cassette_tendon_ranges`). |
+| `../physics_core/{shifting,pedaling,assist,launch_plan,front_lift,rider_intent,efc_monitors,spindle_m2k2}.hpp` | Single-source tri-target (Host, CUDA, Metal MSL) autonomous drivetrain/rider controllers, EFC reaction monitors, and full 4-pass `SpindleM2K2` (`M2_K2`) Newton leg-press/upper-body controller. |
+| `../physics_core/{tyre_upload,spindle_m2k2_upload}.{hpp,cpp}` | Host-side MuJoCo upload builders (`build_gpu_tyre_model`, `build_spindle_m2k2_params_from_json_files`). |
 | `common.hpp` | Defines `BIKE_HD`, vector types (`GpuVec2`, `GpuVec3`), `GpuModelIndices` (`240` bytes for `nq = 27`), and root force projection (`project_planar_force_to_root`). |
-| `terrain_tables.hpp` / `runner_tyre_setup.hpp` | Host-side terrain table packer (`GpuTerrainTableDesc` + flat `f32`/`i32` spans) and default `compliant_2d` / `distributed_2d_reference` `GpuTyreModel` resolution. |
-| `batch_step.hpp` | Defines `GpuWorldConfig`, `GpuWorldState`, `gpu_build_sweep_configs`, and the unified per-world step function `gpu_step_world_writers` wiring all `physics_core` force laws + upper-body posture PD + dual ratchet bounds. |
-| `cuda_kernels.cu` | Defines the `__global__` CUDA kernels (`bike_gpu_init_states_kernel` and `bike_gpu_writers_kernel`) and the `extern "C"` host functions returning status codes. |
-| `cpu_batch_runner.cpp` | Implements the multi-threaded C++ CPU batch runner (`bike_cpu_run_batch`, `bike_cpu_run_batch_sweep`, `bike_cpu_build_tyre_and_terrain`) linking directly against `libmujoco`. |
-| `metal_batch_runner.mm` | Stitches `physics_core/*.hpp` + `gpu/*.hpp` into Apple Metal Shading Language (`MSL`) compute kernels (`1` thread/world, `MTLMathModeSafe`, `#pragma METAL fp contract(off)`) for **Scenario 3** (Hybrid Metal GPU Writers + CPU `mj_step` over Unified Memory) and **Scenario 2** (`warp-metal` + `clean_split` `mujoco_warp` + MSL Writers fused inside one Metal Graph). |
+| `terrain_tables.hpp` / `runner_tyre_setup.hpp` / `runner_spindle_setup.hpp` | Host-side terrain table packer (`GpuTerrainTableDesc` + flat `f32`/`i32` spans), per-surface `GpuTyreModel` resolution, and `SpindleM2K2Params` loader. |
+| `batch_step.hpp` / `sp3_autonomous_step.hpp` / `sp4_closed_loop_step.hpp` | Defines `SP1–SP4` per-world configs/states and the tri-target closed-loop 4-pass `clean_split` step (`gpu_sp4_pre_solve_and_pass0_world`, `gpu_sp4_pass{1,2,3}_world`, `gpu_sp4_post_solve_world`). |
+| `cuda_kernels.cu` | Defines the `__global__` CUDA kernels (`SP1–SP4`) and the `extern "C"` host/CUDA launch entry points returning status codes. |
+| `cpu_batch_runner.cpp` | Implements the multi-threaded C++ CPU batch runner (`bike_cpu_run_batch`, `bike_cpu_run_batch_sweep`, `bike_cpu_build_tyre_and_terrain{,_for_surface}`, `bike_cpu_build_spindle_params`) linking directly against `libmujoco`. |
+| `metal_batch_runner.mm` | Stitches `physics_core/*.hpp` + `gpu/*.hpp` into Apple Metal Shading Language (`MSL`) compute kernels (`1` thread/world, `MTLMathModeSafe`, `#pragma METAL fp contract(off)`) for **Scenario 3** (Hybrid Metal GPU Writers + CPU `mj_step` over Unified Memory), **Scenario 2** (`warp-metal` + `clean_split` `mujoco_warp`), and **SP4 Closed-Loop `4x solve`** (`bike_wp_sp4_*_kernel`). |
 
 ---
 
@@ -111,6 +113,25 @@ python3 tools/colab_gpu/mjwarp_batch_sweep.py \
   --n-steps 1000 \
   --tier-steps 500 \
   --json-out /tmp/colab_gpu_sweep_results.json
+
+# SP4 Closed-Loop 4x-Solve (M2_K2) Throughput & S1-S4 Acceptance
+# Option A (local build tree with build/native-release/bin/bike-gpu-export):
+python3 tools/colab_gpu/mjwarp_batch_sweep.py \
+  --experiment sp4_all \
+  --nworld 2048 \
+  --n-steps 200 \
+  --json-out /tmp/colab_sp4_all.json
+
+# Option B (remote Linux Colab L4 VM without native CMake build / bike-gpu-export):
+# 1. On the dev host with bike-gpu-export built, export the self-contained S1-S4 bundles once:
+python3 tools/colab_gpu/mjwarp_batch_sweep.py --export-sp4-bundles /tmp/sp4_bundles
+# 2. Copy /tmp/sp4_bundles to Colab and run with --sp4-bundle-dir:
+python3 tools/colab_gpu/mjwarp_batch_sweep.py \
+  --experiment sp4_all \
+  --nworld 2048 \
+  --n-steps 200 \
+  --sp4-bundle-dir /tmp/sp4_bundles \
+  --json-out /tmp/colab_sp4_all.json
 ```
 
 ---
@@ -145,6 +166,15 @@ uv run --no-config --no-project --python .venv-metal/bin/python \
   --n-steps 1000 \
   --tier-steps 500 \
   --json-out build/mjwarp_metal_sweep_results.json
+
+# Full SP4 Closed-Loop 4x-Solve Throughput (compliant_2d + distributed_2d_reference) + S1-S4 GPU Acceptance
+# (supports --export-sp4-bundles DIR and --sp4-bundle-dir DIR just like mjwarp_batch_sweep.py)
+.venv-metal/bin/python tools/colab_gpu/mjwarp_metal_sweep.py \
+  --experiment sp4_all \
+  --nworld 2048 \
+  --n-steps 200 \
+  --sp4-bundle-dir /tmp/sp4_bundles \
+  --json-out build/mjwarp_metal_sp4_verification.json
 ```
 
 

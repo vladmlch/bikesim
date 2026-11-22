@@ -456,9 +456,11 @@ SpindleReferenceTables load_spindle_reference_files(
     const std::filesystem::path &strength_json_path,
     const std::filesystem::path &envelope_json_path
 ) {
+    const std::string strength_text = read_text_file(strength_json_path);
+    const std::string envelope_text = read_text_file(envelope_json_path);
     return parse_spindle_reference_json(SpindleReferenceJsonTexts{
-        .strength_json = read_text_file(strength_json_path),
-        .envelope_json = read_text_file(envelope_json_path),
+        .strength_json = strength_text,
+        .envelope_json = envelope_text,
     });
 }
 

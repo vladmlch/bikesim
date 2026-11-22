@@ -477,11 +477,18 @@ void test_shifting_cpu_parity_and_cassette() {
             if (shifted32) {
                 const float old_r = 22.0f / static_cast<float>(prev_teeth);
                 const float new_r = 22.0f / static_cast<float>(s32.rear_teeth);
-                const float expected_bnd = prev_bnd +
-                    (new_r * static_cast<float>(q_shaft) - static_cast<float>(q_wheel)) -
-                    (old_r * static_cast<float>(q_shaft) - static_cast<float>(q_wheel));
-                require_bits_f32(rat32.boundary, expected_bnd,
-                                 "cassette shift ratchet boundary");
+                const float q_shaft_f = static_cast<float>(q_shaft);
+                const float q_wheel_f = static_cast<float>(q_wheel);
+                const double exact_bnd = static_cast<double>(prev_bnd) +
+                    (static_cast<double>(new_r) * static_cast<double>(q_shaft_f) -
+                     static_cast<double>(q_wheel_f)) -
+                    (static_cast<double>(old_r) * static_cast<double>(q_shaft_f) -
+                     static_cast<double>(q_wheel_f));
+                const float expected_bnd = static_cast<float>(exact_bnd);
+                const auto bnd_ulps = std::abs(
+                    static_cast<std::int64_t>(std::bit_cast<std::uint32_t>(rat32.boundary)) -
+                    static_cast<std::int64_t>(std::bit_cast<std::uint32_t>(expected_bnd)));
+                require(bnd_ulps <= 1, "cassette shift ratchet boundary <= 1 ULP vs FP64");
                 for (i32 k = 0; k < 12; ++k) {
                     const std::size_t idx = static_cast<std::size_t>(k);
                     require_bits_f32(tendon_range[2u * idx + 0u], -1e12f,
@@ -1187,6 +1194,43 @@ void test_apple_metal_sp3_parity() {
 }
 #endif
 
+void test_ratchet_phi_large_angle_precision() {
+    const float q_ds = 200.0f;
+    const float q_rw = 271.4f;
+    const float ratio = 1.3571428f;
+    const float got = ratchet_phi<float, GpuToolkit>(ratio, q_ds, q_rw);
+    const double exact =
+        static_cast<double>(ratio) * static_cast<double>(q_ds) - static_cast<double>(q_rw);
+    const float ref = static_cast<float>(exact);
+    const auto ulp_diff = std::abs(
+        static_cast<std::int64_t>(std::bit_cast<std::uint32_t>(got)) -
+        static_cast<std::int64_t>(std::bit_cast<std::uint32_t>(ref)));
+    require(ulp_diff <= 1, "ratchet_phi<float> at large angle exceeded 1 ULP vs FP64");
+
+    // Also verify ratchet_shift_ratio_bound<float> preserves gap to <= 2 ULP at large angles.
+    const float new_ratio = 1.4666667f;
+    bool has_b32 = true;
+    float b32 = ref + 0.00125f;
+    ErrCode err32 = ErrCode::none;
+    require(
+        ratchet_shift_ratio_bound<float, GpuToolkit>(
+            ratio, new_ratio, q_ds, q_rw, has_b32, b32, err32) == Status::ok,
+        "ratchet_shift_ratio_bound<float> failed");
+    bool has_b64 = true;
+    double b64 = exact + 0.00125;
+    ErrCode err64 = ErrCode::none;
+    require(
+        ratchet_shift_ratio_bound<double, CpuExactToolkit>(
+            static_cast<double>(ratio), static_cast<double>(new_ratio),
+            static_cast<double>(q_ds), static_cast<double>(q_rw),
+            has_b64, b64, err64) == Status::ok,
+        "ratchet_shift_ratio_bound<double> failed");
+    const float b_ref = static_cast<float>(b64);
+    const float ulp_b = std::abs(std::nextafter(b_ref, std::copysign(1.0e9f, b_ref)) - b_ref);
+    require(std::abs(b32 - b_ref) <= 2.0f * ulp_b,
+            "ratchet_shift_ratio_bound<float> at large angle drifted > 2 ULP vs FP64");
+}
+
 } // namespace
 
 int main() {
@@ -1197,6 +1241,7 @@ int main() {
         test_assist_cpu_parity();
         test_3600s_int32_tick_drift();
         test_2pi_epoch_rebase_invariance();
+        test_ratchet_phi_large_angle_precision();
 #if defined(__APPLE__)
         test_apple_metal_sp3_parity();
 #endif

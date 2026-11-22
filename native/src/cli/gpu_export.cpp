@@ -27,7 +27,7 @@ namespace {
 
 constexpr std::string_view kHelpText =
     "usage: bike-gpu-export --physics-config TOML --track PRESET_OR_TOML --out DIR "
-    "[--duration SEC] [--steps N] [--seed DEC] [--strict] [--verify] [-h|--help]\n\n"
+    "[--duration SEC] [--steps N] [--seed DEC] [--initial-speed-mps MPS] [--strict] [--verify] [-h|--help]\n\n"
     "Export a self-contained GPU Golden Bundle (model.xml, model_12gears.xml,\n"
     "hfield_data.bin, physics_config.json, step_closure.bin, manifest.json)\n"
     "from a deterministic NativeRideRuntime run.\n";
@@ -49,18 +49,29 @@ struct ParsedArgs {
     std::optional<double> duration_s;
     std::optional<std::size_t> max_steps;
     std::optional<std::string> seed;
+    std::optional<double> initial_speed_mps;
     bool strict = false;
     bool verify = false;
 };
 
-[[nodiscard]] double parse_positive_real(std::string_view text,
-                                         const char *option) {
+[[nodiscard]] double parse_nonnegative_real(std::string_view text,
+                                            const char *option) {
     double value = 0.;
     const auto *begin = text.data();
     const auto *end = std::to_address(text.end());
     const auto parsed = std::from_chars(begin, end, value);
     if (parsed.ec != std::errc{} || parsed.ptr != end ||
-        !std::isfinite(value) || value <= 0.) {
+        !std::isfinite(value) || value < 0.) {
+        throw ParseError("option --" + std::string(option) +
+                         " must be finite and non-negative");
+    }
+    return value;
+}
+
+[[nodiscard]] double parse_positive_real(std::string_view text,
+                                         const char *option) {
+    const double value = parse_nonnegative_real(text, option);
+    if (value <= 0.) {
         throw ParseError("option --" + std::string(option) +
                          " must be finite and positive");
     }
@@ -84,7 +95,7 @@ struct ParsedArgs {
 
 [[nodiscard]] ParsedArgs parse_args(std::span<const std::string_view> args) {
     static const std::set<std::string, std::less<>> kValueOptions{
-        "physics-config", "track", "out", "duration", "steps", "seed",
+        "physics-config", "track", "out", "duration", "steps", "seed", "initial-speed-mps",
     };
     static const std::set<std::string, std::less<>> kFlags{
         "strict", "verify",
@@ -155,6 +166,9 @@ struct ParsedArgs {
     if (const auto it = values.find("seed"); it != values.end()) {
         parsed.seed = it->second;
     }
+    if (const auto it = values.find("initial-speed-mps"); it != values.end()) {
+        parsed.initial_speed_mps = parse_nonnegative_real(it->second, "initial-speed-mps");
+    }
     parsed.strict = flags.contains("strict");
     parsed.verify = flags.contains("verify");
     return parsed;
@@ -192,18 +206,22 @@ int run_gpu_export(int argc, const char *const *argv,
 
         const ParsedArgs parsed = parse_args(args);
         const std::filesystem::path physics_path(parsed.physics_config);
-        const golden::StepClosureCaptureSpec spec{
-            .physics = configuration::load_physics(physics_path),
-            .track = resolve_track(parsed.track, parsed.seed),
-            .duration_s = parsed.duration_s,
-            .max_steps = parsed.max_steps,
-            .seed_decimal = parsed.seed.value_or("0"),
-            .physics_config_label = parsed.physics_config,
-            .track_label = parsed.track,
-            .asset_root = std::filesystem::absolute(physics_path).parent_path(),
-            .strict = parsed.strict,
-        };
-        const auto bundle = golden::capture_step_closure_bundle(spec);
+        auto spec = std::make_unique<golden::StepClosureCaptureSpec>(
+            golden::StepClosureCaptureSpec{
+                .physics = configuration::load_physics(physics_path),
+                .track = resolve_track(parsed.track, parsed.seed),
+                .duration_s = parsed.duration_s,
+                .max_steps = parsed.max_steps,
+                .seed_decimal = parsed.seed.value_or("0"),
+                .physics_config_label = parsed.physics_config,
+                .track_label = parsed.track,
+                .asset_root = std::filesystem::absolute(physics_path).parent_path(),
+                .strict = parsed.strict,
+            });
+        if (parsed.initial_speed_mps.has_value()) {
+            spec->physics.initial_speed_mps = *parsed.initial_speed_mps;
+        }
+        const auto bundle = golden::capture_step_closure_bundle(*spec);
         const std::filesystem::path out_dir(parsed.out_dir);
         golden::write_step_closure_bundle(*bundle, out_dir);
 

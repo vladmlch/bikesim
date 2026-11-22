@@ -204,10 +204,13 @@ BIKE_HD GpuSuspensionParams gpu_make_default_suspension_params() noexcept {
 
 BIKE_HD bike::physics_core::ResistanceParams<float> gpu_make_default_resistance_params() noexcept {
     bike::physics_core::ResistanceParams<float> rp{};
-    rp.crr = 0.008f;
-    rp.rolling_taper_rad_s = 0.25f;
-    rp.rho_kg_m3 = 1.225f;
-    rp.cda_m2 = 0.38f;
+    rp.crr = 0.015f;
+    rp.rolling_taper_rad_s = 0.2f;
+    rp.rho_kg_m3 = 1.2f;
+    rp.cda_m2 = 0.5f;
+    rp.point_body_m[0] = 0.0f;
+    rp.point_body_m[1] = 0.0f;
+    rp.point_body_m[2] = 0.5f;
     return rp;
 }
 
@@ -712,15 +715,13 @@ BIKE_HD bike::physics_core::Status gpu_write_drivetrain_qfrc(
     return bike::physics_core::Status::ok;
 }
 
-// Evaluates 9-DOF rider ROM soft-edge envelope torques via single-source
-// physics_core::eval_rider_joint_envelope and upper-body posture PD ctrl.
-BIKE_HD bike::physics_core::Status gpu_write_rider_qfrc_and_ctrl(
+// Evaluates 9-DOF rider ROM soft-edge envelope torques into qfrc via single-source
+// physics_core::eval_rider_joint_envelope (without modifying ctrl[]).
+BIKE_HD bike::physics_core::Status gpu_write_rider_envelope_qfrc(
     const BIKE_THREAD GpuRiderParams &rp,
     const BIKE_THREAD GpuModelIndices &idx,
     const BIKE_THREAD float *qpos,
-    const BIKE_THREAD float *qvel,
     BIKE_THREAD float *qfrc,
-    BIKE_THREAD float *ctrl,
     BIKE_THREAD float *out_envelope_energy_j = nullptr
 ) noexcept {
     if (rp.rider_enabled == 0) {
@@ -756,6 +757,31 @@ BIKE_HD bike::physics_core::Status gpu_write_rider_qfrc_and_ctrl(
     if (st != bike::physics_core::Status::ok) {
         return st;
     }
+    if (out_envelope_energy_j != nullptr) {
+        *out_envelope_energy_j = env_energy;
+    }
+    return bike::physics_core::Status::ok;
+}
+
+// Evaluates 9-DOF rider ROM soft-edge envelope torques via single-source
+// physics_core::eval_rider_joint_envelope and upper-body posture PD ctrl.
+BIKE_HD bike::physics_core::Status gpu_write_rider_qfrc_and_ctrl(
+    const BIKE_THREAD GpuRiderParams &rp,
+    const BIKE_THREAD GpuModelIndices &idx,
+    const BIKE_THREAD float *qpos,
+    const BIKE_THREAD float *qvel,
+    BIKE_THREAD float *qfrc,
+    BIKE_THREAD float *ctrl,
+    BIKE_THREAD float *out_envelope_energy_j = nullptr
+) noexcept {
+    const bike::physics_core::Status st =
+        gpu_write_rider_envelope_qfrc(rp, idx, qpos, qfrc, out_envelope_energy_j);
+    if (st != bike::physics_core::Status::ok) {
+        return st;
+    }
+    if (rp.rider_enabled == 0) {
+        return bike::physics_core::Status::ok;
+    }
 
     for (int j = 0; j < kNumRiderJoints; ++j) {
         const int qp = idx.rider_qpos[j];
@@ -774,9 +800,6 @@ BIKE_HD bike::physics_core::Status gpu_write_rider_qfrc_and_ctrl(
         ctrl[ci] = pd_ctrl;
     }
 
-    if (out_envelope_energy_j != nullptr) {
-        *out_envelope_energy_j = env_energy;
-    }
     return bike::physics_core::Status::ok;
 }
 

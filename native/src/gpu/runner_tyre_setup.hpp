@@ -9,6 +9,12 @@
 #include "model_assets.hpp"
 #include "terrain_tables.hpp"
 
+#if defined(BIKE_GPU_STANDALONE_RUNNER)
+#include "standalone_mujoco_shim.hpp"
+#else
+#include "../engine_call.hpp"
+#endif
+
 #include <mujoco/mujoco.h>
 
 #include <algorithm>
@@ -85,6 +91,76 @@ inline nativecfg::TireConfig make_default_distributed_tire_config(int station_co
     cfg.significant_delta_m = 0.002;
     cfg.significance_fraction = 0.25;
     cfg.distinct_normal_deg = 12.0;
+    return cfg;
+}
+
+inline nativecfg::SurfaceSpec make_surface_spec_from_label(int surface_label) {
+    // Mirrors native/src/terrain/surface.cpp registry (SurfaceLabel enum: 0..4).
+    switch (surface_label) {
+        case 0:
+            return {.name = "asphalt", .mu_peak = 1.05, .mu_slide = 0.75,
+                    .slip_stiffness_per_load = 15.0, .stribeck_speed_mps = 4.5};
+        case 1:
+            return {.name = "hardpack", .mu_peak = 0.80, .mu_slide = 0.60,
+                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5};
+        case 2:
+            return {.name = "loose", .mu_peak = 0.55, .mu_slide = 0.45,
+                    .slip_stiffness_per_load = 7.0, .stribeck_speed_mps = 4.5};
+        case 3:
+            return {.name = "wet", .mu_peak = 0.50, .mu_slide = 0.40,
+                    .slip_stiffness_per_load = 10.0, .stribeck_speed_mps = 4.5};
+        case 4:
+            return {.name = "scree", .mu_peak = 0.45, .mu_slide = 0.38,
+                    .slip_stiffness_per_load = 4.5, .stribeck_speed_mps = 4.5};
+        default:
+            return {.name = "hardpack", .mu_peak = 0.80, .mu_slide = 0.60,
+                    .slip_stiffness_per_load = 12.0, .stribeck_speed_mps = 4.5};
+    }
+}
+
+struct ViewerWeldedTireOptions {
+    int backend_kind = 0;
+    int station_count = 0;
+    int surface_label = -1;
+};
+
+inline nativecfg::TireConfig make_viewer_welded_tire_config(
+    const ViewerWeldedTireOptions &opts
+) {
+    nativecfg::TireConfig cfg = (opts.backend_kind == 0)
+        ? make_default_compliant_tire_config()
+        : make_default_distributed_tire_config(opts.station_count);
+
+    cfg.significant_delta_m = 0.0001;
+    cfg.significance_fraction = 0.05;
+    cfg.distinct_normal_deg = 20.0;
+
+    const auto set_side = [](nativecfg::TireParams &side, double loss_factor) {
+        side.tangent_k_n_m = 20000.0;
+        side.mu = 1.1;
+        side.relaxation_length_m = 0.2;
+        if (side.material.has_value()) {
+            side.material->radial_k_n_m = 130000.0;
+            side.material->loss_factor = loss_factor;
+            side.material->hysteresis_rate_eps_mps = 0.01;
+            side.material->pressure_pa_gauge = 200000.0;
+            side.material->provenance = "synthetic";
+            side.material->valid_load_range_n = {0.0, 2000.0};
+        }
+    };
+    set_side(cfg.front, 0.0662);
+    set_side(cfg.rear, 0.0690);
+
+    if (opts.surface_label >= 0) {
+        cfg.surface_mode = "track";
+        cfg.surface_map = nativecfg::SurfaceMap{
+            .surface = make_surface_spec_from_label(opts.surface_label),
+            .sections = {},
+        };
+    } else {
+        cfg.surface_mode = "configured";
+        cfg.surface_map.reset();
+    }
     return cfg;
 }
 
@@ -220,10 +296,11 @@ inline int resolve_runner_tyre_and_terrain(
     }
 }
 
-inline int build_runner_tyre_and_terrain_buffers(
+inline int build_runner_tyre_and_terrain_buffers_for_surface(
     const char *xml_path,
     int backend_kind,
     int station_count,
+    int surface_label,
     const GpuModelIndices *d_idx,
     bike::physics_core::GpuTyreModel *out_tyre_model,
     bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
@@ -245,8 +322,6 @@ inline int build_runner_tyre_and_terrain_buffers(
     }
 
     try {
-        const auto make_data_fn = &mj_makeData;
-        const auto forward_fn = &mj_forward;
         std::array<char, 1024> err{};
         mjModel *m = mj_loadXML(xml_path, nullptr, err.data(), static_cast<int>(err.size()));
         if (m == nullptr) {
@@ -256,7 +331,7 @@ inline int build_runner_tyre_and_terrain_buffers(
         if (assets::load_hfield_bin(m, xml_path) != assets::AssetStatus::kOk) {
             return -3;
         }
-        mjData *d = make_data_fn(m);
+        mjData *d = engine::make_data(m);
         if (d == nullptr) {
             return -2;
         }
@@ -276,7 +351,7 @@ inline int build_runner_tyre_and_terrain_buffers(
                 d_qvel[i] = static_cast<mjtNum>(qv[i]);
             }
         }
-        forward_fn(m, d);
+        engine::forward(m, d);
 
         const GpuModelIndices idx =
             (d_idx != nullptr) ? *d_idx : assets::resolve_gpu_model_indices(m);
@@ -288,9 +363,15 @@ inline int build_runner_tyre_and_terrain_buffers(
             return -4;
         }
 
-        const nativecfg::TireConfig cfg = (backend_kind == 0)
-                                              ? make_default_compliant_tire_config()
-                                              : make_default_distributed_tire_config(station_count);
+        const nativecfg::TireConfig cfg = (surface_label >= -1)
+            ? make_viewer_welded_tire_config(ViewerWeldedTireOptions{
+                  .backend_kind = backend_kind,
+                  .station_count = station_count,
+                  .surface_label = surface_label,
+              })
+            : ((backend_kind == 0)
+                   ? make_default_compliant_tire_config()
+                   : make_default_distributed_tire_config(station_count));
         const auto bundle = std::make_unique<bike::physics_core::HostTyreUploadBundle>(
             bike::physics_core::build_gpu_tyre_model(
                 m, d, cfg, front_geom, rear_geom, idx.front_wheel_body, idx.rear_wheel_body, idx.frame_body));
@@ -328,6 +409,24 @@ inline int build_runner_tyre_and_terrain_buffers(
         std::cerr << "[build_runner_tyre_and_terrain_buffers] " << e.what() << '\n';
         return -1;
     }
+}
+
+inline int build_runner_tyre_and_terrain_buffers(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    const GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+) noexcept {
+    return build_runner_tyre_and_terrain_buffers_for_surface(
+        xml_path, backend_kind, station_count, -2, d_idx,
+        out_tyre_model, out_terrain_desc,
+        out_terrain_f32, io_f32_count, out_terrain_i32, io_i32_count);
 }
 
 } // namespace bike::gpu

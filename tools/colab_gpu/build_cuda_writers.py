@@ -838,6 +838,151 @@ def configure_cuda_writers_cdll(lib: ctypes.CDLL) -> ctypes.CDLL:
         ]
         lib.bike_gpu_launch_sp3_post_solve.restype = ctypes.c_int
 
+    if hasattr(lib, "bike_gpu_sizeof_sp4_world_state"):
+        lib.bike_gpu_sizeof_sp4_world_state.argtypes = []
+        lib.bike_gpu_sizeof_sp4_world_state.restype = ctypes.c_int
+        sp4_st_bytes = int(lib.bike_gpu_sizeof_sp4_world_state())
+        if sp4_st_bytes <= 0 or sp4_st_bytes > 16384:
+            raise RuntimeError(f"Invalid GpuSp4WorldState size: {sp4_st_bytes} bytes")
+
+    if hasattr(lib, "bike_gpu_sizeof_spindle_params"):
+        lib.bike_gpu_sizeof_spindle_params.argtypes = []
+        lib.bike_gpu_sizeof_spindle_params.restype = ctypes.c_int
+        spindle_bytes = int(lib.bike_gpu_sizeof_spindle_params())
+        if spindle_bytes <= 0 or spindle_bytes > 65536:
+            raise RuntimeError(f"Invalid SpindleM2K2Params size: {spindle_bytes} bytes")
+
+    if hasattr(lib, "bike_gpu_launch_sp4_init"):
+        lib.bike_gpu_launch_sp4_init.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_float,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+        ]
+        lib.bike_gpu_launch_sp4_init.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_pre_solve_and_pass0"):
+        lib.bike_gpu_launch_sp4_pre_solve_and_pass0.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_float,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_pre_solve_and_pass0.restype = ctypes.c_int
+
+    sp4_pass_argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
+    for fn_name in (
+        "bike_gpu_launch_sp4_pass1",
+        "bike_gpu_launch_sp4_pass2",
+        "bike_gpu_launch_sp4_pass3",
+    ):
+        if hasattr(lib, fn_name):
+            fn = getattr(lib, fn_name)
+            fn.argtypes = sp4_pass_argtypes
+            fn.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_launch_sp4_post_solve"):
+        lib.bike_gpu_launch_sp4_post_solve.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_float,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_int,
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        lib.bike_gpu_launch_sp4_post_solve.restype = ctypes.c_int
+
+    if hasattr(lib, "bike_gpu_sp3_state_has_failure"):
+        lib.bike_gpu_sp3_state_has_failure.argtypes = [ctypes.c_void_p]
+        lib.bike_gpu_sp3_state_has_failure.restype = ctypes.c_int
+
     return lib
 
 
@@ -1374,22 +1519,60 @@ def configure_host_tyre_builder(lib: ctypes.CDLL, symbol_name: str) -> Any:
     return fn
 
 
+def configure_host_tyre_for_surface_builder(lib: ctypes.CDLL, symbol_name: str) -> Any:
+    """Bind ``bike_{cpu,metal}_build_tyre_and_terrain_for_surface`` argtypes and restype."""
+    fn = getattr(lib, symbol_name)
+    fn.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.POINTER(ctypes.c_int32),
+        ctypes.POINTER(ctypes.c_int),
+    ]
+    fn.restype = ctypes.c_int
+    return fn
+
+
 def build_tyre_and_terrain_buffers(
     host_lib: ctypes.CDLL,
     xml_path: Path | str,
     backend: str = "compliant_2d",
     station_count: int = 64,
     idx_bytes: bytes | None = None,
+    surface_label: int = -2,
 ) -> tuple[bytes, bytes, np.ndarray, np.ndarray]:
     """Resolve ``(tyre_model_bytes, terrain_desc_bytes, terrain_f32, terrain_i32)`` via host C++."""
-    if hasattr(host_lib, "bike_cpu_build_tyre_and_terrain"):
-        builder = configure_host_tyre_builder(host_lib, "bike_cpu_build_tyre_and_terrain")
-    elif hasattr(host_lib, "bike_metal_build_tyre_and_terrain"):
-        builder = configure_host_tyre_builder(host_lib, "bike_metal_build_tyre_and_terrain")
+    use_surface = int(surface_label) != -2
+    builder = None
+    if use_surface:
+        if hasattr(host_lib, "bike_cpu_build_tyre_and_terrain_for_surface"):
+            builder = configure_host_tyre_for_surface_builder(
+                host_lib, "bike_cpu_build_tyre_and_terrain_for_surface"
+            )
+        elif hasattr(host_lib, "bike_metal_build_tyre_and_terrain_for_surface"):
+            builder = configure_host_tyre_for_surface_builder(
+                host_lib, "bike_metal_build_tyre_and_terrain_for_surface"
+            )
+        else:
+            raise AttributeError(
+                "host_lib exposes neither bike_cpu_build_tyre_and_terrain_for_surface "
+                "nor bike_metal_build_tyre_and_terrain_for_surface"
+            )
     else:
-        raise AttributeError(
-            "host_lib exposes neither bike_cpu_build_tyre_and_terrain nor bike_metal_build_tyre_and_terrain"
-        )
+        if hasattr(host_lib, "bike_cpu_build_tyre_and_terrain"):
+            builder = configure_host_tyre_builder(host_lib, "bike_cpu_build_tyre_and_terrain")
+        elif hasattr(host_lib, "bike_metal_build_tyre_and_terrain"):
+            builder = configure_host_tyre_builder(host_lib, "bike_metal_build_tyre_and_terrain")
+        else:
+            raise AttributeError(
+                "host_lib exposes neither bike_cpu_build_tyre_and_terrain nor bike_metal_build_tyre_and_terrain"
+            )
 
     if backend == "compliant_2d":
         backend_kind = 0
@@ -1406,20 +1589,40 @@ def build_tyre_and_terrain_buffers(
     f32_cap = ctypes.c_int(0)
     i32_cap = ctypes.c_int(0)
     xml_b = str(Path(xml_path).resolve()).encode("utf-8")
-    rc = int(
-        builder(
-            xml_b,
-            int(backend_kind),
-            int(station_count),
-            idx_ptr,
-            ctypes.cast(model_buf, ctypes.c_void_p),
-            ctypes.cast(desc_buf, ctypes.c_void_p),
-            None,
-            ctypes.byref(f32_cap),
-            None,
-            ctypes.byref(i32_cap),
+
+    def _call_builder(f32_ptr: Any, i32_ptr: Any) -> int:
+        if use_surface:
+            return int(
+                builder(
+                    xml_b,
+                    int(backend_kind),
+                    int(station_count),
+                    int(surface_label),
+                    idx_ptr,
+                    ctypes.cast(model_buf, ctypes.c_void_p),
+                    ctypes.cast(desc_buf, ctypes.c_void_p),
+                    f32_ptr,
+                    ctypes.byref(f32_cap),
+                    i32_ptr,
+                    ctypes.byref(i32_cap),
+                )
+            )
+        return int(
+            builder(
+                xml_b,
+                int(backend_kind),
+                int(station_count),
+                idx_ptr,
+                ctypes.cast(model_buf, ctypes.c_void_p),
+                ctypes.cast(desc_buf, ctypes.c_void_p),
+                f32_ptr,
+                ctypes.byref(f32_cap),
+                i32_ptr,
+                ctypes.byref(i32_cap),
+            )
         )
-    )
+
+    rc = _call_builder(None, None)
     if rc != 0:
         raise RuntimeError(f"Host tyre/terrain size query failed with return code {rc}")
 
@@ -1428,19 +1631,9 @@ def build_tyre_and_terrain_buffers(
     f32_cap.value = int(f32_arr.size)
     i32_cap.value = int(i32_arr.size)
 
-    rc = int(
-        builder(
-            xml_b,
-            int(backend_kind),
-            int(station_count),
-            idx_ptr,
-            ctypes.cast(model_buf, ctypes.c_void_p),
-            ctypes.cast(desc_buf, ctypes.c_void_p),
-            f32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            ctypes.byref(f32_cap),
-            i32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)),
-            ctypes.byref(i32_cap),
-        )
+    rc = _call_builder(
+        f32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        i32_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int32)),
     )
     if rc != 0:
         raise RuntimeError(f"Host tyre/terrain build failed with return code {rc}")
@@ -1451,6 +1644,97 @@ def build_tyre_and_terrain_buffers(
         np.ascontiguousarray(f32_arr[: int(f32_cap.value)], dtype=np.float32),
         np.ascontiguousarray(i32_arr[: int(i32_cap.value)], dtype=np.int32),
     )
+
+
+def configure_host_spindle_builder(lib: ctypes.CDLL, symbol_name: str) -> Any:
+    """Bind ``bike_{cpu,metal}_build_spindle_params`` argtypes and restype."""
+    fn = getattr(lib, symbol_name)
+    fn.argtypes = [
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_void_p,
+    ]
+    fn.restype = ctypes.c_int
+    return fn
+
+
+def build_spindle_params_bytes(
+    host_lib: ctypes.CDLL,
+    xml_path: Path | str,
+    strength_json_path: Path | str,
+    envelope_json_path: Path | str,
+    control_period_steps: int = 1,
+) -> bytes:
+    """Resolve ``SpindleM2K2Params<float>`` bytes via host/metal C++ builder."""
+    if hasattr(host_lib, "bike_cpu_build_spindle_params"):
+        builder = configure_host_spindle_builder(host_lib, "bike_cpu_build_spindle_params")
+    elif hasattr(host_lib, "bike_metal_build_spindle_params"):
+        builder = configure_host_spindle_builder(host_lib, "bike_metal_build_spindle_params")
+    else:
+        raise AttributeError(
+            "host_lib exposes neither bike_cpu_build_spindle_params nor bike_metal_build_spindle_params"
+        )
+
+    size_fn = None
+    for cand in ("bike_gpu_sizeof_spindle_params", "bike_metal_sizeof_spindle_params"):
+        if hasattr(host_lib, cand):
+            size_fn = getattr(host_lib, cand)
+            size_fn.argtypes = []
+            size_fn.restype = ctypes.c_int
+            break
+    if size_fn is None:
+        raise AttributeError("host_lib exposes neither bike_gpu_sizeof_spindle_params nor bike_metal_sizeof_spindle_params")
+
+    params_size = int(size_fn())
+    buf = ctypes.create_string_buffer(params_size)
+    rc = int(
+        builder(
+            str(Path(xml_path).resolve()).encode("utf-8"),
+            str(Path(strength_json_path).resolve()).encode("utf-8"),
+            str(Path(envelope_json_path).resolve()).encode("utf-8"),
+            int(control_period_steps),
+            ctypes.cast(buf, ctypes.c_void_p),
+        )
+    )
+    if rc != 0:
+        raise RuntimeError(f"Host spindle params build failed with return code {rc}")
+    return buf.raw
+
+
+def unpack_sp4_world_metrics(raw_bytes: bytes | bytearray | memoryview) -> dict[str, Any]:
+    """Decode the scalar metrics tail from one ``GpuSp4WorldState`` struct."""
+    import struct
+
+    tail_fmt = "<13fi4B"
+    tail_size = struct.calcsize(tail_fmt)
+    if len(raw_bytes) < tail_size:
+        raise ValueError(f"Expected >= {tail_size} bytes for GpuSp4WorldState, got {len(raw_bytes)}")
+    vals = struct.unpack_from(tail_fmt, raw_bytes, len(raw_bytes) - tail_size)
+    max_rise_f = float(vals[3])
+    max_rise_r = float(vals[4])
+    return {
+        "last_posture_min_lean_rad": float(vals[0]),
+        "min_press_front_n": float(vals[1]),
+        "min_press_rear_n": float(vals[2]),
+        "max_rising_front_excess_n": None if max_rise_f <= -1e8 else max_rise_f,
+        "max_rising_rear_excess_n": None if max_rise_r <= -1e8 else max_rise_r,
+        "min_saddle_force_n": float(vals[5]),
+        "max_saddle_force_n": float(vals[6]),
+        "sum_delivered_crank_torque_nm": float(vals[7]),
+        "sum_commanded_crank_torque_nm": float(vals[8]),
+        "start_root_x_m": float(vals[9]),
+        "end_root_x_m": float(vals[10]),
+        "distance_m": float(vals[10] - vals[9]),
+        "end_speed_mps": float(vals[11]),
+        "max_speed_mps": float(vals[12]),
+        "sample_count": int(vals[13]),
+        "has_posture_min_lean": int(vals[14]),
+        "has_start_root_x": int(vals[15]),
+        "active_control_tick": int(vals[16]),
+        "last_cmd_enabled": int(vals[17]),
+    }
 
 
 if __name__ == "__main__":

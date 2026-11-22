@@ -83,7 +83,8 @@ def compile_metal_batch_runner(
     native_src_dir = gpu_src_dir.parent
     mm_path = gpu_src_dir / "metal_batch_runner.mm"
     tyre_upload_cpp = native_src_dir / "physics_core" / "tyre_upload.cpp"
-    for p in (mm_path, tyre_upload_cpp):
+    spindle_upload_cpp = native_src_dir / "physics_core" / "spindle_m2k2_upload.cpp"
+    for p in (mm_path, tyre_upload_cpp, spindle_upload_cpp):
         if not p.is_file():
             raise FileNotFoundError(f"Required Metal batch runner source not found: {p}")
 
@@ -94,7 +95,9 @@ def compile_metal_batch_runner(
     out_so_path.parent.mkdir(parents=True, exist_ok=True)
     obj_mm = out_so_path.with_suffix(".mm.o")
     obj_tu = out_so_path.with_suffix(".tu.o")
+    obj_su = out_so_path.with_suffix(".su.o")
 
+    colab_gpu_dir = Path(__file__).resolve().parent
     common_flags = [
         "clang++",
         "-std=c++20",
@@ -102,13 +105,16 @@ def compile_metal_batch_runner(
         "-ffp-contract=off",
         "-mcpu=native",
         "-fPIC",
+        "-DBIKE_GPU_STANDALONE_RUNNER=1",
         f"-I{native_src_dir}",
         f"-I{gpu_src_dir}",
+        f"-I{colab_gpu_dir}",
         f"-I{mj_inc_dir}",
     ]
     compile_jobs = [
         ([*common_flags, "-fobjc-arc", "-c", str(mm_path), "-o", str(obj_mm)], "Objective-C++"),
         ([*common_flags, "-c", str(tyre_upload_cpp), "-o", str(obj_tu)], "tyre_upload"),
+        ([*common_flags, "-c", str(spindle_upload_cpp), "-o", str(obj_su)], "spindle_upload"),
     ]
     for compile_cmd, label in compile_jobs:
         proc = subprocess.run(compile_cmd, check=False, capture_output=True, text=True)
@@ -130,6 +136,7 @@ def compile_metal_batch_runner(
         "Foundation",
         str(obj_mm),
         str(obj_tu),
+        str(obj_su),
         str(mj_lib_path),
         f"-Wl,-rpath,{mj_lib_path.parent}",
         "-o",

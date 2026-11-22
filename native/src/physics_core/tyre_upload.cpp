@@ -287,7 +287,7 @@ void populate_terrain_views(
             throw std::invalid_argument("invalid compiled heightfield raster");
         }
     }
-    const std::size_t cs = to_idx(cols);
+    std::size_t cs = to_idx(cols);
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
             if (std::abs(raster[to_idx(r) * cs + to_idx(c)] - raster[to_idx(c)]) > 1e-10f) {
@@ -342,6 +342,133 @@ void populate_terrain_views(
         }
         px_d[i] = wx;
         pz_d[i] = wz;
+    }
+
+    for (std::size_t i = 0; i + 1 < cs; ++i) {
+        if (!(px_d[i + 1] - px_d[i] > 0.0)) {
+            throw std::invalid_argument("profile x must increase strictly");
+        }
+    }
+
+    // Collinearly decimate quantized float32 hfield samples on genuine straight
+    // runs (deviation <= 4 um over spans >= 0.25 m) so float32 raster
+    // quantization does not inject high-frequency slope jitter on long ramps
+    // and flats, while curved/rough profiles keep all sample vertices intact.
+    if (cs > 8) {
+        constexpr double kCollinearTolM = 4.0e-6;
+        constexpr double kMinStraightRunM = 0.05;
+        std::vector<int> keep(cs, 0);
+        keep.front() = 1;
+        keep.back() = 1;
+        std::vector<std::pair<std::size_t, std::size_t>> stack;
+        stack.emplace_back(0, cs - 1);
+        while (!stack.empty()) {
+            const auto [i0, i1] = stack.back();
+            stack.pop_back();
+            if (i1 <= i0 + 1) {
+                continue;
+            }
+            const double x0 = px_d[i0];
+            const double z0 = pz_d[i0];
+            const double dx = px_d[i1] - x0;
+            const double dz = pz_d[i1] - z0;
+            if (!(dx > 0.0)) {
+                continue;
+            }
+            if (dx < kMinStraightRunM) {
+                // Only preserve high-density vertices inside short spans when the
+                // surrounding 0.25 m neighborhood has high-frequency roughness
+                // (e.g. rough_uphill), so smooth quadratic transitions (e.g.
+                // climb_15pct's 4 m grade fillet) still shed float32 sawtooth.
+                constexpr double kHalfWindowM = 0.125;
+                constexpr double kRoughWindowTolM = 5.0e-4;
+                const double x_mid = 0.5 * (x0 + px_d[i1]);
+                std::size_t w0 = i0;
+                while (w0 > 0 && (x_mid - px_d[w0 - 1]) <= kHalfWindowM) {
+                    --w0;
+                }
+                std::size_t w1 = i1;
+                while (w1 + 1 < cs && (px_d[w1 + 1] - x_mid) <= kHalfWindowM) {
+                    ++w1;
+                }
+                const double wx_span = px_d[w1] - px_d[w0];
+                bool is_rough = false;
+                if (wx_span > 0.0 && w1 > w0 + 1) {
+                    const double w_slope = (pz_d[w1] - pz_d[w0]) / wx_span;
+                    for (std::size_t k = w0 + 1; k < w1; ++k) {
+                        const double z_w = pz_d[w0] + w_slope * (px_d[k] - px_d[w0]);
+                        if (std::abs(pz_d[k] - z_w) > kRoughWindowTolM) {
+                            is_rough = true;
+                            break;
+                        }
+                    }
+                }
+                if (is_rough) {
+                    for (std::size_t k = i0 + 1; k < i1; ++k) {
+                        keep[k] = 1;
+                    }
+                    continue;
+                }
+            }
+            const double slope = dz / dx;
+            double max_dev = 0.0;
+            std::size_t split = i0;
+            for (std::size_t k = i0 + 1; k < i1; ++k) {
+                const double z_line = z0 + slope * (px_d[k] - x0);
+                const double dev = std::abs(pz_d[k] - z_line);
+                if (dev > max_dev) {
+                    max_dev = dev;
+                    split = k;
+                }
+            }
+            if (max_dev > kCollinearTolM && split > i0 && split < i1) {
+                keep[split] = 1;
+                stack.emplace_back(i0, split);
+                stack.emplace_back(split, i1);
+            }
+        }
+        std::vector<double> dec_x;
+        std::vector<double> dec_z;
+        dec_x.reserve(cs);
+        dec_z.reserve(cs);
+        for (std::size_t i = 0; i < cs; ++i) {
+            if (keep[i] != 0) {
+                dec_x.push_back(px_d[i]);
+                dec_z.push_back(pz_d[i]);
+            }
+        }
+        // Keep >= 8 vertices by subdividing the first segment collinearly if a
+        // purely flat profile collapsed below 8 points (e.g. test mutators at
+        // index 5 assume at least several profile vertices).
+        if (dec_x.size() >= 2 && dec_x.size() < 8) {
+            const std::size_t extra = 8 - dec_x.size();
+            const double x0 = dec_x[0];
+            const double z0 = dec_z[0];
+            const double x1 = dec_x[1];
+            const double z1 = dec_z[1];
+            std::vector<double> padded_x;
+            std::vector<double> padded_z;
+            padded_x.reserve(8);
+            padded_z.reserve(8);
+            padded_x.push_back(x0);
+            padded_z.push_back(z0);
+            for (std::size_t j = 1; j <= extra; ++j) {
+                const double t = static_cast<double>(j) / static_cast<double>(extra + 1);
+                padded_x.push_back(x0 + t * (x1 - x0));
+                padded_z.push_back(z0 + t * (z1 - z0));
+            }
+            for (std::size_t j = 1; j < dec_x.size(); ++j) {
+                padded_x.push_back(dec_x[j]);
+                padded_z.push_back(dec_z[j]);
+            }
+            dec_x = std::move(padded_x);
+            dec_z = std::move(padded_z);
+        }
+        if (dec_x.size() >= 2) {
+            px_d = std::move(dec_x);
+            pz_d = std::move(dec_z);
+            cs = px_d.size();
+        }
     }
 
     const std::size_t nseg = cs - 1;

@@ -161,7 +161,7 @@ BIKE_HD void gpu_init_default_sp3_config(BIKE_THREAD GpuSp3Config &cfg) noexcept
     cfg.assist.max_torque = 85.0f;
     cfg.assist.max_power = 600.0f;
     cfg.assist.tau = 0.04f;
-    cfg.assist.slew = 400.0f;
+    cfg.assist.slew = 2125.0f;
     cfg.assist.engage_torque_nm = 4.0f;
     cfg.assist.release_hold_ticks = 240;
     cfg.assist.cutoff_mps = 25.0f / 3.6f;
@@ -382,6 +382,30 @@ BIKE_HD void gpu_sp3_reset_monitors(CfgPtr cfg, MonitorPtr mon) noexcept {
     mon->brake = bike::physics_core::StaticBrakeMonitorState<float>{};
 }
 
+template <class CfgPtr, class ShiftStatePtr>
+BIKE_HD int gpu_sp3_physical_cog_idx(CfgPtr cfg, ShiftStatePtr shifting) noexcept {
+    if (cfg->shifting.shift_cut_duration_ticks > 1 &&
+        shifting->from_teeth >= 3) {
+        const bool off_band_downshift =
+            (shifting->required_ema < 0.5f * cfg->shifting.target_cadence_min_rpm) ||
+            (shifting->required_ema > 0.85f * cfg->shifting.target_cadence_max_rpm);
+        const long cut_ticks = static_cast<long>(cfg->shifting.shift_cut_duration_ticks);
+        const int rem_threshold = (shifting->from_teeth > shifting->rear_teeth)
+            ? static_cast<int>((cut_ticks * 3L) / 8L)
+            : (off_band_downshift
+                ? static_cast<int>(cut_ticks / 3L)
+                : static_cast<int>(cut_ticks / 6L));
+        if (shifting->cut_remaining_ticks > rem_threshold) {
+            const int from_cog =
+                bike::physics_core::shifting_find_cog_idx(&cfg->shifting, shifting->from_teeth);
+            if (from_cog >= 0 && from_cog < cfg->shifting.cog_count) {
+                return from_cog;
+            }
+        }
+    }
+    return shifting->active_cog_idx;
+}
+
 template <class TendonRangePtr, class CfgPtr, class ShiftStatePtr>
 BIKE_HD bike::physics_core::Status gpu_sp3_write_tendon_ranges(
     CfgPtr cfg,
@@ -398,11 +422,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_write_tendon_ranges(
     if (tendon_range_w == nullptr || ntendon <= 0) {
         return bike::physics_core::Status::ok;
     }
-    if (ntendon >= cfg->shifting.cog_count && shifting->active_cog_idx >= 0 &&
-        shifting->active_cog_idx < cfg->shifting.cog_count) {
+    const int phys_cog = gpu_sp3_physical_cog_idx(cfg, shifting);
+    if (ntendon >= cfg->shifting.cog_count && phys_cog >= 0 &&
+        phys_cog < cfg->shifting.cog_count) {
         const bike::physics_core::Status fc_st =
             bike::physics_core::fill_cassette_tendon_ranges<float, bike::physics_core::GpuToolkit>(
-                shifting->active_cog_idx,
+                phys_cog,
                 cfg->shifting.cog_count,
                 ntendon,
                 fh_bound,
@@ -563,6 +588,8 @@ BIKE_HD bike::physics_core::Status gpu_sp3_init_world(
         cfg, &sp3_st->shifting, idx, ntendon, fh_bound, has_ds, cc_bound, tendon_range_w, err);
 }
 
+namespace detail {
+
 template <
     class CfgPtr,
     class Sp3StatePtr,
@@ -574,7 +601,7 @@ template <
     class XaxisPtr,
     class TendonRangePtr,
     class FrictionLossPtr>
-BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
+BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_core(
     int w,
     float dt_s,
     const BIKE_THREAD GpuModelIndices &idx,
@@ -596,7 +623,15 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
     BIKE_THREAD float *ctrl_w,
     int ntendon,
     TendonRangePtr tendon_range_w,
-    FrictionLossPtr dof_frictionloss_w
+    FrictionLossPtr dof_frictionloss_w,
+    bool has_lean_override,
+    bool ov_has_lean_limit,
+    float ov_lean_limit_rad,
+    bool ov_has_min_lean,
+    float ov_min_lean_rad,
+    bool write_sp3_pd_ctrl,
+    BIKE_THREAD bike::physics_core::IntentResolutionCore<float> *out_intent_res,
+    BIKE_THREAD bike::physics_core::PedalingOutput<float> *out_pedal_out
 ) noexcept {
     if (w < 0 || cfg == nullptr || sp3_st == nullptr || tyre_model == nullptr ||
         !gpu_validate_model_indices(idx) ||
@@ -722,6 +757,15 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
             ? 1
             : 0;
 
+    const bool eff_has_lean_limit =
+        has_lean_override ? ov_has_lean_limit : (cfg->has_lean_limit != 0);
+    const float eff_lean_limit_rad =
+        has_lean_override ? ov_lean_limit_rad : cfg->lean_limit_rad;
+    const bool eff_has_min_lean =
+        has_lean_override ? ov_has_min_lean : (cfg->has_min_lean != 0);
+    const float eff_min_lean_rad =
+        has_lean_override ? ov_min_lean_rad : cfg->min_lean_rad;
+
     bike::physics_core::IntentResolutionCore<float> intent_res{};
     const bike::physics_core::Status ri_st =
         bike::physics_core::rider_intent_resolve<float, bike::physics_core::GpuToolkit>(
@@ -735,11 +779,11 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
             posture_grade,
             true,
             preview_grade,
-            cfg->has_lean_limit != 0,
-            cfg->lean_limit_rad,
+            eff_has_lean_limit,
+            eff_lean_limit_rad,
             true,
-            cfg->has_min_lean != 0,
-            cfg->min_lean_rad,
+            eff_has_min_lean,
+            eff_min_lean_rad,
             launch_ctx,
             &sp3_st->sp3.intent,
             intent_res,
@@ -876,10 +920,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
     const float fh_driver_omega =
         has_drive_shaft ? qvel_w[idx.drive_shaft_spin_dof] : crank_omega;
 
-    const float prev_ratio =
+    const float prev_cog_ratio =
         bike::physics_core::shifting_gear_ratio<float>(&cfg->shifting, &sp3_st->shifting);
+    const float prev_applied_ratio =
+        (sp3_st->freehub.ratio > 0.0f) ? sp3_st->freehub.ratio : prev_cog_ratio;
     const float cadence_rpm = fh_driver_omega * (60.0f / kTwoPi);
-    const float req_cadence_before = (rw_omega / prev_ratio) * (60.0f / kTwoPi);
+    const float req_cadence_before = (rw_omega / prev_applied_ratio) * (60.0f / kTwoPi);
     const bool rider_enabled = (intent_res.control.rider_enabled != 0);
     const float effort_cmd =
         (intent_res.control.has_human_torque_nm != 0) ? intent_res.control.human_torque_nm : 0.0f;
@@ -925,14 +971,19 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
         }
     }
 
-    const float new_ratio =
+    const int phys_cog = gpu_sp3_physical_cog_idx(cfg, &sp3_st->shifting);
+    float target_ratio =
         bike::physics_core::shifting_gear_ratio<float>(&cfg->shifting, &sp3_st->shifting);
+    if (phys_cog != sp3_st->shifting.active_cog_idx && sp3_st->shifting.from_teeth >= 3) {
+        target_ratio = static_cast<float>(cfg->shifting.front_teeth) /
+                       static_cast<float>(sp3_st->shifting.from_teeth);
+    }
     bool fh_has = (sp3_st->freehub.has_boundary != 0);
     float fh_bound = sp3_st->freehub.boundary;
-    if (out_shifted) {
+    if (target_ratio != prev_applied_ratio) {
         const bike::physics_core::Status srb_st =
             bike::physics_core::ratchet_shift_ratio_bound<float, bike::physics_core::GpuToolkit>(
-                prev_ratio, new_ratio, fh_driver_qpos, rw_qpos, fh_has, fh_bound, err);
+                prev_applied_ratio, target_ratio, fh_driver_qpos, rw_qpos, fh_has, fh_bound, err);
         if (srb_st != bike::physics_core::Status::ok) {
             return srb_st;
         }
@@ -940,13 +991,15 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
     // Unconditionally call ratchet_prepare_bound on EVERY step
     const bike::physics_core::Status fhp_st =
         bike::physics_core::ratchet_prepare_bound<float, bike::physics_core::GpuToolkit>(
-            new_ratio, fh_driver_qpos, rw_qpos, fh_has, fh_bound, err);
+            target_ratio, fh_driver_qpos, rw_qpos, fh_has, fh_bound, err);
     if (fhp_st != bike::physics_core::Status::ok) {
         return fhp_st;
     }
-    sp3_st->freehub.ratio = new_ratio;
+    sp3_st->freehub.ratio = target_ratio;
     sp3_st->freehub.has_boundary = fh_has ? 1 : 0;
     sp3_st->freehub.boundary = fh_bound;
+    const float active_cog_ub = fh_bound;
+    const float curr_applied_ratio = target_ratio;
 
     float cc_bound = sp3_st->crank_clutch.boundary;
     if (has_drive_shaft) {
@@ -962,15 +1015,17 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
         sp3_st->crank_clutch.boundary = cc_bound;
     }
 
+    const float tendon_ub =
+        (ntendon >= cfg->shifting.cog_count) ? active_cog_ub : fh_bound;
     const bike::physics_core::Status tr_st = gpu_sp3_write_tendon_ranges(
-        cfg, &sp3_st->shifting, idx, ntendon, fh_bound, has_drive_shaft, cc_bound, tendon_range_w, err);
+        cfg, &sp3_st->shifting, idx, ntendon, tendon_ub, has_drive_shaft, cc_bound, tendon_range_w, err);
     if (tr_st != bike::physics_core::Status::ok) {
         return tr_st;
     }
     sp3_st->using_cassette_tendons = (ntendon >= cfg->shifting.cog_count) ? 1 : 0;
 
     // 5. Pedaling policy & crank torque
-    const float req_cadence_after = (rw_omega / new_ratio) * (60.0f / kTwoPi);
+    const float req_cadence_after = (rw_omega / curr_applied_ratio) * (60.0f / kTwoPi);
     const float torque_factor =
         bike::physics_core::shift_torque_factor<float>(&cfg->shifting, &sp3_st->shifting);
     const bool has_ceiling =
@@ -1154,7 +1209,62 @@ BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
         rider_p.target_qpos_rad[4] =
             cfg->rider.target_qpos_rad[4] + intent_res.control.posture.torso_lean_rad;
     }
-    return gpu_write_rider_qfrc_and_ctrl(rider_p, idx, qpos_w, qvel_w, qfrc_w, ctrl_w);
+    if (out_intent_res != nullptr) {
+        *out_intent_res = intent_res;
+    }
+    if (out_pedal_out != nullptr) {
+        *out_pedal_out = pedal_out;
+    }
+    if (write_sp3_pd_ctrl) {
+        return gpu_write_rider_qfrc_and_ctrl(rider_p, idx, qpos_w, qvel_w, qfrc_w, ctrl_w);
+    }
+    return gpu_write_rider_envelope_qfrc(rider_p, idx, qpos_w, qfrc_w);
+}
+
+} // namespace detail
+
+template <
+    class CfgPtr,
+    class Sp3StatePtr,
+    class CompliantStatePtr,
+    class DistStatePtr,
+    class XposPtr,
+    class XmatPtr,
+    class XanchorPtr,
+    class XaxisPtr,
+    class TendonRangePtr,
+    class FrictionLossPtr>
+BIKE_HD bike::physics_core::Status gpu_sp3_pre_solve_world(
+    int w,
+    float dt_s,
+    const BIKE_THREAD GpuModelIndices &idx,
+    BIKE_DEVICE const bike::physics_core::GpuTyreModel *tyre_model,
+    const BIKE_THREAD bike::physics_core::GpuTerrainTableDesc &terrain_desc,
+    BIKE_DEVICE const float *terrain_f32,
+    BIKE_DEVICE const bike::physics_core::i32 *terrain_i32,
+    CfgPtr cfg,
+    Sp3StatePtr sp3_st,
+    CompliantStatePtr compliant_wheels_w,
+    DistStatePtr dist_wheels_w,
+    const BIKE_THREAD float *qpos_w,
+    const BIKE_THREAD float *qvel_w,
+    XposPtr xpos_w,
+    XmatPtr xmat_w,
+    XanchorPtr xanchor_w,
+    XaxisPtr xaxis_w,
+    BIKE_THREAD float *qfrc_w,
+    BIKE_THREAD float *ctrl_w,
+    int ntendon,
+    TendonRangePtr tendon_range_w,
+    FrictionLossPtr dof_frictionloss_w
+) noexcept {
+    return detail::gpu_sp3_pre_solve_core(
+        w, dt_s, idx, tyre_model, terrain_desc, terrain_f32, terrain_i32,
+        cfg, sp3_st, compliant_wheels_w, dist_wheels_w,
+        qpos_w, qvel_w, xpos_w, xmat_w, xanchor_w, xaxis_w,
+        qfrc_w, ctrl_w, ntendon, tendon_range_w, dof_frictionloss_w,
+        false, false, 0.0f, false, 0.0f,
+        true, nullptr, nullptr);
 }
 
 namespace detail {
@@ -1354,11 +1464,12 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
 
     // 1. Scan per-world efc rows (resolve active cassette tendon id dynamically when ntendon >= cog_count)
     bike::physics_core::EfcScanConfig<float> efc_cfg = cfg->efc_scan;
+    const int phys_cog = gpu_sp3_physical_cog_idx(cfg, &sp3_st->shifting);
     if (sp3_st->using_cassette_tendons != 0 &&
-        sp3_st->shifting.active_cog_idx >= 0 &&
-        sp3_st->shifting.active_cog_idx < cfg->shifting.cog_count &&
+        phys_cog >= 0 &&
+        phys_cog < cfg->shifting.cog_count &&
         efc_cfg.freehub_tendon_id >= 0) {
-        const int cog_tid = cfg->shifting.cassette_tendon_ids[sp3_st->shifting.active_cog_idx];
+        const int cog_tid = cfg->shifting.cassette_tendon_ids[phys_cog];
         if (cog_tid >= 0) {
             efc_cfg.freehub_tendon_id = cog_tid;
         }
@@ -1488,7 +1599,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     // 5. Increment step_index
     sp3_st->step_index = cur_step + 1;
 
-    // 6. Synchronized 2*pi epoch re-basing whenever |qpos[wheel/shaft/crank]| > 256.0f
+    // 6. Synchronized 2*pi epoch re-basing when any drivetrain/wheel angle exceeds 256 rad.
     const float fw_q = (idx.front_wheel_spin_qpos >= 0) ? qpos_w[idx.front_wheel_spin_qpos] : 0.0f;
     const float rw_q = (idx.rear_wheel_spin_qpos >= 0) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
     const float cr_q = (idx.crank_spin_qpos >= 0) ? qpos_w[idx.crank_spin_qpos] : 0.0f;

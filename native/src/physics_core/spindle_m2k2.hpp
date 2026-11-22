@@ -327,10 +327,11 @@ template <class Real>
 struct SpindleM2K2State {
     Real coast_hold_nm = BIKE_REAL(Real, 0.0);
     Real held_torques[kNumSpindleJoints]{};
+    PressStateCore<Real> prev_ps{};
     u8 enabled = 1;
     u8 command_enabled = 1;
     u8 has_held_torques = 0;
-    u8 pad = 0;
+    u8 has_prev_ps = 0;
 };
 
 template <class Real>
@@ -378,11 +379,13 @@ struct SpindleM2K2StepScratch {
     u8 converged = 0;
     u8 perturbed0 = 0;
     u8 perturbed1 = 0;
+    u8 adaptive_mode = 0;
     u8 pad_flags[3]{};
 
     PressStateCore<Real> ps0{};
     PressStateCore<Real> P{};
     PressStateCore<Real> P0{};
+    PressStateCore<Real> ps_trial{};
     Real base_leg_req[4]{};
     Real base_leg_prio[4]{};
 };
@@ -1823,10 +1826,12 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
     ScratchPtr scratch,
     PtrCtrl ctrl
 ) noexcept {
+    (void)step_index;
     scratch->active_newton = 0;
     scratch->converged = 1;
     scratch->perturbed0 = 0;
     scratch->perturbed1 = 0;
+    scratch->adaptive_mode = 0;
     if (!validate_spindle_m2k2_params(params)) {
         return;
     }
@@ -1843,6 +1848,8 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
                 state->held_torques[i] = BIKE_REAL(Real, 0.0);
             }
             state->has_held_torques = 1;
+            state->has_prev_ps = 0;
+            state->prev_ps = PressStateCore<Real>{};
         }
         for (i32 i = 0; i < kNumSpindleJoints; ++i) {
             const i32 aid = params->joint_actuator_id[i];
@@ -2079,8 +2086,11 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
     scratch->has_weld_crank_torque = cmd.has_weld_crank_torque;
     scratch->crank_reposition = cmd.crank_reposition;
 
-    const PressStateCore<Real> ps0 = compute_press_state_zero_qacc_m<Real>(
-        params, scratch, qM_row_stride, M_rowadr, M_rownnz, M_colind, d_M_or_qM, qfrc_bias);
+    const PressStateCore<Real> ps0 =
+        (state->has_prev_ps != 0 && cmd.steady_state == 0 && state->enabled != 0)
+        ? state->prev_ps
+        : compute_press_state_zero_qacc_m<Real>(
+              params, scratch, qM_row_stride, M_rowadr, M_rownnz, M_colind, d_M_or_qM, qfrc_bias);
     scratch->ps0 = ps0;
 
     Real req[kNumSpindleJoints]{};
@@ -2096,6 +2106,8 @@ BIKE_HD void spindle_m2k2_pass0_init_and_base(
                 state->held_torques[i] = exc[i];
             }
             state->has_held_torques = 1;
+            state->prev_ps = ps0;
+            state->has_prev_ps = 1;
         }
         write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
         return;
@@ -2186,10 +2198,33 @@ BIKE_HD void spindle_m2k2_pass1_perturb0(
         return;
     }
 
-    PressStateCore<Real> ps_p0 = scratch->ps0;
-    ps_p0.f_passive[0] += params->newton_eps;
     Real req[kNumSpindleJoints]{};
     Real prio[kNumSpindleJoints]{};
+    Real exc[kNumSpindleJoints]{};
+
+    const bool sign_flip_kink =
+        ((scratch->ps0.f_passive[0] > BIKE_REAL(Real, 0.0) && P.f_passive[0] < BIKE_REAL(Real, 0.0)) ||
+         (scratch->ps0.f_passive[0] < BIKE_REAL(Real, 0.0) && P.f_passive[0] > BIKE_REAL(Real, 0.0)) ||
+         (scratch->ps0.f_passive[1] > BIKE_REAL(Real, 0.0) && P.f_passive[1] < BIKE_REAL(Real, 0.0)) ||
+         (scratch->ps0.f_passive[1] < BIKE_REAL(Real, 0.0) && P.f_passive[1] > BIKE_REAL(Real, 0.0)));
+    if (state->has_prev_ps != 0 &&
+        (err > BIKE_REAL(Real, 100.0) || sign_flip_kink)) {
+        scratch->adaptive_mode = 1;
+        const Real alpha = BIKE_REAL(Real, 0.55);
+        PressStateCore<Real> ps_mid{};
+        ps_mid.f_passive[0] = scratch->ps0.f_passive[0] + alpha * r0;
+        ps_mid.f_passive[1] = scratch->ps0.f_passive[1] + alpha * r1;
+        ps_mid.max_total_press_n = scratch->ps0.max_total_press_n + alpha * r2;
+        scratch->ps_trial = ps_mid;
+        populate_leg_torques_core<Real, TK, Trig>(
+            params, scratch, ps_mid, 0u, qvel, state, req, prio);
+        limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
+        write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
+        return;
+    }
+
+    PressStateCore<Real> ps_p0 = scratch->ps0;
+    ps_p0.f_passive[0] += params->newton_eps;
     populate_leg_torques_core<Real, TK, Trig>(
         params, scratch, ps_p0, 0u, qvel, state, req, prio);
 
@@ -2200,13 +2235,39 @@ BIKE_HD void spindle_m2k2_pass1_perturb0(
             same = 0;
         }
     }
+    if (same != 0 && state->has_prev_ps != 0) {
+        PressStateCore<Real> ps_chk = scratch->ps0;
+        ps_chk.f_passive[0] = P.f_passive[0];
+        populate_leg_torques_core<Real, TK, Trig>(
+            params, scratch, ps_chk, 0u, qvel, state, req, prio);
+        u8 diff_at_P = 0;
+        for (i32 j = 0; j < 4; ++j) {
+            if (Trig::flush_subnorm(req[5 + j]) != scratch->base_leg_req[j] ||
+                Trig::flush_subnorm(prio[5 + j]) != scratch->base_leg_prio[j]) {
+                diff_at_P = 1;
+            }
+        }
+        if (diff_at_P != 0) {
+            scratch->adaptive_mode = 1;
+            const Real alpha = BIKE_REAL(Real, 0.55);
+            PressStateCore<Real> ps_mid{};
+            ps_mid.f_passive[0] = scratch->ps0.f_passive[0] + alpha * r0;
+            ps_mid.f_passive[1] = scratch->ps0.f_passive[1] + alpha * r1;
+            ps_mid.max_total_press_n = scratch->ps0.max_total_press_n + alpha * r2;
+            scratch->ps_trial = ps_mid;
+            populate_leg_torques_core<Real, TK, Trig>(
+                params, scratch, ps_mid, 0u, qvel, state, req, prio);
+            limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
+            write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
+            return;
+        }
+    }
     if (same != 0) {
         scratch->perturbed0 = 0;
         return;
     }
 
     scratch->perturbed0 = 1;
-    Real exc[kNumSpindleJoints]{};
     limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
     write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
 }
@@ -2259,6 +2320,51 @@ BIKE_HD void spindle_m2k2_pass2_perturb1(
         scratch->active_newton == 0 || scratch->converged != 0) {
         return;
     }
+    if (scratch->adaptive_mode != 0) {
+        const PressStateCore<Real> P_mid = compute_press_state_m<Real>(
+            params, scratch, qM_row_stride, M_rowadr, M_rownnz, M_colind, d_M_or_qM,
+            qacc, qfrc_bias);
+        const Real rm0 = P_mid.f_passive[0] - scratch->ps_trial.f_passive[0];
+        const Real rm1 = P_mid.f_passive[1] - scratch->ps_trial.f_passive[1];
+        const Real rm2 = P_mid.max_total_press_n - scratch->ps_trial.max_total_press_n;
+        const Real err_m = TK::max(TK::abs(rm0), TK::max(TK::abs(rm1), TK::abs(rm2)));
+        if (err_m <= params->conv_eps) {
+            scratch->ps0 = scratch->ps_trial;
+            scratch->P = P_mid;
+            scratch->converged = 1;
+            return;
+        }
+        PressStateCore<Real> ps2{};
+        const Real dx0 = scratch->ps_trial.f_passive[0] - scratch->ps0.f_passive[0];
+        const Real dx1 = scratch->ps_trial.f_passive[1] - scratch->ps0.f_passive[1];
+        const Real dP0 = P_mid.f_passive[0] - scratch->P.f_passive[0];
+        const Real dP1 = P_mid.f_passive[1] - scratch->P.f_passive[1];
+        const Real den0 = (TK::abs(dx0) > BIKE_REAL(Real, 0.5))
+            ? (TK::clamp(dP0 / dx0, -BIKE_REAL(Real, 0.6), BIKE_REAL(Real, 0.5)) - BIKE_REAL(Real, 1.0))
+            : -BIKE_REAL(Real, 1.0);
+        const Real den1 = (TK::abs(dx1) > BIKE_REAL(Real, 0.5))
+            ? (TK::clamp(dP1 / dx1, -BIKE_REAL(Real, 0.6), BIKE_REAL(Real, 0.5)) - BIKE_REAL(Real, 1.0))
+            : -BIKE_REAL(Real, 1.0);
+        ps2.f_passive[0] = scratch->ps_trial.f_passive[0] +
+            TK::clamp(-rm0 / den0, -BIKE_REAL(Real, 400.0), BIKE_REAL(Real, 400.0));
+        ps2.f_passive[1] = scratch->ps_trial.f_passive[1] +
+            TK::clamp(-rm1 / den1, -BIKE_REAL(Real, 400.0), BIKE_REAL(Real, 400.0));
+        ps2.max_total_press_n = P_mid.max_total_press_n;
+
+        scratch->ps0 = scratch->ps_trial;
+        scratch->P = P_mid;
+        scratch->ps_trial = ps2;
+
+        Real req[kNumSpindleJoints]{};
+        Real prio[kNumSpindleJoints]{};
+        Real exc[kNumSpindleJoints]{};
+        populate_leg_torques_core<Real, TK, Trig>(
+            params, scratch, ps2, 0u, qvel, state, req, prio);
+        limit_torques_core<Real, TK, Trig>(params, req, prio, qpos, qvel, exc);
+        write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
+        return;
+    }
+
     if (scratch->perturbed0 != 0) {
         scratch->P0 = compute_press_state_m<Real>(
             params, scratch, qM_row_stride, M_rowadr, M_rownnz, M_colind, d_M_or_qM,
@@ -2340,7 +2446,34 @@ BIKE_HD void spindle_m2k2_pass3_commit(
         return;
     }
     PressStateCore<Real> ps_final = scratch->ps0;
-    if (scratch->converged == 0) {
+    if (scratch->converged == 0 && scratch->adaptive_mode != 0) {
+        const PressStateCore<Real> P2 = compute_press_state_m<Real>(
+            params, scratch, qM_row_stride, M_rowadr, M_rownnz, M_colind, d_M_or_qM,
+            qacc, qfrc_bias);
+        const Real r2_0 = P2.f_passive[0] - scratch->ps_trial.f_passive[0];
+        const Real r2_1 = P2.f_passive[1] - scratch->ps_trial.f_passive[1];
+        const Real r2_2 = P2.max_total_press_n - scratch->ps_trial.max_total_press_n;
+        const Real err2 = TK::max(TK::abs(r2_0), TK::max(TK::abs(r2_1), TK::abs(r2_2)));
+        if (err2 <= params->conv_eps) {
+            ps_final = scratch->ps_trial;
+        } else {
+            const Real dx0 = scratch->ps_trial.f_passive[0] - scratch->ps0.f_passive[0];
+            const Real dx1 = scratch->ps_trial.f_passive[1] - scratch->ps0.f_passive[1];
+            const Real dP0 = P2.f_passive[0] - scratch->P.f_passive[0];
+            const Real dP1 = P2.f_passive[1] - scratch->P.f_passive[1];
+            const Real den0 = (TK::abs(dx0) > BIKE_REAL(Real, 0.25))
+                ? (TK::clamp(dP0 / dx0, -BIKE_REAL(Real, 0.8), BIKE_REAL(Real, 0.6)) - BIKE_REAL(Real, 1.0))
+                : -BIKE_REAL(Real, 1.0);
+            const Real den1 = (TK::abs(dx1) > BIKE_REAL(Real, 0.25))
+                ? (TK::clamp(dP1 / dx1, -BIKE_REAL(Real, 0.8), BIKE_REAL(Real, 0.6)) - BIKE_REAL(Real, 1.0))
+                : -BIKE_REAL(Real, 1.0);
+            ps_final.f_passive[0] = scratch->ps_trial.f_passive[0] +
+                TK::clamp(-r2_0 / den0, -BIKE_REAL(Real, 400.0), BIKE_REAL(Real, 400.0));
+            ps_final.f_passive[1] = scratch->ps_trial.f_passive[1] +
+                TK::clamp(-r2_1 / den1, -BIKE_REAL(Real, 400.0), BIKE_REAL(Real, 400.0));
+            ps_final.max_total_press_n = P2.max_total_press_n;
+        }
+    } else if (scratch->converged == 0) {
         PressStateCore<Real> P1 = scratch->P;
         if (scratch->perturbed1 != 0) {
             P1 = compute_press_state_m<Real>(
@@ -2366,7 +2499,8 @@ BIKE_HD void spindle_m2k2_pass3_commit(
             const Real dp2 = r2 + J20 * dp0 + J21 * dp1;
             ps_final.f_passive[0] += dp0;
             ps_final.f_passive[1] += dp1;
-            ps_final.max_total_press_n += dp2;
+            ps_final.max_total_press_n = TK::max(
+                ps_final.max_total_press_n + dp2, BIKE_REAL(Real, 0.0));
         }
     }
 
@@ -2381,6 +2515,17 @@ BIKE_HD void spindle_m2k2_pass3_commit(
             state->held_torques[i] = exc[i];
         }
         state->has_held_torques = 1;
+        if (TK::isfinite(ps_final.f_passive[0]) &&
+            TK::isfinite(ps_final.f_passive[1]) &&
+            TK::isfinite(ps_final.max_total_press_n)) {
+            state->prev_ps.f_passive[0] = ps_final.f_passive[0];
+            state->prev_ps.f_passive[1] = ps_final.f_passive[1];
+            state->prev_ps.max_total_press_n =
+                TK::max(ps_final.max_total_press_n, BIKE_REAL(Real, 0.0));
+            state->has_prev_ps = 1;
+        } else {
+            state->has_prev_ps = 0;
+        }
     }
     write_ctrl_with_speed_gate<Real, TK, Trig>(params, exc, qvel, 1u, ctrl);
 }

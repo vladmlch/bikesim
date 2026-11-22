@@ -7,7 +7,14 @@
 #include <mujoco/mujoco.h>
 
 #include "model_assets.hpp"
+#include "runner_spindle_setup.hpp"
 #include "runner_tyre_setup.hpp"
+
+#if defined(BIKE_GPU_STANDALONE_RUNNER)
+#include "standalone_mujoco_shim.hpp"
+#else
+#include "../engine_call.hpp"
+#endif
 
 #include <algorithm>
 #include <array>
@@ -150,6 +157,28 @@ int bike_cpu_build_tyre_and_terrain(
     int *io_i32_count
 );
 
+int bike_cpu_build_tyre_and_terrain_for_surface(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    int surface_label,
+    const bike::gpu::GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+);
+
+int bike_cpu_build_spindle_params(
+    const char *xml_path,
+    const char *strength_json_path,
+    const char *envelope_json_path,
+    int control_period_steps,
+    bike::physics_core::SpindleM2K2Params<float> *out_params
+);
+
 int bike_cpu_run_batch_ex(
     const char *xml_path,
     int nworld,
@@ -282,15 +311,9 @@ int bike_cpu_run_batch_ex(
         qvel0[i] = init_qvel_v[i];
     }
 
-    const auto make_data_fn = &mj_makeData;
-    const auto reset_data_fn = &mj_resetData;
-    const auto forward_fn = &mj_forward;
-    const auto step_fn = &mj_step;
-    const auto kinematics_fn = &mj_kinematics;
-
     bike::gpu::ResolvedRunnerTyre resolved_tyre{};
     {
-        mjData *d_init = make_data_fn(m_base);
+        mjData *d_init = engine::make_data(m_base);
         const std::span<mjtNum> d_init_qpos = boundary_span(d_init->qpos, to_index(nq));
         const std::span<mjtNum> d_init_qvel = boundary_span(d_init->qvel, to_index(nv));
         for (std::size_t i = 0; i < to_index(nq); ++i) {
@@ -299,7 +322,7 @@ int bike_cpu_run_batch_ex(
         for (std::size_t i = 0; i < to_index(nv); ++i) {
             d_init_qvel[i] = static_cast<mjtNum>(qvel0[i]);
         }
-        forward_fn(m_base, d_init);
+        engine::forward(m_base, d_init);
         const int rc_tyre = bike::gpu::resolve_runner_tyre_and_terrain(
             m_base,
             d_init,
@@ -343,7 +366,7 @@ int bike_cpu_run_batch_ex(
     std::vector<mjData *> worker_data(to_index(n_workers), nullptr);
     for (int t = 0; t < n_workers; ++t) {
         worker_models[to_index(t)] = mj_copyModel(nullptr, m_base);
-        worker_data[to_index(t)] = make_data_fn(worker_models[to_index(t)]);
+        worker_data[to_index(t)] = engine::make_data(worker_models[to_index(t)]);
     }
 
     const float dt_s = static_cast<float>(m_base->opt.timestep);
@@ -383,7 +406,7 @@ int bike_cpu_run_batch_ex(
             const bike::gpu::GpuWorldConfig &cfg_w =
                 configs_v[(per_world_config != 0) ? to_index(w) : 0];
 
-            reset_data_fn(m_t, d_t);
+            engine::reset_data(m_t, d_t);
             for (std::size_t i = 0; i < to_index(nq); ++i) {
                 d_qpos[i] = static_cast<mjtNum>(qpos0[i]);
             }
@@ -409,7 +432,7 @@ int bike_cpu_run_batch_ex(
                 tendon_f32[2] = static_cast<float>(base_tendon_range[ct_idx + 0]);
                 tendon_f32[3] = static_cast<float>(base_tendon_range[ct_idx + 1]);
             }
-            forward_fn(m_t, d_t);
+            engine::forward(m_t, d_t);
 
             const auto st_w = std::make_unique<bike::gpu::GpuWorldState>();
             const float crank0 =
@@ -508,8 +531,8 @@ int bike_cpu_run_batch_ex(
                     t_tendon_range[ct_idx + 1] = static_cast<mjtNum>(tendon_f32[3]);
                 }
 
-                step_fn(m_t, d_t);
-                kinematics_fn(m_t, d_t);
+                engine::step(m_t, d_t);
+                engine::kinematics(m_t, d_t);
 
                 if (idx.fork_travel_qpos >= 0 && idx.fork_travel_qpos < nq) {
                     const float fk = static_cast<float>(d_qpos[to_index(idx.fork_travel_qpos)]);
@@ -705,6 +728,38 @@ int bike_cpu_build_tyre_and_terrain(
         out_terrain_f32, io_f32_count,
         out_terrain_i32, io_i32_count
     );
+}
+
+int bike_cpu_build_tyre_and_terrain_for_surface(
+    const char *xml_path,
+    int backend_kind,
+    int station_count,
+    int surface_label,
+    const bike::gpu::GpuModelIndices *d_idx,
+    bike::physics_core::GpuTyreModel *out_tyre_model,
+    bike::physics_core::GpuTerrainTableDesc *out_terrain_desc,
+    float *out_terrain_f32,
+    int *io_f32_count,
+    bike::physics_core::i32 *out_terrain_i32,
+    int *io_i32_count
+) {
+    return bike::gpu::build_runner_tyre_and_terrain_buffers_for_surface(
+        xml_path, backend_kind, station_count, surface_label, d_idx,
+        out_tyre_model, out_terrain_desc,
+        out_terrain_f32, io_f32_count,
+        out_terrain_i32, io_i32_count
+    );
+}
+
+int bike_cpu_build_spindle_params(
+    const char *xml_path,
+    const char *strength_json_path,
+    const char *envelope_json_path,
+    int control_period_steps,
+    bike::physics_core::SpindleM2K2Params<float> *out_params
+) {
+    return bike::gpu::build_runner_spindle_params(
+        xml_path, strength_json_path, envelope_json_path, control_period_steps, out_params);
 }
 
 } // extern "C"

@@ -90,7 +90,8 @@ def compile_cpu_batch_runner(
     cpp_path = gpu_src_dir / "cpu_batch_runner.cpp"
     host_kernels_cpp = gpu_src_dir / "cuda_kernels_host.cpp"
     tyre_upload_cpp = native_src_dir / "physics_core" / "tyre_upload.cpp"
-    for p in (cpp_path, host_kernels_cpp, tyre_upload_cpp):
+    spindle_upload_cpp = native_src_dir / "physics_core" / "spindle_m2k2_upload.cpp"
+    for p in (cpp_path, host_kernels_cpp, tyre_upload_cpp, spindle_upload_cpp):
         if not p.is_file():
             raise FileNotFoundError(f"Required C++ source not found: {p}")
 
@@ -102,7 +103,8 @@ def compile_cpu_batch_runner(
     out_so_path = Path(out_so_path).resolve()
     out_so_path.parent.mkdir(parents=True, exist_ok=True)
 
-    sources = [str(cpp_path), str(host_kernels_cpp), str(tyre_upload_cpp)]
+    colab_gpu_dir = Path(__file__).resolve().parent
+    sources = [str(cpp_path), str(host_kernels_cpp), str(tyre_upload_cpp), str(spindle_upload_cpp)]
     if is_macos:
         cmd = [
             "clang++",
@@ -112,8 +114,10 @@ def compile_cpu_batch_runner(
             "-mcpu=native",
             "-dynamiclib",
             "-fPIC",
+            "-DBIKE_GPU_STANDALONE_RUNNER=1",
             f"-I{native_src_dir}",
             f"-I{gpu_src_dir}",
+            f"-I{colab_gpu_dir}",
             f"-I{mj_inc_dir}",
             *sources,
             str(mj_lib_path),
@@ -131,8 +135,10 @@ def compile_cpu_batch_runner(
             "-shared",
             "-fPIC",
             "-pthread",
+            "-DBIKE_GPU_STANDALONE_RUNNER=1",
             f"-I{native_src_dir}",
             f"-I{gpu_src_dir}",
+            f"-I{colab_gpu_dir}",
             f"-I{mj_inc_dir}",
             *sources,
             str(mj_lib_path),

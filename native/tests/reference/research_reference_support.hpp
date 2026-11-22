@@ -350,34 +350,36 @@ inline void flatten_state(const runtime::WireObject &state,
 // Structural equality over the plain-data wire tree — used for
 // "unchanged since" assertions where the Python source compares state_dict
 // snapshots.
-[[nodiscard]] inline bool wire_equal(const runtime::Wire &a, // NOLINT(misc-no-recursion) recursion mirrors the document tree
+[[nodiscard]] inline bool wire_equal(const runtime::Wire &a,
                                      const runtime::Wire &b) {
-    if (a.value.index() != b.value.index()) return false;
-    if (const auto *x = std::get_if<runtime::WireArray>(&a.value)) {
-        const auto &y = std::get<runtime::WireArray>(b.value);
-        return x->size() == y.size() &&
-               std::equal(x->begin(), x->end(), y.begin(),
-                          [](const runtime::Wire &p, const runtime::Wire &q) { // NOLINT(misc-no-recursion) recursion mirrors the document tree
-                              return wire_equal(p, q); });
+    std::vector<std::pair<const runtime::Wire *, const runtime::Wire *>> pending{{&a, &b}};
+    while (!pending.empty()) {
+        const auto [left, right] = pending.back();
+        pending.pop_back();
+        if (left->value.index() != right->value.index()) return false;
+        if (const auto *array_value = std::get_if<runtime::WireArray>(&left->value)) {
+            const auto &y = std::get<runtime::WireArray>(right->value);
+            if (array_value->size() != y.size()) return false;
+            for (std::size_t i = 0; i < array_value->size(); ++i)
+                pending.emplace_back(&(*array_value)[i], &y[i]);
+        } else if (const auto *object_value = std::get_if<runtime::WireObject>(&left->value)) {
+            const auto &y = std::get<runtime::WireObject>(right->value);
+            if (object_value->size() != y.size()) return false;
+            for (std::size_t i = 0; i < object_value->size(); ++i) {
+                if ((*object_value)[i].first != y[i].first) return false;
+                pending.emplace_back(&(*object_value)[i].second, &y[i].second);
+            }
+        } else if (const auto *real_value = std::get_if<double>(&left->value)) {
+            if (*real_value != std::get<double>(right->value)) return false;
+        } else if (const auto *bool_value = std::get_if<bool>(&left->value)) {
+            if (*bool_value != std::get<bool>(right->value)) return false;
+        } else if (const auto *integer_value = std::get_if<std::int64_t>(&left->value)) {
+            if (*integer_value != std::get<std::int64_t>(right->value)) return false;
+        } else if (const auto *string_value = std::get_if<std::string>(&left->value)) {
+            if (*string_value != std::get<std::string>(right->value)) return false;
+        }
     }
-    if (const auto *x = std::get_if<runtime::WireObject>(&a.value)) {
-        const auto &y = std::get<runtime::WireObject>(b.value);
-        if (x->size() != y.size()) return false;
-        for (std::size_t i = 0; i < x->size(); ++i)
-            if ((*x)[i].first != y[i].first ||
-                !wire_equal((*x)[i].second, y[i].second))
-                return false;
-        return true;
-    }
-    if (const auto *x = std::get_if<double>(&a.value))
-        return *x == std::get<double>(b.value);
-    if (const auto *x = std::get_if<bool>(&a.value))
-        return *x == std::get<bool>(b.value);
-    if (const auto *x = std::get_if<std::int64_t>(&a.value))
-        return *x == std::get<std::int64_t>(b.value);
-    if (const auto *x = std::get_if<std::string>(&a.value))
-        return *x == std::get<std::string>(b.value);
-    return true; // both null
+    return true;
 }
 
 // RideControl(2.) — the Python single-positional form is motor_torque_nm;

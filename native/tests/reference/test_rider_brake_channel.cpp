@@ -567,7 +567,9 @@ void test_rider_shift_request_flows_to_the_shifter() {
         1, runtime::ResearchCaptureMode::legacy);
     runtime::RideControl control;
     control.human_torque_nm = 30.;
-    ride_intervals(env, 8, control);   // 10 ms — the gear is still 51T.
+    // Allow the brief reverse wheel oscillation after brake release to
+    // settle before exercising the cassette-end rejection.
+    ride_intervals(env, 24, control);  // 30 ms
     const auto cassette = std::vector<int>{10, 12, 14, 16, 18, 21, 24, 28,
                                            33, 39, 45, 51};
     const auto response_of = [&](const runtime::SamplePtr &sample) {
@@ -577,6 +579,12 @@ void test_rider_shift_request_flows_to_the_shifter() {
     bt::require(response_of(env.runtime->recorded_intervals().back()) ==
                     "none",
                 "the recorded response defaults to none");
+    const auto &before_request = env.runtime->recorded_intervals().back();
+    bt::require(channel_number(before_request, "drive", "gear_rear_teeth") == 51.,
+                "the uncommanded warm-up keeps the cassette-end cog");
+    bt::require(channel_number(before_request, "drive", "cadence_rpm") >= 0. &&
+                    channel_number(before_request, "drive", "required_cadence_rpm") >= 0.,
+                "the uncommanded warm-up reaches nonnegative cadence");
     // 1) Rejected at the cassette end: 'down' asks past 51T.
     bike::validation::RuntimeRigAccess::set_rider_commands(
         *env.runtime, rider::RiderCommands{

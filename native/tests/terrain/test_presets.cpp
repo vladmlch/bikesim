@@ -99,7 +99,7 @@ void generators(){
     bt::require(t::AlpineGenSpec::from_dict(t::AlpineGenSpec{}.to_dict()).sha256()==t::AlpineGenSpec{}.sha256(),"complete alpine spec roundtrip");
     bt::require(io::canonical_json(t::AlpineGenSpec{}.to_dict()).find("surface_blend_m")==std::string::npos,"default alpine spec omits surface_blend_m for hash stability");
     {
-        auto blended_spec=t::AlpineGenSpec::from_dict(toml("surface_blend_m=0.4\nn_wet=[1,1]\n"));
+        const auto blended_spec=t::AlpineGenSpec::from_dict(toml("surface_blend_m=0.4\nn_wet=[1,1]\n"));
         bt::require(blended_spec.surface_blend_m==0.4&&blended_spec.sha256()!=t::AlpineGenSpec{}.sha256(),"nonzero alpine surface_blend_m participates in spec hash");
         bt::require(t::AlpineGenSpec::from_dict(blended_spec.to_dict()).sha256()==blended_spec.sha256(),"alpine surface_blend_m roundtrips through dict");
         const auto gen_track=t::generate_alpine_track(blended_spec,"41");

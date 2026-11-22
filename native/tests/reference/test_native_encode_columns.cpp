@@ -2417,13 +2417,16 @@ void test_whole_episode_single_pass() {
         // compile_plan + the optimized() gate are the two conditions under
         // which tables() takes the reviewed encode_rows fallback.
         (void)rec::compile_plan(*ride.catalog, spec.name);
-        const auto optimized = [](this auto &&self, const rec::FieldSpec &f) // NOLINT(misc-no-recursion) recursion mirrors the document tree
-                -> bool {
-            if (f.dtype == "map<bigint>") return false;
-            return std::ranges::all_of(f.children, self);
-        };
-        bt::require(std::ranges::all_of(spec.fields, optimized),
-                    spec.name + ": every field has a native plan");
+        std::vector<const rec::FieldSpec *> pending;
+        pending.reserve(spec.fields.size());
+        for (const auto &field : spec.fields) pending.push_back(&field);
+        while (!pending.empty()) {
+            const auto *field = pending.back();
+            pending.pop_back();
+            bt::require(field->dtype != "map<bigint>",
+                        spec.name + ": every field has a native plan");
+            for (const auto &child : field->children) pending.push_back(&child);
+        }
     }
     std::map<std::string, std::int64_t> emitted;
     std::set<std::string> seen;

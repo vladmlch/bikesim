@@ -11,6 +11,7 @@
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "support/record_initial_state.hpp"
+#include "diag.hpp"
 #include "runtime/control.hpp"
 #include "configuration/model_config.hpp"
 #include "engine_call.hpp"
@@ -132,14 +133,29 @@ void test_clock_rejects_invalid_durations() {
 // ctrl channels bitwise on non-tick steps while the every-step rider
 // channels update between ticks, a solved-effort channel row per
 // physics step, and reset returning the runtime to step 0.
+// The test stages a full ResearchRequest and its loaded replacement on the
+// stack; this one-shot fixture path is not a realtime entry point.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
 [[gnu::noinline]] void
 test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
-    bt::record_initial_state(
-        bt::oracle::root() / bt::oracle::platform() / "control_clock" /
-        "env_request" / "request.toml");
-    const auto env = bike::research::make_environment(
-            bt::oracle::root() / bt::oracle::platform() / "control_clock" /
-                    "env_request" / "request.toml");
+    const auto bundle = bt::oracle::root() / bt::oracle::platform() /
+                        "control_clock" / "env_request";
+    const auto request_file = bundle / "request.toml";
+    auto request = bike::research::read_research_request(request_file);
+    // This clock regression relies on all four named rider actuators
+    // entering their velocity-dependent limits. Pin the original setup
+    // instead of making that precondition depend on suspension defaults.
+    const auto pin_suspension = [](auto &bike) {
+        bike.fork_initial_psi = 85.2;
+        bike.shock_stiffness = 114600.;
+        bike.backend_default_suspension = false;
+    };
+    pin_suspension(request.setup.model.bike);
+    bt::record_initial_state(request, bundle / "initial_state.json");
+    request = bike::research::read_research_request(request_file);
+    pin_suspension(request.setup.model.bike);
+    const auto env = bike::research::make_environment(std::move(request));
     const runtime::RideControl zero{
             .motor_torque_nm = 0., .motor_limit_nm = std::nullopt,
             .human_torque_nm = 0., .crank_target_rate_rad_s = std::nullopt,
@@ -207,16 +223,16 @@ test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
     const auto bits = [](const double value) {
         return std::bit_cast<std::uint64_t>(value);
     };
-    for (const std::size_t channel : every_step) {
+    for (std::size_t k = 0; k < every_step.size(); ++k) {
+        const std::size_t channel = every_step[k];
         bool updated = false;
         for (std::size_t i = 1; i < episode.controls.size(); ++i) {
             if (i % 10 == 0) continue;
             updated = updated || bits(ctrl[i * nu + channel]) !=
                                     bits(ctrl[(i - 1) * nu + channel]);
         }
-        bt::require(updated,
-                    "every-step rider ctrl channel updates on a "
-                    "non-tick step");
+        bt::require(updated, std::string("every-step rider ctrl channel updates on a "
+                    "non-tick step: ") + every_step_actuators[k]);
     }
     // Solved-effort telemetry: every published sample row carries the
     // solved_actuator_force_at_incoming_interval marker and a finite
@@ -249,6 +265,7 @@ test_runtime_holds_ctrl_but_observes_solved_effort_each_step() {
     bt::require(tail.controls.size() == 10,
                 "post-reset stepping resumes the control clock");
 }
+NATIVE_DIAG_POP
 } // namespace
 int main() { return bt::run([] {
     test_period_must_be_an_integer_multiple_of_the_timestep();

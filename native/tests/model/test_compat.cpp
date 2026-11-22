@@ -21,6 +21,7 @@
 #include <limits>
 #include <memory>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -107,6 +108,14 @@ void relocate_declared_assets(Value& controller, const cfg::ArticulatedConfig& c
 
 void independent_projection() {
     auto request = physical();
+    // Reconstruct the historical inputs of the captured Python snapshot,
+    // rather than today's calibrated suspension and launch defaults.
+    request->bike.fork_initial_psi = 85.2;
+    request->bike.shock_stiffness = 114600.0;
+    request->bike.backend_default_suspension = false;
+    if (!request->physics) throw std::logic_error("captured setup requires physics");
+    request->physics->rider_launch.effort_cap_grades = {0.};
+    request->physics->rider_launch.effort_cap_grade_nm = {1000.};
     const auto track = trn::load_track(bt::fixture("tracks/flat.toml"));
     request->field = trn::HeightFieldSpec::for_track(track);
     const auto model = compiled(*request, track);

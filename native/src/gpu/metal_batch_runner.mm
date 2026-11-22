@@ -250,7 +250,7 @@ inline void bike_metal_step_writers_world(
     }
 
     const bike::physics_core::Status st = bike::gpu::gpu_step_world_writers_single(
-        w,
+        0,
         dt_s,
         local_idx,
         tyre_model,

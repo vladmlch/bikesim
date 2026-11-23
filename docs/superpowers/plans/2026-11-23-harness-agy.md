@@ -251,6 +251,13 @@ the command's cwd passed by the caller). Matching is on tokens, not
 substrings; tests for false positives (`git push` inside a quoted commit
 message, `git log --grep reset`). No gate check here: 3.4 enforces that in
 `run_tests.sh` itself.
+As built (R3/R4 fixes): `git stash list|show` are allowed (read-only);
+`rm -rf` is also allowed strictly inside `$TMPDIR`, `/tmp`, `/private/tmp`
+and the physical targets of the repo's `.scratch`/`.work` links (the roots
+and root-level wildcards stay denied); env wrappers (`env -S/-i`,
+`cmake -E env`) and git global options are seen through; quoted text,
+heredocs, `[[ ]]`, arithmetic and compound keywords are not commands. It
+stays a backstop, not a sandbox (`sudo`, `bash -c`, `eval` not unwrapped).
 
 4.2 **Capture a real agy hook payload first.** A throwaway agy session
 (`gemini-4-hydrogen-low`) in a scratch git repo with a logging-only
@@ -301,7 +308,11 @@ that log or stderr) it exits 4 and writes `quota_reset=<ISO time>`
 (computed from the line time + relative duration) to the run dir; no retry,
 no model switch. SKILL.md tells the orchestrator to schedule a wakeup at
 that time. Replace the running script atomically (sibling file + `mv`);
-run the skill's unit tests.
+run the skill's unit tests. As built (R4 I3): only a 429 of the agent's own
+model call, after the attempt started and with a future reset, yields exit
+4; background-monitor 429s do not; a stale `quota_reset` is removed at the
+start of each attempt. Default model: `gemini-4-hydrogen-high` (user,
+2026-11-23).
 
 5.3 `agy-run.sh`: optional `--json-schema <file>` passthrough.
 
@@ -322,6 +333,8 @@ by a plan-change guard). Add `tools/agy/container-recipe.md` with the
 `container run` line mounting the repo at its host path and a host dir
 (`/Volumes/SSD_1TB_M2/work/agy-container-gemini`, or
 `~/.cache/agy-container-gemini` without the SSD) at `/root/.gemini`.
+The physical targets of `.scratch` and of the project skill links
+(llm-orchestrators, read-only) are mounted at their host paths too (R4 I4).
 Recreating the existing `fedora` container is the user's call.
 
 Level 1. **R4** (stages 5-6 and the whole branch diff).

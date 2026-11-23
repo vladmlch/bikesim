@@ -649,6 +649,30 @@ void test_fingerprint_binds_joint_content_not_checkout() {
 }
 
 // ---------------------------------------------------------------------------
+// An unreadable joint file the cache key hashes fails settle by field name, before any solve.
+// ---------------------------------------------------------------------------
+void test_unreadable_joint_file_fails_before_settle() {
+    const bt::TemporaryDirectory dir("eq_joint_missing");
+    const auto cache_dir = dir.path() / "cache";
+    const auto missing = dir.path() / "absent_envelope.json";
+    // A lumped rider on the default physical profile builds no joints, so
+    // nothing else opens the envelope file; the welded profile's pinned planar
+    // attachments would demand an articulated rider.
+    auto request = welded_request(cache_dir, true);
+    request.model.rider->variant = "lumped"; // NOLINT(bugprone-unchecked-optional-access) the welded fixture always declares a rider
+    request.model.physics = cfg::default_physics(); // NOLINT(bugprone-unchecked-optional-access) the request always decodes a physics file
+    request.model.physics->physics_mode = "physical"; // NOLINT(bugprone-unchecked-optional-access) set just above
+    cfg::post_init(*request.model.physics); // NOLINT(bugprone-unchecked-optional-access) set just above
+    request.model.physics->equilibrium_cache_enabled = true; // NOLINT(bugprone-unchecked-optional-access) set just above
+    request.model.physics->articulated.joint_envelope_path = missing.string(); // NOLINT(bugprone-unchecked-optional-access) set just above
+    auto owner = init::make_setup(request);
+    expect_invalid("joint_envelope_path",
+                   [&] { (void)init::settle(*owner); });
+    bt::require(!std::filesystem::exists(cache_dir) || npz_files(cache_dir).empty(),
+                "the rejected configuration writes no cache entry");
+}
+
+// ---------------------------------------------------------------------------
 // Queue item 6 follow-up: capture_initial_state() serves the finalized
 // context — a PhysicalInitialState is a launch transfer, so a moving
 // initial_speed_mps start must carry the qvel finalize writes, not the
@@ -734,6 +758,7 @@ void check() {
     test_post_episode_lifecycle_writes_no_cache_entry();
     test_pneumatic_settle_restore_round_trip();
     test_fingerprint_binds_joint_content_not_checkout();
+    test_unreadable_joint_file_fails_before_settle();
     test_savage_pneumatic_fixture_restores();
     test_capture_initial_state_keeps_launch_velocity();
 }

@@ -373,12 +373,14 @@ void test_brake_hold_and_dynamic_braking() {
                                       0.0f, 0.8f, 0.5f, qf.data(), out, false,
                                       frictionloss.data()) == Status::ok,
             "latched hold + static frictionloss ok");
-    require_near(frictionloss[to_index(idx.front_wheel_spin_dof)], 160.0f, 1e-4f,
-                 "apply_static_brake writes front frictionloss");
-    require_near(frictionloss[to_index(idx.rear_wheel_spin_dof)], 100.0f, 1e-4f,
-                 "apply_static_brake writes rear frictionloss");
     require(out.front_brake_torque_nm < -50.0f,
             "latched bite produces strong restoring hold torque against positive creep");
+    const float expected_front_fl =
+        std::max(0.0f, dp.static_brake_ceiling_nm * 0.8f - std::abs(out.front_brake_torque_nm));
+    require_near(frictionloss[to_index(idx.front_wheel_spin_dof)], expected_front_fl, 1e-4f,
+                 "apply_static_brake writes Decision 11 front frictionloss (ceiling*u - |hold|)");
+    require_near(frictionloss[to_index(idx.rear_wheel_spin_dof)], 100.0f, 1e-4f,
+                 "apply_static_brake writes rear frictionloss");
     // In static frictionloss mode, unlatched rear wheel omits dynamic torque
     require_near(out.rear_brake_torque_nm, 0.0f, 1e-6f,
                  "static frictionloss mode omits unlatched dynamic torque");

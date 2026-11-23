@@ -480,6 +480,39 @@ double road_grade_preview(std::span<const RoadSample> road) {
     return road.back().grade;
 }
 
+double road_grade_chord_preview(std::span<const RoadSample> road,
+                                double front_wheel_x_m) {
+    if (road.empty())
+        throw std::invalid_argument(
+            "posture program needs at least one road sample");
+    if (!std::isfinite(front_wheel_x_m))
+        throw std::invalid_argument(
+            "road grade chord preview front wheel x must be finite");
+    const double dx = road.back().x_m - front_wheel_x_m;
+    if (!(dx > 1e-9)) return road_grade_preview(road);
+    double h_front = road.front().height_m;
+    if (front_wheel_x_m >= road.back().x_m) {
+        h_front = road.back().height_m;
+    } else if (front_wheel_x_m > road.front().x_m) {
+        const auto it = std::ranges::lower_bound(
+            road, front_wheel_x_m, {}, &RoadSample::x_m);
+        if (it == road.end()) {
+            h_front = road.back().height_m;
+        } else if (it->x_m == front_wheel_x_m || it == road.begin()) {
+            h_front = it->height_m;
+        } else {
+            const auto prev = it - 1;
+            const double span = it->x_m - prev->x_m;
+            h_front = span > 0.
+                          ? prev->height_m +
+                                (front_wheel_x_m - prev->x_m) / span *
+                                    (it->height_m - prev->height_m)
+                          : prev->height_m;
+        }
+    }
+    return (road.back().height_m - h_front) / dx;
+}
+
 RiderKinematicState rider_kinematic_state(
     const mjModel *model, const mjData *data,
     std::span<const std::array<double, 2>> vertices,

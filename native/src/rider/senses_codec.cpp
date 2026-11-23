@@ -250,7 +250,8 @@ RiderSenses decode_rider_senses(const bio::Value &value,
                                 std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
     ncd::exact(d, keys("hand_press_n", "speed_mps", "rear_teeth",
-                       "surface_front", "surface_ahead", "grade_ahead"));
+                       "surface_rear", "surface_front", "surface_ahead",
+                       "grade_ahead"));
     RiderSenses senses;
     senses.hand_press_n = d["hand_press_n"].finite_real(path);
     senses.speed_mps = d["speed_mps"].finite_real(path);
@@ -261,6 +262,8 @@ RiderSenses decode_rider_senses(const bio::Value &value,
         invalid(std::string(path) + ".rear_teeth",
                 "invalid value or out of range");
     senses.rear_teeth = static_cast<int>(teeth);
+    senses.surface_rear = label_field(d["surface_rear"],
+                                      std::string(path) + ".surface_rear");
     senses.surface_front = label_field(d["surface_front"],
                                        std::string(path) + ".surface_front");
     senses.surface_ahead = label_field(d["surface_ahead"],
@@ -296,6 +299,9 @@ bio::Value encode_rider_senses(const RiderSenses &senses) {
     out.emplace_back("hand_press_n", real_value(senses.hand_press_n));
     out.emplace_back("speed_mps", real_value(senses.speed_mps));
     out.emplace_back("rear_teeth", integer_value(senses.rear_teeth));
+    out.emplace_back("surface_rear",
+                     bio::Value{std::string(
+                         surface_label_name(senses.surface_rear))});
     out.emplace_back("surface_front",
                      bio::Value{std::string(
                          surface_label_name(senses.surface_front))});
@@ -360,7 +366,8 @@ namespace {
 Perception::State decode_perception_state(const bio::Value &value,
                                           std::string_view path) {
     const Dict d = mapping(VNode{&value}, path);
-    ncd::exact(d, keys("tick", "samples", "delayed", "pitch_rad"));
+    ncd::exact(d, keys("tick", "samples", "delayed", "pitch_rad",
+                       "initial_grade_rad"));
     Perception::State state;
     state.tick = d["tick"].integer(path);
     if (state.tick < 0)
@@ -384,6 +391,9 @@ Perception::State decode_perception_state(const bio::Value &value,
         state.delayed = decode_sense_sample(
             delayed, std::string(path) + ".delayed");
     state.pitch_rad = d["pitch_rad"].finite_real(path);
+    const VNode initial_grade = d["initial_grade_rad"];
+    if (!initial_grade.is_none())
+        state.initial_grade_rad = initial_grade.finite_real(path);
     return state;
 }
 
@@ -404,6 +414,10 @@ bio::Value encode_perception_state(const Perception::State &state) {
                          ? encode_sense_sample(*state.delayed)
                          : bio::Value{});
     out.emplace_back("pitch_rad", real_value(state.pitch_rad));
+    out.emplace_back("initial_grade_rad",
+                     state.initial_grade_rad.has_value()
+                         ? real_value(*state.initial_grade_rad)
+                         : bio::Value{});
     return bio::Value{std::move(out)};
 }
 

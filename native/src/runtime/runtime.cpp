@@ -953,6 +953,27 @@ std::optional<std::string> NativeRideRuntime::take_pending_warning() {
     return accounting_->take_warning();
 }
 
+TrackSurfaceRibbon NativeRideRuntime::track_surface_ribbon() const {
+    const AdvancementGuard guard(advancing_);
+    require_open();
+    TrackSurfaceRibbon out;
+    const auto &road = physical_->road_profile();
+    out.road_x_m.assign(road.x_m().begin(), road.x_m().end());
+    out.road_z_m.assign(road.z_m().begin(), road.z_m().end());
+    out.labels = physical_->surface_labels();
+    const auto decoded = nativecfg::decode(config_.writer_config);
+    if (decoded.tire.has_value() && decoded.tire->surface_map.has_value()) {
+        out.micro_spans.reserve(decoded.tire->surface_map->micro_spans.size());
+        for (const auto &span : decoded.tire->surface_map->micro_spans) {
+            out.micro_spans.push_back(TrackSurfaceRibbon::MicroSpan{
+                .start_m = span.start_m,
+                .end_m = span.end_m,
+                .surface = span.surface.name});
+        }
+    }
+    return out;
+}
+
 void NativeRideRuntime::reset() {
     const AdvancementGuard guard(advancing_);
     require_open();

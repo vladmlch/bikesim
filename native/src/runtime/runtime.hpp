@@ -45,6 +45,20 @@ struct ModelImage {
     std::string sha256;
 };
 
+// Presentation-only snapshot of the track elevation profile, macro surface
+// labels, and Stage C obstacle-local micro-spans for the 3D viewer ribbon.
+struct TrackSurfaceRibbon {
+    struct MicroSpan {
+        double start_m = 0.;
+        double end_m = 0.;
+        std::string surface;
+    };
+    std::vector<double> road_x_m;
+    std::vector<double> road_z_m;
+    rider::SurfaceLabels labels;
+    std::vector<MicroSpan> micro_spans;
+};
+
 // One fully staged bootstrap: the model image plus the decoded config and
 // state inventories the runtime consumes.
 struct RuntimeBootstrap {
@@ -146,6 +160,7 @@ public:
     [[nodiscard]] RuntimeSnapshot snapshot() const;
     [[nodiscard]] RenderFrame render_frame() const;
     [[nodiscard]] ModelImage model_image() const;
+    [[nodiscard]] TrackSurfaceRibbon track_surface_ribbon() const;
     void flush();
     [[nodiscard]] RuntimeSampleBatch prepare_samples() const;
     void acknowledge_samples(const RuntimeSampleBatch &batch);

@@ -104,7 +104,8 @@ double LaunchPlan::ramp(double effort, const Percepts &p, State &n) const {
     // Launch part 4, decisions 1-2: the lower of the surface cap and the
     // grade cap; from the first tick at the rise speed the grade cap rises at
     // the effort rate (the calibration probe's arithmetic, operand order kept).
-    const double surface = cap(p.senses.surface_front);
+    const double surface =
+        std::min(cap(p.senses.surface_rear), cap(p.senses.surface_ahead));
     const double grade = detail::grade_cap_unchecked(config_, p.senses.grade_ahead);
     double ceiling = std::min(surface, grade);
     if (p.senses.speed_mps >= config_.effort_rise_speed_mps) {

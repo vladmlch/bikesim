@@ -42,6 +42,7 @@ rider::SenseSample sample(int k) {
     s.senses = {.hand_press_n = 100. + k,
                 .speed_mps = .01 * k,
                 .rear_teeth = 51,
+                .surface_rear = rider::SurfaceLabel::hardpack,
                 .surface_front = rider::SurfaceLabel::asphalt,
                 .surface_ahead = rider::SurfaceLabel::loose,
                 .grade_ahead = .001 * k};
@@ -54,6 +55,7 @@ void require_same(const rider::Percepts &a, const rider::Percepts &b,
     bt::require(a.senses.hand_press_n == b.senses.hand_press_n &&
                     a.senses.speed_mps == b.senses.speed_mps &&
                     a.senses.rear_teeth == b.senses.rear_teeth &&
+                    a.senses.surface_rear == b.senses.surface_rear &&
                     a.senses.surface_front == b.senses.surface_front &&
                     a.senses.surface_ahead == b.senses.surface_ahead &&
                     a.senses.grade_ahead == b.senses.grade_ahead &&
@@ -77,6 +79,7 @@ void require_same_bits(const rider::Percepts &a, const rider::Percepts &b,
     bt::require(bits(a.senses.hand_press_n) == bits(b.senses.hand_press_n) &&
                     bits(a.senses.speed_mps) == bits(b.senses.speed_mps) &&
                     a.senses.rear_teeth == b.senses.rear_teeth &&
+                    a.senses.surface_rear == b.senses.surface_rear &&
                     a.senses.surface_front == b.senses.surface_front &&
                     a.senses.surface_ahead == b.senses.surface_ahead &&
                     bits(a.senses.grade_ahead) ==
@@ -102,6 +105,8 @@ rider::SenseSample ride_sample(int k) {
     s.senses = {.hand_press_n = 30. + (k % 80),
                 .speed_mps = 4. + .0001 * (k % 300),
                 .rear_teeth = 11 + (k % 41),
+                .surface_rear =
+                    static_cast<rider::SurfaceLabel>((k + 4) % 5),
                 .surface_front =
                     static_cast<rider::SurfaceLabel>(k % 5),
                 .surface_ahead =
@@ -147,15 +152,62 @@ void test_every_sensation_is_delayed_together() {
                 "crank rate in rpm");
 }
 
-// pitch_rad integrates only delayed rates: 21 delayed ticks of
-// .5 rad/s.
+// pitch_rad integrates only delayed rates; on constant grade the published
+// trail-relative pitch matches the integrated pitch bitwise, while on a
+// rising grade it subtracts atan(grade_ahead) - initial_grade_rad.
 void test_pitch_integrates_the_delayed_rate() {
     rider::Perception p(.15, .01);
     std::optional<rider::Percepts> last;
     for (int k = 0; k <= 35; ++k) last = p.update(sample(k));
+    const double expected_rel = 21 * .5 * .01 - (std::atan(.02) - std::atan(0.));
     bt::require(last.has_value() &&
-                    std::abs(last->pitch_rad - 21 * .5 * .01) < 1e-12,
-                "pitch integrates the delayed rate");
+                    std::abs(p.state().pitch_rad - 21 * .5 * .01) < 1e-12 &&
+                    std::abs(last->pitch_rad - expected_rel) < 1e-12,
+                "pitch integrates delayed rate and publishes trail-relative pitch");
+    const auto init_grade = p.state().initial_grade_rad;
+    bt::require(init_grade.has_value() && *init_grade == 0.,
+                "initial_grade_rad latches on first delivery");
+}
+
+// Stage D: on a constant grade Percepts::pitch_rad is bitwise identical to
+// integrated pitch; on a 0% -> 20% climb transition where the bike pitches up
+// with the trail, Percepts::pitch_rad stays ~0 instead of latching at +atan(0.2).
+void test_pitch_is_trail_relative_across_grade_transition() {
+    {
+        rider::Perception p(0., .01);
+        for (int k = 0; k < 20; ++k) {
+            auto s = sample(k);
+            s.senses.grade_ahead = .15;
+            const auto out = p.update(s);
+            bt::require(out.has_value() &&
+                            std::bit_cast<std::uint64_t>(out->pitch_rad) ==
+                                std::bit_cast<std::uint64_t>(p.state().pitch_rad),
+                        "constant grade preserves integrated pitch bitwise");
+        }
+    }
+    {
+        rider::Perception p(0., .01);
+        const double climb_rad = std::atan(.20);
+        // 5 flat ticks (0% grade, 0 pitch rate) latch initial_grade_rad = 0.
+        for (int k = 0; k < 5; ++k) {
+            auto s = sample(k);
+            s.signals.pitch_rate_up_rad_s = 0.;
+            s.senses.grade_ahead = 0.;
+            const auto out = p.update(s);
+            bt::require(out.has_value() && out->pitch_rad == 0.,
+                        "flat approach has zero relative pitch");
+        }
+        // 10 transition ticks pitching up smoothly to atan(0.20) as grade rises to 20%.
+        std::optional<rider::Percepts> last;
+        for (int k = 0; k < 10; ++k) {
+            auto s = sample(5 + k);
+            s.signals.pitch_rate_up_rad_s = climb_rad / .10;
+            s.senses.grade_ahead = .20;
+            last = p.update(s);
+        }
+        bt::require(last.has_value() && std::abs(last->pitch_rad) < 1e-12,
+                    "trail-relative pitch returns to zero on the 20% climb");
+    }
 }
 
 // Serialize, read back into a fresh adapter, continue: identical — the
@@ -274,8 +326,31 @@ void test_invalid_sample_contents_are_rejected() {
     {
         auto bad = p.state();
         bad.delayed.value() // NOLINT(bugprone-unchecked-optional-access) engagement is the fixture contract; .value() reports violations loudly
+            .senses.surface_rear = static_cast<rider::SurfaceLabel>(9);
+        bt::invalid([&] { p.restore(bad); });
+    }
+    {
+        auto bad = p.state();
+        bad.delayed.value() // NOLINT(bugprone-unchecked-optional-access) engagement is the fixture contract; .value() reports violations loudly
             .senses.surface_front = static_cast<rider::SurfaceLabel>(9);
         bt::invalid([&] { p.restore(bad); });
+    }
+    {
+        auto bad = p.state();
+        bad.initial_grade_rad = std::nullopt;
+        bt::invalid([&] { p.restore(bad); });
+    }
+    {
+        auto bad = p.state();
+        bad.initial_grade_rad = std::numeric_limits<double>::quiet_NaN();
+        bt::invalid([&] { p.restore(bad); });
+    }
+    {
+        rider::Perception pre(.15, .01);
+        for (int k = 0; k < 5; ++k) (void)pre.update(sample(k));
+        auto bad = pre.state();
+        bad.initial_grade_rad = 0.;
+        bt::invalid([&] { pre.restore(bad); });
     }
     {
         auto bad = p.state();
@@ -318,6 +393,7 @@ void test_output_overflow_rejects_atomically() {
         seeded.tick = 1;
         seeded.delayed = sample(0);
         seeded.pitch_rad = std::numeric_limits<double>::max();
+        seeded.initial_grade_rad = 0.;
         p.restore(seeded);
         const std::string before = state_json(p.state());
         auto boom = sample(1);
@@ -342,6 +418,7 @@ void test_output_overflow_rejects_atomically() {
         seeded.tick = 2;
         seeded.delayed = sample(0);
         seeded.pitch_rad = std::numeric_limits<double>::max();
+        seeded.initial_grade_rad = 0.;
         auto queued = sample(7);
         queued.signals.pitch_rate_up_rad_s = 1e308;
         seeded.samples.emplace_back(1, queued);
@@ -356,6 +433,7 @@ void test_output_overflow_rejects_atomically() {
         rider::Perception::State seeded;
         seeded.tick = 1;
         seeded.delayed = sample(0);
+        seeded.initial_grade_rad = 0.;
         p.restore(seeded);
         const std::string before = state_json(p.state());
         auto boom = sample(1);
@@ -412,10 +490,19 @@ void test_perception_state_codec_is_exact_and_bitwise() {
                     bio::canonical_json(encoded),
                 "state document round-trips bitwise");
     {
+        rider::Perception pre(.15, .01);
+        for (int k = 0; k < 5; ++k) (void)pre.update(sample(k));
+        const bio::Value pre_doc = rider::encode_perception_state(pre.state());
+        const auto pre_decoded =
+            rider::decode_perception_state(pre_doc, "perception");
+        bt::require(!pre_decoded.initial_grade_rad.has_value(),
+                    "pre-delivery initial_grade_rad round-trips as nullopt");
+    }
+    for (const std::string_view missing_key : {"pitch_rad", "initial_grade_rad"}) {
         auto missing = encoded;
         auto &members = std::get<bio::Value::Object>(missing.data);
         std::erase_if(members,
-                      [](const auto &kv) { return kv.first == "pitch_rad"; });
+                      [missing_key](const auto &kv) { return kv.first == missing_key; });
         bt::invalid([&] {
             (void)rider::decode_perception_state(missing, "perception");
         });
@@ -548,6 +635,7 @@ void test_huge_tick_rejects_promptly() {
     rider::Perception::State huge;
     huge.tick = 1000000000000000LL;
     huge.delayed = sample(0);
+    huge.initial_grade_rad = 0.;
     for (std::int64_t t = huge.tick - 15; t < huge.tick; ++t)
         huge.samples.emplace_back(t, sample(0));
     rider::Perception q(.15, .01);
@@ -563,6 +651,7 @@ int main() {
     return bt::run([] {
         test_every_sensation_is_delayed_together();
         test_pitch_integrates_the_delayed_rate();
+        test_pitch_is_trail_relative_across_grade_transition();
         test_state_serialize_read_continue_is_bitwise();
         test_off_grid_delay_is_rejected();
         test_malformed_state_is_rejected_atomically();

@@ -58,6 +58,7 @@ public:
         std::deque<std::pair<std::int64_t, SenseSample>> samples;
         std::optional<SenseSample> delayed;
         double pitch_rad = 0.;
+        std::optional<double> initial_grade_rad{};
     };
     // reaction_delay_s must be a nonnegative multiple of period_s (the
     // intent.cpp:382-389 rule); the integer delay tick count follows.

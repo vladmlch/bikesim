@@ -75,6 +75,7 @@ void test_all_five_labels_round_trip_and_unknown_fails() {
 void test_senses_codec_is_exact_and_bitwise() {
     const rider::RiderSenses s{.hand_press_n = 123.5, .speed_mps = .25,
                          .rear_teeth = 51,
+                         .surface_rear = rider::SurfaceLabel::loose,
                          .surface_front = rider::SurfaceLabel::wet,
                          .surface_ahead = rider::SurfaceLabel::scree,
                          .grade_ahead = .15};
@@ -83,21 +84,24 @@ void test_senses_codec_is_exact_and_bitwise() {
     bt::require(back.hand_press_n == s.hand_press_n &&
                     back.speed_mps == s.speed_mps &&
                     back.rear_teeth == 51 &&
+                    back.surface_rear == s.surface_rear &&
                     back.surface_front == s.surface_front &&
                     back.surface_ahead == s.surface_ahead &&
                     back.grade_ahead == s.grade_ahead,
                 "senses round-trip bitwise");
-    auto v = rider::encode_rider_senses(s);
-    auto &o = std::get<bio::Value::Object>(v.data);
-    std::erase_if(o,
-                  [](const auto &kv) { return kv.first == "grade_ahead"; });
-    bool threw = false;
-    try {
-        (void)rider::decode_rider_senses(v, "senses");
-    } catch (const std::invalid_argument &) {
-        threw = true;
+    for (const std::string_view missing_key : {"grade_ahead", "surface_rear"}) {
+        auto v = rider::encode_rider_senses(s);
+        auto &o = std::get<bio::Value::Object>(v.data);
+        std::erase_if(o,
+                      [missing_key](const auto &kv) { return kv.first == missing_key; });
+        bool threw = false;
+        try {
+            (void)rider::decode_rider_senses(v, "senses");
+        } catch (const std::invalid_argument &) {
+            threw = true;
+        }
+        bt::require(threw, "a missing key is rejected");
     }
-    bt::require(threw, "a missing key is rejected");
 }
 
 // The label-map codec validates the SurfaceMap contract: unknown keys,
@@ -161,7 +165,7 @@ struct SensesRow {
     double hand_press_n = 0.;
     double speed_mps = 0.;
     std::int64_t rear_teeth = 0;
-    std::string surface_front, surface_ahead;
+    std::string surface_rear, surface_front, surface_ahead;
     double grade_ahead = 0.;
     double root_x = 0.;
     double front_x = 0.;
@@ -197,6 +201,8 @@ ride_rows(launch_ride::PedelecEnv &env, double front_wheel_offset,
                 sw::number(sw::required(senses, "hand_press_n"));
             row.speed_mps = sw::number(sw::required(senses, "speed_mps"));
             row.rear_teeth = sw::integer(sw::required(senses, "rear_teeth"));
+            row.surface_rear =
+                sw::string(sw::required(senses, "surface_rear"));
             row.surface_front =
                 sw::string(sw::required(senses, "surface_front"));
             row.surface_ahead =
@@ -258,9 +264,9 @@ void test_ride_senses_follow_the_label_map() {
     bt::require(rows.front().rear_teeth > 2,
                 "the startup record carries the engaged rear cog");
 
-    bool saw_loose_front = false, saw_loose_ahead = false,
+    bool saw_loose_rear = false, saw_loose_front = false, saw_loose_ahead = false,
          returned_front = false;
-    std::int64_t ahead_flip = -1, front_flip = -1;
+    std::int64_t ahead_flip = -1, front_flip = -1, rear_flip = -1;
     for (const auto &row : rows) {
         // The fold's surface_front tracks the label map at the front
         // wheel's interval-start position — the [6,9) loose section
@@ -268,7 +274,8 @@ void test_ride_senses_follow_the_label_map() {
         // interval-END pose while the fold reads the start pose, so the
         // boundary legs keep a 1 m margin against the half-step offset.
         if (row.front_x < 5.)
-            bt::require(row.surface_front == "asphalt",
+            bt::require(row.surface_front == "asphalt" &&
+                            row.surface_rear == "asphalt",
                         "before the section the default label holds");
         else if (row.front_x < 9.) {
             if (row.surface_front == "loose") {
@@ -277,6 +284,10 @@ void test_ride_senses_follow_the_label_map() {
             }
         } else if (row.surface_front == "asphalt")
             returned_front = true;
+        if (row.surface_rear == "loose") {
+            saw_loose_rear = true;
+            if (rear_flip < 0) rear_flip = row.interval;
+        }
         if (row.surface_ahead == "loose") {
             saw_loose_ahead = true;
             if (ahead_flip < 0) ahead_flip = row.interval;
@@ -285,13 +296,13 @@ void test_ride_senses_follow_the_label_map() {
         bt::require(row.grade_ahead == 0., "flat track previews no grade");
         bt::require(row.rear_teeth > 2, "a real cassette cog is sensed");
     }
-    bt::require(saw_loose_front && saw_loose_ahead,
+    bt::require(saw_loose_rear && saw_loose_front && saw_loose_ahead,
                 "the ride crosses the loose section");
     bt::require(returned_front,
                 "the front label returns to the default past the section");
-    bt::require(ahead_flip >= 0 && front_flip >= 0 &&
-                    ahead_flip < front_flip,
-                "the lookahead senses the section before the wheel does");
+    bt::require(ahead_flip >= 0 && front_flip >= 0 && rear_flip >= 0 &&
+                    ahead_flip < front_flip && front_flip < rear_flip,
+                "the lookahead senses the section before front, then rear");
 
     // Behavior preservation: reset() replays the stored bootstrap and the
     // identical command sequence reproduces every interval's qpos
@@ -311,6 +322,7 @@ void test_ride_senses_follow_the_label_map() {
                 "the replayed trajectory is bitwise identical");
         bt::require(
             replay[i].hand_press_n == rows[i].hand_press_n &&
+                replay[i].surface_rear == rows[i].surface_rear &&
                 replay[i].surface_front == rows[i].surface_front &&
                 replay[i].rear_teeth == rows[i].rear_teeth,
             "the senses record restores through reset");

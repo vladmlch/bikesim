@@ -54,6 +54,7 @@ struct RiderSenses {
     // keeps a not-yet-acquired record decode-valid (review P2) — the real
     // startup value always comes from the drivetrain's engaged cog.
     int rear_teeth = 3;
+    SurfaceLabel surface_rear = SurfaceLabel::hardpack;
     SurfaceLabel surface_front = SurfaceLabel::hardpack;
     SurfaceLabel surface_ahead = SurfaceLabel::hardpack;
     double grade_ahead = 0.;

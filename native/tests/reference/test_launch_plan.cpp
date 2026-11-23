@@ -78,6 +78,7 @@ rider::Percepts standing(double grade = 0.) {
     rider::Percepts p;
     p.senses.speed_mps = 0.;
     p.senses.rear_teeth = 51;
+    p.senses.surface_rear = rider::SurfaceLabel::hardpack;
     p.senses.surface_front = rider::SurfaceLabel::hardpack;
     p.senses.surface_ahead = rider::SurfaceLabel::hardpack;
     p.senses.grade_ahead = grade;
@@ -118,10 +119,48 @@ void test_hold_brakes_and_ramps_to_the_surface_cap() {
     auto p = standing(.1);
     for (int i = 0; i < 5; ++i) cmd = plan.update(in(p));
     bt::require(std::abs(cmd.effort_nm - 5.) < 1e-12, "effort rises by rate * period per tick");
-    p.senses.surface_front = rider::SurfaceLabel::loose;
+    p.senses.surface_rear = rider::SurfaceLabel::loose;
     for (int i = 0; i < 30; ++i) cmd = plan.update(in(p));
     bt::require(cmd.effort_nm == 20. && cmd.phase == rider::LaunchPhase::hold,
                 "the loose cap binds while the felt torque stays below the release value");
+}
+
+// Stage D: the launch surface cap uses min(cap(surface_rear), cap(surface_ahead))
+// and ignores surface_front.
+void test_surface_cap_uses_minimum_of_rear_and_ahead() {
+    {
+        rider::LaunchPlan plan(table(), kPeriod);
+        auto p = standing(0.);
+        p.senses.surface_rear = rider::SurfaceLabel::loose;
+        p.senses.surface_front = rider::SurfaceLabel::asphalt;
+        p.senses.surface_ahead = rider::SurfaceLabel::asphalt;
+        rider::LaunchCommand cmd;
+        for (int i = 0; i < 35; ++i) cmd = plan.update(in(p));
+        bt::require(cmd.effort_nm == 20.,
+                    "loose rear surface caps effort even when front and ahead are asphalt");
+    }
+    {
+        rider::LaunchPlan plan(table(), kPeriod);
+        auto p = standing(0.);
+        p.senses.surface_rear = rider::SurfaceLabel::asphalt;
+        p.senses.surface_front = rider::SurfaceLabel::asphalt;
+        p.senses.surface_ahead = rider::SurfaceLabel::loose;
+        rider::LaunchCommand cmd;
+        for (int i = 0; i < 35; ++i) cmd = plan.update(in(p));
+        bt::require(cmd.effort_nm == 20.,
+                    "loose surface ahead caps effort even when rear and front are asphalt");
+    }
+    {
+        rider::LaunchPlan plan(table(), kPeriod);
+        auto p = standing(0.);
+        p.senses.surface_rear = rider::SurfaceLabel::asphalt;
+        p.senses.surface_front = rider::SurfaceLabel::loose;
+        p.senses.surface_ahead = rider::SurfaceLabel::asphalt;
+        rider::LaunchCommand cmd;
+        for (int i = 0; i < 35; ++i) cmd = plan.update(in(p));
+        bt::require(cmd.effort_nm > 25.,
+                    "loose front surface alone does not cap rear drive traction");
+    }
 }
 
 // Before the first percept the plan holds without pressing and its clock
@@ -224,7 +263,7 @@ void test_grade_cap_binds_below_the_surface_cap() {
     // A fresh plan: the 50-tick hold limit would end the first hold.
     rider::LaunchPlan loose(t, kPeriod);
     auto q = standing(0.);
-    q.senses.surface_front = rider::SurfaceLabel::loose;
+    q.senses.surface_rear = rider::SurfaceLabel::loose;
     for (int i = 0; i < 30; ++i) cmd = loose.update(in(q));
     bt::require(cmd.phase == rider::LaunchPhase::hold && cmd.effort_nm == 20.,
                 "the 20 N·m loose cap binds below the 30 N·m flat grade cap");
@@ -466,6 +505,7 @@ void test_counter_domains_are_checked() {
 int main() {
     return bt::run([] {
         test_hold_brakes_and_ramps_to_the_surface_cap();
+        test_surface_cap_uses_minimum_of_rear_and_ahead();
         test_no_percept_and_caller_brake_freeze_the_hold();
         test_release_by_felt_torque_and_by_timeout();
         test_upshift_request_follows_the_shifter();

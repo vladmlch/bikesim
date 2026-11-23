@@ -13,16 +13,26 @@
 // activation-once-per-timestamp guard; the test now probes non-advancing.
 #include "support/fixture_test.hpp"
 #include "support/model_fixture.hpp"
+#include "configuration/load.hpp"
+#include "diag.hpp"
 #include "engine_call.hpp"
+#include "model/rider_geometry.hpp"
 #include "model_access.hpp"
+#include "research/environment.hpp"
 #include "research/policy.hpp"
 #include "runtime/control.hpp"
+#include "runtime/research.hpp"
 #include "runtime/sensors.hpp"
+#include "support/golden.hpp"
+#include "terrain/trackfile.hpp"
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <limits>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -238,6 +248,72 @@ bool approx(double actual, double expected) {
     bt::require(rejected,
                 "a policy RideControl carrying rider cadence is rejected");
 }
+
+// Stage D: changing the surface label 1.5 m ahead of the front wheel
+// (asphalt vs scree) never leaks into the research SensorObservation.
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+[[gnu::noinline]] void test_research_observation_is_invariant_to_surface_ahead() {
+    const auto make_env = [](std::string_view track_toml) {
+        auto req = std::make_unique<bike::research::ResearchRequest>();
+        const auto repo_root =
+            bt::oracle::root().parent_path().parent_path().parent_path();
+        req->setup.model.physics = bike::configuration::load_physics(
+            repo_root / "examples/research/viewer_physics_welded.toml");
+        req->setup.model.mode = "ride";
+        req->setup.model.crank_joint = true;
+        req->setup.model.rider =
+            bike::model::rider_from_args("articulated_planar");
+        req->setup.track = bike::terrain::track_from_dict(
+            bike::terrain::parse_track_toml(track_toml));
+        req->setup.model.physics->initial_speed_mps = 0.;
+        req->experiment.duration_s = .05;
+        req->experiment.control_period_s =
+            req->setup.model.physics->research.control_period_s;
+        req->experiment.actuator_delay_s =
+            req->setup.model.physics->research.actuator_delay_s;
+        req->experiment.record_decimation = 1;
+        req->experiment.maximum_energy_residual_ratio = 1e9;
+        req->experiment.stop_on_model_violation = false;
+        req->sensors.delivery.latency_s =
+            req->setup.model.physics->research.sensor_latency_s;
+        req->sensors.delivery.maximum_age_s =
+            req->setup.model.physics->research.sensor_maximum_age_s;
+        req->sensors.sample_period_s = .005;
+        return bike::research::make_environment(std::move(*req));
+    };
+    const auto bits = [](double v) { return std::bit_cast<std::uint64_t>(v); };
+    const auto require_obs_bitwise = [&](const runtime::SensorObservation &a,
+                                         const runtime::SensorObservation &b) {
+        bt::require(bits(a.time_s) == bits(b.time_s) &&
+                        bits(a.source_time_s) == bits(b.source_time_s) &&
+                        a.valid == b.valid,
+                    "research SensorObservation metadata is bitwise identical");
+        for (std::size_t i = 0; i < a.values.size(); ++i)
+            bt::require(bits(a.values[i]) == bits(b.values[i]),
+                        "research SensorObservation values are bitwise identical despite surface_ahead change");
+    };
+    auto env_asphalt = make_env(
+        "name = \"ahead_asphalt\"\nlength_m = 40.0\nsurface = \"asphalt\"\n"
+        "grade_profile = { knots = [[0.0, 0.0], [40.0, 0.0]] }\n");
+    auto env_scree = make_env(
+        "name = \"ahead_scree\"\nlength_m = 40.0\nsurface = \"asphalt\"\n"
+        "grade_profile = { knots = [[0.0, 0.0], [40.0, 0.0]] }\n"
+        "surface_sections = [{ start_m = 4.3, end_m = 8.0, surface = \"scree\" }]\n");
+    const RideControl cmd{};
+    for (int step = 0; step < 4; ++step) {
+        env_asphalt->begin_control(cmd, 0., 0.);
+        const auto ra = env_asphalt->advance_control(std::nullopt);
+        env_asphalt->acknowledge_control();
+        env_scree->begin_control(cmd, 0., 0.);
+        const auto rb = env_scree->advance_control(std::nullopt);
+        env_scree->acknowledge_control();
+        bt::require(ra.has_value() && rb.has_value(),
+                    "both research environments produce transitions");
+        require_obs_bitwise(ra.value().observation, rb.value().observation); // NOLINT(bugprone-unchecked-optional-access) checked immediately above
+    }
+}
+NATIVE_DIAG_POP
 } // namespace
 
 int main() {
@@ -248,5 +324,6 @@ int main() {
         test_road_window_is_bounded();
         test_sensor_observation_contract_unchanged();
         test_motor_policy_cannot_take_ownership_of_rider_cadence();
+        test_research_observation_is_invariant_to_surface_ahead();
     });
 }

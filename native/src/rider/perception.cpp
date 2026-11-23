@@ -44,6 +44,10 @@ namespace {
         if (sample.senses.rear_teeth < 3)
             throw std::invalid_argument(
                 std::string(what) + " rear_teeth below the cog domain");
+        if (surface_label_name(sample.senses.surface_rear).empty())
+            throw std::invalid_argument(
+                std::string(what) +
+                " surface_rear outside the label domain");
         if (surface_label_name(sample.senses.surface_front).empty())
             throw std::invalid_argument(
                 std::string(what) +
@@ -91,24 +95,31 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
         delayed = &s_.samples.front().second;
     if (delay_ticks_ == 0) delayed = &sample;
     double pitch = s_.pitch_rad;
+    std::optional<double> initial_grade = s_.initial_grade_rad;
     std::optional<Percepts> out;
     if (delayed) {
         pitch = s_.pitch_rad +
                 delayed->signals.pitch_rate_up_rad_s * period_s_;
         if (!std::isfinite(pitch))
             throw std::invalid_argument("perception pitch overflowed");
+        const double trail_rad = std::atan(delayed->senses.grade_ahead);
+        const double init_rad = s_.initial_grade_rad.value_or(trail_rad);
+        const double pitch_rel = pitch - (trail_rad - init_rad);
+        if (!std::isfinite(pitch_rel))
+            throw std::invalid_argument("perception pitch overflowed");
         const double crank_rpm =
             std::abs(delayed->signals.crank_rate_rad_s) * 60. /
             (2. * std::numbers::pi);
         if (!std::isfinite(crank_rpm))
             throw std::invalid_argument("perception crank rate overflowed");
+        initial_grade = init_rad;
         out = Percepts{.senses = delayed->senses,
                        .crank_rpm = crank_rpm,
                        .human_crank_torque_nm =
                            delayed->signals.human_crank_torque_nm,
                        .pitch_rate_up_rad_s =
                            delayed->signals.pitch_rate_up_rad_s,
-                       .pitch_rad = pitch};
+                       .pitch_rad = pitch_rel};
     }
     s_.samples.emplace_back(s_.tick, sample);
     // A stamp k is due at the tick n with k <= n - delay_ticks — the
@@ -121,6 +132,7 @@ std::optional<Percepts> Perception::update(const SenseSample &sample) {
     }
     ++s_.tick;
     s_.pitch_rad = pitch;
+    s_.initial_grade_rad = initial_grade;
     return out;
 }
 
@@ -155,6 +167,13 @@ void Perception::restore(const State &state) {
         check_sample(*state.delayed, "perception delayed sample");
     if (!std::isfinite(state.pitch_rad))
         throw std::invalid_argument("perception pitch_rad must be finite");
+    if (state.initial_grade_rad.has_value() != (state.tick > delay_ticks_))
+        throw std::invalid_argument(
+            "perception initial_grade_rad does not match delivery state");
+    if (state.initial_grade_rad.has_value() &&
+        !std::isfinite(*state.initial_grade_rad))
+        throw std::invalid_argument(
+            "perception initial_grade_rad must be finite");
     // The allocating deque copy goes into a candidate first: it can
     // throw without touching the live state, and the move assignment
     // below is the nonthrowing commit.

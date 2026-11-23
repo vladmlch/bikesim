@@ -60,4 +60,7 @@ struct LifecycleHooks {
 [[nodiscard]] int replay_exit_code(bool completed, bool passed) noexcept;
 [[nodiscard]] RunResult run_replay(SessionHooks, const runtime::ModelImage&,
     ViewerOptions, bool checked);
+[[nodiscard]] std::vector<SurfaceBand> surface_bands_near(
+    const runtime::TrackSurfaceRibbon& ribbon, double center_x_m,
+    double back_m = 8., double ahead_m = 18.);
 } // namespace bike::viewer

@@ -651,6 +651,46 @@ void test_preview_is_last_sample_and_preserves_exact_endpoint() {
     });
 }
 
+// test_chord_preview_matches_constant_grade_and_suppresses_obstacle_spike
+void test_chord_preview_matches_constant_grade_and_suppresses_obstacle_spike() {
+    const std::array<std::array<double, 2>, 2> constant_slope{
+        std::array<double, 2>{0., 0.}, {20., 3.}};   // 15% constant slope
+    const std::array<double, 2> wheels{2., 3.2};
+    const auto constant_road = runtime::road_samples(constant_slope, wheels, 2.);
+    const double chord_const =
+        runtime::road_grade_chord_preview(constant_road, 3.2);
+    bt::require(std::abs(chord_const - .15) <= 2e-15,
+                "chord preview matches constant grade to rounding");
+
+    // 10% base slope with a narrow obstacle spike right at the lookahead tip.
+    const std::array<runtime::RoadSample, 3> spiked{
+        runtime::RoadSample{.x_m = 2.0, .height_m = .20, .grade = .10},
+        runtime::RoadSample{.x_m = 3.2, .height_m = .32, .grade = .10},
+        runtime::RoadSample{.x_m = 5.2, .height_m = .54, .grade = .80}};
+    bt::require(runtime::road_grade_preview(spiked) == .80,
+                "point preview sees the local obstacle tangent spike");
+    const double chord_spiked =
+        runtime::road_grade_chord_preview(spiked, 3.2);
+    bt::require(std::abs(chord_spiked - .11) < 1e-12,
+                "chord preview suppresses obstacle tangent spikes");
+
+    // Degenerate lookahead falls back to road_grade_preview.
+    const std::array<runtime::RoadSample, 2> degenerate{
+        runtime::RoadSample{.x_m = 2.0, .height_m = .20, .grade = .10},
+        runtime::RoadSample{.x_m = 3.2, .height_m = .32, .grade = .25}};
+    bt::require(runtime::road_grade_chord_preview(degenerate, 3.2) == .25,
+                "degenerate lookahead falls back to point preview");
+
+    bt::invalid([] {
+        (void)runtime::road_grade_chord_preview(
+            std::span<const runtime::RoadSample>{}, 0.);
+    });
+    bt::invalid([&] {
+        (void)runtime::road_grade_chord_preview(
+            spiked, std::numeric_limits<double>::quiet_NaN());
+    });
+}
+
 // test_geometric_limit_replaces_the_legacy_config_ceiling_when_available
 void test_geometric_limit_replaces_the_legacy_config_ceiling_when_available() {
     rider::IntentConfig config = default_intent_config();
@@ -773,6 +813,7 @@ int main() {
         test_trim_is_delayed_and_increases_forward_lean_for_light_front();
         test_geometric_limit_caps_lean();
         test_preview_is_last_sample_and_preserves_exact_endpoint();
+        test_chord_preview_matches_constant_grade_and_suppresses_obstacle_spike();
         test_geometric_limit_replaces_the_legacy_config_ceiling_when_available();
         test_effective_lean_limit_takes_minimum_of_config_ceiling_and_anatomical_reach();
         test_lean_override_hook();

@@ -399,6 +399,8 @@ public:
     samples(std::span<const double> wheel_x_m, double lookahead_m,
             double spacing_m = .05) const;
     [[nodiscard]] std::size_t size() const noexcept { return x_.size(); }
+    [[nodiscard]] std::span<const double> x_m() const noexcept { return x_; }
+    [[nodiscard]] std::span<const double> z_m() const noexcept { return z_; }
 
 private:
     std::vector<double> x_, z_;
@@ -416,6 +418,8 @@ road_samples(std::span<const std::array<double, 2>> vertices,
 
 [[nodiscard]] double road_grade_for_posture(std::span<const RoadSample> road);
 [[nodiscard]] double road_grade_preview(std::span<const RoadSample> road);
+[[nodiscard]] double road_grade_chord_preview(std::span<const RoadSample> road,
+                                              double front_wheel_x_m);
 
 // RiderKinematicState — qpos/qvel snapshots plus the road window (the
 // dataclass freezes its inputs; the native form owns them).

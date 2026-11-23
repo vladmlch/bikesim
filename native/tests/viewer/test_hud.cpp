@@ -5,9 +5,11 @@
 #include "viewer/input.hpp"
 #include "viewer/render_owner.hpp"
 #include "viewer/hud.hpp"
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <limits>
+#include <memory>
 
 namespace {
 using Clock = std::chrono::steady_clock;
@@ -115,6 +117,38 @@ void controls_and_camera() {
         view::replay_exit_code(true, true) == 0, "inspection help and checked replay outcomes are explicit");
     const std::vector<view::HudColumn> legend{{.legend="F", .text=" L→10"}, {.legend="v", .text=" 2°"}};
     bt::require(view::hud_legend(legend) == " F    v ", "HUD legends measure visible Unicode symbols rather than UTF-8 bytes");
+
+    // Stage D: physical_columns renders compact surf=r/f/a from rider_senses.
+    {
+        runtime::RenderFrame frame;
+        const auto sample = std::make_shared<runtime::PhysicalSampleData>();
+        sample->time_s = 1.;
+        sample->end_time_s = 1.00125;
+        sample->qvel = {0.};
+        sample->channels = {
+            {"tires", runtime::WireObject{}},
+            {"drive", runtime::WireObject{}},
+            {"rider", runtime::WireObject{}},
+            {"rider_senses", runtime::WireObject{
+                {"surface_rear", runtime::Wire("asphalt")},
+                {"surface_front", runtime::Wire("hardpack")},
+                {"surface_ahead", runtime::Wire("scree")}}}};
+        frame.state.latest_sample = sample;
+        frame.state.view = {{"drive_mode", runtime::Wire("articulated_effort")}};
+        const auto cols = view::physical_columns(frame, 1.);
+        const auto it = std::ranges::find_if(cols, [](const auto &c) { return c.legend == "surf r/f/a"; });
+        bt::require(it != cols.end(), "HUD emits surf r/f/a column");
+        bt::require(it->text.find("surf=asp/hpk/scr") != std::string::npos,
+                    "HUD abbreviates rear/front/ahead surfaces");
+
+        // Missing rider_senses renders ---/---/---.
+        sample->channels.pop_back();
+        const auto cols_missing = view::physical_columns(frame, 1.);
+        const auto it_missing = std::ranges::find_if(cols_missing, [](const auto &c) { return c.legend == "surf r/f/a"; });
+        bt::require(it_missing != cols_missing.end() &&
+                    it_missing->text.find("surf=---/---/---") != std::string::npos,
+                    "HUD falls back to ---/---/--- when rider_senses is absent");
+    }
 }
 }
 int main() { return bt::run([] { pacing(); controls_and_camera(); }); }

@@ -371,6 +371,12 @@ public:
     [[nodiscard]] std::span<const std::array<double, 2>> terrain_vertices() const noexcept {
         return vertices_;
     }
+    [[nodiscard]] const RoadProfile &road_profile() const noexcept {
+        return road_profile_;
+    }
+    [[nodiscard]] const rider::SurfaceLabels &surface_labels() const noexcept {
+        return config_.surface_labels;
+    }
     [[nodiscard]] bool rider_present() const noexcept {
         return rider_control_.has_value();
     }

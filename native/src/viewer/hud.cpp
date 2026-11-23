@@ -51,6 +51,14 @@ std::size_t display_columns(std::string_view text) {
     return result;
 }
 std::string pad(std::string value, std::size_t width) { const auto columns=display_columns(value);if(columns<width)value.append(width-columns,' ');return value; }
+std::string_view surface_abbr(std::string_view name) noexcept {
+    if (name == "asphalt") return "asp";
+    if (name == "hardpack") return "hpk";
+    if (name == "wet") return "wet";
+    if (name == "loose") return "lse";
+    if (name == "scree") return "scr";
+    return "---";
+}
 }
 std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::optional<double> rtf) {
     const auto& state = frame.state;
@@ -119,6 +127,10 @@ std::vector<HudColumn> physical_columns(const runtime::RenderFrame& frame, std::
         optional_number(number(path(tires,{"rear","slip_ratio"})),5,2,true));
     auto coast=text(child(drive,"coasting_reason")); if(coast.empty()&&!truth(child(drive,"freehub_engaged"),true))coast="freehub";
     add("coast","coast="+pad(coast.empty()?"-":coast,12));sep();add("shaft W","motor="+f(n("motor_shaft_power_w"),5,0,true)+"W");
+    const auto* senses = child(&channels, "rider_senses");
+    add("surf r/f/a", "surf=" + std::string(surface_abbr(text(child(senses, "surface_rear")))) + "/" +
+        std::string(surface_abbr(text(child(senses, "surface_front")))) + "/" +
+        std::string(surface_abbr(text(child(senses, "surface_ahead")))));
     return out;
 }
 std::string hud_legend(const std::vector<HudColumn>& columns) {

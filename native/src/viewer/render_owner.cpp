@@ -167,6 +167,13 @@ void RenderOwner::draw(int width, int height) {
                 mjv_connector(geom, mjGEOM_ARROW, .01, a.from.data(), a.to.data());
                 ++owner->scene.ngeom;
             }
+            for (const auto& band : owner->decorations.surface_bands) {
+                if (owner->scene.ngeom >= owner->scene.maxgeom) break;
+                mjvGeom* geom = &geoms[static_cast<std::size_t>(owner->scene.ngeom)];
+                mjv_initGeom(geom, mjGEOM_CAPSULE, nullptr, nullptr, nullptr, band.rgba.data());
+                mjv_connector(geom, mjGEOM_CAPSULE, band.radius_m, band.from.data(), band.to.data());
+                ++owner->scene.ngeom;
+            }
         }
         const mjrRect viewport{.left = 0, .bottom = 0, .width = draw_state->width, .height = draw_state->height};
         mjr_render(viewport, &owner->scene, &owner->context);
@@ -216,6 +223,19 @@ void RenderOwner::set_decorations(Decorations next) {
         for (const float channel : arrow.rgba) {
             if (!std::isfinite(channel)) {
                 throw std::invalid_argument("decoration arrow color is nonfinite");
+            }
+        }
+    }
+    for (const auto& band : next.surface_bands) {
+        if (!finite(band.from) || !finite(band.to)) {
+            throw std::invalid_argument("decoration surface band endpoint is nonfinite");
+        }
+        if (!std::isfinite(band.radius_m) || band.radius_m <= 0.) {
+            throw std::invalid_argument("decoration surface band radius must be finite and positive");
+        }
+        for (const float channel : band.rgba) {
+            if (!std::isfinite(channel)) {
+                throw std::invalid_argument("decoration surface band color is nonfinite");
             }
         }
     }

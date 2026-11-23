@@ -170,9 +170,116 @@ RunResult run(SessionHooks hooks, const runtime::ModelImage& model, const Viewer
     return result;
 }
 NATIVE_DIAG_POP
+
+namespace {
+
+[[nodiscard]] std::array<float, 4> surface_band_rgba(std::string_view name) noexcept {
+    // 5 macro surfaces
+    if (name == "asphalt") return {.24f, .26f, .30f, .92f};       // dark slate
+    if (name == "hardpack") return {.68f, .56f, .40f, .92f};      // warm tan
+    if (name == "wet") return {.26f, .46f, .64f, .92f};           // cool blue-slate
+    if (name == "loose") return {.82f, .58f, .22f, .92f};         // amber gravel
+    if (name == "scree") return {.78f, .77f, .72f, .92f};         // pale limestone
+    // 5 Stage C obstacle-local micro-surfaces
+    if (name == "dry_wood") return {.54f, .36f, .18f, .95f};      // oak brown
+    if (name == "wet_wood") return {.22f, .34f, .34f, .95f};      // glossy dark umber/cyan
+    if (name == "polished_rock") return {.84f, .86f, .89f, .95f}; // light quartz
+    if (name == "wet_rock") return {.25f, .44f, .48f, .95f};      // teal-grey
+    if (name == "mud_lens") return {.34f, .22f, .12f, .95f};      // deep mud brown
+    return {.35f, .35f, .38f, .90f};
+}
+
+[[nodiscard]] double interp_height(const std::vector<double> &xs,
+                                   const std::vector<double> &zs,
+                                   double x) noexcept {
+    if (x <= xs.front()) return zs.front();
+    if (x >= xs.back()) return zs.back();
+    const auto it = std::ranges::lower_bound(xs, x);
+    if (it == xs.end()) return zs.back();
+    if (*it == x || it == xs.begin()) return zs[static_cast<std::size_t>(it - xs.begin())];
+    const auto idx = static_cast<std::size_t>(it - xs.begin());
+    const double dx = xs[idx] - xs[idx - 1];
+    return dx > 0. ? zs[idx - 1] + (x - xs[idx - 1]) / dx * (zs[idx] - zs[idx - 1]) : zs[idx - 1];
+}
+
+} // namespace
+
+std::vector<SurfaceBand> surface_bands_near(
+    const runtime::TrackSurfaceRibbon& ribbon, double center_x_m,
+    double back_m, double ahead_m) {
+    if (ribbon.road_x_m.size() < 2 || ribbon.road_x_m.size() != ribbon.road_z_m.size() ||
+        !std::isfinite(center_x_m) || !std::isfinite(back_m) || !std::isfinite(ahead_m) ||
+        back_m < 0. || ahead_m < 0.) {
+        return {};
+    }
+    const double x_lo = std::max(ribbon.road_x_m.front(), center_x_m - back_m);
+    const double x_hi = std::min(ribbon.road_x_m.back(), center_x_m + ahead_m);
+    if (!(x_hi > x_lo + 1e-6)) return {};
+
+    std::vector<double> breaks;
+    constexpr double kMacroStep = .20;
+    constexpr double kMicroStep = .05;
+    const auto macro_steps = static_cast<int>(std::ceil((x_hi - x_lo) / kMacroStep));
+    for (int i = 0; i < macro_steps; ++i) {
+        const double x = x_lo + static_cast<double>(i) * kMacroStep;
+        if (x < x_hi) breaks.push_back(x);
+    }
+    breaks.push_back(x_hi);
+    for (const auto &sec : ribbon.labels.sections) {
+        if (sec.start_m > x_lo && sec.start_m < x_hi) breaks.push_back(sec.start_m);
+        if (sec.end_m > x_lo && sec.end_m < x_hi) breaks.push_back(sec.end_m);
+    }
+    for (const auto &span : ribbon.micro_spans) {
+        const double s_lo = std::max(x_lo, span.start_m);
+        const double s_hi = std::min(x_hi, span.end_m);
+        if (s_hi > s_lo) {
+            const auto micro_steps = static_cast<int>(std::ceil((s_hi - s_lo) / kMicroStep));
+            for (int i = 0; i < micro_steps; ++i) {
+                const double x = s_lo + static_cast<double>(i) * kMicroStep;
+                if (x < s_hi) breaks.push_back(x);
+            }
+            breaks.push_back(s_hi);
+        }
+    }
+    std::ranges::sort(breaks);
+    std::vector<double> xs;
+    xs.reserve(breaks.size());
+    for (const double x : breaks) {
+        if (xs.empty() || x - xs.back() > 1e-4) xs.push_back(x);
+    }
+    if (xs.size() < 2) return {};
+
+    constexpr double kEdgeY = .22;
+    constexpr double kLiftZ = .012;
+    constexpr double kRadius = .018;
+    std::vector<SurfaceBand> bands;
+    bands.reserve(xs.size() - 1);
+    for (std::size_t i = 0; i + 1 < xs.size(); ++i) {
+        const double x0 = xs[i];
+        const double x1 = xs[i + 1];
+        const double xm = .5 * (x0 + x1);
+        std::string_view material = ::rider::surface_label_name(ribbon.labels.at(xm));
+        for (const auto &span : ribbon.micro_spans) {
+            if (span.start_m <= xm && xm < span.end_m) {
+                material = span.surface;
+                break;
+            }
+        }
+        const double z0 = interp_height(ribbon.road_x_m, ribbon.road_z_m, x0);
+        const double z1 = interp_height(ribbon.road_x_m, ribbon.road_z_m, x1);
+        bands.push_back(SurfaceBand{
+            .from = {x0, kEdgeY, z0 + kLiftZ},
+            .to = {x1, kEdgeY, z1 + kLiftZ},
+            .radius_m = kRadius,
+            .rgba = surface_band_rgba(material)});
+    }
+    return bands;
+}
+
 RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options,
     runtime::RideControl control,const LifecycleHooks& lifecycle) {
     double front=0.,rear=0.;
+    const auto ribbon = std::make_shared<const runtime::TrackSurfaceRibbon>(ride.track_surface_ribbon());
     SessionHooks hooks;
     hooks.frame=[&]{return ride.render_frame();};
     hooks.advance=[&](std::int64_t target,double budget){(void)ride.advance(target,control,front,rear,budget);if(lifecycle.after_advance)lifecycle.after_advance();};
@@ -185,6 +292,11 @@ RunResult run_ride(runtime::NativeRideRuntime& ride,const ViewerOptions& options
         } catch(const std::exception& error) {
             std::cerr << "crank reposition rejected: " << error.what() << '\n';
         }
+    };
+    hooks.decorations=[ribbon](const runtime::RenderFrame& frame){
+        Decorations d;
+        d.surface_bands = surface_bands_near(*ribbon, frame.presentation.position_m);
+        return d;
     };
     hooks.operator_event=lifecycle.operator_event;
     hooks.close_requested=lifecycle.close_requested;

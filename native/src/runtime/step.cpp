@@ -1287,7 +1287,8 @@ PhysicalStep::apply_forces_body(
                 .external_brake = caller_braking};
             const auto resolution = rider_intent_.resolve_full(
                 control, intent_signals_, rider_senses_, step_,
-                road_grade_for_posture(road), road_grade_preview(road),
+                road_grade_for_posture(road),
+                road_grade_chord_preview(road, wheel_x_m_[0]),
                 rider_control_.has_value() && rider_control_->lean_limit_rad().has_value()
                     ? std::optional<double>{std::min(config_.intent.max_forward_lean_rad,
                                                      *rider_control_->lean_limit_rad())}
@@ -2090,6 +2091,9 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
             senses.emplace_back("rear_teeth",
                                 Wire(static_cast<std::int64_t>(
                                     rider_senses_.rear_teeth)));
+            senses.emplace_back("surface_rear",
+                                Wire(std::string(rider::surface_label_name(
+                                    rider_senses_.surface_rear))));
             senses.emplace_back("surface_front",
                                 Wire(std::string(rider::surface_label_name(
                                     rider_senses_.surface_front))));
@@ -2921,14 +2925,16 @@ void PhysicalStep::update_rider_senses(
     s.speed_mps = qvel_start[static_cast<std::size_t>(root_x_dofadr_)];
     if (stepper_->has_drive())
         s.rear_teeth = stepper_->drive().state().shifting.rear_teeth;
+    s.surface_rear = config_.surface_labels.at(wheel_x_m[1]);
     s.surface_front = config_.surface_labels.at(wheel_x_m[0]);
     s.surface_ahead = config_.surface_labels.at(
         wheel_x_m[0] + config_.road_lookahead_m);
     // The same lookahead window and preview the intent layer computes —
     // evaluated on this interval's start positions, not the control
     // tick's cached rider_state_.
-    s.grade_ahead = road_grade_preview(road_profile_.samples(
-        wheel_x_m, config_.road_lookahead_m));
+    s.grade_ahead = road_grade_chord_preview(
+        road_profile_.samples(wheel_x_m, config_.road_lookahead_m),
+        wheel_x_m[0]);
     rider_senses_ = s;
 }
 

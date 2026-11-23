@@ -3,12 +3,15 @@
 #include "diag.hpp"
 #include "support/fixture_test.hpp"
 #include "viewer/render_owner.hpp"
+#include "viewer/session.hpp"
 #include "initialization/capture.hpp"
 #include "model/builder.hpp"
 #include "model_access.hpp"
 #include "engine_call.hpp"
+#include <cmath>
 #include <limits>
 #include <memory>
+#include <set>
 #include <thread>
 
 namespace {
@@ -94,6 +97,7 @@ void replica_contracts() {
     bike::viewer::Decorations decorations;
     decorations.ghost_qpos = std::vector<double>(static_cast<std::size_t>(frame.state.integration_state.size() > 1 ? 1 : 0), .25);
     decorations.arrows = {{.from = {0., 0., 0.}, .to = {0., 0., .5}, .rgba = {1.f, .4f, .1f, 1.f}}};
+    decorations.surface_bands = {{.from = {0., .22, .012}, .to = {.2, .22, .012}, .radius_m = .018, .rgba = {.24f, .26f, .30f, .92f}}};
     decorations.overlay = "GPU vs CPU  max|Δq| 0.000e+00 (root_x)  run max 0.000e+00";
     auto bad_dec = decorations;
     renderer.set_decorations(std::move(decorations));
@@ -104,7 +108,56 @@ void replica_contracts() {
     bad_dec.ghost_qpos = std::vector<double>{.25};
     bad_dec.arrows.front().to[2] = std::numeric_limits<double>::infinity();
     bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.arrows.front().to[2] = .5;
+    bad_dec.surface_bands.front().from[0] = std::numeric_limits<double>::quiet_NaN();
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.surface_bands.front().from[0] = 0.;
+    bad_dec.surface_bands.front().radius_m = 0.;
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.surface_bands.front().radius_m = std::numeric_limits<double>::infinity();
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
+    bad_dec.surface_bands.front().radius_m = .018;
+    bad_dec.surface_bands.front().rgba[1] = std::numeric_limits<float>::quiet_NaN();
+    bt::invalid([&] { renderer.set_decorations(bad_dec); });
     renderer.set_decorations({});
+
+    // Stage D: surface_bands_near builds distinct RGBA bands across macro and
+    // Stage C micro-surfaces within the sliding window [x - back, x + ahead].
+    {
+        runtime::TrackSurfaceRibbon ribbon;
+        ribbon.road_x_m = {0., 40.};
+        ribbon.road_z_m = {0., 4.};
+        ribbon.labels = rider::SurfaceLabels(
+            rider::SurfaceLabel::asphalt,
+            {{.start_m = 4., .end_m = 6., .label = rider::SurfaceLabel::hardpack},
+             {.start_m = 6., .end_m = 8., .label = rider::SurfaceLabel::wet},
+             {.start_m = 8., .end_m = 10., .label = rider::SurfaceLabel::loose},
+             {.start_m = 10., .end_m = 12., .label = rider::SurfaceLabel::scree}});
+        ribbon.micro_spans = {
+            {.start_m = 12.2, .end_m = 12.6, .surface = "dry_wood"},
+            {.start_m = 13.0, .end_m = 13.4, .surface = "wet_wood"},
+            {.start_m = 14.0, .end_m = 14.4, .surface = "polished_rock"},
+            {.start_m = 15.0, .end_m = 15.4, .surface = "wet_rock"},
+            {.start_m = 16.0, .end_m = 16.4, .surface = "mud_lens"}};
+        const auto bands = bike::viewer::surface_bands_near(ribbon, 10., 8., 18.);
+        bt::require(!bands.empty(), "surface_bands_near generates bands inside the window");
+        std::set<std::array<float, 4>> colors;
+        for (const auto &band : bands) {
+            bt::require(band.from[0] >= 2. - 1e-9 && band.to[0] <= 28. + 1e-9,
+                        "bands stay inside [center - back, center + ahead]");
+            bt::require(std::isfinite(band.radius_m) && band.radius_m > 0.,
+                        "band radius is finite and positive");
+            colors.insert(band.rgba);
+        }
+        bt::require(colors.size() == 10,
+                    "all 5 macro surfaces and 5 Stage C micro-surfaces have distinct RGBA colors");
+        bike::viewer::Decorations ribbon_dec;
+        ribbon_dec.surface_bands = bands;
+        renderer.set_decorations(std::move(ribbon_dec));
+        bt::require(renderer.model_sha256() == image.sha256,
+                    "surface bands never alter compiled model identity");
+        renderer.set_decorations({});
+    }
 
     renderer.set_markers(true); renderer.set_markers(false);
     renderer.set_camera(bike::viewer::CameraMode::chase); renderer.reset_camera();

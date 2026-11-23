@@ -8156,6 +8156,26 @@
           "frame": "n/a",
           "path": [
             "rider_senses",
+            "surface_rear"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "surface_rear",
+          "dtype": "varchar",
+          "unit": "n/a",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "measured",
+          "source": "docs/superpowers/specs/2026-11-22-tracks-and-surfaces-design.md::Stage D",
+          "description": "surface label under the rear drive wheel"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "rider_senses",
             "surface_front"
           ],
           "aliases": [],

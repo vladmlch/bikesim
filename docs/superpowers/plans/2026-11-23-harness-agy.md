@@ -364,5 +364,6 @@ the final tree (it must pass its own new precondition). Fast-forward
   minimal start state (coordinates + physical memory; parameters from the
   current model, derived values recomputed) with a state-contract version
   instead of the source digest.
-- Stack budgets (`-Wframe-larger-than`, `-Wstack-usage`) never ran: they
-  need an optimized build, not the frontends sweep (dropped in 44979530).
+- Stack budgets: closed, not a gap. Only the GCC frontends sweep lacked
+  them (dropped in 44979530); the real builds already enforce them via
+  `native/cmake/BikeCompilerPolicy.cmake` (clang 8192, GCC 16384, ASan 3x).

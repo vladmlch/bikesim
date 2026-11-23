@@ -1,13 +1,32 @@
 {
     "permissions": {
         "allow": [
-            "Bash(bash .claude/skills/devin-orchestration/scripts/devin-run.sh:*)"
+            "Bash(bash .claude/skills/devin-orchestration/scripts/devin-run.sh:*)",
+            "Bash(bash .claude/skills/agy-orchestration/scripts/agy-run.sh:*)",
+            "Bash(bash .claude/skills/glm-orchestration/scripts/glm-run.sh:*)",
+            "Bash(bash .claude/skills/qoder-orchestration/scripts/qoder-run.sh:*)",
+            "Bash(bash .claude/skills/zcode-orchestration/scripts/zcode-run.sh:*)",
+            "Bash(bash .claude/skills/cld-igx-orchestration/scripts/cld-igx-run.sh:*)",
+            "Bash(bash .claude/skills/nvidia-orchestration/scripts/nvidia-run.sh:*)",
+            "Bash(bash .claude/skills/alibaba-orchestration/scripts/alibaba-run.sh:*)",
+            "Bash(bash .claude/skills/devin-orchestration-legacy/scripts/devin-run.sh:*)"
         ]
     },
     "hooks": {
         "SessionStart": [
         ],
         "SessionEnd": [
+        ],
+        "PreToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "bash \"$CLAUDE_PROJECT_DIR\"/tools/claude/pretool-guard.sh"
+                    }
+                ]
+            }
         ]
     },
     "enabledPlugins": {

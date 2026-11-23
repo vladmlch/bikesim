@@ -198,8 +198,10 @@ long-lived; never pass `HEAD`.
 columns as `run_tests.sh` (profile `change`, preset `release`, from `-`,
 jobs, status, seconds, summary) plus an 11th column `tree=<id>`;
 `run_tests.sh` appends the same 11th column. Before changing the format,
-check every reader of `timings.tsv` (`native/src/tools/checks_internal.hpp`,
-`mise.toml`, docs, the tooling tests) and keep them working.
+check every reader of `timings.tsv` (only the tooling tests and
+docs/TESTING.md read it; checks_internal.hpp and mise.toml only mention it)
+and keep them working. Only complete runs (from `-`) satisfy a
+precondition; `--uncommitted` journals from `uncommitted` (R2 I1).
 
 3.4 **Gate preconditions.** `run_tests.sh native|full` (release preset,
 no `--from`) refuses to start unless the journal has a passed `change` row
@@ -222,6 +224,14 @@ e.g. `-c -O0 -o /dev/null` instead of syntax-only. Reproduce on the
 pre-fix sources of e4bb0e6d. If it works within seconds per TU, add it to
 the kind used by level 1, with a test. If not, record why here and leave
 the sweep order unchanged (odr stays where it is: before tidy).
+Outcome: the diagnostic was `-Winvalid-noreturn` ('noreturn' function does
+return), which `-fsyntax-only` cannot emit. b55800ed + 44979530 + 7d36b82f:
+the GCC frontend compiles (`-c -O0`) only under `--only-sources` (level 1,
+~1.2 s/TU); the full sweep stays `-fsyntax-only` (88 s vs 236 s; user
+ruling). `-fanalyzer` was a no-op under `-fsyntax-only` and is dropped;
+the -O0 stack budgets were never effective and are queued. f13041d8 keeps
+`native/src/tools/` out of the source identity so tooling edits do not
+stale the pinned pose.
 
 3.6 **Docs.** `AGENTS.md` Verification: level 1 is a hard precondition of
 level 2/3, the override variable, the journal column, `--uncommitted`.
@@ -246,7 +256,13 @@ message, `git log --grep reset`). No gate check here: 3.4 enforces that in
 (`gemini-4-hydrogen-low`) in a scratch git repo with a logging-only
 `PreToolUse` hook; one allowed command and one `git push --dry-run`. Record
 the tool name, args shape, `cwd`, `workspacePaths`, and whether the hook
-fires under `--dangerously-skip-permissions`. Outcome recorded here.
+fires under `--dangerously-skip-permissions`. Outcome (2026-11-23,
+/tmp/agy-hook-probe): layout
+`{"<name>":{"PreToolUse":[{"matcher":"*","hooks":[{"type":"command",...}]}]}}`;
+shell tool `run_command`, command in `toolCall.args.CommandLine`, cwd in
+`cwd`; `lastUserInput` echoes the prompt (never match on it); the hook
+fires and `deny` blocks under `--dangerously-skip-permissions`, so `agym`
+keeps skip-permissions.
 
 4.3 **agy adapter.** `.agents/hooks.json` `PreToolUse` hook; the hook runs
 with cwd `.agents/`, so its command is `bash ../tools/agy/pretool-guard.sh`

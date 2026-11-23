@@ -817,10 +817,12 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     spec64->chain.wheel_body_id = 1;
     spec64->chain.njnt = 3;
     spec64->chain.joint_count = 3;
-    const std::span chain_joints{spec64->chain.joints};
-    chain_joints[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
-    chain_joints[1] = GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1};
-    chain_joints[2] = GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2};
+    const std::array<GpuChainJoint, 3> joints_init{{
+        GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0},
+        GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1},
+        GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2},
+    }};
+    std::ranges::copy(joints_init, std::span{spec64->chain.joints}.begin());
     require(bike::physics_core::init_pneumatic_ray_ring<double, CpuExactToolkit>(
                 256, 75.0 * (std::numbers::pi / 180.0), spec64->ring, err) ==
                 Status::ok,
@@ -908,10 +910,12 @@ void test_surface_null_uniform_and_polyline_contracts() {
     spec64->chain.wheel_body_id = 1;
     spec64->chain.njnt = 3;
     spec64->chain.joint_count = 3;
-    const std::span chain_joints{spec64->chain.joints};
-    chain_joints[0] = GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0};
-    chain_joints[1] = GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1};
-    chain_joints[2] = GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2};
+    const std::array<GpuChainJoint, 3> joints_init{{
+        GpuChainJoint{.joint_id = 0, .joint_type = kJntSlide, .dof_adr = 0},
+        GpuChainJoint{.joint_id = 1, .joint_type = kJntSlide, .dof_adr = 1},
+        GpuChainJoint{.joint_id = 2, .joint_type = kJntHinge, .dof_adr = 2},
+    }};
+    std::ranges::copy(joints_init, std::span{spec64->chain.joints}.begin());
     require(bike::physics_core::init_pneumatic_ray_ring<double, CpuExactToolkit>(
                 64, 75.0 * (std::numbers::pi / 180.0), spec64->ring, err) ==
                 Status::ok,
@@ -1010,13 +1014,18 @@ void test_surface_null_uniform_and_polyline_contracts() {
 } // namespace
 
 int main() {
-    test_tabulated_radial();
-    test_pneumatic_geometry_and_carcass();
-    test_pneumatic_brush_and_stage_a();
-    test_whole_wheel_model_parity(false, 64, 0.0005);
-    test_whole_wheel_model_parity(true, 256, 0.00025);
-    test_step_pneumatic_wheel_wrench_and_energy();
-    test_surface_null_uniform_and_polyline_contracts();
-    std::cout << "ALL test_tyre_pneumatic_core CHECKS PASSED\n";
-    return 0;
+    try {
+        test_tabulated_radial();
+        test_pneumatic_geometry_and_carcass();
+        test_pneumatic_brush_and_stage_a();
+        test_whole_wheel_model_parity(false, 64, 0.0005);
+        test_whole_wheel_model_parity(true, 256, 0.00025);
+        test_step_pneumatic_wheel_wrench_and_energy();
+        test_surface_null_uniform_and_polyline_contracts();
+        std::cout << "ALL test_tyre_pneumatic_core CHECKS PASSED\n";
+        return 0;
+    } catch (const std::exception &ex) {
+        std::cerr << "FAIL: " << ex.what() << '\n';
+        return 1;
+    }
 }

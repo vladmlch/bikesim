@@ -400,7 +400,8 @@ BIKE_HD PolylineView<float> make_polyline_view(
     pl.seg_x = terrain_f32 + desc.seg_x_offset;
     pl.seg_z = terrain_f32 + desc.seg_z_offset;
     pl.seg_len_sq = terrain_f32 + desc.seg_len_sq_offset;
-    pl.height_changes = terrain_i32 + desc.height_changes_offset;
+    pl.height_changes =
+        (terrain_i32 != nullptr) ? (terrain_i32 + desc.height_changes_offset) : nullptr;
     pl.left_x = terrain_f32 + desc.left_x_offset;
     pl.left_z = terrain_f32 + desc.left_z_offset;
     pl.right_x = terrain_f32 + desc.right_x_offset;

@@ -60,6 +60,15 @@
 # follow the order the shell runs them. The word that held a substitution
 # becomes a bare $, which the rules above treat as unknown. An unterminated
 # quote or substitution is a syntax error in the shell, and is denied.
+# [[ ... ]] is a conditional expression, not a command: its words are operands,
+# so && || ( ) < > inside it are not separators or redirections, and a newline
+# is blank. Only $(...), backticks and <(...) inside it run, and they are
+# checked. It ends at a ]] word. A ; & | or # inside it is a shell error, so the
+# guard leaves the conditional there and checks the text after it as usual.
+# Reserved words (if then do else elif while until time ! {) before a command
+# are skipped, and the word after them is the command start. case, (( and [[
+# are reserved only at a command start, and only when unquoted and not after a
+# redirection; a quoted or redirected one is an ordinary command name.
 #
 # A backstop against honest mistakes, not a sandbox: sudo, xargs, bash -c and
 # eval are not unwrapped, and a symlink inside the repository or a scratch root
@@ -87,6 +96,23 @@ guard_deny() {
   exit 2
 }
 
+# guard_is_keyword <word> — a reserved word that may precede a command name.
+guard_is_keyword() {
+  case $1 in
+    '{'|'!'|if|then|do|else|elif|while|until|time) return 0 ;;
+  esac
+  return 1
+}
+
+# guard_is_delim <index> — true when the character at <index> ends a word: the
+# end of the text, blank, newline, or one of ; & | ).
+guard_is_delim() {
+  case ${G_STR:$1:1} in
+    ''|' '|$'\t'|$'\n'|';'|'&'|'|'|')') return 0 ;;
+  esac
+  return 1
+}
+
 # --- scanner ----------------------------------------------------------------
 #
 # guard_verdict owns the text (G_STR, G_LEN) and the position (G_POS). guard_scan
@@ -99,6 +125,12 @@ guard_deny() {
 #
 # G_CS holds one letter per open case: h (after `case`, up to `in`), p (pattern
 # list, up to `)`), b (arm body, up to `;;` or `esac`).
+#
+# G_LEAD is 1 while the simple command has no word yet, or only unquoted
+# reserved words before its command name: a command start, where case, (( and
+# [[ are reserved. G_QUOTED is 1 when the pending word has quoted or escaped
+# text, so it is never a reserved word. G_COND is 1 inside [[ ... ]], where the
+# words are operands and are discarded; G_CPAR counts the ( open inside it.
 
 # _guard_top — sets the caller's top to the innermost case state, or "".
 _guard_top() {
@@ -109,28 +141,36 @@ _guard_top() {
 }
 
 # _guard_word — a finished word that is not a redirection target or heredoc
-# delimiter. It drives the case state; otherwise it joins the simple command.
+# delimiter. Inside [[ ... ]] it is an operand and is dropped. It drives the case
+# state; otherwise it joins the simple command. A reserved word keeps G_LEAD;
+# any other word, or a quoted one, ends the command start.
 _guard_word() {
   local top=""
+  if ((G_COND)); then
+    return 0
+  fi
   _guard_top
   case $top in
     h)
-      if [[ $G_BUF == in ]]; then
+      if [[ $G_BUF == in ]] && ((G_QUOTED == 0)); then
         G_CS=${G_CS%?}p
       fi
       ;;
     p)
-      if [[ $G_BUF == "esac" ]]; then
+      if [[ $G_BUF == "esac" ]] && ((G_QUOTED == 0)); then
         G_CS=${G_CS%?}
       fi
       ;;
     *)
-      if ((${#GW[@]} == 0)) && [[ $G_BUF == case ]]; then
+      if ((G_LEAD && G_QUOTED == 0)) && [[ $G_BUF == case ]]; then
         G_CS+=h
-      elif ((${#GW[@]} == 0)) && [[ $top == b && $G_BUF == "esac" ]]; then
+      elif ((${#GW[@]} == 0)) && [[ $top == b && $G_BUF == "esac" ]] && ((G_QUOTED == 0)); then
         G_CS=${G_CS%?}
       else
         GW+=("$G_BUF")
+        if ((G_QUOTED)) || ! guard_is_keyword "$G_BUF"; then
+          G_LEAD=0
+        fi
       fi
       ;;
   esac
@@ -156,6 +196,7 @@ _guard_flush() {
   G_BUF=""
   G_HAVE=0
   G_HDRAW=0
+  G_QUOTED=0
 }
 
 # _guard_sep — ends the pending word and the simple command, and checks it.
@@ -166,17 +207,22 @@ _guard_sep() {
   fi
   GW=()
   G_SKIP=0
+  G_LEAD=1
 }
 
 # _guard_redir — a < or > operator, or &> (the caller handles a lone &). A word
-# of digits right before the operator is a file descriptor and is dropped.
+# of digits right before the operator is a file descriptor and is dropped. A
+# redirection ends the command start: bash does not treat a reserved word after
+# it as reserved, so `>f case` is a command named case.
 _guard_redir() {
   local op=""
+  G_LEAD=0
   case $G_BUF in
     ''|*[!0-9]*) _guard_flush ;;
     *)
       G_BUF=""
       G_HAVE=0
+      G_QUOTED=0
       ;;
   esac
   while ((G_POS < G_LEN)) && ((${#op} < 3)); do
@@ -374,9 +420,82 @@ guard_scan() {
   local mode=$1 c nx top="" j len n
   local -a GW=() G_HD=() G_STK=()
   local G_BUF="" G_CS="" G_HAVE=0 G_SKIP=0 G_HDWAIT=0 G_HDRAW=0
+  local G_LEAD=1 G_QUOTED=0 G_COND=0 G_CPAR=0
   while ((G_POS < G_LEN)); do
     c=${G_STR:G_POS:1}
     nx=${G_STR:G_POS+1:1}
+    _guard_top
+    # [[ at a command start (not a case pattern) opens a conditional expression.
+    if ((G_COND == 0 && G_LEAD && G_HAVE == 0)) && [[ $top != h && $top != p ]] \
+      && [[ ${G_STR:G_POS:2} == '[[' ]] && guard_is_delim $((G_POS + 2)); then
+      G_COND=1
+      G_CPAR=0
+      G_LEAD=0
+      G_POS=$((G_POS + 2))
+      continue
+    fi
+    if ((G_COND)); then
+      # Inside [[ ... ]] the words are operands. ]] ends it, a ; & | or # ends it
+      # early (the shell rejects those inside), and any other operator is skipped.
+      if [[ ${G_STR:G_POS:2} == ']]' ]] && ((G_HAVE == 0)) && guard_is_delim $((G_POS + 2)); then
+        G_COND=0
+        G_POS=$((G_POS + 2))
+        continue
+      fi
+      case $c in
+        '&'|'|')
+          if [[ $nx == "$c" ]]; then
+            _guard_flush
+            G_POS=$((G_POS + 2))
+            continue
+          fi
+          G_COND=0
+          ;;
+        '#')
+          if ((G_HAVE == 0)); then
+            G_COND=0
+          fi
+          ;;
+        ';') G_COND=0 ;;
+        $'\n')
+          # A newline is blank inside [[ ]], except that a pending heredoc body
+          # starts after it, so the normal newline handling must run.
+          if ((${#G_HD[@]})); then
+            G_COND=0
+          else
+            _guard_flush
+            G_POS=$((G_POS + 1))
+            continue
+          fi
+          ;;
+        '(')
+          _guard_flush
+          G_CPAR=$((G_CPAR + 1))
+          G_POS=$((G_POS + 1))
+          continue
+          ;;
+        ')')
+          if ((G_CPAR == 0)); then
+            G_COND=0
+          else
+            _guard_flush
+            G_CPAR=$((G_CPAR - 1))
+            G_POS=$((G_POS + 1))
+            continue
+          fi
+          ;;
+        '<'|'>')
+          # <(...) and >(...) run a command, so they leave the conditional.
+          if [[ $nx == '(' ]]; then
+            G_COND=0
+          else
+            _guard_flush
+            G_POS=$((G_POS + 1))
+            continue
+          fi
+          ;;
+      esac
+    fi
     case $c in
       ' '|$'\t')
         _guard_flush
@@ -426,7 +545,7 @@ guard_scan() {
         _guard_top
         if [[ $top == h || $top == p ]]; then
           _guard_flush
-        elif [[ $nx == '(' ]] && ((${#GW[@]} == 0 && G_HAVE == 0)) && guard_arith_end $((G_POS + 2)); then
+        elif [[ $nx == '(' ]] && ((G_LEAD && G_HAVE == 0)) && guard_arith_end $((G_POS + 2)); then
           local end=$ARITH_END
           G_POS=$((G_POS + 2))
           guard_arith_body "$end"
@@ -444,6 +563,8 @@ guard_scan() {
           G_CS=${G_CS%?}b
         elif ((${#G_STK[@]})); then
           _guard_sep
+          # bash rejects a word right after a subshell's ), so it is no command start.
+          G_LEAD=0
           n=${#G_STK[@]}
           GUARD_BASE=${G_STK[n - 1]}
           unset "G_STK[$((n - 1))]"
@@ -466,6 +587,7 @@ guard_scan() {
         len=$((j - G_POS - 1))
         G_BUF+=${G_STR:G_POS+1:len}
         G_HAVE=1
+        G_QUOTED=1
         if ((G_HDWAIT)); then
           G_HDRAW=1
         fi
@@ -473,6 +595,7 @@ guard_scan() {
         ;;
       '"')
         G_HAVE=1
+        G_QUOTED=1
         if ((G_HDWAIT)); then
           G_HDRAW=1
         fi
@@ -510,6 +633,7 @@ guard_scan() {
         else
           G_BUF+=$nx
           G_HAVE=1
+          G_QUOTED=1
           if ((G_HDWAIT)); then
             G_HDRAW=1
           fi
@@ -548,6 +672,7 @@ guard_scan() {
           len=$((j - G_POS - 2))
           G_BUF+='$'"${G_STR:G_POS+2:len}"
           G_HAVE=1
+          G_QUOTED=1
           G_POS=$((j + 1))
         elif [[ $nx == '"' ]]; then
           # $"..." is a locale-translated double-quoted string: quote it as one.
@@ -570,6 +695,9 @@ guard_scan() {
         ;;
     esac
   done
+  if ((G_COND)); then
+    guard_deny "unterminated [[ conditional expression"
+  fi
   if [[ $mode == sub ]]; then
     guard_deny "unterminated \$( substitution"
   fi

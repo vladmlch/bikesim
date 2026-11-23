@@ -151,6 +151,21 @@ guard_case(deny_push_in_arithmetic deny [==[echo $(( $(git push) + 1 ))]==])
 guard_case(deny_push_in_case_word deny [==[case $(git push) in a) echo;; esac]==])
 guard_case(deny_push_in_case_arm deny [==[case $x in a) git push;; esac]==])
 guard_case(deny_push_in_double_quoted_case_pattern deny [==[case $x in "$(git push)") echo;; esac]==])
+# A reserved word does not hide the command after it: the conditional or
+# arithmetic command that follows ends where its own syntax ends, and the
+# command after that is still checked.
+guard_case(deny_push_after_then_in_if deny [==[if true; then git push; fi]==])
+guard_case(deny_rm_after_do_in_for deny [==[for x in 1; do rm -rf /etc; done]==])
+guard_case(deny_push_after_cond deny [==[[[ -n "$x" && "$y" == z ]] && git push]==])
+guard_case(deny_push_after_cond_in_if deny [==[if [[ -f "$f" && "$a" != "$b" ]]; then git push; fi]==])
+guard_case(deny_push_in_cond_substitution deny [==[[[ -n "$(git push)" && "$y" == z ]]]==])
+# A quoted word is never a reserved word, and a redirected one is a command name:
+# bash runs `case` and `[[` as commands here, so the git push after them runs.
+guard_case(deny_push_after_quoted_case deny [==["case" x; git push]==])
+guard_case(deny_push_after_redirected_case deny [==[>/dev/null case x; git push]==])
+guard_case(deny_push_after_quoted_cond_word deny [==["[[" a && git push]==])
+# An unclosed conditional is a shell syntax error; denied, so it cannot hide a command.
+guard_case(deny_push_after_unterminated_cond deny [==[[[ a && git push]==])
 # A cd inside a subshell ends with the subshell: the later rm is judged from the
 # repository root, where ../build/tmp is outside.
 guard_case(deny_rm_cd_in_subshell_does_not_leak deny [==[(cd native) && rm -rf ../build/tmp]==])
@@ -346,6 +361,24 @@ guard_case(allow_case_arms_multiline allow [==[case $x in
   *) git status ;;
 esac
 git status]==])
+# [[ ... ]] is a conditional: && || ( ) < > inside it are operators on operands,
+# not separators or redirections, so the command after ]] is still checked.
+guard_case(allow_cond_and_or_operands allow [==[[[ -n "$x" && "$y" == z || -z "$w" ]] && echo ok]==])
+guard_case(allow_cond_in_if allow [==[if [[ -f "$f" && "$a" != "$b" ]]; then echo ok; fi]==])
+guard_case(allow_cond_grouping_and_comparisons allow [==[[[ ( "$x" < "$y" ) && "$a" > "$b" ]] && echo ok]==])
+guard_case(allow_cond_multiline allow [==[[[ -n "$x"
+  && "$y" == z ]] && echo ok]==])
+guard_case(allow_cond_in_while allow [==[while [[ $i -lt 3 && "$j" == x ]]; do i=$((i+1)); done]==])
+# Arithmetic after if, while and until is a (( )) command, not a subshell.
+guard_case(allow_arithmetic_if allow [==[if (( $x > 1 )); then echo a; fi]==])
+guard_case(allow_arithmetic_while allow [==[while (( i < 3 )); do i=$((i+1)); done]==])
+guard_case(allow_arithmetic_until allow [==[until (( i >= 3 )); do i=$((i+1)); done]==])
+# case after a reserved word (do, then, else, {, !) is a case statement.
+guard_case(allow_case_after_do allow [==[for f in *; do case "$f" in a) echo a;; esac; done]==])
+guard_case(allow_case_after_then allow [==[if true; then case x in x) :;; esac; fi]==])
+guard_case(allow_case_after_else allow [==[if false; then :; else case x in x) :;; esac; fi]==])
+guard_case(allow_case_after_brace allow [==[{ case x in x) :;; esac; }]==])
+guard_case(allow_case_after_bang allow [==[! case x in y) :;; esac]==])
 guard_case(allow_subshell_cd_inside allow [==[(cd native && rm -rf build/tmp)]==])
 guard_case(allow_stash_list allow [==[git stash list]==])
 guard_case(allow_stash_show allow [==[git stash show -p]==])

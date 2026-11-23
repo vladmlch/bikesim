@@ -545,7 +545,7 @@ void test_savage_pneumatic_fixture_restores() {
     auto owner = init::make_setup(request);
     if (!same_build_identity(*owner, stored.metadata)) {
         if (bike::platform::key() == "darwin-arm64")
-            bt::require(false, "pinned savage_pneumatic pose is stale; re-record it with bike-settle --physics-config viewer_physics_pneumatic.toml --track rough_uphill_savage --rider articulated_planar --out tests/fixtures/config/poses/savage_pneumatic.npz");
+            bt::require(false, "pinned savage_pneumatic pose is stale; re-record it from a copy of tests/fixtures/config/viewer_physics_pneumatic.toml without its equilibrium_state_file line (the stale pin would be rejected): bike-settle --physics-config <copy> --track tests/fixtures/tracks/rough_uphill_savage.toml --rider articulated_planar --out tests/fixtures/config/poses/savage_pneumatic.npz");
         std::cerr << "Skipping test_savage_pneumatic_fixture_restores on " << bike::platform::key() << ": build identity mismatch\n";
         return;
     }

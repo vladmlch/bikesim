@@ -435,11 +435,10 @@ set(_bike_gcc_warning_candidates
   # pathological frames, without clang-calibrated false positives. The clang
   # lane keeps the 8192-byte contract; the sanitizer lane's 24576 bump stacks
   # on top of whichever budget the family selected.
-  # NOTE: the GCC frontends sweep (check_frontends.cpp) still names =8192 and
-  # now compiles each TU with -c -O0, so its stack diagnostics measure -O0
-  # frames, not this lane's codegen frames; the two budgets can disagree.
-  # Reconciling the sweep's spelling with this calibrated budget is deferred
-  # to T14/T10, which wire the sweep onto the Linux lane.
+  # NOTE: the GCC frontends sweep (check_frontends.cpp) carries no stack
+  # budget: it compiles each TU at -O0, whose frames are inflated, so it
+  # cannot check this lane's codegen frames. A sweep-side budget needs an
+  # optimized build and is tracked separately.
   -Wstack-usage=16384 -Wframe-larger-than=16384 -Wstack-protector)
 
 # Required flags — safety/numerics contract, fail closed when unsupported.

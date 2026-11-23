@@ -30,7 +30,11 @@ constexpr std::array<std::string_view, 2> kGccRequiredFlags{
 // _GCC_OPTIONAL_WARNING_FLAGS: probed per run — a batch rejection probes
 // each spelling individually so one unsupported name drops only itself.
 // -fanalyzer is deliberately absent: see the frontends branch of tool_argv.
-constexpr std::array<std::string_view, 50> kGccOptionalWarningFlags{
+// -Wstack-usage and -Wframe-larger-than are deliberately absent too: they
+// never ran under -fsyntax-only (frame sizes exist only after codegen), and
+// at -O0 the frames they measure are inflated, so they are not a budget. A
+// stack budget needs an optimized build and is tracked separately.
+constexpr std::array<std::string_view, 48> kGccOptionalWarningFlags{
     "-Wall", "-Wextra", "-Wconversion",
     "-Wsign-conversion", "-Wdouble-promotion", "-Wshadow", "-Wcast-qual",
     "-Wformat=2", "-Wundef", "-Wimplicit-fallthrough", "-Wnon-virtual-dtor",
@@ -45,8 +49,7 @@ constexpr std::array<std::string_view, 50> kGccOptionalWarningFlags{
     "-Wplacement-new=2", "-Wmismatched-new-delete", "-Wsized-deallocation",
     "-Winterference-size", "-Wsubobject-linkage", "-Wsuggest-override",
     "-Wstrict-null-sentinel", "-Walloca", "-Wvla", "-Warray-bounds=2",
-    "-Waggressive-loop-optimizations", "-Wstack-usage=8192",
-    "-Wframe-larger-than=8192", "-Wmissing-declarations", "-Wswitch-enum",
+    "-Waggressive-loop-optimizations", "-Wmissing-declarations", "-Wswitch-enum",
 };
 
 // _GCC_WARNING_FLAGS: required + optional, the default when no probe runs.

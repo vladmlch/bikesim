@@ -3,9 +3,12 @@
 #
 # agy logs each error with a glog prefix that has no year and no zone:
 #   E1117 23:18:38.409415   29699 errorreport.go:307] ... code 429): ... Resets in 1h45m13s.
+#   I1122 23:16:35.796617  781482 runner.go:957] ... code 429): ... Your quota will reset after 19m9s.
 # The quota reset is the line's local time plus that relative Go duration. The
-# year comes from the agym-YYYY... name of the wrapper's own log file, else from
-# the current date. Bash 3.2 compatible: macOS /bin/bash is the reference.
+# two wordings and the choice of the latest line follow agy-orchestration's
+# scripts/agy-quota.py. The year comes from the agym-YYYY... name of the wrapper's
+# own log file, else from the current date. Bash 3.2 compatible: macOS /bin/bash
+# is the reference.
 
 # agym_duration_seconds DURATION — prints whole seconds for a Go duration made of
 # h, m and s parts ("1h45m13s", "13.5s"); a fraction is truncated. Returns 1 for
@@ -26,12 +29,13 @@ agym_duration_seconds() {
   printf '%s\n' "$total"
 }
 
-# agym_quota_duration LINE — prints the duration after "Resets in " with the
-# sentence's trailing period removed.
-agym_quota_duration() {
-  local rest=${1#*Resets in }
-  rest=${rest%%[!0-9hms.]*}
-  printf '%s\n' "${rest%.}"
+# agym_quota_phrase LINE — prints the reset announcement of LINE, "Resets in <d>" or
+# "reset after <d>", with the duration's trailing period removed. Returns 1 when
+# the line has neither wording.
+agym_quota_phrase() {
+  local re='(Resets in|reset after) ([0-9hms.]+)'
+  [[ $1 =~ $re ]] || return 1
+  printf '%s %s\n' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]%.}"
 }
 
 # agym_local_after YYYYMMDD HH:MM:SS SECONDS — prints the local-time instant
@@ -48,15 +52,18 @@ agym_local_after() {
   fi
 }
 
-# agym_report_quota LOG — when LOG holds a 429 line with "Resets in", prints to
-# stderr the local reset time and, when a conversation id precedes that line, the
-# resume line `agym --conversation=<id>`. Prints nothing otherwise, including when
-# LOG does not exist. Always returns 0.
+# agym_report_quota LOG — when LOG holds a quota reset, prints to stderr the local
+# reset time and, when a conversation id precedes that 429, the resume line
+# `agym --conversation=<id>`. The reset comes from the latest 429 line that
+# announces one: a later line is a fresher countdown, and an earlier one may
+# belong to a quota that has since reset. Prints nothing otherwise, including
+# when LOG does not exist. Always returns 0.
 agym_report_quota() {
-  local log=$1 hit line_no line re mmdd hms year dur secs when id
+  local log=$1 hit line_no line re mmdd hms year phrase dur secs when id
   re='^[IWEF]([0-9]{4}) ([0-9]{2}:[0-9]{2}:[0-9]{2})'
   [[ -f $log ]] || return 0
-  hit=$(grep -n 'code 429.*Resets in ' "$log" | head -n 1) || true
+  hit=$(grep -n -E 'RESOURCE_EXHAUSTED \(code 429\).*(Resets in|reset after) [0-9]' "$log" \
+    | tail -n 1) || true
   [[ -n $hit ]] || return 0
   line_no=${hit%%:*}
   line=${hit#*:}
@@ -67,20 +74,23 @@ agym_report_quota() {
   if [[ $(basename -- "$log") =~ ^agym-([0-9]{4})[0-9]{4}T ]]; then
     year=${BASH_REMATCH[1]}
   fi
-  dur=$(agym_quota_duration "$line")
+  phrase=$(agym_quota_phrase "$line") || return 0
+  dur=${phrase##* }
   if secs=$(agym_duration_seconds "$dur") && when=$(agym_local_after "$year$mmdd" "$hms" "$secs"); then
-    printf 'agym: quota resets at %s local time (429 "Resets in %s").\n' "$when" "$dur" >&2
+    printf 'agym: quota resets at %s local time (429 "%s").\n' "$when" "$phrase" >&2
   else
     printf 'agym: quota resets in %s (429; the local reset time could not be computed).\n' "$dur" >&2
   fi
-  # The conversation is the last one the wrapper forwarded a message to before
-  # the 429; cascade_id lines carry the same id in the latency breakdown.
+  # The conversation is the last one the wrapper sent a message to before the 429.
+  # Its id is on the "Forwarding user message to conversation" line and on the
+  # latency line's cascade_id. The same latency line also has a trajectory_id,
+  # which names no brain directory (agy keys ~/.gemini/antigravity-cli/brain/ by
+  # conversation id), so only the two anchored forms are read.
   id=""
   if ((line_no > 1)); then
     # BSD head rejects a zero count, so the scan runs only when a line precedes the 429.
     id=$(head -n "$((line_no - 1))" "$log" \
-      | grep -E 'Forwarding user message to conversation |cascade_id:' \
-      | grep -Eo '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' \
+      | sed -nE 's/.*(Forwarding user message to conversation |cascade_id:)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*/\2/p' \
       | tail -n 1) || true
   fi
   if [[ -n $id ]]; then

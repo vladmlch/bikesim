@@ -16,8 +16,9 @@
 # about every shell command, and the hook is verified to fire under
 # skip-permissions.
 #
-# On exit the session log is scanned. A 429 "Resets in <duration>" prints the
-# local reset time and the `agym --conversation=<id>` line to resume with (see
+# On exit the session log is scanned. The latest 429 that announces a reset
+# ("Resets in <duration>" or "reset after <duration>") prints the local reset
+# time and the `agym --conversation=<id>` line to resume with (see
 # lib_agym.sh). The exit status is agy's.
 set -euo pipefail
 

@@ -1,6 +1,8 @@
 # tooling_agym — contract for tools/agy/agym and its quota parser (lib_agym.sh).
-# Covers: the --parse-log report of a 429 "Resets in" line (local reset time and
-# the resume line), silence without a 429, the raw-duration fallback when the
+# Covers: the --parse-log report of a 429 reset line (local reset time and the
+# resume line), the conversation id taken over the latency line's trajectory_id,
+# the latest of several 429 lines and its "reset after" wording, silence without
+# a 429, the raw-duration fallback when the
 # time does not parse, --help, and a run under a fake agy on PATH: the argv
 # (skip-permissions, per-session --log-file, --add-dir for each reachable target,
 # the note for a missing one), the exit status passthrough, and the 429 scan of
@@ -25,13 +27,27 @@ else()
 endif()
 set(_agym "${REPO_ROOT}/tools/agy/agym")
 
-# Fixtures use the glog line shapes of ~/.gemini/antigravity-cli/log. The agym-
-# prefixed names carry the year, as the wrapper's own log files do.
+# Fixtures use the glog line shapes of ~/.gemini/antigravity-cli/log, copied from
+# a real log (cli-20261117_215701.log). The agym- prefixed names carry the year,
+# as the wrapper's own log files do. The latency line carries both the
+# conversation id (cascade_id) and the trajectory_id, which must not be picked.
 set(_quota_name "agym-20261117T231838Z-quota.log")
 file(WRITE "${SCRATCH_DIR}/${_quota_name}" [==[I1117 23:18:37.053611   31090 conversation_manager.go:884] Forwarding user message to conversation a83dad8b-7b39-49a0-9316-29a1b87b49c8 (items=1, media=0)
-I1117 23:18:37.064177   31090 latency_breakdown.go:168] SEND_USER_CASCADE_MESSAGE_LATENCY latency breakdown: map[cascade_id:a83dad8b-7b39-49a0-9316-29a1b87b49c8 cascade_send_latency_ms:2]
+I1117 23:18:37.064177   31090 latency_breakdown.go:168] SEND_USER_CASCADE_MESSAGE_LATENCY latency breakdown: map[active_user_state_latency_ms:0 blocking:false cascade_id:a83dad8b-7b39-49a0-9316-29a1b87b49c8 cascade_send_latency_ms:2 hydrate_slash_commands_latency_ms:0 load_trajectory_latency_ms:0 media_count:0 media_summaries_latency_ms:0 message_origin:AGENT_MESSAGE_ORIGIN_UNSPECIFIED resolve_agent_config_latency_ms:2 save_media_latency_ms:0 saved_media_count:0 status:OK total_latency_ms:5 trajectory_id:d7db33a0-1827-40ff-8ff9-efb01b21c24f]
 E1117 23:18:38.409415   29699 errorreport.go:307] agent executor error: generating and executing: RESOURCE_EXHAUSTED (code 429): Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 1h45m13s.
 E1117 23:18:38.411286   29699 errorreport.go:307] generating and executing: RESOURCE_EXHAUSTED (code 429): Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 1h45m13s.
+]==])
+
+# Two 429s. The first ("Resets in", under conversation a83dad8b) is stale: the
+# user sent a new message to conversation 4d1b0e41 later, and the latest 429 is a
+# monitor line in the "reset after" wording (as in cli-20261122_194826.log). The
+# report must use the latest line and its conversation.
+set(_multi_name "agym-20261117T090000Z-multi.log")
+file(WRITE "${SCRATCH_DIR}/${_multi_name}" [==[I1117 08:59:58.000001   31090 conversation_manager.go:884] Forwarding user message to conversation a83dad8b-7b39-49a0-9316-29a1b87b49c8 (items=1, media=0)
+E1117 08:59:59.409415   29699 errorreport.go:307] agent executor error: generating and executing: RESOURCE_EXHAUSTED (code 429): Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 1h45m13s.
+I1117 09:30:00.000001   31090 conversation_manager.go:884] Forwarding user message to conversation 4d1b0e41-63b7-4fd7-852a-4276583e6ad6 (items=2, media=0)
+I1117 09:30:00.009000   31090 latency_breakdown.go:168] SEND_USER_CASCADE_MESSAGE_LATENCY latency breakdown: map[active_user_state_latency_ms:0 blocking:false cascade_id:4d1b0e41-63b7-4fd7-852a-4276583e6ad6 cascade_send_latency_ms:0 hydrate_slash_commands_latency_ms:0 load_trajectory_latency_ms:0 media_count:0 media_summaries_latency_ms:0 message_origin:AGENT_MESSAGE_ORIGIN_UNSPECIFIED resolve_agent_config_latency_ms:0 save_media_latency_ms:0 saved_media_count:0 status:OK total_latency_ms:1 trajectory_id:9b1f0c52-3e7a-4d1e-8c55-2a6f0d9e7b13]
+I1117 09:31:01.000002   31090 runner.go:957] Monitor sir_flash_lite FINISHED: triggered=false, reason="Failed: LLM call failed: modelAPI.Generate failed: RESOURCE_EXHAUSTED (code 429): You have exhausted your capacity on this model. Your quota will reset after 19m9s.", duration=118.370709ms
 ]==])
 
 # Clean log: a 500 with "Resets in" is not a quota reset and must stay silent.
@@ -66,6 +82,32 @@ set(_resume_line "\nagym --conversation=a83dad8b-7b39-49a0-9316-29a1b87b49c8\n")
 string(FIND "\n${_err}\n" "${_resume_line}" _pos)
 if(_pos EQUAL -1)
   string(APPEND _failures "\n  parse_quota: exact resume line missing from stderr: '${_err}'")
+endif()
+# The latency line's trajectory_id names no brain directory and must not be resumed.
+string(FIND "${_err}" "d7db33a0" _pos)
+if(NOT _pos EQUAL -1)
+  string(APPEND _failures "\n  parse_quota: trajectory id reached the report: '${_err}'")
+endif()
+
+# --- --parse-log: the latest 429 wins, with its wording and conversation ---------
+execute_process(COMMAND "${_bash}" "${_agym}" --parse-log "${SCRATCH_DIR}/${_multi_name}"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+# 09:31:01 + 19m9s is 09:50:10 the same day; the first 429 (1h45m13s) is stale.
+string(FIND "${_err}" "quota resets at 2026-11-17 09:50:10 local time" _pos)
+if(NOT _rc EQUAL 0 OR NOT "${_out}" STREQUAL "" OR _pos EQUAL -1)
+  string(APPEND _failures "\n  parse_multi: expected the latest reset at 09:50:10, rc=${_rc}, stdout '${_out}', stderr '${_err}'")
+endif()
+string(FIND "${_err}" "reset after 19m9s" _pos)
+if(_pos EQUAL -1)
+  string(APPEND _failures "\n  parse_multi: 'reset after' wording missing from stderr: '${_err}'")
+endif()
+string(FIND "${_err}" "1h45m13s" _pos)
+if(NOT _pos EQUAL -1)
+  string(APPEND _failures "\n  parse_multi: the stale first 429 was reported: '${_err}'")
+endif()
+string(FIND "\n${_err}\n" "\nagym --conversation=4d1b0e41-63b7-4fd7-852a-4276583e6ad6\n" _pos)
+if(_pos EQUAL -1)
+  string(APPEND _failures "\n  parse_multi: resume line does not name the conversation of the latest 429: '${_err}'")
 endif()
 
 # --- --parse-log: silence without a quota reset --------------------------------

@@ -1,7 +1,9 @@
 # tooling_guard — contract for tools/guard.sh: every deny and allow example from
 # its header, stdin input, a usage error, and --cwd / working-directory
-# resolution for rm. The guard only parses; no command runs. Stays in the
-# ordinary (non-slow) CTest set.
+# resolution for rm. The guard only parses; no command runs. Also covers the
+# agy and Claude PreToolUse adapters (payload shapes, fail-open rule, verdict
+# format) and .agents/hooks.json, which is run as written from .agents/.
+# Stays in the ordinary (non-slow) CTest set.
 #
 # Commands are CMake bracket arguments ([==[ ... ]==]) so $, quotes, backticks
 # and semicolons reach the guard byte for byte.
@@ -220,6 +222,194 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDE
   RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
 if(NOT _rc EQUAL 2)
   set(_failures "${_failures}\n  usage_unknown_option: expected exit 2, got ${_rc}")
+endif()
+
+# --- agy and Claude PreToolUse adapters ---------------------------------------
+# hook_run(<name> <script> <payload>) runs <script> from REPO_ROOT with <payload>
+# on stdin; @REPO@ in the payload becomes REPO_ROOT. Sets <name>_rc, <name>_out
+# and <name>_err in the caller, each stripped of surrounding whitespace.
+function(hook_run name script payload)
+  string(REPLACE "@REPO@" "${REPO_ROOT}" _payload "${payload}")
+  file(WRITE "${SCRATCH_DIR}/hook_${name}.in" "${_payload}")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+    bash "${script}"
+    WORKING_DIRECTORY "${REPO_ROOT}"
+    INPUT_FILE "${SCRATCH_DIR}/hook_${name}.in"
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  string(STRIP "${_out}" _out)
+  string(STRIP "${_err}" _err)
+  set(${name}_rc "${_rc}" PARENT_SCOPE)
+  set(${name}_out "${_out}" PARENT_SCOPE)
+  set(${name}_err "${_err}" PARENT_SCOPE)
+endfunction()
+
+# agy_payload(<out> <tool> <command> <last-user-input>) — an agy PreToolUse
+# payload in the verified shape (see tools/agy/pretool-guard.sh).
+function(agy_payload out tool command last)
+  set(${out} "{\"cwd\":\"@REPO@\",\"hookEventName\":\"PreToolUse\",\"toolCall\":{\"args\":{\"CommandLine\":\"${command}\",\"toolSummary\":\"probe\",\"WaitMsBeforeAsync\":5000},\"id\":\"call_1\",\"name\":\"${tool}\"},\"workspacePaths\":[\"@REPO@\"],\"lastUserInput\":\"${last}\",\"conversationId\":\"test\"}" PARENT_SCOPE)
+endfunction()
+
+# agy_check(<name> <allow|deny|open> [<needle>]) — checks an agy hook result.
+#   allow: exit 0, stdout decision allow, empty stderr
+#   deny:  exit 0, stdout decision deny, reason contains <needle>, empty stderr
+#   open:  fail-open: exit 0, decision allow, stderr notes it with <needle>
+function(agy_check name expect)
+  set(_bad "")
+  set(_needle "${ARGV2}")
+  set(_out "${${name}_out}")
+  set(_err "${${name}_err}")
+  if(NOT ${name}_rc EQUAL 0)
+    string(APPEND _bad " exit=${${name}_rc}")
+  endif()
+  if(expect STREQUAL "open")
+    set(_want allow)
+  else()
+    set(_want "${expect}")
+  endif()
+  string(JSON _dec ERROR_VARIABLE _jerr GET "${_out}" decision)
+  if(NOT "${_jerr}" STREQUAL "NOTFOUND")
+    string(APPEND _bad " stdout is not a decision object: '${_out}'")
+  elseif(NOT "${_dec}" STREQUAL "${_want}")
+    string(APPEND _bad " decision '${_dec}', expected '${_want}'")
+  endif()
+  if(expect STREQUAL "deny")
+    string(FIND "${_out}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " reason lacks '${_needle}'")
+    endif()
+  endif()
+  if(expect STREQUAL "open")
+    string(FIND "${_err}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " stderr lacks fail-open note '${_needle}': '${_err}'")
+    endif()
+  elseif(NOT "${_err}" STREQUAL "")
+    string(APPEND _bad " unexpected stderr '${_err}'")
+  endif()
+  if(NOT _bad STREQUAL "")
+    set(_failures "${_failures}\n  ${name}:${_bad}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# claude_check(<name> <allow|deny|open> [<needle>]) — checks a Claude hook result.
+#   allow: exit 0, no stdout, empty stderr
+#   deny:  exit 2, no stdout, one stderr line containing <needle>
+#   open:  fail-open: exit 0, no stdout, stderr notes it with <needle>
+function(claude_check name expect)
+  set(_bad "")
+  set(_needle "${ARGV2}")
+  set(_out "${${name}_out}")
+  set(_err "${${name}_err}")
+  if(expect STREQUAL "deny")
+    set(_want_rc 2)
+  else()
+    set(_want_rc 0)
+  endif()
+  if(NOT ${name}_rc EQUAL _want_rc)
+    string(APPEND _bad " exit=${${name}_rc}, expected ${_want_rc}")
+  endif()
+  if(NOT "${_out}" STREQUAL "")
+    string(APPEND _bad " unexpected stdout '${_out}'")
+  endif()
+  if(expect STREQUAL "allow")
+    if(NOT "${_err}" STREQUAL "")
+      string(APPEND _bad " unexpected stderr '${_err}'")
+    endif()
+  else()
+    string(FIND "${_err}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " stderr lacks '${_needle}': '${_err}'")
+    endif()
+    string(FIND "${_err}" "\n" _nl)
+    if(NOT _nl EQUAL -1)
+      string(APPEND _bad " stderr is more than one line")
+    endif()
+  endif()
+  if(NOT _bad STREQUAL "")
+    set(_failures "${_failures}\n  ${name}:${_bad}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+set(_agy_hook "${REPO_ROOT}/tools/agy/pretool-guard.sh")
+set(_claude_hook "${REPO_ROOT}/tools/claude/pretool-guard.sh")
+
+# --- agy: verdict JSON on stdout, only run_command is checked -----------------
+agy_payload(_p view_file "git push" "")
+hook_run(agy_allow_non_shell "${_agy_hook}" "${_p}")
+agy_check(agy_allow_non_shell allow)
+
+agy_payload(_p run_command "echo ok" "")
+hook_run(agy_allow_echo "${_agy_hook}" "${_p}")
+agy_check(agy_allow_echo allow)
+
+agy_payload(_p run_command "git push" "")
+hook_run(agy_deny_push "${_agy_hook}" "${_p}")
+agy_check(agy_deny_push deny "guard: denied: git push")
+
+# lastUserInput echoes the prompt; a push the user only mentioned must not deny.
+agy_payload(_p run_command "echo ok" "run git push now")
+hook_run(agy_allow_prompt_mentions_push "${_agy_hook}" "${_p}")
+agy_check(agy_allow_prompt_mentions_push allow)
+
+# --- agy: fail open on a payload the hook cannot read -------------------------
+hook_run(agy_open_garbage "${_agy_hook}" "not json {")
+agy_check(agy_open_garbage open "payload is not JSON")
+
+hook_run(agy_open_array "${_agy_hook}" "[1,2]")
+agy_check(agy_open_array open "payload is not JSON")
+
+hook_run(agy_open_no_command "${_agy_hook}" [==[{"toolCall":{"name":"run_command","args":{}}}]==])
+agy_check(agy_open_no_command open "no CommandLine")
+
+# --- Claude: exit codes, reason on stderr --------------------------------------
+hook_run(claude_allow_status "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"@REPO@"}]==])
+claude_check(claude_allow_status allow)
+
+hook_run(claude_deny_push "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"git push"},"cwd":"@REPO@"}]==])
+claude_check(claude_deny_push deny "guard: denied: git push")
+
+hook_run(claude_allow_non_bash "${_claude_hook}" [==[{"tool_name":"Edit","tool_input":{"command":"git push"},"cwd":"@REPO@"}]==])
+claude_check(claude_allow_non_bash allow)
+
+# The payload cwd is the base for relative rm targets: ../build/tmp is inside
+# the repository from native/ and outside it from the repository root.
+hook_run(claude_allow_cwd_native "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"rm -rf ../build/tmp"},"cwd":"@REPO@/native"}]==])
+claude_check(claude_allow_cwd_native allow)
+
+hook_run(claude_deny_cwd_root "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"rm -rf ../build/tmp"},"cwd":"@REPO@"}]==])
+claude_check(claude_deny_cwd_root deny "rm target is outside the repository")
+
+hook_run(claude_open_garbage "${_claude_hook}" "not json {")
+claude_check(claude_open_garbage open "payload is not JSON")
+
+hook_run(claude_open_no_command "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{}}]==])
+claude_check(claude_open_no_command open "no command string")
+
+# --- .agents/hooks.json: valid, and the command as written runs from .agents/ --
+file(READ "${REPO_ROOT}/.agents/hooks.json" _hooks)
+string(JSON _hook_cmd ERROR_VARIABLE _jerr GET "${_hooks}" guard PreToolUse 0 hooks 0 command)
+if(NOT "${_jerr}" STREQUAL "NOTFOUND")
+  set(_failures "${_failures}\n  hooks_json: ${_jerr}")
+else()
+  string(REGEX MATCH "^bash ([^ ]+)$" _hook_match "${_hook_cmd}")
+  if(NOT _hook_match)
+    set(_failures "${_failures}\n  hooks_json: command is not 'bash <path>': '${_hook_cmd}'")
+  else()
+    get_filename_component(_hook_script "${REPO_ROOT}/.agents/${CMAKE_MATCH_1}" ABSOLUTE)
+    if(NOT EXISTS "${_hook_script}")
+      set(_failures "${_failures}\n  hooks_json: '${CMAKE_MATCH_1}' does not name a file relative to .agents/")
+    endif()
+    agy_payload(_p run_command "git push" "")
+    string(REPLACE "@REPO@" "${REPO_ROOT}" _p "${_p}")
+    file(WRITE "${SCRATCH_DIR}/hooks_json.in" "${_p}")
+    execute_process(COMMAND bash -c "${_hook_cmd}"
+      WORKING_DIRECTORY "${REPO_ROOT}/.agents"
+      INPUT_FILE "${SCRATCH_DIR}/hooks_json.in"
+      RESULT_VARIABLE hooks_json_rc OUTPUT_VARIABLE hooks_json_out ERROR_VARIABLE hooks_json_err)
+    string(STRIP "${hooks_json_out}" hooks_json_out)
+    string(STRIP "${hooks_json_err}" hooks_json_err)
+    agy_check(hooks_json deny "guard: denied: git push")
+  endif()
 endif()
 
 if(NOT _failures STREQUAL "")

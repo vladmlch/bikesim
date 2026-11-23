@@ -113,6 +113,14 @@ guard_case(deny_push_after_background deny [==[make & git push]==])
 guard_case(deny_push_in_parens deny [==[(git push)]==])
 guard_case(deny_push_in_brace_group deny [==[{ git push; }]==])
 guard_case(deny_push_git_c deny [==[git -C native push]==])
+guard_case(deny_push_git_c_config deny [==[git -c core.x=y push]==])
+guard_case(deny_push_git_exec_path_separate deny [==[git --exec-path /x push]==])
+guard_case(deny_push_git_exec_path_attached deny [==[git --exec-path=/x push]==])
+guard_case(deny_push_git_dir_attached deny [==[git --git-dir=.git --work-tree=. push]==])
+guard_case(deny_push_git_dir_separate deny [==[git --git-dir .git push]==])
+guard_case(deny_reset_hard_no_pager deny [==[git --no-pager reset --hard]==])
+guard_case(deny_push_unknown_long_option_before_push deny [==[git --unknown-flag push]==])
+guard_case(deny_push_env_split_string deny [==[env -S 'git push']==])
 guard_case(deny_push_absolute_path deny [==[/usr/bin/git push]==])
 guard_case(deny_push_env_prefix deny [==[env GIT_TRACE=1 git push]==])
 guard_case(deny_push_command_prefix deny [==[command git push]==])
@@ -163,6 +171,13 @@ guard_case(deny_misspelt_prefix deny [==[BIKE_RECORD_GOLDENS=1 ./run]==])
 guard_case(deny_misspelt_export deny [==[export BIKE_RECORD_GOLDENS=1]==])
 guard_case(deny_misspelt_env deny [==[env BIKE_RECORD_GOLDENS=1 ./run]==])
 guard_case(deny_golden_guard_env_zero deny [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=0)
+# Wrappers that run a command with an environment: the assignment is still seen.
+guard_case(deny_golden_cmake_env deny [==[cmake -E env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_cmake_env_double_dash deny [==[cmake -E env -- BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_usr_bin_env deny [==[/usr/bin/env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_env_split_string deny [==[env -S 'BIKE_GOLDEN_RECORD=1 ctest']==])
+guard_case(deny_golden_env_split_string_attached deny [==[env -iS"BIKE_GOLDEN_RECORD=1 ctest"]==])
+guard_case(deny_golden_env_unset_option deny [==[env --unset=PATH BIKE_GOLDEN_RECORD=1 ./run]==])
 
 # --- deny: rm outside the repository ------------------------------------------
 guard_case(deny_rm_root deny [==[rm -rf /]==])
@@ -244,6 +259,43 @@ guard_case(deny_rm_scratch_physical_root_slash deny "rm -rf ${_alias_phys}/" GUA
 guard_case(deny_rm_scratch_cwd_root deny [==[rm -rf .]==] GUARD ${_alias_repo} CWD ${_alias_repo}/.scratch)
 guard_case(deny_rm_scratch_link_escape deny [==[rm -rf .scratch/../../x]==] GUARD ${_alias_repo})
 
+# --- wildcards that clear a protected directory --------------------------------
+# A wildcard made only of * and ? matches every entry of its parent: denied
+# when the parent is the repository root, a scratch root or .scratch/.work.
+guard_case(deny_rm_repo_root_star deny [==[rm -rf *]==])
+guard_case(deny_rm_repo_root_dot_star deny [==[rm -rf ./*]==])
+guard_case(deny_rm_repo_root_question_star deny [==[rm -rf ?*]==])
+guard_case(deny_rm_tmp_star deny [==[rm -rf /tmp/*]==])
+guard_case(deny_rm_tmpdir_star deny [==[rm -rf /var/folders/zz/T/*]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmpdir_variable_star deny [==[rm -rf "$TMPDIR"/*]==])
+guard_case(deny_rm_scratch_link_star deny [==[rm -rf .scratch/*]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_star deny "rm -rf ${_alias_phys}/*" GUARD ${_alias_repo})
+guard_case(allow_rm_build_star allow [==[rm -rf build/*]==])
+guard_case(allow_rm_tmp_child_star allow [==[rm -rf /tmp/mydir/*]==])
+guard_case(allow_rm_scratch_child_star allow [==[rm -rf .scratch/agy/*]==] GUARD ${_alias_repo})
+
+# --- repository-root symlinks that leave the repository ------------------------
+# .deps is the shared dependency cache, a symlink to a directory outside the
+# checkout. A target through a repository-root symlink that resolves outside is
+# denied; a symlink that resolves inside the repository is followed.
+set(_outside_cache "${SCRATCH_DIR}/shared_cache")
+file(MAKE_DIRECTORY "${_outside_cache}" "${_alias_repo}/inner")
+file(CREATE_LINK "${_outside_cache}" "${_alias_repo}/.deps" SYMBOLIC)
+file(CREATE_LINK "${_outside_cache}" "${_alias_repo}/cache_link" SYMBOLIC)
+file(CREATE_LINK "${_alias_repo}/inner" "${_alias_repo}/inner_link" SYMBOLIC)
+guard_case(deny_rm_deps_link deny [==[rm -rf .deps]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_slash deny [==[rm -rf .deps/]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_star deny [==[rm -rf .deps/*]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_child deny [==[rm -rf .deps/x]==] GUARD ${_alias_repo})
+guard_case(deny_rm_other_outside_link deny [==[rm -rf cache_link/x]==] GUARD ${_alias_repo})
+guard_case(allow_rm_inside_link_child allow [==[rm -rf inner_link/x]==] GUARD ${_alias_repo})
+# The checkout's own .deps link, when it exists: the same denial on the real tree.
+if(IS_SYMLINK "${REPO_ROOT}/.deps")
+  guard_case(deny_rm_checkout_deps deny [==[rm -rf .deps]==])
+  guard_case(deny_rm_checkout_deps_slash deny [==[rm -rf .deps/]==])
+  guard_case(deny_rm_checkout_deps_star deny [==[rm -rf .deps/*]==])
+endif()
+
 # --- allow: quoted text, comments, heredocs, safe rm ---------------------------
 guard_case(allow_commit_message_push allow [==[git commit -m "do not git push"]==])
 guard_case(allow_commit_message_reset allow [==[git commit -m "never git reset --hard"]==])
@@ -322,6 +374,14 @@ guard_case(allow_rm_wd_native_parent allow [==[rm -rf ../build/tmp]==] WD ${REPO
 guard_case(allow_golden_zero allow [==[BIKE_GOLDEN_RECORD=0 ./run]==])
 guard_case(allow_golden_text allow [==[echo BIKE_GOLDEN_RECORD=1]==])
 guard_case(allow_golden_with_guard_env allow [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_golden_cmake_env_with_guard_env allow [==[cmake -E env BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_golden_env_split_string_with_guard_env allow [==[env -S 'BIKE_GOLDEN_RECORD=1 ctest']==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_env_split_string_text allow [==[env -S 'echo BIKE_GOLDEN_RECORD=1']==])
+guard_case(allow_env_assignment_then_status allow [==[env FOO=1 git status]==])
+guard_case(allow_env_alone allow [==[env]==])
+guard_case(allow_git_no_pager_status allow [==[git --no-pager status]==])
+guard_case(allow_git_exec_path_status allow [==[git --exec-path /x status]==])
+guard_case(allow_git_git_dir_status allow [==[git --git-dir=.git status]==])
 guard_case(allow_misspelt_with_guard_env allow [==[export BIKE_RECORD_GOLDENS=1]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
 
 # --- stdin input ---------------------------------------------------------------

@@ -17,10 +17,13 @@
 #   git stash          drops other agents' work in the shared tree. Only the
 #                      read-only forms `git stash list` and `git stash show`
 #                      are allowed; every other stash form is denied.
+#   git global options before the subcommand (-C, -c, --opt=value, --opt value)
+#                      are skipped, so the real subcommand is the one checked.
 #   BIKE_GOLDEN_RECORD=1, or the misspelt BIKE_RECORD_GOLDENS=1, as a prefix,
 #                      an export argument or an env argument: rewrites goldens.
-#                      Allowed when the guard's own environment has
-#                      BIKE_GUARD_ALLOW_GOLDENS=1.
+#                      Also through env (/usr/bin/env, env -i, env -S TEXT,
+#                      env -S'TEXT') and cmake -E env. Allowed when the guard's
+#                      own environment has BIKE_GUARD_ALLOW_GOLDENS=1.
 #   rm with a recursive and a force flag on a target outside the repository
 #                      and outside the scratch roots. A target strictly inside
 #                      $TMPDIR, /tmp or /private/tmp is allowed (lexical and
@@ -37,6 +40,14 @@
 #                      $ expansion, braces, ~user, a hidden-name glob) counts as
 #                      outside. The repository root and .git are denied even
 #                      though they are inside.
+#   rm -rf of a wildcard made only of * and ? (with a *) directly inside a
+#                      protected directory: the repository root, a scratch root
+#                      or .scratch/.work. `rm -rf *`, `rm -rf /tmp/*` and
+#                      `rm -rf .scratch/*` clear the directory; `rm -rf build/*`
+#                      and `rm -rf /tmp/mydir/*` are allowed.
+#   rm through a repository-root symlink that resolves outside the repository,
+#                      other than the scratch links .scratch and .work: `.deps`
+#                      (the shared dependency cache) and `.deps/*` are denied.
 #   A command name or git subcommand that is not a literal word (a $ expansion).
 #
 # Parsing: one left-to-right scan that tracks quoting. Single-quoted text,
@@ -53,7 +64,8 @@
 # A backstop against honest mistakes, not a sandbox: sudo, xargs, bash -c and
 # eval are not unwrapped, and a symlink inside the repository or a scratch root
 # is not followed, except the repository-root .scratch and .work links named
-# above: rm -rf /tmp/link/ is judged by the lexical path /tmp/link.
+# above: rm -rf /tmp/link/ is judged by the lexical path /tmp/link. Any other
+# repository-root symlink that leaves the repository is denied, not followed.
 set -euo pipefail
 
 GUARD_ROOT=""    # physical repository root
@@ -603,15 +615,33 @@ guard_check_golden() {
   guard_deny "$name=$(printf '%q' "$value") re-records goldens; BIKE_GUARD_ALLOW_GOLDENS=1 in the guard's environment allows it"
 }
 
-# guard_check_git <argument>... — the words after `git`.
+# guard_check_git <argument>... — the words after `git`. Global options come
+# before the subcommand. -C and -c take the next word. A long option written
+# without `=` takes the next word as its value, unless git documents it as a
+# bare flag. An unknown long option whose next word is a denied subcommand is
+# itself denied: the word may be the subcommand, and the guard cannot tell.
 guard_check_git() {
   local a sub=""
   while (($#)); do
     a=$1
     shift
     case $a in
-      -C|-c|--git-dir|--work-tree|--namespace)
+      -C|-c)
         if (($#)); then
+          shift
+        fi
+        ;;
+      --*=*) ;;
+      --no-pager|--paginate|--bare|--no-replace-objects|--literal-pathspecs) ;;
+      --glob-pathspecs|--noglob-pathspecs|--icase-pathspecs|--no-optional-locks) ;;
+      --no-advice|--version|--help|--html-path|--man-path|--info-path) ;;
+      --*)
+        if (($#)); then
+          case $1 in
+            reset|clean|push|stash)
+              guard_deny "git option $a is followed by $1, which may be the subcommand"
+              ;;
+          esac
           shift
         fi
         ;;
@@ -724,7 +754,7 @@ guard_scratch_roots() {
 # guard_check_rm_target <path> — the target must resolve inside the repository
 # or strictly inside a scratch root (GUARD_TMP).
 guard_check_rm_target() {
-  local t=$1 rest comp k
+  local t=$1 rest comp k top phys last parent
   [[ -n $t ]] || guard_deny "rm target is empty"
   case $t in
     *'$'*|*'`'*|*'{'*|*'}'*)
@@ -758,6 +788,46 @@ guard_check_rm_target() {
     esac
     k=$((k + 1))
   done
+  # Any other repository-root symlink is not followed: one that leaves the
+  # repository (.deps, the shared dependency cache) denies the target.
+  case $RESOLVED in
+    "$GUARD_ROOT"/*)
+      top=${RESOLVED#"$GUARD_ROOT"/}
+      top=${top%%/*}
+      if [[ -L $GUARD_ROOT/$top ]]; then
+        phys=$(cd -P -- "$GUARD_ROOT/$top" 2>/dev/null && pwd -P) || phys=""
+        case $phys in
+          "$GUARD_ROOT"|"$GUARD_ROOT"/*) ;;
+          *) guard_deny "rm target runs through repository-root symlink $top, which does not resolve inside the repository: $(printf '%q' "$t")" ;;
+        esac
+      fi
+      ;;
+  esac
+  # A last component of only * and ? (with a *) matches every entry of its
+  # parent. Directly inside a protected directory, that clears the directory.
+  # Partial patterns such as /tmp/agy-* are not denied.
+  last=${RESOLVED##*/}
+  case $last in
+    *'*'*)
+      case $last in
+        *[!*?]*) ;;
+        *)
+          parent=${RESOLVED%/*}
+          [[ -n $parent ]] || parent=/
+          if [[ $parent == "$GUARD_ROOT" || $parent == "$GUARD_ROOT/.scratch" || $parent == "$GUARD_ROOT/.work" ]]; then
+            guard_deny "rm $(printf '%q' "$t") would remove every entry of the repository directory $parent"
+          fi
+          k=0
+          while ((k < ${#GUARD_TMP[@]})); do
+            if [[ $parent == "${GUARD_TMP[k]}" ]]; then
+              guard_deny "rm $(printf '%q' "$t") would remove every entry of the scratch root $parent"
+            fi
+            k=$((k + 1))
+          done
+          ;;
+      esac
+      ;;
+  esac
   case $RESOLVED in
     "$GUARD_ROOT"|"$GUARD_ROOT/.git"|"$GUARD_ROOT/.git"/*)
       guard_deny "rm would remove the repository root or its .git: $(printf '%q' "$t")"
@@ -841,6 +911,72 @@ guard_is_wrapper() {
   return 1
 }
 
+# guard_check_text <text> — command text that a wrapper runs (env -S). It is
+# scanned as shell text in its own scope: a cd inside it stays inside.
+guard_check_text() {
+  local saved=$GUARD_BASE
+  guard_verdict "$1"
+  GUARD_BASE=$saved
+}
+
+# guard_check_env <argument>... — the words after `env`, or after `cmake -E env`.
+# Options are skipped. The text of -S / --split-string is checked as a command.
+# The first word that is not an option starts the wrapped command, which
+# guard_check_simple checks with its assignments. -u and -C take a value.
+guard_check_env() {
+  local a short c
+  while (($#)); do
+    a=$1
+    case $a in
+      --) shift; break ;;
+      --split-string=*)
+        shift
+        guard_check_text "${a#--split-string=}"
+        ;;
+      --split-string)
+        shift
+        if (($#)); then
+          guard_check_text "$1"
+          shift
+        fi
+        ;;
+      --unset|--chdir)
+        shift
+        if (($#)); then
+          shift
+        fi
+        ;;
+      --*|-) shift ;;
+      -*)
+        shift
+        short=${a#-}
+        while [[ -n $short ]]; do
+          c=${short:0:1}
+          short=${short:1}
+          case $c in
+            S)
+              if [[ -z $short ]] && (($#)); then
+                short=$1
+                shift
+              fi
+              guard_check_text "$short"
+              break
+              ;;
+            u|C)
+              if [[ -z $short ]] && (($#)); then
+                shift
+              fi
+              break
+              ;;
+          esac
+        done
+        ;;
+      *) break ;;
+    esac
+  done
+  guard_check_simple "$@"
+}
+
 # guard_check_simple <word>... — one simple command, words already unquoted.
 guard_check_simple() {
   local -a w
@@ -849,18 +985,17 @@ guard_check_simple() {
   m=${#w[@]}
   while ((i < m)); do
     word=${w[i]}
+    name=${word##*/}
     if guard_is_assignment "$word"; then
       guard_check_golden "$word"
       i=$((i + 1))
-    elif [[ $word == env ]]; then
-      i=$((i + 1))
-      while ((i < m)); do
-        case ${w[i]} in
-          -u|-C|-S) i=$((i + 2)) ;;
-          -*) i=$((i + 1)) ;;
-          *) break ;;
-        esac
-      done
+    elif [[ $name == env ]]; then
+      # The wrapped command and its assignments are checked by guard_check_env.
+      guard_check_env "${w[@]:i+1}"
+      return 0
+    elif [[ $name == cmake && ${w[i+1]-} == -E && ${w[i+2]-} == env ]]; then
+      guard_check_env "${w[@]:i+3}"
+      return 0
     elif guard_is_wrapper "$word"; then
       i=$((i + 1))
     else

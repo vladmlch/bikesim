@@ -345,7 +345,36 @@ def _mjwarp_sp3_clean_split_step(
 
 
 _SP4_XZ_SHIFT_KERNEL: Any = None
+_SP4_CONTACT_SHIFT_KERNEL: Any = None
 _SP4_EXACT_TENDON_LENGTH_KERNEL: Any = None
+_SP4_EXACT_PLANAR_KINEMATICS_KERNELS: tuple[Any, Any] | None = None
+
+
+def _get_sp4_contact_shift_kernel() -> Any:
+    """Lazily construct the Warp kernel that shifts active contact positions by ``sign * xz_off``."""
+    global _SP4_CONTACT_SHIFT_KERNEL
+    if _SP4_CONTACT_SHIFT_KERNEL is not None:
+        return _SP4_CONTACT_SHIFT_KERNEL
+    if wp is None:
+        raise RuntimeError("warp-lang is required for SP4 XZ contact rebasing")
+
+    @wp.kernel
+    def _sp4_shift_contact_pos_kernel(
+        nacon: wp.array[int],
+        contact_worldid: wp.array[int],
+        contact_pos: wp.array[wp.vec3],
+        xz_off: wp.array[wp.vec2],
+        sign: float,
+    ) -> None:
+        c = wp.tid()
+        if c >= nacon[0]:
+            return
+        w = contact_worldid[c]
+        off = xz_off[w]
+        contact_pos[c] = contact_pos[c] + wp.vec3(sign * off[0], 0.0, sign * off[1])
+
+    _SP4_CONTACT_SHIFT_KERNEL = _sp4_shift_contact_pos_kernel
+    return _SP4_CONTACT_SHIFT_KERNEL
 
 
 def _get_sp4_xz_shift_kernel() -> Any:
@@ -356,6 +385,13 @@ def _get_sp4_xz_shift_kernel() -> Any:
     if wp is None:
         raise RuntimeError("warp-lang is required for SP4 XZ coordinate rebasing")
 
+    @wp.func
+    def _xz_two_sum(a: float, b: float) -> wp.vec2:
+        s = a + b
+        bb = s - a
+        e = (a - (s - bb)) + (b - bb)
+        return wp.vec2(s, e)
+
     @wp.kernel
     def _sp4_shift_xz_kernel(
         qpos: wp.array2d[float],
@@ -363,13 +399,17 @@ def _get_sp4_xz_shift_kernel() -> Any:
         xipos: wp.array2d[wp.vec3],
         xanchor: wp.array2d[wp.vec3],
         site_xpos: wp.array2d[wp.vec3],
+        geom_xpos: wp.array2d[wp.vec3],
+        geom_bodyid: wp.array[int],
         subtree_com: wp.array2d[wp.vec3],
         xz_off: wp.array[wp.vec2],
+        xz_lo: wp.array2d[float],
         saved_xz: wp.array2d[float],
         saved_xpos: wp.array2d[wp.vec3],
         saved_xipos: wp.array2d[wp.vec3],
         saved_xanchor: wp.array2d[wp.vec3],
         saved_site_xpos: wp.array2d[wp.vec3],
+        saved_geom_xpos: wp.array2d[wp.vec3],
         saved_subtree_com: wp.array2d[wp.vec3],
         rx0: int,
         rz0: int,
@@ -383,21 +423,21 @@ def _get_sp4_xz_shift_kernel() -> Any:
             dx = wp.trunc(qpos[w, rx0])
             dz = wp.trunc(qpos[w, rz0])
             xz_off[w] = wp.vec2(dx, dz)
-            qpos[w, rx0] = qpos[w, rx0] - dx
-            qpos[w, rz0] = qpos[w, rz0] - dz
+            qpos[w, rx0] = (qpos[w, rx0] - dx) + xz_lo[w, 0]
+            qpos[w, rz0] = (qpos[w, rz0] - dz) + xz_lo[w, 1]
             if rx1 >= 0:
-                qpos[w, rx1] = qpos[w, rx1] - dx
+                qpos[w, rx1] = (qpos[w, rx1] - dx) + xz_lo[w, 2]
             if rz1 >= 0:
-                qpos[w, rz1] = qpos[w, rz1] - dz
+                qpos[w, rz1] = (qpos[w, rz1] - dz) + xz_lo[w, 3]
             return
         if mode == 4:
             off = xz_off[w]
-            qpos[w, rx0] = qpos[w, rx0] + sign * off[0]
-            qpos[w, rz0] = qpos[w, rz0] + sign * off[1]
+            qpos[w, rx0] = (qpos[w, rx0] + sign * off[0]) + xz_lo[w, 0]
+            qpos[w, rz0] = (qpos[w, rz0] + sign * off[1]) + xz_lo[w, 1]
             if rx1 >= 0:
-                qpos[w, rx1] = qpos[w, rx1] + sign * off[0]
+                qpos[w, rx1] = (qpos[w, rx1] + sign * off[0]) + xz_lo[w, 2]
             if rz1 >= 0:
-                qpos[w, rz1] = qpos[w, rz1] + sign * off[1]
+                qpos[w, rz1] = (qpos[w, rz1] + sign * off[1]) + xz_lo[w, 3]
             return
         if mode == 3:
             qpos[w, rx0] = saved_xz[w, 0]
@@ -414,6 +454,9 @@ def _get_sp4_xz_shift_kernel() -> Any:
                 xanchor[w, i] = saved_xanchor[w, i]
             for i in range(site_xpos.shape[1]):
                 site_xpos[w, i] = saved_site_xpos[w, i]
+            for g in range(geom_xpos.shape[1]):
+                if geom_bodyid[g] != 0:
+                    geom_xpos[w, g] = saved_geom_xpos[w, g]
             for i in range(1, subtree_com.shape[1]):
                 subtree_com[w, i] = saved_subtree_com[w, i]
             return
@@ -432,16 +475,30 @@ def _get_sp4_xz_shift_kernel() -> Any:
                 saved_xanchor[w, i] = xanchor[w, i]
             for i in range(site_xpos.shape[1]):
                 saved_site_xpos[w, i] = site_xpos[w, i]
+            for g in range(geom_xpos.shape[1]):
+                if geom_bodyid[g] != 0:
+                    saved_geom_xpos[w, g] = geom_xpos[w, g]
             for i in range(1, subtree_com.shape[1]):
                 saved_subtree_com[w, i] = subtree_com[w, i]
         off = xz_off[w]
         s = wp.vec3(sign * off[0], 0.0, sign * off[1])
-        qpos[w, rx0] = qpos[w, rx0] + s[0]
-        qpos[w, rz0] = qpos[w, rz0] + s[2]
+        s0 = _xz_two_sum(s[0], qpos[w, rx0])
+        s1 = _xz_two_sum(s[2], qpos[w, rz0])
+        qpos[w, rx0] = s0[0]
+        qpos[w, rz0] = s1[0]
+        if mode == 0:
+            xz_lo[w, 0] = s0[1]
+            xz_lo[w, 1] = s1[1]
         if rx1 >= 0:
-            qpos[w, rx1] = qpos[w, rx1] + s[0]
+            s2 = _xz_two_sum(s[0], qpos[w, rx1])
+            qpos[w, rx1] = s2[0]
+            if mode == 0:
+                xz_lo[w, 2] = s2[1]
         if rz1 >= 0:
-            qpos[w, rz1] = qpos[w, rz1] + s[2]
+            s3 = _xz_two_sum(s[2], qpos[w, rz1])
+            qpos[w, rz1] = s3[0]
+            if mode == 0:
+                xz_lo[w, 3] = s3[1]
         for i in range(1, xpos.shape[1]):
             xpos[w, i] = xpos[w, i] + s
         for i in range(1, xipos.shape[1]):
@@ -450,6 +507,9 @@ def _get_sp4_xz_shift_kernel() -> Any:
             xanchor[w, i] = xanchor[w, i] + s
         for i in range(site_xpos.shape[1]):
             site_xpos[w, i] = site_xpos[w, i] + s
+        for g in range(geom_xpos.shape[1]):
+            if geom_bodyid[g] != 0:
+                geom_xpos[w, g] = geom_xpos[w, g] + s
         for i in range(1, subtree_com.shape[1]):
             subtree_com[w, i] = subtree_com[w, i] + s
 
@@ -512,8 +572,244 @@ def _get_sp4_exact_tendon_length_kernel() -> Any:
     return _SP4_EXACT_TENDON_LENGTH_KERNEL
 
 
+def _split_f64_to_df32_array(vals: np.ndarray, device: str) -> Any:
+    arr64 = np.asarray(vals, dtype=np.float64).reshape(-1)
+    hi = arr64.astype(np.float32)
+    lo = (arr64 - hi.astype(np.float64)).astype(np.float32)
+    packed = np.stack([hi, lo], axis=-1)
+    return wp.array(packed, dtype=wp.vec2, device=device)
+
+
+def _get_sp4_exact_planar_kinematics_kernels() -> tuple[Any, Any]:
+    """Lazily construct the Warp kernels computing df32 exact planar forward kinematics."""
+    global _SP4_EXACT_PLANAR_KINEMATICS_KERNELS
+    if _SP4_EXACT_PLANAR_KINEMATICS_KERNELS is not None:
+        return _SP4_EXACT_PLANAR_KINEMATICS_KERNELS
+    if wp is None:
+        raise RuntimeError("warp-lang is required for SP4 exact planar kinematics kernels")
+
+    @wp.func
+    def _df_two_sum(a: float, b: float) -> wp.vec2:
+        s = a + b
+        bb = s - a
+        e = (a - (s - bb)) + (b - bb)
+        return wp.vec2(s, e)
+
+    @wp.func
+    def _df_two_prod(a: float, b: float) -> wp.vec2:
+        ca = float(4097.0) * a
+        a_hi = ca - (ca - a)
+        a_lo = a - a_hi
+        cb = float(4097.0) * b
+        b_hi = cb - (cb - b)
+        b_lo = b - b_hi
+        p = a * b
+        e = ((a_hi * b_hi - p) + a_hi * b_lo + a_lo * b_hi) + a_lo * b_lo
+        return wp.vec2(p, e)
+
+    @wp.func
+    def _df_add(x: wp.vec2, y: wp.vec2) -> wp.vec2:
+        s = _df_two_sum(x[0], y[0])
+        t = _df_two_sum(x[1], y[1])
+        v = _df_two_sum(s[0], s[1] + t[0])
+        return _df_two_sum(v[0], t[1] + v[1])
+
+    @wp.func
+    def _df_sub(x: wp.vec2, y: wp.vec2) -> wp.vec2:
+        return _df_add(x, wp.vec2(-y[0], -y[1]))
+
+    @wp.func
+    def _df_mul(x: wp.vec2, y: wp.vec2) -> wp.vec2:
+        p = _df_two_prod(x[0], y[0])
+        e = p[1] + (x[0] * y[1] + x[1] * y[0])
+        return _df_two_sum(p[0], e)
+
+    @wp.func
+    def _df_sincos(
+        th: wp.vec2,
+        two_pi: wp.vec2,
+        sin_tab: wp.array[wp.vec2],
+        cos_tab: wp.array[wp.vec2],
+    ) -> wp.vec4:
+        inv_two_pi = float(0.15915494309189535)
+        k = wp.round((th[0] + th[1]) * inv_two_pi)
+        th_red = _df_sub(th, _df_mul(wp.vec2(k, 0.0), two_pi))
+        idx = wp.clamp(int(wp.round((th_red[0] + float(4.0)) * float(256.0))), 0, 2048)
+        g = float(-4.0) + float(idx) * float(0.00390625)
+        r_df = _df_add(th_red, wp.vec2(-g, 0.0))
+        r = r_df[0] + r_df[1]
+        r2 = _df_mul(r_df, r_df)
+        sin_r = _df_mul(r_df, _df_add(wp.vec2(1.0, 0.0), wp.vec2(float(-0.16666667) * r * r, 0.0)))
+        cos_r = _df_add(
+            wp.vec2(1.0, 0.0),
+            _df_add(_df_mul(wp.vec2(-0.5, 0.0), r2), wp.vec2(float(0.041666668) * r * r * r * r, 0.0)),
+        )
+        sg = sin_tab[idx]
+        cg = cos_tab[idx]
+        s_out = _df_add(_df_mul(sg, cos_r), _df_mul(cg, sin_r))
+        c_out = _df_sub(_df_mul(cg, cos_r), _df_mul(sg, sin_r))
+        return wp.vec4(c_out[0], c_out[1], s_out[0], s_out[1])
+
+    @wp.kernel
+    def _sp4_exact_planar_poses_kernel(
+        qpos: wp.array2d[float],
+        nbody: int,
+        body_parentid: wp.array[int],
+        body_jntadr: wp.array[int],
+        body_jntnum: wp.array[int],
+        bpos_x: wp.array[wp.vec2],
+        bpos_y: wp.array[float],
+        bpos_z: wp.array[wp.vec2],
+        bpitch0: wp.array[wp.vec2],
+        jnt_type: wp.array[int],
+        jnt_qadr: wp.array[int],
+        jqpos0: wp.array[wp.vec2],
+        jpos_x: wp.array[wp.vec2],
+        jpos_y: wp.array[float],
+        jpos_z: wp.array[wp.vec2],
+        jaxis_x: wp.array[wp.vec2],
+        jaxis_y: wp.array[float],
+        jaxis_z: wp.array[wp.vec2],
+        two_pi: wp.vec2,
+        sin_tab: wp.array[wp.vec2],
+        cos_tab: wp.array[wp.vec2],
+        scratch_bx: wp.array2d[wp.vec2],
+        scratch_by: wp.array2d[float],
+        scratch_bz: wp.array2d[wp.vec2],
+        scratch_bth: wp.array2d[wp.vec2],
+        scratch_bc: wp.array2d[wp.vec2],
+        scratch_bs: wp.array2d[wp.vec2],
+        xpos_out: wp.array2d[wp.vec3],
+        xquat_out: wp.array2d[wp.quat],
+        xanchor_out: wp.array2d[wp.vec3],
+        xaxis_out: wp.array2d[wp.vec3],
+    ) -> None:
+        w = wp.tid()
+        scratch_bx[w, 0] = wp.vec2(0.0, 0.0)
+        scratch_by[w, 0] = 0.0
+        scratch_bz[w, 0] = wp.vec2(0.0, 0.0)
+        scratch_bth[w, 0] = wp.vec2(0.0, 0.0)
+        scratch_bc[w, 0] = wp.vec2(1.0, 0.0)
+        scratch_bs[w, 0] = wp.vec2(0.0, 0.0)
+
+        for b in range(1, nbody):
+            pid = body_parentid[b]
+            cp = scratch_bc[w, pid]
+            sp = scratch_bs[w, pid]
+            lpx = bpos_x[b]
+            lpz = bpos_z[b]
+            px = _df_add(scratch_bx[w, pid], _df_add(_df_mul(cp, lpx), _df_mul(sp, lpz)))
+            py = scratch_by[w, pid] + bpos_y[b]
+            pz = _df_add(scratch_bz[w, pid], _df_sub(_df_mul(cp, lpz), _df_mul(sp, lpx)))
+            th = _df_add(scratch_bth[w, pid], bpitch0[b])
+            cs = _df_sincos(th, two_pi, sin_tab, cos_tab)
+            ct = wp.vec2(cs[0], cs[1])
+            st = wp.vec2(cs[2], cs[3])
+
+            ja = body_jntadr[b]
+            jn = body_jntnum[b]
+            for k in range(jn):
+                j = ja + k
+                jt = jnt_type[j]
+                qa = jnt_qadr[j]
+                dq = _df_sub(wp.vec2(qpos[w, qa], 0.0), jqpos0[j])
+                jx = jpos_x[j]
+                jy = jpos_y[j]
+                jz = jpos_z[j]
+                anc_x = _df_add(px, _df_add(_df_mul(ct, jx), _df_mul(st, jz)))
+                anc_y = py + jy
+                anc_z = _df_add(pz, _df_sub(_df_mul(ct, jz), _df_mul(st, jx)))
+                xanchor_out[w, j] = wp.vec3(anc_x[0] + anc_x[1], anc_y, anc_z[0] + anc_z[1])
+                if jt == 2:  # mjJNT_SLIDE
+                    ax = jaxis_x[j]
+                    az = jaxis_z[j]
+                    wx = _df_add(_df_mul(ct, ax), _df_mul(st, az))
+                    wz = _df_sub(_df_mul(ct, az), _df_mul(st, ax))
+                    xaxis_out[w, j] = wp.vec3(wx[0] + wx[1], float(0.0), wz[0] + wz[1])
+                    px = _df_add(px, _df_mul(wx, dq))
+                    pz = _df_add(pz, _df_mul(wz, dq))
+                elif jt == 3:  # mjJNT_HINGE
+                    ay = jaxis_y[j]
+                    xaxis_out[w, j] = wp.vec3(float(0.0), ay, float(0.0))
+                    th = _df_add(th, _df_mul(wp.vec2(ay, 0.0), dq))
+                    cs2 = _df_sincos(th, two_pi, sin_tab, cos_tab)
+                    ct = wp.vec2(cs2[0], cs2[1])
+                    st = wp.vec2(cs2[2], cs2[3])
+                    px = _df_sub(anc_x, _df_add(_df_mul(ct, jx), _df_mul(st, jz)))
+                    pz = _df_sub(anc_z, _df_sub(_df_mul(ct, jz), _df_mul(st, jx)))
+
+            scratch_bx[w, b] = px
+            scratch_by[w, b] = py
+            scratch_bz[w, b] = pz
+            scratch_bth[w, b] = th
+            scratch_bc[w, b] = ct
+            scratch_bs[w, b] = st
+            xpos_out[w, b] = wp.vec3(px[0] + px[1], py, pz[0] + pz[1])
+            hth = wp.vec2(float(0.5) * th[0], float(0.5) * th[1])
+            csh = _df_sincos(hth, two_pi, sin_tab, cos_tab)
+            xquat_out[w, b] = wp.quat(
+                csh[0] + csh[1], float(0.0), csh[2] + csh[3], float(0.0)
+            )
+
+    @wp.kernel
+    def _sp4_exact_planar_frames_kernel(
+        nbody: int,
+        nsite: int,
+        scratch_bx: wp.array2d[wp.vec2],
+        scratch_by: wp.array2d[float],
+        scratch_bz: wp.array2d[wp.vec2],
+        scratch_bc: wp.array2d[wp.vec2],
+        scratch_bs: wp.array2d[wp.vec2],
+        bipos_x: wp.array[wp.vec2],
+        bipos_y: wp.array[float],
+        bipos_z: wp.array[wp.vec2],
+        site_bodyid: wp.array[int],
+        spos_x: wp.array[wp.vec2],
+        spos_y: wp.array[float],
+        spos_z: wp.array[wp.vec2],
+        xmat_out: wp.array2d[wp.mat33],
+        xipos_out: wp.array2d[wp.vec3],
+        site_xpos_out: wp.array2d[wp.vec3],
+    ) -> None:
+        w = wp.tid()
+        for b in range(1, nbody):
+            ct = scratch_bc[w, b]
+            st = scratch_bs[w, b]
+            c = ct[0] + ct[1]
+            s = st[0] + st[1]
+            xmat_out[w, b] = wp.mat33(
+                c, float(0.0), s,
+                float(0.0), float(1.0), float(0.0),
+                -s, float(0.0), c,
+            )
+            ix = bipos_x[b]
+            iz = bipos_z[b]
+            ipx = _df_add(scratch_bx[w, b], _df_add(_df_mul(ct, ix), _df_mul(st, iz)))
+            ipz = _df_add(scratch_bz[w, b], _df_sub(_df_mul(ct, iz), _df_mul(st, ix)))
+            xipos_out[w, b] = wp.vec3(ipx[0] + ipx[1], scratch_by[w, b] + bipos_y[b], ipz[0] + ipz[1])
+
+        for s_id in range(nsite):
+            sb = site_bodyid[s_id]
+            if sb > 0:
+                csb = scratch_bc[w, sb]
+                ssb = scratch_bs[w, sb]
+                sx = spos_x[s_id]
+                sz = spos_z[s_id]
+                wsx = _df_add(scratch_bx[w, sb], _df_add(_df_mul(csb, sx), _df_mul(ssb, sz)))
+                wsz = _df_add(scratch_bz[w, sb], _df_sub(_df_mul(csb, sz), _df_mul(ssb, sx)))
+                site_xpos_out[w, s_id] = wp.vec3(
+                    wsx[0] + wsx[1], scratch_by[w, sb] + spos_y[s_id], wsz[0] + wsz[1]
+                )
+
+    _SP4_EXACT_PLANAR_KINEMATICS_KERNELS = (
+        _sp4_exact_planar_poses_kernel,
+        _sp4_exact_planar_frames_kernel,
+    )
+    return _SP4_EXACT_PLANAR_KINEMATICS_KERNELS
+
+
 def _build_sp4_xz_rebase_ctx(m_mj: Any, nworld: int, device: str) -> dict[str, Any] | None:
-    """Build per-world XZ coordinate rebase and df32 2-joint tendon state for FP32 mjwarp."""
+    """Build per-world XZ coordinate rebase and df32 2-joint tendon / planar CONNECT state for FP32 mjwarp."""
     if mujoco is None or wp is None:
         return None
     def _jnt_qadr(name: str) -> int:
@@ -570,14 +866,114 @@ def _build_sp4_xz_rebase_ctx(m_mj: Any, nworld: int, device: str) -> dict[str, A
             }
         )
 
+    nbody = int(m_mj.nbody)
+    njnt = int(m_mj.njnt)
+    is_planar_xz = nbody > 1 and njnt > 0
+    if is_planar_xz:
+        for b in range(1, nbody):
+            qx = float(m_mj.body_quat[b, 1])
+            qz = float(m_mj.body_quat[b, 3])
+            if abs(qx) > 1.0e-9 or abs(qz) > 1.0e-9:
+                is_planar_xz = False
+                break
+    if is_planar_xz:
+        jnt_slide = int(mujoco.mjtJoint.mjJNT_SLIDE)
+        jnt_hinge = int(mujoco.mjtJoint.mjJNT_HINGE)
+        for j in range(njnt):
+            jt = int(m_mj.jnt_type[j])
+            ax, ay, az = (float(m_mj.jnt_axis[j, 0]), float(m_mj.jnt_axis[j, 1]), float(m_mj.jnt_axis[j, 2]))
+            if jt == jnt_slide:
+                if abs(ay) > 1.0e-9:
+                    is_planar_xz = False
+                    break
+            elif jt == jnt_hinge:
+                if abs(ax) > 1.0e-9 or abs(az) > 1.0e-9 or abs(abs(ay) - 1.0) > 1.0e-7:
+                    is_planar_xz = False
+                    break
+            else:
+                is_planar_xz = False
+                break
+
+    planar_kin_ctx: dict[str, Any] = {"is_planar_xz": bool(is_planar_xz)}
+    if is_planar_xz:
+        poses_kernel, frames_kernel = _get_sp4_exact_planar_kinematics_kernels()
+        two_pi_64 = 2.0 * math.pi
+        two_pi_hi = np.float32(two_pi_64)
+        two_pi_lo = np.float32(two_pi_64 - float(two_pi_hi))
+        g_grid = -4.0 + np.arange(2049, dtype=np.float64) / 256.0
+        bpos = np.asarray(m_mj.body_pos, dtype=np.float64)
+        bipos = np.asarray(m_mj.body_ipos, dtype=np.float64)
+        bquat = np.asarray(m_mj.body_quat, dtype=np.float64)
+        bpitch0_64 = np.zeros(nbody, dtype=np.float64)
+        for b in range(1, nbody):
+            bpitch0_64[b] = 2.0 * math.atan2(float(bquat[b, 2]), float(bquat[b, 0]))
+        jpos = np.asarray(m_mj.jnt_pos, dtype=np.float64)
+        jaxis = np.asarray(m_mj.jnt_axis, dtype=np.float64)
+        jqpos0_64 = np.zeros(njnt, dtype=np.float64)
+        for j in range(njnt):
+            jqpos0_64[j] = float(m_mj.qpos0[int(m_mj.jnt_qposadr[j])])
+        nsite = int(m_mj.nsite)
+        if nsite > 0:
+            spos = np.asarray(m_mj.site_pos, dtype=np.float64)
+            sbody = np.asarray(m_mj.site_bodyid, dtype=np.int32)
+        else:
+            spos = np.zeros((1, 3), dtype=np.float64)
+            sbody = np.zeros(1, dtype=np.int32)
+        planar_kin_ctx.update(
+            {
+                "exact_planar_poses_kernel": poses_kernel,
+                "exact_planar_frames_kernel": frames_kernel,
+                "nbody": nbody,
+                "nsite": nsite,
+                "body_parentid": wp.array(np.asarray(m_mj.body_parentid, dtype=np.int32), dtype=wp.int32, device=device),
+                "body_jntadr": wp.array(np.asarray(m_mj.body_jntadr, dtype=np.int32), dtype=wp.int32, device=device),
+                "body_jntnum": wp.array(np.asarray(m_mj.body_jntnum, dtype=np.int32), dtype=wp.int32, device=device),
+                "bpos_x": _split_f64_to_df32_array(bpos[:, 0], device=device),
+                "bpos_y": wp.array(np.asarray(bpos[:, 1], dtype=np.float32), dtype=wp.float32, device=device),
+                "bpos_z": _split_f64_to_df32_array(bpos[:, 2], device=device),
+                "bipos_x": _split_f64_to_df32_array(bipos[:, 0], device=device),
+                "bipos_y": wp.array(np.asarray(bipos[:, 1], dtype=np.float32), dtype=wp.float32, device=device),
+                "bipos_z": _split_f64_to_df32_array(bipos[:, 2], device=device),
+                "bpitch0": _split_f64_to_df32_array(bpitch0_64, device=device),
+                "jnt_type": wp.array(np.asarray(m_mj.jnt_type, dtype=np.int32), dtype=wp.int32, device=device),
+                "jnt_qadr": wp.array(np.asarray(m_mj.jnt_qposadr, dtype=np.int32), dtype=wp.int32, device=device),
+                "jqpos0": _split_f64_to_df32_array(jqpos0_64, device=device),
+                "jpos_x": _split_f64_to_df32_array(jpos[:, 0], device=device),
+                "jpos_y": wp.array(np.asarray(jpos[:, 1], dtype=np.float32), dtype=wp.float32, device=device),
+                "jpos_z": _split_f64_to_df32_array(jpos[:, 2], device=device),
+                "jaxis_x": _split_f64_to_df32_array(jaxis[:, 0], device=device),
+                "jaxis_y": wp.array(np.asarray(jaxis[:, 1], dtype=np.float32), dtype=wp.float32, device=device),
+                "jaxis_z": _split_f64_to_df32_array(jaxis[:, 2], device=device),
+                "site_bodyid": wp.array(sbody, dtype=wp.int32, device=device),
+                "spos_x": _split_f64_to_df32_array(spos[:, 0], device=device),
+                "spos_y": wp.array(np.asarray(spos[:, 1], dtype=np.float32), dtype=wp.float32, device=device),
+                "spos_z": _split_f64_to_df32_array(spos[:, 2], device=device),
+                "two_pi": wp.vec2(float(two_pi_hi), float(two_pi_lo)),
+                "sin_tab": _split_f64_to_df32_array(np.sin(g_grid), device=device),
+                "cos_tab": _split_f64_to_df32_array(np.cos(g_grid), device=device),
+                "scratch_bx": wp.zeros((int(nworld), nbody), dtype=wp.vec2, device=device),
+                "scratch_by": wp.zeros((int(nworld), nbody), dtype=wp.float32, device=device),
+                "scratch_bz": wp.zeros((int(nworld), nbody), dtype=wp.vec2, device=device),
+                "scratch_bth": wp.zeros((int(nworld), nbody), dtype=wp.vec2, device=device),
+                "scratch_bc": wp.zeros((int(nworld), nbody), dtype=wp.vec2, device=device),
+                "scratch_bs": wp.zeros((int(nworld), nbody), dtype=wp.vec2, device=device),
+            }
+        )
+
     return {
         "kernel": _get_sp4_xz_shift_kernel(),
+        "contact_kernel": _get_sp4_contact_shift_kernel(),
+        "geom_bodyid": wp.array(
+            np.asarray(m_mj.geom_bodyid, dtype=np.int32), dtype=wp.int32, device=device
+        ),
         "xz_off": wp.zeros(int(nworld), dtype=wp.vec2, device=device),
+        "xz_lo": wp.zeros((int(nworld), 4), dtype=wp.float32, device=device),
         "saved_xz": wp.zeros((int(nworld), 4), dtype=wp.float32, device=device),
         "saved_xpos": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
         "saved_xipos": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
         "saved_xanchor": wp.zeros((int(nworld), int(m_mj.njnt)), dtype=wp.vec3, device=device),
         "saved_site_xpos": wp.zeros((int(nworld), int(m_mj.nsite)), dtype=wp.vec3, device=device),
+        "saved_geom_xpos": wp.zeros((int(nworld), int(m_mj.ngeom)), dtype=wp.vec3, device=device),
         "saved_subtree_com": wp.zeros((int(nworld), int(m_mj.nbody)), dtype=wp.vec3, device=device),
         "rx0": rx0,
         "rz0": rz0,
@@ -586,6 +982,7 @@ def _build_sp4_xz_rebase_ctx(m_mj: Any, nworld: int, device: str) -> dict[str, A
         "nworld": int(nworld),
         "device": device,
         **exact_tendon_ctx,
+        **planar_kin_ctx,
     }
 
 
@@ -606,13 +1003,17 @@ def _launch_sp4_xz_shift(
             d_b.xipos,
             d_b.xanchor,
             d_b.site_xpos,
+            d_b.geom_xpos,
+            xz_ctx["geom_bodyid"],
             d_b.subtree_com,
             xz_ctx["xz_off"],
+            xz_ctx["xz_lo"],
             xz_ctx["saved_xz"],
             xz_ctx["saved_xpos"],
             xz_ctx["saved_xipos"],
             xz_ctx["saved_xanchor"],
             xz_ctx["saved_site_xpos"],
+            xz_ctx["saved_geom_xpos"],
             xz_ctx["saved_subtree_com"],
             xz_ctx["rx0"],
             xz_ctx["rz0"],
@@ -623,6 +1024,22 @@ def _launch_sp4_xz_shift(
         ],
         device=xz_ctx["device"],
     )
+    if int(mode) == 3 and hasattr(d_b, "contact") and hasattr(d_b, "nacon"):
+        c_pos = getattr(d_b.contact, "pos", None)
+        c_wid = getattr(d_b.contact, "worldid", None)
+        if c_pos is not None and c_wid is not None and int(c_pos.shape[0]) > 0:
+            wp.launch(
+                xz_ctx["contact_kernel"],
+                dim=int(c_pos.shape[0]),
+                inputs=[
+                    d_b.nacon,
+                    c_wid,
+                    c_pos,
+                    xz_ctx["xz_off"],
+                    -1.0,
+                ],
+                device=xz_ctx["device"],
+            )
 
 
 def _launch_sp4_exact_tendon_length(
@@ -647,6 +1064,115 @@ def _launch_sp4_exact_tendon_length(
     )
 
 
+def _launch_sp4_exact_planar_kinematics(
+    xz_ctx: dict[str, Any] | None,
+    m_wp: Any,
+    d_b: Any,
+) -> None:
+    if xz_ctx is None or not bool(xz_ctx.get("is_planar_xz", False)):
+        return
+    from mujoco_warp._src import smooth as mjw_smooth
+
+    nworld = int(xz_ctx["nworld"])
+    nbody = int(xz_ctx["nbody"])
+    nsite = int(xz_ctx["nsite"])
+    dev = xz_ctx["device"]
+    wp.launch(
+        xz_ctx["exact_planar_poses_kernel"],
+        dim=nworld,
+        inputs=[
+            d_b.qpos,
+            nbody,
+            xz_ctx["body_parentid"],
+            xz_ctx["body_jntadr"],
+            xz_ctx["body_jntnum"],
+            xz_ctx["bpos_x"],
+            xz_ctx["bpos_y"],
+            xz_ctx["bpos_z"],
+            xz_ctx["bpitch0"],
+            xz_ctx["jnt_type"],
+            xz_ctx["jnt_qadr"],
+            xz_ctx["jqpos0"],
+            xz_ctx["jpos_x"],
+            xz_ctx["jpos_y"],
+            xz_ctx["jpos_z"],
+            xz_ctx["jaxis_x"],
+            xz_ctx["jaxis_y"],
+            xz_ctx["jaxis_z"],
+            xz_ctx["two_pi"],
+            xz_ctx["sin_tab"],
+            xz_ctx["cos_tab"],
+            xz_ctx["scratch_bx"],
+            xz_ctx["scratch_by"],
+            xz_ctx["scratch_bz"],
+            xz_ctx["scratch_bth"],
+            xz_ctx["scratch_bc"],
+            xz_ctx["scratch_bs"],
+            d_b.xpos,
+            d_b.xquat,
+            d_b.xanchor,
+            d_b.xaxis,
+        ],
+        device=dev,
+    )
+    wp.launch(
+        mjw_smooth._compute_body_inertial_frames,
+        dim=(nworld, nbody),
+        inputs=[m_wp.body_ipos, m_wp.body_iquat, d_b.xpos, d_b.xquat],
+        outputs=[d_b.xipos, d_b.ximat],
+        device=dev,
+    )
+    if int(m_wp.ngeom) > 0:
+        wp.launch(
+            mjw_smooth._geom_local_to_global,
+            dim=(nworld, int(m_wp.ngeom)),
+            inputs=[
+                m_wp.body_rootid,
+                m_wp.body_weldid,
+                m_wp.body_mocapid,
+                m_wp.geom_bodyid,
+                m_wp.geom_pos,
+                m_wp.geom_quat,
+                d_b.xpos,
+                d_b.xquat,
+            ],
+            outputs=[d_b.geom_xpos, d_b.geom_xmat],
+            device=dev,
+        )
+    if nsite > 0:
+        wp.launch(
+            mjw_smooth._site_local_to_global,
+            dim=(nworld, nsite),
+            inputs=[m_wp.site_bodyid, m_wp.site_pos, m_wp.site_quat, d_b.xpos, d_b.xquat],
+            outputs=[d_b.site_xpos, d_b.site_xmat],
+            device=dev,
+        )
+    wp.launch(
+        xz_ctx["exact_planar_frames_kernel"],
+        dim=nworld,
+        inputs=[
+            nbody,
+            nsite,
+            xz_ctx["scratch_bx"],
+            xz_ctx["scratch_by"],
+            xz_ctx["scratch_bz"],
+            xz_ctx["scratch_bc"],
+            xz_ctx["scratch_bs"],
+            xz_ctx["bipos_x"],
+            xz_ctx["bipos_y"],
+            xz_ctx["bipos_z"],
+            xz_ctx["site_bodyid"],
+            xz_ctx["spos_x"],
+            xz_ctx["spos_y"],
+            xz_ctx["spos_z"],
+            d_b.xmat,
+            d_b.xipos,
+            d_b.site_xpos,
+        ],
+        device=dev,
+    )
+
+
 def _mjwarp_sp4_clean_split_step(
     ops: dict[str, Any],
     m_wp: Any,
@@ -665,6 +1191,7 @@ def _mjwarp_sp4_clean_split_step(
     # so FP32 xpos subtraction in _equality_connect does not lose precision at x=20..100m.
     _launch_sp4_xz_shift(xz_ctx, d_b, 0.0, 1)
     ops["fwd_kinematics"](m_wp, d_b)
+    _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
     _launch_sp4_exact_tendon_length(xz_ctx, d_b)
     ops["crb"](m_wp, d_b)
     ops["tendon_armature"](m_wp, d_b)
@@ -702,6 +1229,7 @@ def _mjwarp_sp4_clean_split_step(
     if launch_energy_post_step_fn is not None:
         _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 4)
         ops["fwd_kinematics"](m_wp, d_b)
+        _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
         ops["crb"](m_wp, d_b)
         _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
         launch_energy_post_step_fn()
@@ -717,11 +1245,12 @@ def _mjwarp_sp4_m0_clean_split_step(
     launch_energy_post_step_fn: Callable[[], None] | None = None,
     run_collision: bool = False,
     xz_ctx: dict[str, Any] | None = None,
-    max_passes: int = 37,
+    max_passes: int = 52,
 ) -> None:
     """Execute one SP4 closed-loop multi-pass Armijo Newton ``m0`` ``clean_split`` step."""
     _launch_sp4_xz_shift(xz_ctx, d_b, 0.0, 1)
     ops["fwd_kinematics"](m_wp, d_b)
+    _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
     _launch_sp4_exact_tendon_length(xz_ctx, d_b)
     ops["crb"](m_wp, d_b)
     ops["tendon_armature"](m_wp, d_b)
@@ -739,11 +1268,14 @@ def _mjwarp_sp4_m0_clean_split_step(
     ops["fwd_acceleration"](m_wp, d_b, factorize=False)
     ops["solve"](m_wp, d_b)
     for _ in range(int(max_passes)):
-        if launch_m0_step_fn() == 0:
+        st = launch_m0_step_fn()
+        if st == 0:
             break
         ops["fwd_actuation"](m_wp, d_b)
         ops["fwd_acceleration"](m_wp, d_b, factorize=False)
         ops["solve"](m_wp, d_b)
+        if st == 1:
+            break
     ops["sensor_acc"](m_wp, d_b)
     ops["implicit"](m_wp, d_b)
     _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
@@ -751,9 +1283,87 @@ def _mjwarp_sp4_m0_clean_split_step(
     if launch_energy_post_step_fn is not None:
         _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 4)
         ops["fwd_kinematics"](m_wp, d_b)
+        _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
         ops["crb"](m_wp, d_b)
         _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
         launch_energy_post_step_fn()
+
+
+def _build_mjwarp_sp4_m0_captured_stepper(
+    ops: dict[str, Any],
+    m_wp: Any,
+    d_b: Any,
+    launch_m0_pre_solve_fn: Callable[[], None],
+    launch_m0_step_fn: Callable[[], int],
+    launch_m0_post_solve_fn: Callable[[], None],
+    launch_energy_post_step_fn: Callable[[], None] | None = None,
+    run_collision: bool = False,
+    xz_ctx: dict[str, Any] | None = None,
+    max_passes: int = 52,
+) -> Callable[[], None]:
+    """Capture the 4 pure-GPU sub-graphs around host-polled M0 pre/step callbacks."""
+    with wp.ScopedCapture() as cap_head:
+        _launch_sp4_xz_shift(xz_ctx, d_b, 0.0, 1)
+        ops["fwd_kinematics"](m_wp, d_b)
+        _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
+        _launch_sp4_exact_tendon_length(xz_ctx, d_b)
+        ops["crb"](m_wp, d_b)
+        ops["tendon_armature"](m_wp, d_b)
+        ops["factor_m"](m_wp, d_b)
+        ops["transmission"](m_wp, d_b)
+        ops["fwd_velocity"](m_wp, d_b)
+        ops["sensor_vel"](m_wp, d_b)
+        _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 2)
+        if run_collision:
+            ops["collision"](m_wp, d_b)
+    g_head = cap_head.graph
+
+    launch_m0_pre_solve_fn()
+
+    with wp.ScopedCapture() as cap_first_solve:
+        _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 3)
+        ops["make_constraint"](m_wp, d_b)
+        ops["fwd_actuation"](m_wp, d_b)
+        ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+        ops["solve"](m_wp, d_b)
+    g_first_solve = cap_first_solve.graph
+
+    with wp.ScopedCapture() as cap_iter_solve:
+        ops["fwd_actuation"](m_wp, d_b)
+        ops["fwd_acceleration"](m_wp, d_b, factorize=False)
+        ops["solve"](m_wp, d_b)
+    g_iter_solve = cap_iter_solve.graph
+
+    with wp.ScopedCapture() as cap_tail:
+        ops["sensor_acc"](m_wp, d_b)
+        ops["implicit"](m_wp, d_b)
+        _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
+        launch_m0_post_solve_fn()
+        if launch_energy_post_step_fn is not None:
+            _launch_sp4_xz_shift(xz_ctx, d_b, -1.0, 4)
+            ops["fwd_kinematics"](m_wp, d_b)
+            _launch_sp4_exact_planar_kinematics(xz_ctx, m_wp, d_b)
+            ops["crb"](m_wp, d_b)
+            _launch_sp4_xz_shift(xz_ctx, d_b, 1.0, 0)
+            launch_energy_post_step_fn()
+    g_tail = cap_tail.graph
+
+    n_passes = int(max_passes)
+
+    def _captured_m0_step() -> None:
+        wp.capture_launch(g_head)
+        launch_m0_pre_solve_fn()
+        wp.capture_launch(g_first_solve)
+        for _ in range(n_passes):
+            st = launch_m0_step_fn()
+            if st == 0:
+                break
+            wp.capture_launch(g_iter_solve)
+            if st == 1:
+                break
+        wp.capture_launch(g_tail)
+
+    return _captured_m0_step
 
 
 REPO_ROOT = DEFAULT_GPU_SRC_DIR.parents[2]
@@ -762,12 +1372,18 @@ DEFAULT_STRENGTH_JSON = REPO_ROOT / "examples" / "research" / "rider_strength_re
 DEFAULT_ENVELOPE_JSON = (
     REPO_ROOT / "examples" / "research" / "rider_joint_envelope_anatomical.json"
 )
-# Authoritative M0 FP64 distances from native/tests/gpu/test_sp4_s1s4_cpu_acceptance.cpp
+# Authoritative M0 FP64 distances from native/tests/gpu/test_sp4_s1s4_cpu_acceptance.cpp (main 1d243969)
 M0_S1S4_REFERENCE_DISTANCES_M = {
-    "S1_flat": 28.9273,
-    "S2_climb15": 96.2017,
-    "S3_steady90": 50.0476,
-    "S4_start_uphill15_60nm": 26.1543,
+    "S1_flat": 28.8498,
+    "S2_climb15": 96.0092,
+    "S3_steady90": 50.0179,
+    "S4_start_uphill15_60nm": 26.1202,
+    "G1_welded_flat_30s": 109.5113,
+    "G2_welded_rough_uphill_extreme_30s": 85.2300,
+    "G3_distributed_flat_30s": 109.5274,
+    "G4_distributed_rough_uphill_extreme_30s": 52.5472,
+    "G5_pneumatic_flat_30s": 109.5313,
+    "G6_pneumatic_mixed_surface_savage": 89.5536,
 }
 
 
@@ -919,6 +1535,7 @@ def _configure_sp4_mjwarp_model(m: Any, device: str, *, disable_contacts: bool =
         m.geom_contype[:] = 0
         m.geom_conaffinity[:] = 0
     m_wp = mjwarp.put_model(m)
+    m_wp.opt.warn_overflow = False
     m_wp.opt.disableflags |= int(mjw_types.DisableBit.MULTICCD)
     if disable_contacts:
         m_wp.opt.disableflags |= int(mjw_types.DisableBit.CONTACT)
@@ -1973,6 +2590,7 @@ def _build_sp4_s1s4_scenarios(
             "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/flat.toml",
             "duration_s": 6.0,
+            "target_steps": 4800,
             "v0": 0.0,
             "surface_label": 1,  # hardpack
             "backend": "compliant_2d",
@@ -1980,12 +2598,18 @@ def _build_sp4_s1s4_scenarios(
             "human_torque_nm": None,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S1_flat"],
+            "m0_end_speed_mps": 7.1396,
+            "max_rel_dist_err": 0.002,
+            "diagnostic_rough": False,
+            "m0_crash_detected": False,
+            "m0_balance_lost": False,
         },
         {
             "id": "S2_climb15",
             "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/climb_15pct.toml",
             "duration_s": 25.0,
+            "target_steps": 20000,
             "v0": 0.0,
             "surface_label": 0,  # asphalt
             "backend": "compliant_2d",
@@ -1993,12 +2617,18 @@ def _build_sp4_s1s4_scenarios(
             "human_torque_nm": None,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S2_climb15"],
+            "m0_end_speed_mps": 3.5593,
+            "max_rel_dist_err": 0.010,
+            "diagnostic_rough": False,
+            "m0_crash_detected": False,
+            "m0_balance_lost": False,
         },
         {
             "id": "S3_steady90",
             "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/flat.toml",
             "duration_s": 8.0,
+            "target_steps": 6400,
             "v0": float(steady90_v0),
             "surface_label": 1,  # hardpack
             "backend": "compliant_2d",
@@ -2006,12 +2636,18 @@ def _build_sp4_s1s4_scenarios(
             "human_torque_nm": 24.0,
             "motor_torque_nm": None,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S3_steady90"],
+            "m0_end_speed_mps": 7.2184,
+            "max_rel_dist_err": 0.002,
+            "diagnostic_rough": False,
+            "m0_crash_detected": False,
+            "m0_balance_lost": False,
         },
         {
             "id": "S4_start_uphill15_60nm",
             "physics_toml": "examples/research/viewer_physics_welded.toml",
             "track": "tests/fixtures/tracks/climb_15pct.toml",
             "duration_s": 10.0,
+            "target_steps": 8000,
             "v0": 0.0,
             "surface_label": 0,  # asphalt
             "backend": "compliant_2d",
@@ -2019,6 +2655,11 @@ def _build_sp4_s1s4_scenarios(
             "human_torque_nm": 60.0,
             "motor_torque_nm": 0.0,
             "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["S4_start_uphill15_60nm"],
+            "m0_end_speed_mps": 1.9593,
+            "max_rel_dist_err": 0.003,
+            "diagnostic_rough": False,
+            "m0_crash_detected": False,
+            "m0_balance_lost": False,
         },
     ]
     if include_g_scenarios:
@@ -2028,79 +2669,116 @@ def _build_sp4_s1s4_scenarios(
                     "id": "G1_welded_flat_30s",
                     "physics_toml": "examples/research/viewer_physics_welded.toml",
                     "track": "tests/fixtures/tracks/flat.toml",
-                    "duration_s": 30.0,
+                    "duration_s": 16.91,
+                    "target_steps": 13528,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "compliant_2d",
                     "station_count": 0,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G1_welded_flat_30s"],
+                    "m0_end_speed_mps": 7.7377,
+                    "max_rel_dist_err": 0.005,
+                    "diagnostic_rough": False,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": False,
                 },
                 {
                     "id": "G2_welded_rough_uphill_extreme_30s",
                     "physics_toml": "examples/research/viewer_physics_welded.toml",
                     "track": "examples/research/rough_uphill_extreme.toml",
                     "duration_s": 30.0,
+                    "target_steps": 24000,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "compliant_2d",
                     "station_count": 0,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G2_welded_rough_uphill_extreme_30s"],
+                    "m0_end_speed_mps": 1.5116,
+                    "max_rel_dist_err": 0.025,
+                    "diagnostic_rough": True,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": False,
                 },
                 {
                     "id": "G3_distributed_flat_30s",
                     "physics_toml": "examples/research/viewer_physics_distributed.toml",
                     "track": "tests/fixtures/tracks/flat.toml",
-                    "duration_s": 30.0,
+                    "duration_s": 17.10,
+                    "target_steps": 13680,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "distributed_2d_reference",
                     "station_count": 128,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G3_distributed_flat_30s"],
+                    "m0_end_speed_mps": 8.0519,
+                    "max_rel_dist_err": 0.005,
+                    "diagnostic_rough": False,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": False,
                 },
                 {
                     "id": "G4_distributed_rough_uphill_extreme_30s",
                     "physics_toml": "examples/research/viewer_physics_distributed.toml",
                     "track": "examples/research/rough_uphill_extreme.toml",
                     "duration_s": 30.0,
+                    "target_steps": 24000,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "distributed_2d_reference",
                     "station_count": 128,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G4_distributed_rough_uphill_extreme_30s"],
+                    "m0_end_speed_mps": 0.2213,
+                    "max_rel_dist_err": 0.010,
+                    "diagnostic_rough": True,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": True,
                 },
                 {
                     "id": "G5_pneumatic_flat_30s",
                     "physics_toml": "examples/research/viewer_physics_pneumatic.toml",
                     "track": "tests/fixtures/tracks/flat.toml",
-                    "duration_s": 30.0,
+                    "duration_s": 16.61,
+                    "target_steps": 13288,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "pneumatic",
                     "station_count": 64,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G5_pneumatic_flat_30s"],
+                    "m0_end_speed_mps": 7.8373,
+                    "max_rel_dist_err": 0.005,
+                    "diagnostic_rough": False,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": False,
                 },
                 {
                     "id": "G6_pneumatic_mixed_surface_savage",
                     "physics_toml": "examples/research/viewer_physics_pneumatic.toml",
                     "track": "examples/research/alpine_scree.toml",
                     "duration_s": 30.0,
+                    "target_steps": 24000,
                     "v0": 0.0,
                     "surface_label": 1,
                     "backend": "pneumatic",
                     "station_count": 64,
                     "human_torque_nm": None,
                     "motor_torque_nm": None,
-                    "m0_distance_m": None,
+                    "m0_distance_m": M0_S1S4_REFERENCE_DISTANCES_M["G6_pneumatic_mixed_surface_savage"],
+                    "m0_end_speed_mps": 0.0,
+                    "max_rel_dist_err": 0.025,
+                    "diagnostic_rough": True,
+                    "max_saddle_limit_n": 2000.0,
+                    "m0_crash_detected": False,
+                    "m0_balance_lost": False,
                 },
             ]
         )
@@ -2126,8 +2804,8 @@ def _run_cuda_sp4_batch(
     station_count: int,
     control_period_steps: int,
     cfg_bytes: bytes,
-    nconmax: int = 32,
-    njmax: int = 64,
+    nconmax: int = 128,
+    njmax: int = 256,
     device: str = "cuda:0",
     init_grade: float | None = None,
     spindle_solver: str = "m2k2",
@@ -2169,7 +2847,7 @@ def _run_cuda_sp4_batch(
     d_sp3_states = wp.zeros(nworld * sizeof_sp3, dtype=wp.uint8, device=device)
     d_sp4_states = wp.zeros(nworld * sizeof_sp4, dtype=wp.uint8, device=device)
     d_m0_scratch = wp.zeros(nworld * sizeof_m0, dtype=wp.uint8, device=device) if use_m0 else None
-    d_any_needs_solve = wp.zeros(1, dtype=wp.int32, device=device) if use_m0 else None
+    h_any_needs_solve = np.zeros(1, dtype=np.int32) if use_m0 else None
     (
         d_tyre_model,
         d_terrain_desc,
@@ -2225,13 +2903,14 @@ def _run_cuda_sp4_batch(
     def _init_states() -> None:
         if xz_ctx is not None:
             xz_ctx["xz_off"].zero_()
+            xz_ctx["xz_lo"].zero_()
         d_world_states.zero_()
         d_sp3_states.zero_()
         d_sp4_states.zero_()
         if d_m0_scratch is not None:
             d_m0_scratch.zero_()
-        if d_any_needs_solve is not None:
-            d_any_needs_solve.zero_()
+        if h_any_needs_solve is not None:
+            h_any_needs_solve.fill(0)
         m_wp.tendon_range.assign(
             wp.array(init_tr_np, dtype=m_wp.tendon_range.dtype, device=device)
         )
@@ -2467,8 +3146,8 @@ def _run_cuda_sp4_batch(
             raise RuntimeError(f"bike_gpu_launch_sp4_energy_post_step failed: {r}")
 
     def _m0_pre() -> None:
-        assert d_m0_scratch is not None and d_any_needs_solve is not None
-        d_any_needs_solve.zero_()
+        assert d_m0_scratch is not None and h_any_needs_solve is not None
+        h_any_needs_solve.fill(0)
         r = int(
             lib.bike_gpu_launch_sp4_m0_pre_solve_and_begin(
                 ctypes.c_void_p(cuda_stream),
@@ -2510,17 +3189,17 @@ def _run_cuda_sp4_batch(
                 ctypes.c_void_p(fl_ptr),
                 int(fl_stride),
                 ctypes.c_void_p(d_b.qacc_warmstart.ptr),
-                ctypes.c_void_p(d_any_needs_solve.ptr),
+                ctypes.c_void_p(h_any_needs_solve.ctypes.data),
             )
         )
         if r != 0:
             raise RuntimeError(f"bike_gpu_launch_sp4_m0_pre_solve_and_begin failed: {r}")
 
     def _m0_step() -> int:
-        assert d_m0_scratch is not None and d_any_needs_solve is not None
-        if int(d_any_needs_solve.numpy()[0]) == 0:
+        assert d_m0_scratch is not None and h_any_needs_solve is not None
+        if int(h_any_needs_solve[0]) == 0:
             return 0
-        d_any_needs_solve.zero_()
+        h_any_needs_solve.fill(0)
         r = int(
             lib.bike_gpu_launch_sp4_m0_step(
                 ctypes.c_void_p(cuda_stream),
@@ -2547,12 +3226,12 @@ def _run_cuda_sp4_batch(
                 ctypes.c_void_p(d_b.M.ptr),
                 ctypes.c_void_p(d_b.ctrl.ptr),
                 ctypes.c_void_p(d_b.qacc_warmstart.ptr),
-                ctypes.c_void_p(d_any_needs_solve.ptr),
+                ctypes.c_void_p(h_any_needs_solve.ctypes.data),
             )
         )
         if r != 0:
             raise RuntimeError(f"bike_gpu_launch_sp4_m0_step failed: {r}")
-        return int(d_any_needs_solve.numpy()[0])
+        return 2 if int(h_any_needs_solve[0]) != 0 else 1
 
     def _m0_post() -> None:
         assert d_m0_scratch is not None
@@ -2601,17 +3280,18 @@ def _run_cuda_sp4_batch(
         )
         wp.synchronize()
         _init_states()
+        m0_step_captured = _build_mjwarp_sp4_m0_captured_stepper(
+            ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+        )
+        wp.synchronize()
+        _init_states()
         for _ in range(warmup_steps):
-            _mjwarp_sp4_m0_clean_split_step(
-                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
-            )
+            m0_step_captured()
         wp.synchronize()
         _init_states()
         t0 = time.perf_counter()
         for _ in range(n_steps):
-            _mjwarp_sp4_m0_clean_split_step(
-                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
-            )
+            m0_step_captured()
         wp.synchronize()
         wall_time_s = time.perf_counter() - t0
     else:
@@ -2862,7 +3542,11 @@ def run_mjwarp_sp4_s1s4_acceptance(
                     physics_config_json=xml12.parent / "physics_config.json",
                     manifest_json=xml12.parent / "manifest.json",
                 )
-                n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
+                n_steps = (
+                    int(sc["target_steps"])
+                    if sc.get("target_steps") is not None
+                    else int(round(sc["duration_s"] / float(m.opt.timestep)))
+                )
                 res = _run_cuda_sp4_batch(
                     lib=lib,
                     host_lib=host_lib,
@@ -2889,6 +3573,10 @@ def run_mjwarp_sp4_s1s4_acceptance(
                     if m0_dist is not None
                     else 0.0
                 )
+                max_rel_err = float(sc.get("max_rel_dist_err", 0.002))
+                diag_rough = bool(sc.get("diagnostic_rough", False))
+                m0_crash = bool(sc.get("m0_crash_detected", False))
+                m0_bal = bool(sc.get("m0_balance_lost", False))
                 min_press = min(float(wm["min_press_front_n"]), float(wm["min_press_rear_n"]))
                 max_rise_f = wm["max_rising_front_excess_n"]
                 max_rise_r = wm["max_rising_rear_excess_n"]
@@ -2905,14 +3593,27 @@ def run_mjwarp_sp4_s1s4_acceptance(
                 max_saddle = float(wm["max_saddle_force_n"])
                 max_rel_e = float(wm["max_rel_energy_residual"])
                 e_ok = int(wm["energy_contract_ok"])
+                rise_lim = 6.0 if solver_mode == "m0" else 10.0
+                saddle_lim = float(sc.get("max_saddle_limit_n", 1750.0))
+                bounds_ok = (
+                    (
+                        bool(res["world0_crash_detected"]) == m0_crash
+                        and bool(res["world0_balance_lost"]) == m0_bal
+                        and max_saddle <= saddle_lim
+                    )
+                    if diag_rough
+                    else (
+                        res["world0_first_failure"] == "none"
+                        and min_press >= -6.0
+                        and (max_rise is not None and max_rise <= rise_lim)
+                        and min_saddle >= -6.0
+                        and max_saddle <= saddle_lim
+                    )
+                )
                 passed = (
                     res["all_finite"]
-                    and res["world0_first_failure"] == "none"
-                    and min_press >= -6.0
-                    and (max_rise is not None and max_rise <= 6.0)
-                    and min_saddle >= -6.0
-                    and max_saddle <= 1750.0
-                    and (m0_dist is None or rel_err <= 0.002)
+                    and bounds_ok
+                    and (m0_dist is None or rel_err <= max_rel_err)
                     and max_rel_e <= 0.05
                     and e_ok == 1
                 )

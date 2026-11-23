@@ -977,7 +977,7 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
                 mj_fwdActuation(m.get(), d.get());
                 mj_fwdAcceleration(m.get(), d.get());
                 mj_fwdConstraint(m.get(), d.get());
-                if (m0_any_needs == 0 || pass >= bike::physics_core::kM0MaxPasses) {
+                if (m0_any_needs == 0 || pass >= (bike::physics_core::kM0MaxPasses + 10)) {
                     break;
                 }
                 copy_cast(d->qacc, to_index(nv), qacc_f);
@@ -1036,6 +1036,7 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
         mj_step2(m.get(), d.get());
 
         copy_cast(d->qpos, to_index(nq), qpos_f);
+        const std::vector<float> qpos_pre_post = qpos_f;
         copy_cast(d->qvel, to_index(nv), qvel_f);
         copy_cast(d->sensordata, to_index(nsd), sd_f);
         const int nefc_val = d->nefc;
@@ -1099,8 +1100,11 @@ std::unique_ptr<bike::gpu::GpuSp3Config> build_sp3_config(
 
         const auto d_qp = ma::mutable_buffer(d->qpos, m->nq, "qpos");
         for (int i = 0; i < nq; ++i) {
-            require(std::isfinite(qpos_f[to_index(i)]), "nonfinite qpos during gpu_spec run");
-            d_qp[to_index(i)] = static_cast<mjtNum>(qpos_f[to_index(i)]);
+            const auto iu = to_index(i);
+            require(std::isfinite(qpos_f[iu]), "nonfinite qpos during gpu_spec run");
+            if (qpos_f[iu] != qpos_pre_post[iu]) {
+                d_qp[iu] = static_cast<mjtNum>(qpos_f[iu]);
+            }
         }
         mj_fwdPosition(m.get(), d.get());
         copy_cast(d->xpos, to_index(nbody) * 3U, xpos_f);

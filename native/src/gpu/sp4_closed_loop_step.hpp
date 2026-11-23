@@ -796,9 +796,16 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_pre_solve_and_begin_world(
 
 BIKE_HD bike::physics_core::SpindleM0Options<float> gpu_sp4_default_m0_options() noexcept {
     bike::physics_core::SpindleM0Options<float> opts{};
-    // 2e-3 N (2x CPU's 1e-3) avoids crossing unilateral efc active-set boundaries
-    // on rough terrain while keeping ample SNR above FP32 qacc roundoff.
-    opts.newton_eps = 2.0e-3f;
+    // Match SpindleM2K2's 0.1 N finite-difference step so Jacobian differences stay well
+    // above FP32 mjwarp solver tolerance noise (~0.02 N on M*qacc), with conv_tol = 0.05 N
+    // (120x tighter than the 6 N acceptance bound), strictly monotone line-search acceptance,
+    // and one damped Picard trial (0.55 * r) when finite-difference Newton hits a ceiling kink.
+    opts.newton_eps = 0.1f;
+    opts.conv_tol = 0.05f;
+    opts.max_j2_abs = 0.0f;
+    opts.reject_failed_line_search = 1u;
+    opts.keep_best_iterate = 1u;
+    opts.picard_fallback = 1u;
     return opts;
 }
 
@@ -849,8 +856,15 @@ BIKE_HD bike::physics_core::Status gpu_sp4_m0_step_world(
         qacc_w == nullptr || d_M_or_qM_w == nullptr || ctrl_w == nullptr) {
         return bike::physics_core::Status::invalid_argument;
     }
-    if ((sp3_st->frozen != 0 && sp3_cfg->freeze_on_crash != 0) ||
-        m0_scratch_w->done != 0) {
+    if (sp3_st->frozen != 0 && sp3_cfg->freeze_on_crash != 0) {
+        out_needs_solve = 0;
+        out_done = 1;
+        return bike::physics_core::Status::ok;
+    }
+    if (m0_scratch_w->done != 0) {
+        if (sp4_st->active_control_tick != 0) {
+            sp4_restore_qacc_warmstart(sp4_st, idx.nv, qacc_warmstart_w);
+        }
         out_needs_solve = 0;
         out_done = 1;
         return bike::physics_core::Status::ok;
@@ -904,7 +918,7 @@ template <
     class PtrGeom,
     class PtrEfcAdr,
     class PtrDim,
-    class M0ScratchPtr = const bike::physics_core::SpindleM0Scratch<float> *>
+    class M0ScratchPtr = BIKE_DEVICE const bike::physics_core::SpindleM0Scratch<float> *>
 BIKE_HD bike::physics_core::Status gpu_sp4_post_solve_world(
     int w,
     float dt_s,
@@ -932,7 +946,8 @@ BIKE_HD bike::physics_core::Status gpu_sp4_post_solve_world(
     PtrGeom contact_geom,
     PtrEfcAdr contact_efc_address,
     PtrDim contact_dim,
-    M0ScratchPtr m0_scratch_w = static_cast<const bike::physics_core::SpindleM0Scratch<float> *>(nullptr)
+    M0ScratchPtr m0_scratch_w =
+        static_cast<BIKE_DEVICE const bike::physics_core::SpindleM0Scratch<float> *>(nullptr)
 ) noexcept {
     if (sp4_st == nullptr || sp3_cfg == nullptr || sp3_st == nullptr) {
         return bike::physics_core::Status::invalid_argument;
@@ -1528,9 +1543,9 @@ template <
     class PtrMass,
     class PtrXipos,
     class PtrGrav,
-    class PtrType = const bike::physics_core::i32 *,
-    class PtrJ = const float *,
-    class PtrForce = const float *>
+    class PtrType = BIKE_DEVICE const bike::physics_core::i32 *,
+    class PtrJ = BIKE_DEVICE const float *,
+    class PtrForce = BIKE_DEVICE const float *>
 BIKE_HD bike::physics_core::Status gpu_sp4_energy_post_step_world(
     float dt_s,
     const BIKE_THREAD GpuModelIndices &idx,
@@ -1557,9 +1572,9 @@ BIKE_HD bike::physics_core::Status gpu_sp4_energy_post_step_world(
     PtrGrav gravity,
     int nefc_w = 0,
     int efc_J_row_stride = 0,
-    PtrType efc_type_w = static_cast<const bike::physics_core::i32 *>(nullptr),
-    PtrJ efc_J_w = static_cast<const float *>(nullptr),
-    PtrForce efc_force_w = static_cast<const float *>(nullptr)
+    PtrType efc_type_w = static_cast<BIKE_DEVICE const bike::physics_core::i32 *>(nullptr),
+    PtrJ efc_J_w = static_cast<BIKE_DEVICE const float *>(nullptr),
+    PtrForce efc_force_w = static_cast<BIKE_DEVICE const float *>(nullptr)
 ) noexcept {
     if (sp3_cfg == nullptr || spindle_params == nullptr ||
         sp3_st == nullptr || sp4_st == nullptr || !gpu_validate_model_indices(idx) ||

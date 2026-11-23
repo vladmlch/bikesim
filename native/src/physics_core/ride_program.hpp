@@ -12,17 +12,17 @@ namespace bike::physics_core {
 BIKE_CONSTEXPR i32 kMaxProgramSegments = 32;
 
 // NOLINTNEXTLINE(performance-enum-size) u32 bitflags match GPU ABI layout
-enum GpuProgramChannelMask : u32 {
+enum class GpuProgramChannelMask : u32 {
     kProgramChannelNone = 0u,
-    has_human_torque = 1u << 0,
-    has_motor_torque = 1u << 1,
-    has_motor_limit = 1u << 2,
-    has_crank_rate = 1u << 3,
-    has_front_brake = 1u << 4,
-    has_rear_brake = 1u << 5,
-    has_cruise_speed_kmh = 1u << 6,
-    has_posture_lean = 1u << 7,
-    linear_ramp = 1u << 8
+    has_human_torque = 1u << 0u,
+    has_motor_torque = 1u << 1u,
+    has_motor_limit = 1u << 2u,
+    has_crank_rate = 1u << 3u,
+    has_front_brake = 1u << 4u,
+    has_rear_brake = 1u << 5u,
+    has_cruise_speed_kmh = 1u << 6u,
+    has_posture_lean = 1u << 7u,
+    linear_ramp = 1u << 8u
 };
 
 BIKE_CONSTEXPR u32 kProgramValueChannelsMask =

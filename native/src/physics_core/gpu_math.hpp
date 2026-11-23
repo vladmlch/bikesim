@@ -29,11 +29,19 @@ BIKE_HD float pf_abs(float x) noexcept {
 
 BIKE_HD float pf_sqrt(float x) noexcept {
 #if defined(__METAL_VERSION__)
-    return metal::sqrt(x);
+    return metal::precise::sqrt(x);
 #elif defined(__CUDACC__)
     return ::sqrtf(x);
 #else
     return std::sqrt(x);
+#endif
+}
+
+BIKE_HD float pf_div(float a, float b) noexcept {
+#if defined(__METAL_VERSION__)
+    return metal::precise::divide(a, b);
+#else
+    return a / b;
 #endif
 }
 
@@ -59,7 +67,7 @@ BIKE_HD float pf_ldexp(float x, int n) noexcept {
 
 BIKE_HD bool pf_isfinite(float x) noexcept {
 #if defined(__METAL_VERSION__)
-    return metal::isfinite(x);
+    return (as_type<u32>(x) & 0x7f800000u) != 0x7f800000u;
 #elif defined(__CUDACC__)
     return ::isfinite(x) != 0;
 #else
@@ -69,7 +77,7 @@ BIKE_HD bool pf_isfinite(float x) noexcept {
 
 BIKE_HD bool pf_isnan(float x) noexcept {
 #if defined(__METAL_VERSION__)
-    return metal::isnan(x);
+    return (as_type<u32>(x) & 0x7fffffffu) > 0x7f800000u;
 #elif defined(__CUDACC__)
     return ::isnan(x) != 0;
 #else
@@ -269,7 +277,7 @@ BIKE_HD float tanhf_portable(float x) noexcept {
     if (u < 0.34657359f) {
         // Avoids (1 + u + ...) - 1 cancellation when 2*|x| < ln(2)/2.
         const float d = expm1f_small_portable(u);
-        return sign * (d / (2.0f + d));
+        return sign * pf_div(d, 2.0f + d);
     }
     if (u < 1.03972077f) {
         // z = 1 Cody-Waite reduction (2*|x| < 1.5*ln(2)): avoids 1-bit cancellation in e^u - 1.
@@ -277,10 +285,10 @@ BIKE_HD float tanhf_portable(float x) noexcept {
         float r = u - 0.693359375f;
         r -= -2.12194440e-4f;
         const float d = 1.0f + 2.0f * expm1f_small_portable(r);
-        return sign * (d / (2.0f + d));
+        return sign * pf_div(d, 2.0f + d);
     }
     const float e2x = expf_portable(u);
-    return sign * ((e2x - 1.0f) / (e2x + 1.0f));
+    return sign * pf_div(e2x - 1.0f, e2x + 1.0f);
 }
 
 BIKE_HD float hypot2f_portable(float a, float b) noexcept {
@@ -303,7 +311,7 @@ BIKE_HD float hypot2f_portable(float a, float b) noexcept {
     if (m == 0.0f) {
         return 0.0f;
     }
-    const float r = n / m;
+    const float r = pf_div(n, m);
     return m * pf_sqrt(1.0f + r * r);
 }
 

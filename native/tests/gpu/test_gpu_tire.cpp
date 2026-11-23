@@ -710,7 +710,7 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
     cfg->rear_brake_demand = 0.0f;
 
     auto ws_host = std::make_unique<bike::gpu::GpuWorldState>();
-    auto ws_mtl = std::make_unique<bike::gpu::GpuWorldState>();
+    const auto ws_mtl = std::make_unique<bike::gpu::GpuWorldState>();
     const auto pneum_scratch = std::make_unique<GpuPneumaticStepScratch<float>>();
 
     std::vector<float> qpos_f(to_index(nq), 0.0f);
@@ -805,16 +805,19 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
 
 [[gnu::noinline]] void test_tabulated_compliant_parity(const fs::path &xml) {
     nativecfg::TireConfig tab_cfg = bike::gpu::make_default_compliant_tire_config();
-    require(tab_cfg.front.material.has_value() && tab_cfg.rear.material.has_value(),
-            "compliant cfg must have material");
+    if (!tab_cfg.front.material.has_value() || !tab_cfg.rear.material.has_value()) {
+        throw std::runtime_error("compliant cfg must have material");
+    }
     const nativecfg::TireTable tbl{
         .deflection_m = {0.0, 0.015, 0.030, 0.060},
         .force_n = {0.0, 1200.0, 3000.0, 7200.0},
     };
-    tab_cfg.front.material->table = tbl;
-    tab_cfg.rear.material->table = tbl;
-    tab_cfg.front.material->valid_load_range_n = {0.0, 6000.0};
-    tab_cfg.rear.material->valid_load_range_n = {0.0, 6000.0};
+    nativecfg::TireMaterial &fmat = *tab_cfg.front.material;
+    nativecfg::TireMaterial &rmat = *tab_cfg.rear.material;
+    fmat.table = tbl;
+    rmat.table = tbl;
+    fmat.valid_load_range_n = {0.0, 6000.0};
+    rmat.valid_load_range_n = {0.0, 6000.0};
 
     run_parity_suite(xml, false, tab_cfg);
 
@@ -909,8 +912,12 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
         auto pcfg_ptr = std::make_unique<nativecfg::TireConfig>(
             bike::gpu::make_default_pneumatic_tire_config(detailed));
         nativecfg::TireConfig &pcfg = *pcfg_ptr;
+        if (!pcfg.pneumatic.has_value()) {
+            throw std::runtime_error("pneumatic config must be populated");
+        }
+        nativecfg::PneumaticConfig &pneu_cfg = *pcfg.pneumatic;
         pcfg.surface_mode = "track";
-        pcfg.pneumatic->surface.reset();
+        pneu_cfg.surface.reset();
         pcfg.surface_map = nativecfg::SurfaceMap{
             .surface = bike::gpu::make_surface_spec_from_label(1), // hardpack
             .sections = {
@@ -929,11 +936,11 @@ void test_stiffness_scale_and_validation(const fs::path &xml) {
         const HostTyreUploadBundle &bundle = *bundle_ptr;
         const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
 
-        pcfg.pneumatic->profile.x0_m = static_cast<double>(bundle.pl_px.front());
-        pcfg.pneumatic->profile.dx_m = static_cast<double>(bundle.gpu_model.road_dx_m);
-        pcfg.pneumatic->profile.z_m.resize(bundle.pl_pz.size());
+        pneu_cfg.profile.x0_m = static_cast<double>(bundle.pl_px.front());
+        pneu_cfg.profile.dx_m = static_cast<double>(bundle.gpu_model.road_dx_m);
+        pneu_cfg.profile.z_m.resize(bundle.pl_pz.size());
         for (std::size_t i = 0; i < bundle.pl_pz.size(); ++i) {
-            pcfg.pneumatic->profile.z_m[i] = static_cast<double>(bundle.pl_pz[i]);
+            pneu_cfg.profile.z_m[i] = static_cast<double>(bundle.pl_pz[i]);
         }
 
         const auto pneu_writer = std::make_unique<PneumaticTireWriter>(

@@ -2440,11 +2440,13 @@ NamedEntries<double> SpindleController::compute_m2k2(
         const auto s = side_index(side);
         if (has_jac[s] == 0)
             continue;
-        const std::span jac_s{jacs[s]};
-        projected_acc.add(
-            excitation[leg_joint_index_[s][0]] * jac_s[0]);
-        projected_acc.add(
-            excitation[leg_joint_index_[s][1]] * jac_s[1]);
+        const std::span<const double, 2> jac_s{jacs[s]};
+        if (jac_s.size() >= 2) {
+            projected_acc.add(
+                excitation[leg_joint_index_[s][0]] * jac_s[0]);
+            projected_acc.add(
+                excitation[leg_joint_index_[s][1]] * jac_s[1]);
+        }
     }
     const double projected = projected_acc.total();
     const double crank_task_nm =

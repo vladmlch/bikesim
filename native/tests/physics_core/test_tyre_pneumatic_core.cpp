@@ -84,16 +84,21 @@ void require_bitwise_eq(double a, double b, std::string_view msg) {
     }
 }
 
-void require_near(double actual, double expected, double tol, std::string_view msg) {
-    if (!std::isfinite(actual) || !std::isfinite(expected)) {
+struct NearTarget {
+    double expected = 0.0;
+    double tol = 0.0;
+};
+
+void require_near(double actual, NearTarget target, std::string_view msg) {
+    if (!std::isfinite(actual) || !std::isfinite(target.expected)) {
         throw std::runtime_error(std::string(msg) + ": non-finite value");
     }
-    const double scale = std::max({1.0, std::abs(actual), std::abs(expected)});
-    const double diff = std::abs(actual - expected);
-    if (diff > tol * scale) {
+    const double scale = std::max({1.0, std::abs(actual), std::abs(target.expected)});
+    const double diff = std::abs(actual - target.expected);
+    if (diff > target.tol * scale) {
         throw std::runtime_error(
             std::string(msg) + ": diff=" + std::to_string(diff) +
-            " tol*scale=" + std::to_string(tol * scale));
+            " tol*scale=" + std::to_string(target.tol * scale));
     }
 }
 
@@ -229,10 +234,16 @@ PneumaticSurfaceMap<Real> make_mixed_surface_map_pod(Real blend_m) {
     return map;
 }
 
-std::vector<double> make_bumpy_z(double x0, double dx, std::size_t n) {
-    std::vector<double> z(n, 0.0);
-    for (std::size_t i = 0; i < n; ++i) {
-        const double x = x0 + dx * static_cast<double>(i);
+struct BumpyGridSpec {
+    double x0 = 0.0;
+    double dx = 0.01;
+    std::size_t count = 0;
+};
+
+std::vector<double> make_bumpy_z(BumpyGridSpec spec) {
+    std::vector<double> z(spec.count, 0.0);
+    for (std::size_t i = 0; i < spec.count; ++i) {
+        const double x = spec.x0 + spec.dx * static_cast<double>(i);
         // Smooth bump + trough so patch count changes and rim strike can be probed.
         const double bump = 0.018 * std::exp(-std::pow((x - 0.85) / 0.07, 2.0));
         const double step = 0.014 * std::sin(8.0 * x);
@@ -270,10 +281,10 @@ void test_tabulated_radial() {
     // Validation error checks
     auto bad_ptr = std::make_unique<TabulatedRadialParams<double>>();
     auto &bad = *bad_ptr;
-    const double bad_x[2] = {0.001, 0.01};
-    const double bad_f[2] = {0.0, 100.0};
+    const std::array<double, 2> bad_x = {0.001, 0.01};
+    const std::array<double, 2> bad_f = {0.0, 100.0};
     require(bike::physics_core::init_tabulated_radial_params<double, CpuExactToolkit>(
-                2, bad_x, bad_f, bad, err) == Status::invalid_argument,
+                2, bad_x.data(), bad_f.data(), bad, err) == Status::invalid_argument,
             "tabulated reject nonzero origin");
     require(bike::physics_core::init_tabulated_radial_params<double, CpuExactToolkit>(
                 kMaxRadialTableKnots + 1, defl.data(), forc.data(), bad, err) ==
@@ -307,8 +318,8 @@ void test_tabulated_radial() {
         require(bike::physics_core::tabulated_radial_elastic<float, GpuToolkit>(
                     &p32, static_cast<float>(d), f32, e32, err) == Status::ok,
                 "tabulated elastic fp32");
-        require_near(static_cast<double>(f32), ref_f, 1e-5, "tabulated elastic f32");
-        require_near(static_cast<double>(e32), ref_e, 1e-5, "tabulated elastic e32");
+        require_near(static_cast<double>(f32), {.expected = ref_f, .tol = 1e-5}, "tabulated elastic f32");
+        require_near(static_cast<double>(e32), {.expected = ref_e, .tol = 1e-5}, "tabulated elastic e32");
 
         const auto [ref_cf, ref_ce] = cpu_ref.normal_contact(d, -0.04, 0.08, 0.015);
         require(bike::physics_core::tabulated_radial_contact<double, CpuExactToolkit>(
@@ -321,7 +332,7 @@ void test_tabulated_radial() {
                     &p32, static_cast<float>(d), -0.04f, 0.08f, 0.015f, f32, e32, err) ==
                     Status::ok,
                 "tabulated contact fp32");
-        require_near(static_cast<double>(f32), ref_cf, 1e-5, "tabulated contact f32");
+        require_near(static_cast<double>(f32), {.expected = ref_cf, .tol = 1e-5}, "tabulated contact f32");
     }
 
     // CompliantWheelParams + TabulatedRadialIo check
@@ -341,7 +352,7 @@ void test_tabulated_radial() {
 
     std::vector<TabulatedRadialParams<double>> tables{p64, p64};
     TabulatedRadialIo<double, CpuExactToolkit, const TabulatedRadialParams<double> *> io{
-        tables.data(), {1, 1}};
+        .tables = tables.data(), .enabled = {1, 1}};
     auto m64 = std::make_unique<TyreModel<double>>();
     m64->backend = TyreBackendKind::compliant_2d;
     m64->nq = 3;
@@ -360,9 +371,9 @@ void test_tabulated_radial() {
     const std::array<double, 3> qvel = {2.0, -0.02, 5.5};
     std::array<double, 3> qfrc = {0.0, 0.0, 0.0};
     CompliantWheelStatePod<double> prev_st{}, next_st{};
-    auto terrain_fn = [](double cx, double cz, double r, bool, i32,
-                         bike::physics_core::PolylineContactResult<double> &out,
-                         ErrCode &e) noexcept -> Status {
+    const auto terrain_fn = [](double cx, double cz, double r, bool, i32,
+                               bike::physics_core::PolylineContactResult<double> &out,
+                               ErrCode &e) noexcept -> Status {
         std::span{out.point}[0] = cx;
         std::span{out.point}[1] = 0.0;
         std::span{out.normal}[0] = 0.0;
@@ -372,21 +383,22 @@ void test_tabulated_radial() {
         e = ErrCode::none;
         return Status::ok;
     };
-    auto jac_fn = [](i32, const bike::physics_core::CompliantJacInput<double> &in,
-                     const double *qv_ptr, bike::physics_core::CompliantJacOutput<double> &out,
-                     ErrCode &e) noexcept -> Status {
-        const auto qv = model_access::readonly_buffer(qv_ptr, 3, "qv");
-        out.velocity = {qv[0] + (in.point.z - in.center.z) * qv[2], 0.0,
-                        qv[1] - (in.point.x - in.center.x) * qv[2]};
-        out.center_velocity = {qv[0], 0.0, qv[1]};
+    const auto jac_fn = [&qvel](i32, const bike::physics_core::CompliantJacInput<double> &in,
+                                const double *, bike::physics_core::CompliantJacOutput<double> &out,
+                                ErrCode &e) noexcept -> Status {
+        out.velocity = {
+            .x = qvel[0] + (in.point.z - in.center.z) * qvel[2],
+            .y = 0.0,
+            .z = qvel[1] - (in.point.x - in.center.x) * qvel[2],
+        };
+        out.center_velocity = {.x = qvel[0], .y = 0.0, .z = qvel[1]};
         e = ErrCode::none;
         return Status::ok;
     };
-    auto accum_fn = [](i32, const TyreVec3<double> &, const TyreVec3<double> &fw,
-                       double *qf_ptr, ErrCode &e) noexcept -> Status {
-        const auto qf = model_access::mutable_buffer(qf_ptr, 3, "qf");
-        qf[0] += fw.x;
-        qf[2] += fw.z;
+    const auto accum_fn = [&qfrc](i32, const TyreVec3<double> &, const TyreVec3<double> &fw,
+                                  double *, ErrCode &e) noexcept -> Status {
+        qfrc[0] += fw.x;
+        qfrc[2] += fw.z;
         e = ErrCode::none;
         return Status::ok;
     };
@@ -425,12 +437,13 @@ void test_pneumatic_geometry_and_carcass() {
         require_bitwise_eq(std::span{ring64->theta_rad}[i], cpu_ring64.theta_rad()[i], "ring64 theta");
         require_bitwise_eq(std::span{ring64->ux}[i], cpu_ring64.ux()[i], "ring64 ux");
         require_bitwise_eq(std::span{ring64->uz}[i], cpu_ring64.uz()[i], "ring64 uz");
-        require_near(static_cast<double>(std::span{ring32->ux}[i]), cpu_ring64.ux()[i], 1e-6, "ring32 ux");
+        require_near(static_cast<double>(std::span{ring32->ux}[i]),
+                     {.expected = cpu_ring64.ux()[i], .tol = 1e-6}, "ring32 ux");
     }
 
     // Road profile & intersect parity (bumpy road + airborne)
     const double x0 = 0.0, dx = 0.01;
-    const auto z = make_bumpy_z(x0, dx, 400);
+    const auto z = make_bumpy_z({.x0 = x0, .dx = dx, .count = 400});
     const biketyre::RoadProfile cpu_road(x0, dx, z);
     std::vector<float> px32(z.size()), pz32(z.size());
     for (std::size_t i = 0; i < z.size(); ++i) {
@@ -439,14 +452,14 @@ void test_pneumatic_geometry_and_carcass() {
     }
 
     const auto hits_cpu = biketyre::intersect(cpu_ring256, 0.85, 0.355, 0.379, cpu_road);
-    auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
-    auto scr32 = std::make_unique<GpuPneumaticStepScratch<float>>();
+    const auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
     bike::physics_core::u8 cov = 0, air = 0;
     require(bike::physics_core::pneumatic_intersect_uniform_grid<double, CpuExactToolkit>(
                 ring256.get(), 0.85, 0.355, 0.379, x0, dx,
                 static_cast<i32>(z.size()),
                 cpu_road.x_m().data(), cpu_road.z_m().data(),
-                scr64->r_m, scr64->delta_m, scr64->road_x_m, scr64->road_z_m,
+                std::span{scr64->r_m}.data(), std::span{scr64->delta_m}.data(),
+                std::span{scr64->road_x_m}.data(), std::span{scr64->road_z_m}.data(),
                 cov, air, err) == Status::ok,
             "pneumatic_intersect_uniform_grid 256");
     require((cov != 0) == hits_cpu.coverage_event && (air != 0) == hits_cpu.airborne,
@@ -470,7 +483,7 @@ void test_pneumatic_geometry_and_carcass() {
                 cov, air, err) == Status::ok,
             "pneumatic_intersect_polyline 256");
     for (std::size_t i = 0; i < 256; ++i) {
-        require_near(pl_d[i], hits_cpu.delta_m[i], 1e-13, "polyline intersect delta");
+        require_near(pl_d[i], {.expected = hits_cpu.delta_m[i], .tol = 1e-13}, "polyline intersect delta");
     }
 
     // Patches check
@@ -478,7 +491,8 @@ void test_pneumatic_geometry_and_carcass() {
     std::array<PneumaticRayPatch, kMaxPneumaticPatches> core_p{};
     i32 core_pc = 0;
     require(bike::physics_core::pneumatic_patches<double>(
-                256, scr64->delta_m, kMaxPneumaticPatches, core_p.data(), core_pc, err) ==
+                256, std::span<const double>{scr64->delta_m}.data(),
+                kMaxPneumaticPatches, core_p.data(), core_pc, err) ==
                 Status::ok,
             "pneumatic_patches");
     require(static_cast<std::size_t>(core_pc) == cpu_p.size(), "patch count match");
@@ -502,7 +516,7 @@ void test_pneumatic_geometry_and_carcass() {
                 static_cast<float>(d), static_cast<float>(rho)));
         require(w_f32 >= 0.0, "casing_chord_integral_m2 fp32 nonnegative");
         if (d > 1e-6) {
-            require_near(w_f32, w_ref, 1e-4, "casing_chord_integral_m2 fp32");
+            require_near(w_f32, {.expected = w_ref, .tol = 1e-4}, "casing_chord_integral_m2 fp32");
         }
     }
 
@@ -556,16 +570,16 @@ void test_pneumatic_geometry_and_carcass() {
                     0.0005f, 8.0f, 3.0f, cscr32.get(), err) == Status::ok,
                 "carcass step fp32");
 
-        require_near(cscr64->force_x_n, cres_cpu.force_x_n, 1e-12, "carcass force_x fp64");
-        require_near(cscr64->force_z_n, cres_cpu.force_z_n, 1e-12, "carcass force_z fp64");
-        require_near(cscr64->rim_energy_j, cres_cpu.rim_energy_j, 1e-12, "carcass rim_e fp64");
-        require_near(cscr64->dissipated_power_w, cres_cpu.dissipated_power_w, 1e-12,
+        require_near(cscr64->force_x_n, {.expected = cres_cpu.force_x_n, .tol = 1e-12}, "carcass force_x fp64");
+        require_near(cscr64->force_z_n, {.expected = cres_cpu.force_z_n, .tol = 1e-12}, "carcass force_z fp64");
+        require_near(cscr64->rim_energy_j, {.expected = cres_cpu.rim_energy_j, .tol = 1e-12}, "carcass rim_e fp64");
+        require_near(cscr64->dissipated_power_w, {.expected = cres_cpu.dissipated_power_w, .tol = 1e-12},
                      "carcass power fp64");
 
-        require_near(static_cast<double>(cscr32->force_z_n), cres_cpu.force_z_n, 1e-4,
+        require_near(static_cast<double>(cscr32->force_z_n), {.expected = cres_cpu.force_z_n, .tol = 1e-4},
                      "carcass force_z fp32");
         require_near(static_cast<double>(cscr32->dissipated_power_w),
-                     cres_cpu.dissipated_power_w, 1e-3,
+                     {.expected = cres_cpu.dissipated_power_w, .tol = 1e-3},
                      "carcass power fp32");
 
         if (cscr64->rim_strike_active != 0) {
@@ -573,9 +587,11 @@ void test_pneumatic_geometry_and_carcass() {
         }
         if (cscr64->rim_event.valid != 0) {
             saw_rim_completed = true;
-            require(cres_cpu.rim_event.has_value(), "cpu rim_event should also complete");
+            if (!cres_cpu.rim_event.has_value()) {
+                throw std::runtime_error("cpu rim_event should also complete");
+            }
             require_near(cscr64->rim_event.peak_rim_force_n,
-                         cres_cpu.rim_event->peak_rim_force_n, 1e-12,
+                         {.expected = cres_cpu.rim_event->peak_rim_force_n, .tol = 1e-12},
                          "rim event peak_rim_force_n");
         }
     }
@@ -605,7 +621,7 @@ void test_pneumatic_brush_and_stage_a() {
         require_bitwise_eq(s64.crr_delta, s_ref.crr_delta, "surface crr_delta bitwise");
         require_bitwise_eq(s64.load_sensitivity, s_ref.load_sensitivity,
                            "surface load_sensitivity bitwise");
-        require_near(static_cast<double>(s32.mu_peak), s_ref.mu_peak, 1e-6, "surface fp32");
+        require_near(static_cast<double>(s32.mu_peak), {.expected = s_ref.mu_peak, .tol = 1e-6}, "surface fp32");
     }
 
     // Load sensitivity overflow-safe guard in FP32
@@ -669,19 +685,28 @@ void test_pneumatic_brush_and_stage_a() {
                     kp32, br32.data(), upd32.data(), kbuf32.data(),
                     mbuf32.data(), res32, err) == Status::ok,
                 "discretised_brush_step_heterogeneous fp32");
-        require_near(res64.force_n, ref.force_n, 1e-12, "hetero brush force fp64");
-        require_near(res64.friction_coefficient, ref.friction_coefficient, 1e-12,
+        require_near(res64.force_n, {.expected = ref.force_n, .tol = 1e-12}, "hetero brush force fp64");
+        require_near(res64.friction_coefficient, {.expected = ref.friction_coefficient, .tol = 1e-12},
                      "hetero brush mu fp64");
-        require_near(static_cast<double>(res32.force_n), ref.force_n, 1e-4,
+        require_near(static_cast<double>(res32.force_n), {.expected = ref.force_n, .tol = 1e-4},
                      "hetero brush force fp32");
     }
     std::cout << "[test_tyre_pneumatic_core] Pneumatic Brush + Stage A PASS\n";
 }
 
-void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
+struct WholeWheelParitySpec {
+    bool discretised = false;
+    i32 n_rays = 64;
+    double dt_s = 0.0005;
+};
+
+void test_whole_wheel_model_parity(WholeWheelParitySpec wspec) {
+    const bool discretised = wspec.discretised;
+    const i32 n_rays = wspec.n_rays;
+    const double dt_s = wspec.dt_s;
     const auto tyre_cfg = make_front_tyre_cfg();
     const double x0 = 0.0, dx = 0.01;
-    const auto z = make_bumpy_z(x0, dx, 400);
+    const auto z = make_bumpy_z({.x0 = x0, .dx = dx, .count = 400});
     const biketyre::RoadProfile cpu_road(x0, dx, z);
     const auto map_cfg = make_mixed_surface_map_cfg(0.4);
 
@@ -712,12 +737,12 @@ void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
         pz32[i] = static_cast<float>(z[i]);
     }
 
-    auto st64 = std::make_unique<GpuPneumaticWheelState<double>>();
-    auto st32 = std::make_unique<GpuPneumaticWheelState<float>>();
+    const auto st64 = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st32 = std::make_unique<GpuPneumaticWheelState<float>>();
     bike::physics_core::init_pneumatic_wheel_state<double>(n_rays, st64.get());
     bike::physics_core::init_pneumatic_wheel_state<float>(n_rays, st32.get());
-    auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
-    auto scr32 = std::make_unique<GpuPneumaticStepScratch<float>>();
+    const auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
+    const auto scr32 = std::make_unique<GpuPneumaticStepScratch<float>>();
 
     // Roll from asphalt (x=0.35) -> hardpack transition (0.5) -> bump (0.85) ->
     // scree transition (1.5) -> airborne jump (z=0.50) -> decay.
@@ -758,17 +783,18 @@ void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
                     st32.get(), st32.get(), out32, scr32.get(), err) == Status::ok,
                 "evaluate_pneumatic_wheel fp32");
 
-        require_near(std::span{out64.force_world_n}[0], cpu_out.force_world_n[0], 1e-12,
+        require_near(std::span{out64.force_world_n}[0], {.expected = cpu_out.force_world_n[0], .tol = 1e-12},
                      "whole wheel fx fp64");
-        require_near(std::span{out64.force_world_n}[2], cpu_out.force_world_n[2], 1e-12,
+        require_near(std::span{out64.force_world_n}[2], {.expected = cpu_out.force_world_n[2], .tol = 1e-12},
                      "whole wheel fz fp64");
-        require_near(out64.normal_load_n, cpu_out.normal_load_n, 1e-12,
+        require_near(out64.normal_load_n, {.expected = cpu_out.normal_load_n, .tol = 1e-12},
                      "whole wheel normal_load fp64");
-        require_near(out64.rolling_crr, cpu_out.rolling_crr, 1e-12,
+        require_near(out64.rolling_crr, {.expected = cpu_out.rolling_crr, .tol = 1e-12},
                      "whole wheel rolling_crr fp64");
-        require_near(out64.carcass_dissipated_power_w, cpu_out.carcass_dissipated_power_w,
-                     1e-12, "whole wheel carcass power fp64");
-        require_near(out64.dissipated_power_w, cpu_out.dissipated_power_w, 1e-12,
+        require_near(out64.carcass_dissipated_power_w,
+                     {.expected = cpu_out.carcass_dissipated_power_w, .tol = 1e-12},
+                     "whole wheel carcass power fp64");
+        require_near(out64.dissipated_power_w, {.expected = cpu_out.dissipated_power_w, .tol = 1e-12},
                      "whole wheel total power fp64");
         require(out64.airborne == (cpu_out.airborne ? 1 : 0), "airborne match");
 
@@ -776,16 +802,16 @@ void test_whole_wheel_model_parity(bool discretised, i32 n_rays, double dt_s) {
         for (const auto &p : cpu_out.patches()) {
             cpu_shear += p.shear_energy_j;
         }
-        require_near(out64.shear_energy_j, cpu_shear, 1e-12,
+        require_near(out64.shear_energy_j, {.expected = cpu_shear, .tol = 1e-12},
                      "whole wheel shear_energy_j fp64");
 
         // FP32 parity against CPU FP64
         require_near(static_cast<double>(std::span{out32.force_world_n}[0]),
-                     cpu_out.force_world_n[0], 1e-3, "whole wheel fx fp32");
+                     {.expected = cpu_out.force_world_n[0], .tol = 1e-3}, "whole wheel fx fp32");
         require_near(static_cast<double>(std::span{out32.force_world_n}[2]),
-                     cpu_out.force_world_n[2], 1e-4, "whole wheel fz fp32");
+                     {.expected = cpu_out.force_world_n[2], .tol = 1e-4}, "whole wheel fz fp32");
         require_near(static_cast<double>(out32.rolling_crr),
-                     cpu_out.rolling_crr, 1e-4, "whole wheel crr fp32");
+                     {.expected = cpu_out.rolling_crr, .tol = 1e-4}, "whole wheel crr fp32");
 
         // Stored energy consistency check
         double stored64 = 0.0;
@@ -836,9 +862,9 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
         px[i] = x0 + dx * static_cast<double>(i);
     }
 
-    auto st64 = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st64 = std::make_unique<GpuPneumaticWheelState<double>>();
     bike::physics_core::init_pneumatic_wheel_state<double>(256, st64.get());
-    auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
+    const auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
 
     const std::array<double, 6> xpos = {0.0, 0.0, 0.0, 0.55, 0.0, 0.355};
     const std::array<double, 18> xmat = {
@@ -870,13 +896,13 @@ void test_step_pneumatic_wheel_wrench_and_energy() {
     // Verify qfrc matches centroid force + axial rolling moment:
     // qfrc[0] = F_world_x, qfrc[1] = F_world_z,
     // qfrc[2] = (centroid - hub) x F_world |_y + M_roll
-    require_near(qfrc[0], std::span{out.force_world_n}[0], 1e-12, "qfrc[0] == fx");
-    require_near(qfrc[1], std::span{out.force_world_n}[2], 1e-12, "qfrc[1] == fz");
+    require_near(qfrc[0], {.expected = std::span{out.force_world_n}[0], .tol = 1e-12}, "qfrc[0] == fx");
+    require_near(qfrc[1], {.expected = std::span{out.force_world_n}[2], .tol = 1e-12}, "qfrc[1] == fz");
     const double expected_tau =
         ((std::span{scr64->patch_centroids}[2] - xpos[5]) * std::span{scr64->patch_forces}[0] -
          (std::span{scr64->patch_centroids}[0] - xpos[3]) * std::span{scr64->patch_forces}[2]) +
         out.rolling_moment_nm;
-    require_near(qfrc[2], expected_tau, 1e-12, "qfrc[2] == patch moment + M_roll");
+    require_near(qfrc[2], {.expected = expected_tau, .tol = 1e-12}, "qfrc[2] == patch moment + M_roll");
 
     std::cout << "[test_tyre_pneumatic_core] step_pneumatic_wheel Wrench + Energy PASS\n";
 }
@@ -925,10 +951,10 @@ void test_surface_null_uniform_and_polyline_contracts() {
     for (std::size_t i = 0; i < px.size(); ++i) {
         px[i] = 0.02 * static_cast<double>(i);
     }
-    auto st_in = std::make_unique<GpuPneumaticWheelState<double>>();
-    auto st_out = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st_in = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st_out = std::make_unique<GpuPneumaticWheelState<double>>();
     bike::physics_core::init_pneumatic_wheel_state<double>(64, st_in.get());
-    auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
+    const auto scr64 = std::make_unique<GpuPneumaticStepScratch<double>>();
     const std::array<double, 3> hub_air{0.55, 0.0, 0.80};
     const std::array<double, 3> vel_zero{0.0, 0.0, 0.0};
     GpuPneumaticWheelOutput<double> out{};
@@ -987,8 +1013,8 @@ void test_surface_null_uniform_and_polyline_contracts() {
     // 3) Polyline road (road_is_uniform_grid = false) matches uniform grid
     const std::array<double, 3> hub_loaded{0.55, 0.0, 0.355};
     const std::array<double, 3> vel_loaded{4.0, 0.0, -0.05};
-    auto st_grid = std::make_unique<GpuPneumaticWheelState<double>>();
-    auto st_poly = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st_grid = std::make_unique<GpuPneumaticWheelState<double>>();
+    const auto st_poly = std::make_unique<GpuPneumaticWheelState<double>>();
     bike::physics_core::init_pneumatic_wheel_state<double>(64, st_grid.get());
     bike::physics_core::init_pneumatic_wheel_state<double>(64, st_poly.get());
     GpuPneumaticWheelOutput<double> out_grid{}, out_poly{};
@@ -1002,10 +1028,10 @@ void test_surface_null_uniform_and_polyline_contracts() {
                 px.data(), pz.data(), 100, 0.0, 0.02, false, 0.0005,
                 st_in.get(), st_poly.get(), out_poly, scr64.get(), err) == Status::ok,
             "polyline eval ok");
-    require_near(out_poly.normal_load_n, out_grid.normal_load_n, 1e-12,
+    require_near(out_poly.normal_load_n, {.expected = out_grid.normal_load_n, .tol = 1e-12},
                  "polyline vs uniform grid normal_load");
     require_near(std::span{out_poly.force_world_n}[0],
-                 std::span{out_grid.force_world_n}[0], 1e-12,
+                 {.expected = std::span{out_grid.force_world_n}[0], .tol = 1e-12},
                  "polyline vs uniform grid fx");
 
     std::cout << "[test_tyre_pneumatic_core] Null/Uniform/Polyline Contracts PASS\n";
@@ -1018,8 +1044,8 @@ int main() {
         test_tabulated_radial();
         test_pneumatic_geometry_and_carcass();
         test_pneumatic_brush_and_stage_a();
-        test_whole_wheel_model_parity(false, 64, 0.0005);
-        test_whole_wheel_model_parity(true, 256, 0.00025);
+        test_whole_wheel_model_parity({.discretised = false, .n_rays = 64, .dt_s = 0.0005});
+        test_whole_wheel_model_parity({.discretised = true, .n_rays = 256, .dt_s = 0.00025});
         test_step_pneumatic_wheel_wrench_and_energy();
         test_surface_null_uniform_and_polyline_contracts();
         std::cout << "ALL test_tyre_pneumatic_core CHECKS PASSED\n";

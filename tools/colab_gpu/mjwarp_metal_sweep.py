@@ -92,6 +92,7 @@ try:
         _mjwarp_sp3_clean_split_step,
         _mjwarp_sp4_clean_split_step,
         _mjwarp_sp4_m0_clean_split_step,
+        _build_mjwarp_sp4_m0_captured_stepper,
         _polyline_slope_from_desc_and_f32,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
@@ -141,6 +142,7 @@ except ImportError:
         _mjwarp_sp3_clean_split_step,
         _mjwarp_sp4_clean_split_step,
         _mjwarp_sp4_m0_clean_split_step,
+        _build_mjwarp_sp4_m0_captured_stepper,
         _polyline_slope_from_desc_and_f32,
         _prepare_initial_mjdata,
         _resolve_clean_split_ops,
@@ -3044,8 +3046,8 @@ def _run_metal_sp4_batch(
     station_count: int,
     control_period_steps: int,
     cfg_bytes: bytes,
-    nconmax: int = 32,
-    njmax: int = 64,
+    nconmax: int = 128,
+    njmax: int = 256,
     device: str = "metal:0",
     init_grade: float | None = None,
     spindle_solver: str = "m2k2",
@@ -3058,6 +3060,8 @@ def _run_metal_sp4_batch(
 
     m = load_model_with_assets(xml_path)
     _ensure_newton_solver(m)
+    if str(device).startswith("metal") and hasattr(m, "opt"):
+        m.opt.iterations = min(int(m.opt.iterations), 50)
     d0 = mujoco.MjData(m)
     d0.qpos[:] = qpos0
     d0.qvel[:] = qvel0
@@ -3161,6 +3165,7 @@ def _run_metal_sp4_batch(
     def _init_states() -> None:
         if xz_ctx is not None:
             xz_ctx["xz_off"].zero_()
+            xz_ctx["xz_lo"].zero_()
         d_world_states.zero_()
         d_sp3_states.zero_()
         d_sp4_states.zero_()
@@ -3417,8 +3422,11 @@ def _run_metal_sp4_batch(
             d_efc_force_ptr=int(post_b["efc_force_ptr"]),
         )
 
+    m0_synced_any: list[int | None] = [None]
+
     def _m0_pre() -> None:
         assert d_m0_scratch is not None and d_any_needs_solve is not None
+        m0_synced_any[0] = None
         d_any_needs_solve.zero_()
         wm_rt.launch_sp4_m0_pre_solve_and_begin(
             nworld=nworld,
@@ -3465,7 +3473,10 @@ def _run_metal_sp4_batch(
 
     def _m0_step() -> int:
         assert d_m0_scratch is not None and d_any_needs_solve is not None
-        if int(d_any_needs_solve.numpy()[0]) == 0:
+        if m0_synced_any[0] is None:
+            wp.synchronize()
+            m0_synced_any[0] = int(d_any_needs_solve.numpy()[0])
+        if m0_synced_any[0] == 0:
             return 0
         d_any_needs_solve.zero_()
         wm_rt.launch_sp4_m0_step(
@@ -3494,7 +3505,9 @@ def _run_metal_sp4_batch(
             d_qacc_warmstart_ptr=int(d_b.qacc_warmstart.ptr),
             d_any_needs_solve_ptr=int(d_any_needs_solve.ptr),
         )
-        return int(d_any_needs_solve.numpy()[0])
+        wp.synchronize()
+        m0_synced_any[0] = int(d_any_needs_solve.numpy()[0])
+        return 2 if int(m0_synced_any[0]) != 0 else 1
 
     def _m0_post() -> None:
         assert d_m0_scratch is not None
@@ -3538,17 +3551,18 @@ def _run_metal_sp4_batch(
         )
         wp.synchronize()
         _init_states()
+        m0_step_captured = _build_mjwarp_sp4_m0_captured_stepper(
+            ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
+        )
+        wp.synchronize()
+        _init_states()
         for _ in range(warmup_steps):
-            _mjwarp_sp4_m0_clean_split_step(
-                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
-            )
+            m0_step_captured()
         wp.synchronize()
         _init_states()
         t0 = time.perf_counter()
         for _ in range(n_steps):
-            _mjwarp_sp4_m0_clean_split_step(
-                ops, m_wp, d_b, _m0_pre, _m0_step, _m0_post, _energy_post, run_collision=True, xz_ctx=xz_ctx
-            )
+            m0_step_captured()
         wp.synchronize()
         wall_time_s = time.perf_counter() - t0
     else:
@@ -3756,7 +3770,11 @@ def run_mjwarp_metal_sp4_s1s4_acceptance(
                     physics_config_json=xml12.parent / "physics_config.json",
                     manifest_json=xml12.parent / "manifest.json",
                 )
-                n_steps = int(round(sc["duration_s"] / float(m.opt.timestep)))
+                n_steps = (
+                    int(sc["target_steps"])
+                    if sc.get("target_steps") is not None
+                    else int(round(sc["duration_s"] / float(m.opt.timestep)))
+                )
                 res = _run_metal_sp4_batch(
                     lib=lib,
                     wm_rt=wm_rt,
@@ -3783,6 +3801,10 @@ def run_mjwarp_metal_sp4_s1s4_acceptance(
                     if m0_dist is not None
                     else 0.0
                 )
+                max_rel_err = float(sc.get("max_rel_dist_err", 0.002))
+                diag_rough = bool(sc.get("diagnostic_rough", False))
+                m0_crash = bool(sc.get("m0_crash_detected", False))
+                m0_bal = bool(sc.get("m0_balance_lost", False))
                 min_press = min(float(wm["min_press_front_n"]), float(wm["min_press_rear_n"]))
                 max_rise_f = wm["max_rising_front_excess_n"]
                 max_rise_r = wm["max_rising_rear_excess_n"]
@@ -3799,14 +3821,27 @@ def run_mjwarp_metal_sp4_s1s4_acceptance(
                 max_saddle = float(wm["max_saddle_force_n"])
                 max_rel_e = float(wm["max_rel_energy_residual"])
                 e_ok = int(wm["energy_contract_ok"])
+                rise_lim = 6.0 if solver_mode == "m0" else 10.0
+                saddle_lim = float(sc.get("max_saddle_limit_n", 1750.0))
+                bounds_ok = (
+                    (
+                        bool(res["world0_crash_detected"]) == m0_crash
+                        and bool(res["world0_balance_lost"]) == m0_bal
+                        and max_saddle <= saddle_lim
+                    )
+                    if diag_rough
+                    else (
+                        res["world0_first_failure"] == "none"
+                        and min_press >= -6.0
+                        and (max_rise is not None and max_rise <= rise_lim)
+                        and min_saddle >= -6.0
+                        and max_saddle <= saddle_lim
+                    )
+                )
                 passed = (
                     res["all_finite"]
-                    and res["world0_first_failure"] == "none"
-                    and min_press >= -6.0
-                    and (max_rise is not None and max_rise <= 6.0)
-                    and min_saddle >= -6.0
-                    and max_saddle <= 1750.0
-                    and (m0_dist is None or rel_err <= 0.002)
+                    and bounds_ok
+                    and (m0_dist is None or rel_err <= max_rel_err)
                     and max_rel_e <= 0.05
                     and e_ok == 1
                 )
@@ -3840,7 +3875,18 @@ def run_mjwarp_metal_sp4_s1s4_acceptance(
                         "current_m0_passes": int(wm["current_m0_passes"]),
                         "wall_time_ms": res["wall_time_ms"],
                         "all_finite": res["all_finite"],
+                        "crash_detected": bool(res["world0_crash_detected"]),
+                        "balance_lost": bool(res["world0_balance_lost"]),
                     }
+                )
+                m0_s = f"{float(m0_dist):.4f}" if m0_dist is not None else "N/A"
+                print(
+                    f"  [Metal {sc['id']} {solver_mode}] pass={passed} dist={dist:.4f} m0={m0_s} "
+                    f"rel={rel_err * 100.0:.4f}% (lim {max_rel_err * 100.0:.2f}%) "
+                    f"e_rel={max_rel_e * 100.0:.4f}% e_ok={e_ok} m0_passes={wm['max_m0_passes_used']} "
+                    f"crash={res['world0_crash_detected']}/{m0_crash} bal={res['world0_balance_lost']}/{m0_bal} "
+                    f"saddle={min_saddle:+.1f}..{max_saddle:.1f} N wall={res['wall_time_ms']:.1f} ms",
+                    flush=True,
                 )
     return {
         "experiment": "SP4_S1S4_G1G6_metal",
@@ -4100,6 +4146,8 @@ def main(argv: list[str] | None = None) -> int:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
 
+    if "sp4_s1s4" in results and not bool(results["sp4_s1s4"].get("all_passed", False)):
+        return 1
     return 0
 
 

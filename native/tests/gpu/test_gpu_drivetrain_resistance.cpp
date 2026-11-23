@@ -28,7 +28,6 @@ namespace {
 
 namespace fs = std::filesystem;
 using namespace bike::gpu;
-using bike::physics_core::HostTyreUploadBundle;
 using bike::physics_core::Status;
 
 using ModelPtr = std::unique_ptr<mjModel, decltype(&mj_deleteModel)>;

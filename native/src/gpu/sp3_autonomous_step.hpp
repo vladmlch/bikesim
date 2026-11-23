@@ -1890,7 +1890,7 @@ template <
     class PtrGeom,
     class PtrEfcAdr,
     class PtrDim,
-    class ActForcePtr = const float *>
+    class ActForcePtr = BIKE_DEVICE const float *>
 BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     int w,
     float dt_s,
@@ -1914,7 +1914,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     PtrGeom contact_geom,
     PtrEfcAdr contact_efc_address,
     PtrDim contact_dim,
-    ActForcePtr actuator_force_w = static_cast<const float *>(nullptr)
+    ActForcePtr actuator_force_w = static_cast<BIKE_DEVICE const float *>(nullptr)
 ) noexcept {
     if (w < 0 || cfg == nullptr || sp3_st == nullptr || !gpu_validate_model_indices(idx) ||
         qpos_w == nullptr || qvel_w == nullptr || xmat_w == nullptr) {
@@ -2086,15 +2086,16 @@ BIKE_HD bike::physics_core::Status gpu_sp3_post_solve_world(
     // 5. Increment step_index
     sp3_st->step_index = cur_step + 1;
 
-    // 6. Synchronized 2*pi epoch re-basing when any drivetrain/wheel angle exceeds 256 rad.
+    // 6. Synchronized 2*pi epoch re-basing once any drivetrain/wheel angle exceeds one turn (> 8 rad)
+    // so FP32 Euler spin integration and monotonic min(boundary, phi) freehub ratcheting stay at ~2e-7 rad ULP.
     const float fw_q = (idx.front_wheel_spin_qpos >= 0) ? qpos_w[idx.front_wheel_spin_qpos] : 0.0f;
     const float rw_q = (idx.rear_wheel_spin_qpos >= 0) ? qpos_w[idx.rear_wheel_spin_qpos] : 0.0f;
     const float cr_q = (idx.crank_spin_qpos >= 0) ? qpos_w[idx.crank_spin_qpos] : 0.0f;
     const bool has_ds = (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < idx.nq);
     const float ds_q = has_ds ? qpos_w[idx.drive_shaft_spin_qpos] : cr_q;
 
-    if (gpu_abs(fw_q) > 256.0f || gpu_abs(rw_q) > 256.0f ||
-        gpu_abs(cr_q) > 256.0f || gpu_abs(ds_q) > 256.0f) {
+    if (gpu_abs(fw_q) > 8.0f || gpu_abs(rw_q) > 8.0f ||
+        gpu_abs(cr_q) > 8.0f || gpu_abs(ds_q) > 8.0f) {
         bike::physics_core::WorldRotationsRebaseState<float> rb{};
         rb.front_wheel_qpos = fw_q;
         rb.rear_wheel_qpos = rw_q;
@@ -2292,8 +2293,7 @@ BIKE_HD bike::physics_core::Status gpu_sp3_scan_efc_constraint_work(
             out_w_closure_abs_j += gpu_abs(work_j);
         } else {
             bool is_rider_limit = false;
-            for (int j = 0; j < kNumRiderJoints; ++j) {
-                const int dof = idx.rider_dof[j];
+            for (const int dof : idx.rider_dof) {
                 if (dof >= 0 && dof < cols && efc_J_w[base + dof] != 0.0f) {
                     is_rider_limit = true;
                     break;
@@ -2478,9 +2478,9 @@ template <
     class PtrMass,
     class PtrXipos,
     class PtrGrav,
-    class PtrType = const bike::physics_core::i32 *,
-    class PtrJ = const float *,
-    class PtrForce = const float *>
+    class PtrType = BIKE_DEVICE const bike::physics_core::i32 *,
+    class PtrJ = BIKE_DEVICE const float *,
+    class PtrForce = BIKE_DEVICE const float *>
 BIKE_HD bike::physics_core::Status gpu_sp3_step_energy_ledger_world(
     float dt_s,
     const BIKE_THREAD GpuModelIndices &idx,
@@ -2502,9 +2502,9 @@ BIKE_HD bike::physics_core::Status gpu_sp3_step_energy_ledger_world(
         bike::physics_core::ElasticEnergyBreakdown<float>{},
     int nefc_w = 0,
     int efc_J_row_stride = 0,
-    PtrType efc_type_w = static_cast<const bike::physics_core::i32 *>(nullptr),
-    PtrJ efc_J_w = static_cast<const float *>(nullptr),
-    PtrForce efc_force_w = static_cast<const float *>(nullptr),
+    PtrType efc_type_w = static_cast<BIKE_DEVICE const bike::physics_core::i32 *>(nullptr),
+    PtrJ efc_J_w = static_cast<BIKE_DEVICE const float *>(nullptr),
+    PtrForce efc_force_w = static_cast<BIKE_DEVICE const float *>(nullptr),
     float extra_d_tyre_radial_j = 0.0f,
     int qM_row_stride = 0
 ) noexcept {

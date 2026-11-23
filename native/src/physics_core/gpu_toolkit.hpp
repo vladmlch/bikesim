@@ -14,7 +14,7 @@ struct GpuToolkit {
     using Real = float;
 
     BIKE_HD static float div(float a, float b) noexcept {
-        return a / b;
+        return pf_div(a, b);
     }
 
     BIKE_HD static float sqrt(float x) noexcept {

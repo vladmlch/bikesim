@@ -433,8 +433,7 @@ void test_spindle_m0_fp64_parity(const MultiStateCaptureBundle &bundle) {
 
     auto m0_scratch = std::make_unique<pc::SpindleM0Scratch<double>>();
 
-    for (std::size_t si = 0; si < bundle.states.size(); ++si) {
-        const auto &st = bundle.states[si];
+    for (const auto &st : bundle.states) {
 
         copy_state_to_mjdata(m, d_cpu.get(), st);
         {
@@ -706,9 +705,10 @@ void test_spindle_controller_m2k2_zero_bit_parity(const MultiStateCaptureBundle 
             require_bits_f64(terms[slot].second.requested_nm,
                              ref_req[slot],
                              "SpindleController(m2k2) terms.requested_nm parity");
-            require(terms[slot].second.active_request_nm.has_value() &&
-                        terms[slot].second.active_delivered_nm.has_value(),
-                    "SpindleController(m2k2) terms active fields set");
+            if (!terms[slot].second.active_request_nm.has_value() ||
+                !terms[slot].second.active_delivered_nm.has_value()) {
+                throw std::runtime_error("SpindleController(m2k2) terms active fields set");
+            }
             require_bits_f64(*terms[slot].second.active_request_nm,
                              ref_exc[slot],
                              "SpindleController(m2k2) terms.active_request_nm parity");
@@ -918,7 +918,7 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
             // Deliberately invoke spindle_m0_step on ALL worlds (including done ones)
             // to prove multi-world batch isolation.
             for (std::size_t w = 0; w < nworld; ++w) {
-                mjData *dw = d_worlds[w].get();
+                const mjData *dw = d_worlds[w].get();
                 const auto qpos_f32 = to_real_vec<float>(dw->qpos, m->nq);
                 const auto qvel_f32 = to_real_vec<float>(dw->qvel, m->nv);
                 const auto bias_f32 = to_real_vec<float>(dw->qfrc_bias, m->nv);
@@ -982,13 +982,17 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
     };
 
     const auto err_1e3_tol1e4 = run_batched_fp32(
-        pc::SpindleM0Options<float>{1e-3f, 1e-4f, 1e-12f}, "kEps=1e-3f, tol=1e-4f");
+        pc::SpindleM0Options<float>{.newton_eps = 1e-3f, .conv_tol = 1e-4f, .det_eps = 1e-12f},
+        "kEps=1e-3f, tol=1e-4f");
     const auto err_1e3_tol1e5 = run_batched_fp32(
-        pc::SpindleM0Options<float>{1e-3f, 1e-5f, 1e-12f}, "kEps=1e-3f, tol=1e-5f");
+        pc::SpindleM0Options<float>{.newton_eps = 1e-3f, .conv_tol = 1e-5f, .det_eps = 1e-12f},
+        "kEps=1e-3f, tol=1e-5f");
     const auto err_1e2_tol1e4 = run_batched_fp32(
-        pc::SpindleM0Options<float>{1e-2f, 1e-4f, 1e-12f}, "kEps=1e-2f, tol=1e-4f");
+        pc::SpindleM0Options<float>{.newton_eps = 1e-2f, .conv_tol = 1e-4f, .det_eps = 1e-12f},
+        "kEps=1e-2f, tol=1e-4f");
     const auto err_1e2_tol1e5 = run_batched_fp32(
-        pc::SpindleM0Options<float>{1e-2f, 1e-5f, 1e-12f}, "kEps=1e-2f, tol=1e-5f");
+        pc::SpindleM0Options<float>{.newton_eps = 1e-2f, .conv_tol = 1e-5f, .det_eps = 1e-12f},
+        "kEps=1e-2f, tol=1e-5f");
     const auto err_default_f32 = run_batched_fp32(
         std::nullopt, "default SpindleM0Options<float>{}");
 
@@ -1030,8 +1034,8 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
     copy_state_to_mjdata(m, d_csr.get(), st0);
 
     pc::SpindleM0State<float> st_csr{}, st_den{};
-    auto scr_csr = std::make_unique<pc::SpindleM0Scratch<float>>();
-    auto scr_den = std::make_unique<pc::SpindleM0Scratch<float>>();
+    const auto scr_csr = std::make_unique<pc::SpindleM0Scratch<float>>();
+    const auto scr_den = std::make_unique<pc::SpindleM0Scratch<float>>();
     auto ctrl_csr = to_real_vec<float>(d_csr->ctrl, m->nu);
     auto ctrl_den = to_real_vec<float>(d_dense->ctrl, m->nu);
     pc::u8 ns_c = 0, dn_c = 0, ns_d = 0, dn_d = 0;
@@ -1067,12 +1071,12 @@ void test_spindle_m0_fp32_multiworld_and_eps(const MultiStateCaptureBundle &bund
             &params32, qpos_f32.data(), qvel_f32.data(), bias_f32.data(), qa_c.data(),
             M_rowadr_i32.data(), M_rownnz_i32.data(), M_colind_i32.data(), dM_f32.data(),
             &st_csr, scr_csr.get(), ctrl_csr.data(), ns_c, dn_c,
-            pc::SpindleM0Options<float>{1e-3f, 1e-4f, 1e-12f});
+            pc::SpindleM0Options<float>{.newton_eps = 1e-3f, .conv_tol = 1e-4f, .det_eps = 1e-12f});
         pc::spindle_m0_step<float, pc::GpuToolkit>(
             &params32, qpos_f32.data(), qvel_f32.data(), bias_f32.data(), qa_d.data(),
             stride, nullptr, nullptr, nullptr, qM_dense32.data(),
             &st_den, scr_den.get(), ctrl_den.data(), ns_d, dn_d,
-            pc::SpindleM0Options<float>{1e-3f, 1e-4f, 1e-12f});
+            pc::SpindleM0Options<float>{.newton_eps = 1e-3f, .conv_tol = 1e-4f, .det_eps = 1e-12f});
     }
     for (int i = 0; i < pc::kNumSpindleJoints; ++i) {
         const int aid = std::span{params32.joint_actuator_id}[to_idx(i)];
@@ -1175,9 +1179,9 @@ void test_closed_loop_cpu_multistep_ride() {
     init_stepper(*stepper_b);
 
     mjModel *ma = stepper_a->model();
-    mjData *da = stepper_a->data();
+    const mjData *da = stepper_a->data();
     mjModel *mb = stepper_b->model();
-    mjData *db = stepper_b->data();
+    const mjData *db = stepper_b->data();
 
     auto ctrl_a = std::make_unique<rider::SpindleController>(ma, pose, *spindle_cfg, crank_length_m);
     auto ctrl_b = std::make_unique<rider::SpindleController>(mb, pose, *spindle_cfg, crank_length_m);

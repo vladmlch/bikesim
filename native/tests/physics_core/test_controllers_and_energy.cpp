@@ -41,7 +41,6 @@ using bike::physics_core::ErrCode;
 using bike::physics_core::GpuEnergyLedger;
 using bike::physics_core::GpuProgramChannelMask;
 using bike::physics_core::GpuProgramOverride;
-using bike::physics_core::GpuProgramSegment;
 using bike::physics_core::GpuRideProgram;
 using bike::physics_core::GpuStepEnergyInputs;
 using bike::physics_core::GpuToolkit;
@@ -81,7 +80,6 @@ using bike::physics_core::pedaling_validate_state_invariants;
 using bike::physics_core::rebase_pedaling_2pi;
 using bike::physics_core::shift_cut_active;
 using bike::physics_core::shift_cut_active_ticks;
-using bike::physics_core::shifting_gear_ratio;
 using bike::physics_core::shifting_interpolated_gear_ratio;
 using bike::physics_core::shifting_reset;
 using bike::physics_core::u32;
@@ -184,16 +182,16 @@ void test_cruise_0bit_parity_and_validation() {
     };
 
     const std::array<StepCase, 10> cases{{
-        {0.0, false, false, std::nullopt, 0.00125, std::nullopt, std::nullopt, false},
-        {3.0, false, false, true, 0.00125, std::nullopt, std::nullopt, false},
-        {5.0, true, false, false, 0.00125, std::nullopt, std::nullopt, false},
-        {6.0, true, false, std::nullopt, 0.00125, std::nullopt, std::nullopt, false},
-        {7.5, true, true, std::nullopt, 0.00125, std::nullopt, 1.4, false},
-        {7.8, true, false, std::nullopt, 0.0025, 32.0, -0.5, false},
-        {2.0, true, false, std::nullopt, 0.005, std::nullopt, std::nullopt, false},
-        {12.0, true, false, std::nullopt, 0.005, std::nullopt, std::nullopt, false},
-        {8.0, true, false, std::nullopt, 0.00125, std::nullopt, std::nullopt, true},
-        {8.5, true, false, true, 0.00125, std::nullopt, std::nullopt, false},
+        StepCase{.speed_mps = 0.0},
+        StepCase{.speed_mps = 3.0, .controller_grounded = true},
+        StepCase{.speed_mps = 5.0, .rear_in_contact = true, .controller_grounded = false},
+        StepCase{.speed_mps = 6.0, .rear_in_contact = true},
+        StepCase{.speed_mps = 7.5, .rear_in_contact = true, .traction_limited = true, .support_factor = 1.4},
+        StepCase{.speed_mps = 7.8, .rear_in_contact = true, .dt_s = 0.0025, .set_kmh = 32.0, .support_factor = -0.5},
+        StepCase{.speed_mps = 2.0, .rear_in_contact = true, .dt_s = 0.005},
+        StepCase{.speed_mps = 12.0, .rear_in_contact = true, .dt_s = 0.005},
+        StepCase{.speed_mps = 8.0, .rear_in_contact = true, .do_reset = true},
+        StepCase{.speed_mps = 8.5, .rear_in_contact = true, .controller_grounded = true},
     }};
 
     for (const auto &tc : cases) {
@@ -530,7 +528,7 @@ void test_pedaling_p01b_c2_and_stall_reposition() {
     }
 
     // Parity against drivetrain::PedalingPolicy across stall + reposition
-    drivetrain::PedalingConfig cpu_cfg{
+    const drivetrain::PedalingConfig cpu_cfg{
         .coast_above_rpm = 120.0,
         .resume_below_rpm = 105.0,
         .stop_time_s = 0.35,
@@ -840,7 +838,7 @@ void test_energy_ledger_csr_and_conservation() {
     double x = 0.15;
     double v = 0.8;
 
-    auto eval_E = [&](double pos, double vel) {
+    const auto eval_E = [&](double pos, double vel) {
         MechanicalEnergyBreakdown<double> b{};
         ElasticEnergyBreakdown<double> el{};
         el.u_susp_fork = 0.5 * k_val * pos * pos;

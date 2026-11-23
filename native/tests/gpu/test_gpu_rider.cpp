@@ -181,7 +181,7 @@ void test_bounds_guards() {
     const std::span<const int> idx_dof(idx.rider_dof);
 
     // 1. Default -1 sentinel falls back to idx.rider_qpos[j] / idx.rider_dof[j].
-    GpuRiderParams rp_fallback = gpu_make_default_rider_params();
+    const GpuRiderParams rp_fallback = gpu_make_default_rider_params();
     const std::span<const float> lo(rp_fallback.envelope.lower);
     std::array<float, kMaxNq> qpos_fb{};
     std::array<float, kMaxNv> qfrc_fb{};

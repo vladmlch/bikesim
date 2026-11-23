@@ -142,6 +142,7 @@ std::string build_msl_shader_source(const std::string &gpu_src_dir) {
 
     std::string combined = R"MSL(
 #pragma METAL fp contract(off)
+#pragma clang fp contract(off) reassociate(off)
 #pragma clang diagnostic ignored "-Wc++17-extensions"
 #include <metal_stdlib>
 using namespace metal;

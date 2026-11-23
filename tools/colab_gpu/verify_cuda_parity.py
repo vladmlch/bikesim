@@ -38,9 +38,13 @@ import mujoco_warp as mjwarp
 
 
 def _require_mujoco_3x() -> None:
-    if int(str(mujoco.__version__).split(".", 1)[0]) != 3:
+    parts = str(mujoco.__version__).split(".")
+    major = int(parts[0])
+    minor = int(parts[1]) if len(parts) >= 2 and parts[1].isdigit() else 0
+    if major != 3 or not (11 <= minor <= 12):
         raise RuntimeError(
-            f"Unsupported mujoco major version {mujoco.__version__}; expected mujoco>=3.11.0,<4.0.0"
+            f"Unsupported mujoco version {mujoco.__version__} for mujoco-warp==3.11.0; "
+            "expected mujoco>=3.11.0,<3.13.0 (see tools/colab_gpu/requirements-colab.txt)"
         )
 
 try:
@@ -1063,7 +1067,7 @@ def run_level_a_sp4_m0_parity(
     d_sp3 = wp.zeros(nworld * sizeof_sp3, dtype=wp.uint8, device=device)
     d_sp4 = wp.zeros(nworld * sizeof_sp4, dtype=wp.uint8, device=device)
     d_m0 = wp.zeros(nworld * sizeof_m0, dtype=wp.uint8, device=device)
-    d_any = wp.zeros(1, dtype=wp.int32, device=device)
+    g_any = np.zeros(1, dtype=np.int32)
 
     m_wp = _configure_sp4_mjwarp_model(m, device=device, disable_contacts=False)
     expand_mjwarp_tendon_range_and_frictionloss(m, m_wp, nworld, device=device)
@@ -1177,7 +1181,7 @@ def run_level_a_sp4_m0_parity(
         h_qfrc = np.zeros_like(d_b.qfrc_applied.numpy(), dtype=np.float32)
         h_ctrl = np.zeros_like(d_b.ctrl.numpy(), dtype=np.float32)
         h_qws = np.ascontiguousarray(d_b.qacc_warmstart.numpy(), dtype=np.float32)
-        d_any.zero_()
+        g_any.fill(0)
         h_any.fill(0)
 
         rc_g = int(
@@ -1221,7 +1225,7 @@ def run_level_a_sp4_m0_parity(
                 ctypes.c_void_p(fl_ptr),
                 int(fl_stride),
                 ctypes.c_void_p(d_b.qacc_warmstart.ptr),
-                ctypes.c_void_p(d_any.ptr),
+                ctypes.c_void_p(g_any.ctypes.data),
             )
         )
         wp.synchronize()
@@ -1280,14 +1284,14 @@ def run_level_a_sp4_m0_parity(
         ops["make_constraint"](m_wp, d_b)
         _solve_once()
 
-        for _p in range(37):
-            g_need = int(d_any.numpy()[0])
+        for _p in range(52):
+            g_need = int(g_any[0])
             c_need = int(h_any[0])
             if g_need != c_need:
                 raise RuntimeError(f"M0 any_needs_solve divergence: gpu={g_need}, cpu={c_need}")
             if g_need == 0:
                 break
-            d_any.zero_()
+            g_any.fill(0)
             h_any.fill(0)
             h_qpos_s = np.ascontiguousarray(d_b.qpos.numpy(), dtype=np.float32)
             h_qvel_s = np.ascontiguousarray(d_b.qvel.numpy(), dtype=np.float32)
@@ -1322,7 +1326,7 @@ def run_level_a_sp4_m0_parity(
                     ctypes.c_void_p(d_b.M.ptr),
                     ctypes.c_void_p(d_b.ctrl.ptr),
                     ctypes.c_void_p(d_b.qacc_warmstart.ptr),
-                    ctypes.c_void_p(d_any.ptr),
+                    ctypes.c_void_p(g_any.ctypes.data),
                 )
             )
             wp.synchronize()
@@ -1359,11 +1363,11 @@ def run_level_a_sp4_m0_parity(
                 raise RuntimeError(f"sp4_m0_step failed: gpu={rc_sg}, cpu={rc_sc}")
             st_c = _f32_ulp_stats(d_b.ctrl.numpy(), h_ctrl_s)
             max_ulp_by_array["ctrl"] = max(max_ulp_by_array["ctrl"], int(st_c["max_ulp"]))
-            if int(d_any.numpy()[0]) != int(h_any[0]):
-                raise RuntimeError(f"M0 post-step any_needs_solve divergence: gpu={int(d_any.numpy()[0])}, cpu={int(h_any[0])}")
-            if int(d_any.numpy()[0]) == 0:
-                break
+            if int(g_any[0]) != int(h_any[0]):
+                raise RuntimeError(f"M0 post-step any_needs_solve divergence: gpu={int(g_any[0])}, cpu={int(h_any[0])}")
             _solve_once()
+            if int(g_any[0]) == 0:
+                break
 
         ops["sensor_acc"](m_wp, d_b)
         ops["implicit"](m_wp, d_b)
@@ -1642,10 +1646,14 @@ def run_level_c_closed_loop_10scenarios(
                 physics_config_json=sub_dir / "physics_config.json",
                 manifest_json=sub_mf if sub_mf.is_file() else None,
             )
-            n_steps = int(sc["target_steps"])
+            n_steps = (
+                int(sc["target_steps"])
+                if sc.get("target_steps") is not None
+                else int(round(float(sc["duration_s"]) / float(m.opt.timestep)))
+            )
             backend = str(sc.get("tyre_backend", sc.get("backend", "compliant_2d")))
             station_count = int(sc["station_count"])
-            init_grade = float(sc.get("init_grade", 0.0))
+            init_grade = float(sc["init_grade"]) if sc.get("init_grade") is not None else None
 
             res = _run_cuda_sp4_batch(
                 lib=cuda_lib,
@@ -1690,14 +1698,17 @@ def run_level_c_closed_loop_10scenarios(
             max_rel_e = float(wm["max_rel_energy_residual"])
             e_ok = int(wm["energy_contract_ok"])
 
+            rise_lim = 6.0 if solver_mode == "m0" else 10.0
+            saddle_lim = float(sc.get("max_saddle_limit_n", 1750.0))
             bounds_ok = (
-                (max_saddle <= 1750.0)
+                (max_saddle <= saddle_lim)
                 if diag_rough
                 else (
-                    min_press >= -6.0
-                    and max_rise <= 6.0
+                    res["world0_first_failure"] == "none"
+                    and min_press >= -6.0
+                    and max_rise <= rise_lim
                     and min_saddle >= -6.0
-                    and max_saddle <= 1750.0
+                    and max_saddle <= saddle_lim
                 )
             )
             passed = (

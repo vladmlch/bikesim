@@ -1003,7 +1003,7 @@ std::unique_ptr<StepClosureBundle> load_step_closure_bundle(
             }
             bike.shock_lockout = std::get<bool>(m->data);
         }
-        bundle->resolved_bike = std::move(bike);
+        bundle->resolved_bike = bike;
     }
     if (const auto *v = io::find_member(mobj, "track_spec")) {
         const auto &tobj = io::as_object(*v, "track_spec");

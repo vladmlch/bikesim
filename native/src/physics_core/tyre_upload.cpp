@@ -335,12 +335,12 @@ void validate_and_pack_pneumatic_side(
     if (!std::isfinite(pneu.half_angle_deg) || pneu.half_angle_deg <= 0.0 || pneu.half_angle_deg >= 90.0) {
         throw std::invalid_argument("pneumatic half_angle_deg must lie in (0, 90)");
     }
-    auto check_pos = [](double v, const char *msg) {
+    const auto check_pos = [](double v, const char *msg) {
         if (!std::isfinite(v) || v <= 0.0) {
             throw std::invalid_argument(msg);
         }
     };
-    auto check_nonneg = [](double v, const char *msg) {
+    const auto check_nonneg = [](double v, const char *msg) {
         if (!std::isfinite(v) || v < 0.0) {
             throw std::invalid_argument(msg);
         }

@@ -46,6 +46,10 @@ struct SpindleM0Options {
     Real newton_eps = BIKE_REAL(Real, 1e-3);
     Real conv_tol = BIKE_REAL(Real, 1e-6);
     Real det_eps = BIKE_REAL(Real, 1e-12);
+    Real max_j2_abs = BIKE_REAL(Real, 0.0);
+    u8 reject_failed_line_search = 0;
+    u8 keep_best_iterate = 0;
+    u8 picard_fallback = 0;
 };
 
 template <>
@@ -53,6 +57,10 @@ struct SpindleM0Options<float> {
     float newton_eps = 1e-2f;
     float conv_tol = 1e-4f;
     float det_eps = 1e-12f;
+    float max_j2_abs = 0.0f;
+    u8 reject_failed_line_search = 0;
+    u8 keep_best_iterate = 0;
+    u8 picard_fallback = 0;
 };
 
 template <class Real>
@@ -64,6 +72,7 @@ struct SpindleM0Scratch {
     PressStateCore<Real> P1{};
     PressStateCore<Real> cached_P{};
     PressStateCore<Real> ps_next{};
+    PressStateCore<Real> best_ps{};
     Real cached_req[4]{};
     Real cached_prio[4]{};
     Real base_req[4]{};
@@ -74,6 +83,7 @@ struct SpindleM0Scratch {
     Real r1 = BIKE_REAL(Real, 0.0);
     Real r2 = BIKE_REAL(Real, 0.0);
     Real err = BIKE_REAL(Real, 0.0);
+    Real best_err = BIKE_REAL(Real, 0.0);
     Real dp0 = BIKE_REAL(Real, 0.0);
     Real dp1 = BIKE_REAL(Real, 0.0);
     Real dp2 = BIKE_REAL(Real, 0.0);
@@ -82,8 +92,8 @@ struct SpindleM0Scratch {
     i32 ls = 0;
     u8 stage = 0;
     u8 has_cached_eval = 0;
+    u8 has_best_ps = 0;
     u8 done = 1;
-    u8 pad_m0 = 0;
 };
 
 namespace detail_m0 {
@@ -212,6 +222,8 @@ BIKE_HD void spindle_m0_begin(
     done_out = 1;
     scratch->stage = static_cast<u8>(SpindleM0Stage::done);
     scratch->has_cached_eval = 0;
+    scratch->has_best_ps = 0;
+    scratch->best_err = BIKE_REAL(Real, 1e30);
     scratch->iter = 0;
     scratch->ls = 0;
     scratch->done = 1;
@@ -384,15 +396,17 @@ BIKE_HD void spindle_m0_step(
 
     for (i32 trans = 0; trans < kM0MaxStateTransitions; ++trans) {
         if (phase == detail_m0::StepPhase::check_iter) {
-            if (scratch->iter >= kM0MaxNewtonIters) {
-                phase = detail_m0::StepPhase::finalize;
-                continue;
-            }
             const Real r0 = scratch->P.f_passive[0] - scratch->ps.f_passive[0];
             const Real r1 = scratch->P.f_passive[1] - scratch->ps.f_passive[1];
             const Real r2 = scratch->P.max_total_press_n - scratch->ps.max_total_press_n;
             const Real err = TK::max(TK::abs(r0), TK::max(TK::abs(r1), TK::abs(r2)));
-            if (err <= opts.conv_tol) {
+            if (opts.keep_best_iterate != 0 &&
+                (scratch->has_best_ps == 0 || err < scratch->best_err)) {
+                scratch->best_ps = scratch->ps;
+                scratch->best_err = err;
+                scratch->has_best_ps = 1;
+            }
+            if (err <= opts.conv_tol || scratch->iter >= kM0MaxNewtonIters) {
                 phase = detail_m0::StepPhase::finalize;
                 continue;
             }
@@ -465,10 +479,14 @@ BIKE_HD void spindle_m0_step(
             const Real eps = opts.newton_eps;
             const Real J00 = (scratch->P0.f_passive[0] - scratch->P.f_passive[0]) / eps - BIKE_REAL(Real, 1.0);
             const Real J10 = (scratch->P0.f_passive[1] - scratch->P.f_passive[1]) / eps;
-            const Real J20 = (scratch->P0.max_total_press_n - scratch->P.max_total_press_n) / eps;
+            Real J20 = (scratch->P0.max_total_press_n - scratch->P.max_total_press_n) / eps;
             const Real J01 = (scratch->P1.f_passive[0] - scratch->P.f_passive[0]) / eps;
             const Real J11 = (scratch->P1.f_passive[1] - scratch->P.f_passive[1]) / eps - BIKE_REAL(Real, 1.0);
-            const Real J21 = (scratch->P1.max_total_press_n - scratch->P.max_total_press_n) / eps;
+            Real J21 = (scratch->P1.max_total_press_n - scratch->P.max_total_press_n) / eps;
+            if (opts.max_j2_abs > BIKE_REAL(Real, 0.0)) {
+                J20 = TK::clamp(J20, -opts.max_j2_abs, opts.max_j2_abs);
+                J21 = TK::clamp(J21, -opts.max_j2_abs, opts.max_j2_abs);
+            }
             const Real det = J00 * J11 - J01 * J10;
             if (TK::abs(det) < opts.det_eps) {
                 phase = detail_m0::StepPhase::finalize;
@@ -517,7 +535,28 @@ BIKE_HD void spindle_m0_step(
                 TK::max(
                     TK::abs(p_next_eval.f_passive[1] - scratch->ps_next.f_passive[1]),
                     TK::abs(p_next_eval.max_total_press_n - scratch->ps_next.max_total_press_n)));
-            if (next_err < scratch->err || (scratch->ls + 1) >= kM0LineSearchTrials) {
+            if (next_err < scratch->err) {
+                scratch->ps = scratch->ps_next;
+                scratch->P = p_next_eval;
+                scratch->iter += 1;
+                phase = detail_m0::StepPhase::check_iter;
+                continue;
+            }
+            if ((scratch->ls + 1) >= kM0LineSearchTrials) {
+                if (opts.picard_fallback != 0 && scratch->iter <= 1 &&
+                    scratch->ls == (kM0LineSearchTrials - 1)) {
+                    scratch->dp0 = scratch->r0;
+                    scratch->dp1 = scratch->r1;
+                    scratch->dp2 = scratch->r2;
+                    scratch->alpha = BIKE_REAL(Real, 0.55);
+                    scratch->ls = kM0LineSearchTrials;
+                    phase = detail_m0::StepPhase::start_line_search;
+                    continue;
+                }
+                if (opts.reject_failed_line_search != 0) {
+                    phase = detail_m0::StepPhase::finalize;
+                    continue;
+                }
                 scratch->ps = scratch->ps_next;
                 scratch->P = p_next_eval;
                 scratch->iter += 1;
@@ -533,6 +572,9 @@ BIKE_HD void spindle_m0_step(
         break;
     }
 
+    if (opts.keep_best_iterate != 0 && scratch->has_best_ps != 0) {
+        scratch->ps = scratch->best_ps;
+    }
     detail_m0::m0_finalize<Real, TK, Trig>(
         params, state, scratch, qpos, qvel, ctrl, needs_solve_out, done_out);
 }

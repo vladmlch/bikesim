@@ -1,4 +1,4 @@
-mujoco>=3.11.0,<4.0.0
+mujoco==3.11.0
 mujoco-warp==3.11.0
-warp-lang>=1.17.0,<2.0.0
+warp-lang==1.17.0
 numpy>=1.26.0

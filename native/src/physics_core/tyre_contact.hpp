@@ -6,6 +6,10 @@
 #include "common.hpp"
 #include "tyre_types.hpp"
 
+#if !defined(__METAL_VERSION__)
+#include <cmath>
+#endif
+
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel primitives: positional parameters and templated pointer arguments match the CUDA/MSL ABI without address-space cast errors. Register: docs/TESTING.md GPU kernel row.
 BIKE_GPU_SHARED_CODE_BEGIN
 
@@ -328,7 +332,13 @@ BIKE_HD Status uniform_surface_for_span(
 ) noexcept {
     struct SpanFiniteToolkit {
         BIKE_HD static bool isfinite(Real x) noexcept {
-            return (x - x) == BIKE_REAL(Real, 0.0);
+#if defined(__METAL_VERSION__)
+            return metal::isfinite(x);
+#elif defined(__CUDACC__)
+            return ::isfinite(x) != 0;
+#else
+            return std::isfinite(x);
+#endif
         }
     };
     return uniform_surface_for_span<Real, SpanFiniteToolkit>(

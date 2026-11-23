@@ -2618,27 +2618,49 @@ def apply_physics_config_json_to_sp3_config(
 
         assist = drive.get("assist")
         if isinstance(assist, dict):
-            for k in (
-                "gain",
-                "max_torque",
-                "max_power",
-                "tau",
-                "slew",
-                "engage_torque_nm",
-                "cutoff_mps",
-                "taper_width_mps",
-            ):
-                if k in assist:
-                    setattr(cfg.assist, k, float(assist[k]))
+            if "engage_torque_nm" in assist:
+                cfg.assist.engage_torque_nm = float(assist["engage_torque_nm"])
             if "release_hold_s" in assist and float(assist["release_hold_s"]) >= 0.0:
                 cfg.assist.release_hold_ticks = _ticks(float(assist["release_hold_s"]))
             prof = assist.get("profile")
-            if isinstance(prof, str) and prof.strip():
+            prof_key = prof.strip().lower() if isinstance(prof, str) else ""
+            if prof_key in ("bosch_cx_gen4", "bosch_performance_line_cx_gen4"):
                 pmap = {"eco": 0, "tour": 1, "emtb": 2, "turbo": 3}
-                cfg.assist.profile_mode = pmap.get(prof.strip().lower(), 3)
+                mode_key = str(assist.get("mode", "turbo")).strip().lower()
+                pmode = pmap.get(mode_key, 3)
+                cfg.assist.profile_mode = pmode
                 cfg.assist.has_profile = 1
-            elif prof is None and "profile" in assist:
-                cfg.assist.has_profile = 0
+                cfg.assist.profile.eco = 0.6
+                cfg.assist.profile.tour = 1.4
+                cfg.assist.profile.emtb_low = 1.4
+                cfg.assist.profile.emtb_high = 3.4
+                cfg.assist.profile.turbo = 3.4
+                cfg.assist.profile.emtb_full_gain_at_nm = 40.0
+                cfg.assist.gain = {0: 0.6, 1: 1.4, 2: 3.4, 3: 3.4}[pmode]
+                cfg.assist.max_torque = 85.0
+                cfg.assist.max_power = 600.0
+                cfg.assist.tau = 0.04
+                cfg.assist.slew = 85.0 / 0.04
+                cfg.assist.cutoff_mps = 25.0 / 3.6
+                cfg.assist.taper_width_mps = 2.0 / 3.6
+            else:
+                if prof is None and "profile" in assist:
+                    cfg.assist.has_profile = 0
+                elif prof_key in ("eco", "tour", "emtb", "turbo"):
+                    pmap = {"eco": 0, "tour": 1, "emtb": 2, "turbo": 3}
+                    cfg.assist.profile_mode = pmap[prof_key]
+                    cfg.assist.has_profile = 1
+                for k in (
+                    "gain",
+                    "max_torque",
+                    "max_power",
+                    "tau",
+                    "slew",
+                    "cutoff_mps",
+                    "taper_width_mps",
+                ):
+                    if k in assist:
+                        setattr(cfg.assist, k, float(assist[k]))
             tc = _as_seq(assist.get("torque_curve"))
             if tc is not None and len(tc) > 0:
                 cnt = min(len(tc), 8)
@@ -2789,11 +2811,16 @@ def apply_physics_config_json_to_sp3_config(
             cfg.launch.retry_ticks = _ticks(float(rl["shift_retry_s"]))
         cog_b = _as_seq(rl.get("start_cog_grade_breaks"))
         cog_t = _as_seq(rl.get("start_cog_teeth"))
-        if cog_b is not None and cog_t is not None and len(cog_b) == len(cog_t):
-            cnt = min(len(cog_b), 16)
-            cfg.launch.start_cog_count = cnt
-            for i in range(cnt):
+        if (
+            cog_b is not None
+            and cog_t is not None
+            and len(cog_b) + 1 == len(cog_t)
+            and 1 <= len(cog_t) <= 16
+        ):
+            cfg.launch.start_cog_count = len(cog_t)
+            for i in range(len(cog_b)):
                 cfg.launch.start_cog_grade_breaks[i] = float(cog_b[i])
+            for i in range(len(cog_t)):
                 cfg.launch.start_cog_teeth[i] = int(cog_t[i])
         lean_g = _as_seq(rl.get("start_lean_grades"))
         lean_r = _as_seq(rl.get("start_lean_rad"))
@@ -3095,6 +3122,30 @@ def build_tyre_and_terrain_buffers(
     )
     if rc != 0:
         raise RuntimeError(f"Host tyre/terrain build failed with return code {rc}")
+
+    cand_manifest = Path(xml_path).resolve().parent / "manifest.json"
+    if cand_manifest.is_file() and len(model_buf) == ctypes.sizeof(GpuTyreModelStruct):
+        mf = json.loads(cand_manifest.read_text(encoding="utf-8"))
+        ts = mf.get("track_spec") if isinstance(mf, dict) and isinstance(mf.get("track_spec"), dict) else {}
+        secs = _as_seq(ts.get("surface_sections")) or _as_seq(ts.get("sections")) or []
+        if len(secs) > 0:
+            tm = GpuTyreModelStruct.from_buffer(model_buf)
+            def_surf = ts.get("surface", int(surface_label) if use_surface and int(surface_label) >= 0 else "hardpack")
+            _fill_surface_spec_pod(tm.surface_map.default_surface, def_surf)
+            sec_cnt = min(len(secs), 16)
+            tm.surface_map.section_count = sec_cnt
+            for i in range(sec_cnt):
+                sec = secs[i]
+                if not isinstance(sec, dict):
+                    continue
+                tm.surface_map.sections[i].start_m = float(sec.get("start_m", 0.0))
+                tm.surface_map.sections[i].end_m = float(sec.get("end_m", 0.0))
+                tm.surface_map.sections[i].blend_m = float(sec.get("blend_m", 0.0))
+                _fill_surface_spec_pod(
+                    tm.surface_map.sections[i].surface,
+                    sec.get("surface", sec.get("label", def_surf)),
+                )
+            tm.surface_map.has_surface_map = 1
 
     return (
         model_buf.raw,

@@ -344,6 +344,7 @@ the final tree (it must pass its own new precondition). Fast-forward
   a guard that every simulation source is listed or excluded on purpose.
   Today any edit there (comments included) makes `savage_pneumatic.npz`
   stale and fails `reference.equilibrium_state_file` on darwin-arm64; this
-  plan only drops `native/src/tools/` from the glob.
+  plan only drops `native/src/tools/` (f13041d8) and `native/cmake/Checks.cmake`
+  (79b9cf1f, check/test target registry only) from the glob.
 - Stack budgets (`-Wframe-larger-than`, `-Wstack-usage`) never ran: they
   need an optimized build, not the frontends sweep (dropped in 44979530).

@@ -47,19 +47,21 @@
 #
 # Every run ends with a per-stage seconds/exit table and appends one line
 # to $BIKE_GATE_STATE_DIR/timings.tsv (default: <git common dir>/bike-gate,
-# or <repo>/build/bike-gate outside git). BIKE_CPU_COUNT overrides the
-# detected CPU count used for --parallel and recorded as the journal's
-# jobs field. The 11th column is tree=<id>, the tree this run checked
-# (tools/lib/tree_id.sh, taken at start); an applied override adds a 12th
-# column, override=<reason>.
+# or <repo>/build/bike-gate outside the repository's own top level).
+# Column 6 (from) is `-` for a complete run, the --from stage for a partial
+# one, and `uncommitted` for a check_change.sh --uncommitted row.
+# BIKE_CPU_COUNT overrides the detected CPU count used for --parallel and
+# recorded as the journal's jobs field. The 11th column is tree=<id>, the
+# tree this run checked (tools/lib/tree_id.sh, taken at start); an applied
+# override adds a 12th column, override=<reason>.
 #
 # Gate preconditions (native and full, release preset, no --from, inside a
-# git tree): the journal must hold a passed level-1 run (`change` row, from
-# tools/check_change.sh) for the current tree, and native is also refused
-# when a passed full run already covers that tree. BIKE_GATE_OVERRIDE='<why>'
-# skips both checks and is journaled on the run. A refusal exits before the
-# registry entry and the EXIT trap, so it writes no journal row. quick and
-# --from are not gated.
+# git tree): the journal must hold a passed complete level-1 run (`change`
+# row with from `-`, written by tools/check_change.sh) for the current tree,
+# and native is also refused when a passed full run already covers that
+# tree. BIKE_GATE_OVERRIDE='<why>' skips both checks and is journaled on the
+# run. A refusal exits before the registry entry and the EXIT trap, so it
+# writes no journal row. quick and --from are not gated.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -181,12 +183,15 @@ mkdir -p "$BIKE_GATE_STATE_DIR"
 tree="$(bike_tree_id "$REPO_ROOT")"
 
 # journal_has <profile> — 0 when timings.tsv holds a passed release row of
-# that profile for $tree. Columns: 4 profile, 5 preset, 8 status, 11 tree=.
+# that profile for $tree. Columns: 4 profile, 5 preset, 6 from, 8 status,
+# 11 tree=. Only a complete run counts (from is "-"): a --from partial run is
+# an intermediate re-check, and an uncommitted check_change row is not the
+# level-1 run of the committed tree.
 journal_has() {
   local journal="$BIKE_GATE_STATE_DIR/timings.tsv"
   [[ -f "$journal" ]] || return 1
   awk -F'\t' -v p="$1" -v t="tree=$tree" \
-    '$4 == p && $5 == "release" && $8 == "passed" && $11 == t { found = 1 } END { exit !found }' \
+    '$4 == p && $5 == "release" && $6 == "-" && $8 == "passed" && $11 == t { found = 1 } END { exit !found }' \
     "$journal"
 }
 

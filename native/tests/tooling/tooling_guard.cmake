@@ -127,15 +127,14 @@ guard_case(deny_golden_guard_env_zero deny [==[BIKE_GOLDEN_RECORD=1 ./run]==] EN
 # --- deny: rm outside the repository ------------------------------------------
 guard_case(deny_rm_root deny [==[rm -rf /]==])
 guard_case(deny_rm_fr_root deny [==[rm -fr /]==])
-guard_case(deny_rm_separate_flags deny [==[rm -r -f /tmp/x]==])
-guard_case(deny_rm_long_flags deny [==[rm --recursive --force /tmp/x]==])
+guard_case(deny_rm_separate_flags deny [==[rm -r -f /etc/x]==])
+guard_case(deny_rm_long_flags deny [==[rm --recursive --force /etc/x]==])
 guard_case(deny_rm_tilde deny [==[rm -rf ~]==])
 guard_case(deny_rm_home_variable deny [==[rm -rf $HOME]==])
 guard_case(deny_rm_home_variable_quoted deny [==[rm -rf "$HOME/x"]==])
 guard_case(deny_rm_home_braced deny [==[rm -rf ${HOME}/x]==])
 guard_case(deny_rm_parent deny [==[rm -rf ..]==])
 guard_case(deny_rm_parent_relative deny [==[rm -rf ../x]==])
-guard_case(deny_rm_absolute_tmp deny [==[rm -rf /tmp/bike-scratch]==])
 guard_case(deny_rm_glob_root deny [==[rm -rf /*]==])
 guard_case(deny_rm_glob_escape deny [==[rm -rf build/*/../../..]==])
 guard_case(deny_rm_unexpanded_variable deny [==[rm -rf $DIR]==])
@@ -146,7 +145,7 @@ guard_case(deny_rm_dot_git deny [==[rm -rf .git]==])
 guard_case(deny_rm_dot_git_objects deny [==[rm -rf .git/objects]==])
 guard_case(deny_rm_hidden_glob deny [==[rm -rf .*]==])
 guard_case(deny_rm_tilde_user deny [==[rm -rf ~root/x]==])
-guard_case(deny_rm_mixed_targets deny [==[rm -rf build /tmp/x]==])
+guard_case(deny_rm_mixed_targets deny [==[rm -rf build /etc/x]==])
 guard_case(deny_rm_substituted_target deny [==[rm -rf $(pwd)]==])
 guard_case(deny_rm_cwd_outside_relative deny [==[rm -rf build]==] CWD /)
 guard_case(deny_rm_wd_outside_relative deny [==[rm -rf build]==] WD /)
@@ -157,6 +156,29 @@ guard_case(deny_rm_cd_then_parent deny [==[cd native && rm -rf ../../x]==])
 guard_case(deny_rm_cd_unknown deny [==[cd "$X" && rm -rf build]==])
 guard_case(deny_rm_cd_dash deny [==[cd - && rm -rf build]==])
 guard_case(deny_rm_popd deny [==[popd && rm -rf build]==])
+
+# --- scratch roots: $TMPDIR, /tmp and /private/tmp ----------------------------
+# A target strictly inside a scratch root is allowed; the root itself, a
+# lexical escape out of it, and a $ expansion stay denied. TMPDIR is set per
+# case so the results do not depend on the caller's environment.
+guard_case(allow_rm_tmp_child allow [==[rm -rf /tmp/x]==])
+guard_case(allow_rm_tmp_child_trailing_slash allow [==[rm -rf /tmp/x/]==])
+guard_case(allow_rm_tmp_nested allow [==[rm -rf /tmp/a/b/../c]==])
+guard_case(allow_rm_private_tmp_child allow [==[rm -rf /private/tmp/x]==])
+guard_case(allow_rm_tmpdir_child allow [==[rm -rf /var/folders/zz/T/x]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmp_root deny [==[rm -rf /tmp]==])
+guard_case(deny_rm_tmp_root_trailing_slash deny [==[rm -rf /tmp/]==])
+guard_case(deny_rm_tmp_root_dot deny [==[rm -rf /tmp/.]==])
+guard_case(deny_rm_tmp_parent_escape deny [==[rm -rf /tmp/../etc]==])
+guard_case(deny_rm_tmp_sibling_prefix deny [==[rm -rf /tmpx/y]==])
+guard_case(deny_rm_private_tmp_root deny [==[rm -rf /private/tmp]==])
+guard_case(deny_rm_tmpdir_root deny [==[rm -rf /var/folders/zz/T]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmpdir_variable deny [==[rm -rf "$TMPDIR"]==])
+guard_case(deny_rm_tmp_and_outside deny [==[rm -rf /tmp/x /etc/y]==])
+# A TMPDIR that holds the repository is not a scratch root: clearing it would
+# clear the checkout's siblings, and the repository itself stays protected.
+get_filename_component(_repo_parent "${REPO_ROOT}" DIRECTORY)
+guard_case(deny_rm_tmpdir_holds_repo deny "rm -rf ${_repo_parent}/sibling" ENV TMPDIR=${_repo_parent})
 
 # --- allow: quoted text, comments, heredocs, safe rm ---------------------------
 guard_case(allow_commit_message_push allow [==[git commit -m "do not git push"]==])

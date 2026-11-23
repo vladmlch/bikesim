@@ -19,13 +19,17 @@
 #                      an export argument or an env argument: rewrites goldens.
 #                      Allowed when the guard's own environment has
 #                      BIKE_GUARD_ALLOW_GOLDENS=1.
-#   rm with a recursive and a force flag on a target outside the repository.
-#                      Relative targets resolve against --cwd (default: the
-#                      current directory) and against any earlier cd in the
-#                      command. A target the guard cannot decide statically
-#                      (a $ expansion, braces, ~user, a hidden-name glob) counts
-#                      as outside. The repository root and .git are denied even
-#                      though they are inside.
+#   rm with a recursive and a force flag on a target outside the repository
+#                      and outside the scratch roots. A target strictly inside
+#                      $TMPDIR, /tmp or /private/tmp is allowed (lexical and
+#                      physical forms of the roots); a root itself, or anything
+#                      that resolves to one, is denied. Relative targets
+#                      resolve against --cwd (default: the current directory)
+#                      and against any earlier cd in the command. A target the
+#                      guard cannot decide statically (a $ expansion, braces,
+#                      ~user, a hidden-name glob) counts as outside. The
+#                      repository root and .git are denied even though they
+#                      are inside.
 #   A command name or git subcommand that is not a literal word (a $ expansion).
 #
 # Parsing: the command is split on ; & | ( ) and newlines outside quotes.
@@ -34,11 +38,13 @@
 # a bare $, which the rules above treat as unknown.
 #
 # A backstop against honest mistakes, not a sandbox: sudo, xargs, bash -c and
-# eval are not unwrapped, and a symlink inside the repository is not followed.
+# eval are not unwrapped, and a symlink inside the repository or a scratch root
+# is not followed: rm -rf /tmp/link/ is judged by the lexical path /tmp/link.
 set -euo pipefail
 
 GUARD_ROOT=""   # physical repository root
 GUARD_BASE=""   # directory relative rm targets resolve against; "" = unknown
+GUARD_TMP=()    # scratch roots an rm may clear inside (guard_scratch_roots)
 RESOLVED=""     # output of guard_resolve
 EXPANDED=""     # output of guard_expand
 GUARD_CLOSE=0   # output of guard_find_close: index of the matching )
@@ -415,9 +421,32 @@ guard_resolve() {
   RESOLVED=${out:-/}
 }
 
-# guard_check_rm_target <path> — the target must resolve inside the repository.
+# guard_scratch_roots — fills GUARD_TMP with the roots an rm may clear strictly
+# inside: $TMPDIR, /tmp and /private/tmp, each in its lexical and physical form
+# (on macOS /tmp is /private/tmp, and $TMPDIR sits under /var, a link to
+# /private/var). A root that is the repository root or holds it is dropped:
+# clearing it would clear the repository too. "/" is never a root.
+guard_scratch_roots() {
+  local cand form phys
+  GUARD_TMP=()
+  for cand in "${TMPDIR:-}" /tmp /private/tmp; do
+    [[ -n $cand ]] || continue
+    guard_resolve "" "$cand" || continue
+    phys=$(cd -- "$RESOLVED" 2>/dev/null && pwd -P) || phys=""
+    for form in "$RESOLVED" "$phys"; do
+      [[ -n $form && $form != / ]] || continue
+      case $GUARD_ROOT in
+        "$form"|"$form"/*) continue ;;
+      esac
+      GUARD_TMP+=("$form")
+    done
+  done
+}
+
+# guard_check_rm_target <path> — the target must resolve inside the repository
+# or strictly inside a scratch root (GUARD_TMP).
 guard_check_rm_target() {
-  local t=$1 rest comp
+  local t=$1 rest comp k
   [[ -n $t ]] || guard_deny "rm target is empty"
   case $t in
     *'$'*|*'`'*|*'{'*|*'}'*)
@@ -445,7 +474,16 @@ guard_check_rm_target() {
       guard_deny "rm would remove the repository root or its .git: $(printf '%q' "$t")"
       ;;
     "$GUARD_ROOT"/*) ;;
-    *) guard_deny "rm target is outside the repository: $(printf '%q' "$t") resolves to $RESOLVED" ;;
+    *)
+      k=0
+      while ((k < ${#GUARD_TMP[@]})); do
+        case $RESOLVED in
+          "${GUARD_TMP[k]}"/*) return 0 ;;
+        esac
+        k=$((k + 1))
+      done
+      guard_deny "rm target is outside the repository and the scratch roots: $(printf '%q' "$t") resolves to $RESOLVED"
+      ;;
   esac
 }
 
@@ -621,6 +659,7 @@ main() {
     base=$(pwd -P) || fail "cannot read the current directory"
   fi
   GUARD_BASE=$base
+  guard_scratch_roots
   guard_verdict "$cmd"
 }
 

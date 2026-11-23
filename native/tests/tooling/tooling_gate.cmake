@@ -414,6 +414,11 @@ expect_file_lines(uncommitted_only "${_log}"
   "${_repo}/native/src/x.cpp"
   "checks tidy jobs=unset"
   "${_repo}/native/src/x.cpp")
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(GET _journal -1 _last)
+if(NOT _last MATCHES "\tchange\trelease\tuncommitted\t")
+  set(_failures "${_failures}\n  uncommitted_only: journal line '${_last}' does not name from=uncommitted")
+endif()
 gate_run(uncommitted_with_base EXPECT_EXIT 2 ENV ${_gate_env}
   EXPECT_OUTPUT "takes no base"
   COMMAND bash "${_repo}/tools/check_change.sh" --uncommitted main)
@@ -483,12 +488,16 @@ tree_id_run(_pre_id_old "${_pre}")
 file(APPEND "${_pre}/docs/a.md" "edit\n")
 tree_id_run(_pre_id "${_pre}")
 
-# pre_seed(<state-dir> <profile> <status> <tree-id>) — one journal row in the
-# 11-column shape the launchers write.
+# pre_seed(<state-dir> <profile> <status> <tree-id> [<from>]) — one journal row
+# in the 11-column shape the launchers write; <from> defaults to "-" (complete).
 function(pre_seed dir profile status tree)
+  set(_from "-")
+  if(ARGC GREATER 4)
+    set(_from "${ARGV4}")
+  endif()
   file(MAKE_DIRECTORY "${dir}")
   file(APPEND "${dir}/timings.tsv"
-    "2026-11-23T00:00:00Z\t${_pre}\tabc1234\t${profile}\trelease\t-\t8\t${status}\t1\tseeded=1\ttree=${tree}\n")
+    "2026-11-23T00:00:00Z\t${_pre}\tabc1234\t${profile}\trelease\t${_from}\t8\t${status}\t1\tseeded=1\ttree=${tree}\n")
 endfunction()
 
 # journal_count(<var> <state-dir>) — rows in timings.tsv (0 when absent).
@@ -624,7 +633,56 @@ gate_run(pre_from_ungated EXPECT_EXIT 0 ENV ${_pre_env} "BIKE_GATE_STATE_DIR=${_
   EXPECT_OUTPUT "PARTIAL"
   COMMAND bash "${_pre}/tools/run_tests.sh" native release --from tidy)
 
+# An uncommitted change row (from `uncommitted`) is not the level-1 run of the
+# committed tree: native is refused as if no change row existed.
+set(_s "${_pre_states}/uncommitted-change")
+pre_seed("${_s}" change passed "${_pre_id}" uncommitted)
+file(REMOVE "${_log}")
+gate_run(pre_native_uncommitted_change EXPECT_EXIT 2 ENV ${_pre_env} "BIKE_GATE_STATE_DIR=${_s}"
+  EXPECT_OUTPUT "check_change.sh"
+  COMMAND bash "${_pre}/tools/run_tests.sh" native)
+refused_cleanly(pre_native_uncommitted_change "${_s}" 1)
+
+# A passed partial full run (--from tidy) is an intermediate re-check, so it
+# does not count as a covering full run: native still proceeds.
+set(_s "${_pre_states}/partial-full")
+pre_seed("${_s}" change passed "${_pre_id}")
+pre_seed("${_s}" full passed "${_pre_id}" tidy)
+file(REMOVE "${_log}")
+gate_run(pre_native_after_partial_full EXPECT_EXIT 0 ENV ${_pre_env} "BIKE_GATE_STATE_DIR=${_s}"
+  EXPECT_OUTPUT "stage" "total"
+  COMMAND bash "${_pre}/tools/run_tests.sh" native)
+file(STRINGS "${_s}/timings.tsv" _journal)
+list(GET _journal -1 _last)
+if(NOT _last MATCHES "\tnative\trelease\t-\t8\tpassed\t")
+  set(_failures "${_failures}\n  pre_native_after_partial_full: journal line '${_last}'")
+endif()
+
 # (run_tests.sh cases are appended by later tasks above this line.)
+
+# A scratch directory nested in a checkout has no repository of its own: the
+# journal goes under its own build/bike-gate, never the outer .git/bike-gate.
+set(_nested "${_repo}/scratch-nested")
+file(REMOVE_RECURSE "${_nested}" "${_repo}/.git/bike-gate")
+file(MAKE_DIRECTORY "${_nested}/tools" "${_nested}/build/native-release")
+file(COPY "${REPO_ROOT}/tools/run_tests.sh" "${REPO_ROOT}/tools/run_native_checks.sh"
+          "${REPO_ROOT}/tools/native_common.sh" DESTINATION "${_nested}/tools")
+file(COPY "${REPO_ROOT}/tools/lib" DESTINATION "${_nested}/tools")
+file(REMOVE "${_log}")
+gate_run(nested_journal EXPECT_EXIT 0 ENV ${_pre_env} --unset=BIKE_GATE_STATE_DIR
+  COMMAND bash "${_nested}/tools/run_tests.sh" quick)
+if(NOT EXISTS "${_nested}/build/bike-gate/timings.tsv")
+  set(_failures "${_failures}\n  nested_journal: no journal under ${_nested}/build/bike-gate")
+else()
+  file(STRINGS "${_nested}/build/bike-gate/timings.tsv" _journal)
+  list(GET _journal -1 _last)
+  if(NOT _last MATCHES "\tquick\trelease\t-\t8\tpassed\t[^\t]*\t[^\t]*\ttree=nogit$")
+    set(_failures "${_failures}\n  nested_journal: journal line '${_last}'")
+  endif()
+endif()
+if(EXISTS "${_repo}/.git/bike-gate/timings.tsv")
+  set(_failures "${_failures}\n  nested_journal: the journal leaked into the outer .git/bike-gate")
+endif()
 
 if(NOT _failures STREQUAL "")
   message(FATAL_ERROR "tooling_gate contract failed:${_failures}")

@@ -12,7 +12,9 @@
 # main, because it would select none of them.
 # Every run, failures included, appends one row to
 # $BIKE_GATE_STATE_DIR/timings.tsv: the run_tests.sh columns plus tree=<id>
-# (tools/lib/tree_id.sh, taken when the run starts).
+# (tools/lib/tree_id.sh, taken when the run starts). A --uncommitted run
+# writes `uncommitted` in column 6 (from) instead of `-`, so run_tests.sh
+# never counts it as the level-1 run its native and full gates require.
 # Warns on stderr when AGENTS.md exceeds 18000 bytes: agy truncates rule
 # files at 24000 bytes, silently.
 # Not a substitute for `tools/run_tests.sh native` before a merge (level 2).
@@ -88,6 +90,7 @@ cpu_count="${BIKE_CPU_COUNT:-$(getconf _NPROCESSORS_ONLN)}"
 jobs="${BIKE_CHECK_JOBS:-$cpu_count}"
 list="$(mktemp "${TMPDIR:-/tmp}/bike-change.XXXXXX")"
 selected="-"
+journal_from="-"   # column 6: "-" for a complete run, "uncommitted" for --uncommitted
 
 # finish — EXIT trap: drop the file list and journal this run, pass or fail.
 finish() {
@@ -95,8 +98,8 @@ finish() {
   [[ -n "$list" ]] && rm -f "$list"
   local status=passed total=$((SECONDS - gate_started))
   ((rc == 0)) || status=failed
-  printf '%s\t%s\t%s\tchange\trelease\t-\t%s\t%s\t%s\tselected=%s\ttree=%s\n' \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REPO_ROOT" "$head_short" "$jobs" \
+  printf '%s\t%s\t%s\tchange\trelease\t%s\t%s\t%s\t%s\tselected=%s\ttree=%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REPO_ROOT" "$head_short" "$journal_from" "$jobs" \
     "$status" "$total" "$selected" "$tree" \
     >> "$BIKE_GATE_STATE_DIR/timings.tsv"
   exit "$rc"
@@ -105,6 +108,7 @@ trap finish EXIT
 
 if ((uncommitted)); then
   diff_base=HEAD
+  journal_from=uncommitted
   scope="uncommitted changes"
 else
   diff_base="$(git merge-base HEAD "$base")"

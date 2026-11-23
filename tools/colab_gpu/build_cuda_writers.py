@@ -1729,6 +1729,7 @@ def compile_cuda_writers(
         "nvcc",
         "-std=c++20",
         "-O3",
+        "-arch=native",
         "--fmad=false",
         "--shared",
         "-Xcompiler",

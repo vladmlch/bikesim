@@ -52,6 +52,7 @@ try:
         build_sweep_configs_bytes,
         build_tyre_and_terrain_buffers,
         compile_cuda_writers,
+        configure_cuda_writers_cdll,
         expand_mjwarp_tendon_range_and_frictionloss,
         resolve_gpu_model_indices,
         unpack_sp3_energy_ledger,
@@ -85,6 +86,7 @@ except ImportError:
         build_sweep_configs_bytes,
         build_tyre_and_terrain_buffers,
         compile_cuda_writers,
+        configure_cuda_writers_cdll,
         expand_mjwarp_tendon_range_and_frictionloss,
         resolve_gpu_model_indices,
         unpack_sp3_energy_ledger,
@@ -1839,11 +1841,22 @@ def main(argv: list[str] | None = None) -> int:
         default="both",
         help="Spindle solver mode(s) for Level A and Level C parity verification (default: both).",
     )
+    parser.add_argument(
+        "--skip-compile",
+        action="store_true",
+        help="Load pre-compiled libbike_cuda_writers.so and libbike_cpu_batch_runner.so if already present.",
+    )
     args = parser.parse_args(argv)
 
-    print("=== Compiling CUDA (nvcc --fmad=false) & Host-float (g++ -ffp-contract=off) libraries ===", flush=True)
-    cuda_lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
-    host_lib = compile_cpu_batch_runner(DEFAULT_GPU_SRC_DIR)
+    host_so_default = DEFAULT_GPU_SRC_DIR.parents[2] / "build" / "libbike_cpu_batch_runner.so"
+    if args.skip_compile and DEFAULT_OUT_SO_PATH.is_file() and host_so_default.is_file():
+        print("=== Loading pre-compiled CUDA & Host-float libraries ===", flush=True)
+        cuda_lib = configure_cuda_writers_cdll(ctypes.CDLL(str(DEFAULT_OUT_SO_PATH)))
+        host_lib = configure_cuda_writers_cdll(ctypes.CDLL(str(host_so_default)))
+    else:
+        print("=== Compiling CUDA (nvcc --fmad=false) & Host-float (g++ -ffp-contract=off) libraries ===", flush=True)
+        cuda_lib = compile_cuda_writers(DEFAULT_GPU_SRC_DIR, DEFAULT_OUT_SO_PATH)
+        host_lib = compile_cpu_batch_runner(DEFAULT_GPU_SRC_DIR)
     prov = _collect_provenance()
     print(f"GPU: {prov['gpu_name']} | nvidia-smi: {prov['nvidia_smi']}", flush=True)
 

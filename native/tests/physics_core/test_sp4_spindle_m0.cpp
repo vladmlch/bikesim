@@ -1215,7 +1215,8 @@ void test_closed_loop_cpu_multistep_ride() {
     const int root_x_dof = model_access::readonly_buffer(ma->jnt_dofadr, ma->njnt, "da")[to_idx(root_x_jnt)];
     const double start_x = model_access::readonly_buffer(da->qpos, ma->nq, "q")[to_idx(root_x_qpos)];
 
-    const rider::RiderPosture target_posture{.torso_lean_rad = 0.05};
+    rider::RiderPosture target_posture{};
+    target_posture.torso_lean_rad = 0.05;
     const double dt = ma->opt.timestep;
     constexpr int kRolloutSteps = 480;
     constexpr double kHumanTorqueNm = 30.0;

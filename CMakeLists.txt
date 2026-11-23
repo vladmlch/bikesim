@@ -198,6 +198,8 @@ file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   "${_bike_native_dir}/cmake/*.in")
 list(REMOVE_DUPLICATES _runtime_identity_inputs)
 list(FILTER _runtime_identity_inputs EXCLUDE REGEX "^src/tools/")
+# Checks.cmake only registers check/test targets (no libraries, no flags).
+list(FILTER _runtime_identity_inputs EXCLUDE REGEX "^cmake/Checks\\.cmake$")
 list(SORT _runtime_identity_inputs)
 set(_runtime_identity_manifest "")
 foreach(_relative IN LISTS _runtime_identity_inputs)

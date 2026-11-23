@@ -293,7 +293,7 @@ std::string fingerprint(const std::filesystem::path& root) {
     for (const auto& [directory, extensions] : scopes)
         for (const auto& entry : std::filesystem::recursive_directory_iterator(root / directory)) {
             if (!entry.is_regular_file()) continue;
-            if (entry.path().lexically_relative(root).generic_string().starts_with("src/tools/")) continue;
+            if (const auto rel = entry.path().lexically_relative(root).generic_string(); rel.starts_with("src/tools/") || rel == "cmake/Checks.cmake") continue;
             if (extensions.contains(entry.path().extension().string()))
                 inputs.push_back(entry.path());
         }
@@ -328,6 +328,9 @@ void source_manifest() {
   rr::write_file(root / "src/tools/check.cpp", "int check = 1;\n");
   bt::require(fingerprint(root) == expected,
               "check tooling under src/tools/ never enters the source manifest");
+  rr::write_file(root / "cmake/Checks.cmake", "add_test(NAME probe COMMAND true)\n");
+  bt::require(fingerprint(root) == expected,
+              "the check-target registry cmake/Checks.cmake never enters the source manifest");
   rr::write_file(root / "src/core.hpp", "#pragma once\n// changed\n");
   bt::require(fingerprint(root) != expected,
               "header content changes are tracked");

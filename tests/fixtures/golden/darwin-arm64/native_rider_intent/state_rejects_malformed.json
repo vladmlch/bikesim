@@ -19,12 +19,12 @@
   "index": 1,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 938,
+  "nbytes": 963,
   "node": "native_rider_intent/state_rejects_malformed",
   "offset": 5040,
   "rtol": null,
   "shape": [
-   938
+   963
   ]
  },
  {
@@ -33,12 +33,12 @@
   "index": 2,
   "kind": "bitwise",
   "label": "input.restore.0",
-  "nbytes": 7424,
+  "nbytes": 7624,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 5978,
+  "offset": 6003,
   "rtol": null,
   "shape": [
-   928
+   953
   ]
  },
  {
@@ -49,7 +49,7 @@
   "label": "error.restore.0",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 13402,
+  "offset": 13627,
   "rtol": null,
   "shape": [
    0
@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "bitwise",
   "label": "input.restore.1",
-  "nbytes": 6528,
+  "nbytes": 6728,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 13402,
+  "offset": 13627,
   "rtol": null,
   "shape": [
-   816
+   841
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "error.restore.1",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 19930,
+  "offset": 20355,
   "rtol": null,
   "shape": [
    0
@@ -89,12 +89,12 @@
   "index": 6,
   "kind": "bitwise",
   "label": "input.restore.2",
-  "nbytes": 6528,
+  "nbytes": 6728,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 19930,
+  "offset": 20355,
   "rtol": null,
   "shape": [
-   816
+   841
   ]
  },
  {
@@ -105,7 +105,7 @@
   "label": "error.restore.2",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 26458,
+  "offset": 27083,
   "rtol": null,
   "shape": [
    0
@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "input.restore.3",
-  "nbytes": 6800,
+  "nbytes": 7000,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 26458,
+  "offset": 27083,
   "rtol": null,
   "shape": [
-   850
+   875
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "error.restore.3",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 33258,
+  "offset": 34083,
   "rtol": null,
   "shape": [
    0
@@ -145,12 +145,12 @@
   "index": 10,
   "kind": "bitwise",
   "label": "input.restore.4",
-  "nbytes": 7664,
+  "nbytes": 7864,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 33258,
+  "offset": 34083,
   "rtol": null,
   "shape": [
-   958
+   983
   ]
  },
  {
@@ -161,7 +161,7 @@
   "label": "error.restore.4",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 40922,
+  "offset": 41947,
   "rtol": null,
   "shape": [
    0
@@ -173,12 +173,12 @@
   "index": 12,
   "kind": "bitwise",
   "label": "input.restore.5",
-  "nbytes": 7592,
+  "nbytes": 7792,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 40922,
+  "offset": 41947,
   "rtol": null,
   "shape": [
-   949
+   974
   ]
  },
  {
@@ -189,7 +189,7 @@
   "label": "error.restore.5",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 48514,
+  "offset": 49739,
   "rtol": null,
   "shape": [
    0
@@ -201,12 +201,12 @@
   "index": 14,
   "kind": "bitwise",
   "label": "input.restore.6",
-  "nbytes": 7624,
+  "nbytes": 7824,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 48514,
+  "offset": 49739,
   "rtol": null,
   "shape": [
-   953
+   978
   ]
  },
  {
@@ -217,7 +217,7 @@
   "label": "error.restore.6",
   "nbytes": 0,
   "node": "native_rider_intent/state_rejects_malformed",
-  "offset": 56138,
+  "offset": 57563,
   "rtol": null,
   "shape": [
    0

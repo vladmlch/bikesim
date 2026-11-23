@@ -424,6 +424,8 @@ bike_add_reference_test(energy_ledger ENGINE
   SOURCES test_energy_ledger.cpp LIBRARIES bike_app LABELS t52 physics)
 bike_add_reference_test(realistic_pedelec_acceptance ENGINE
   SOURCES test_realistic_pedelec_acceptance.cpp LIBRARIES bike_validation LABELS t52 physics slow)
+bike_add_reference_test(calibrated_surface_tracks ENGINE
+  SOURCES test_calibrated_surface_tracks.cpp LIBRARIES bike_validation LABELS t52 terrain tyre physics)
 
 # 3.25 T53 runtime batch — NativeRideRuntime construction/bootstrap,
 # the bounded-advance command contract, sample acknowledgement and

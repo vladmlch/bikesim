@@ -775,7 +775,7 @@ void same_model_state(const biketyre::PneumaticTyreModel &a, const biketyre::Pne
             "name = \"stage_c_roots\"\nlength_m = 40.0\nsurface = \"hardpack\"\n"
             "grade_profile = { knots = [[0.0, 0.0], [40.0, 0.0]] }\n"
             "[[obstacles]]\ntype = \"roots\"\nstart_m = 12.0\nn_bumps = 4\n"
-            "height_m = 0.035\nwidth_m = 0.45\nsection_length_m = 4.0\n"
+            "height_m = 0.025\nwidth_m = 0.45\nsection_length_m = 4.0\n"
             "jitter = 0.1\nseed = 7\n"
             "surface = \"wet_wood\"\nsurface_blend_m = 0.02\n"));
 }

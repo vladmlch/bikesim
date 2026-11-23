@@ -149,12 +149,12 @@
   "index": 11,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 985,
+  "nbytes": 1010,
   "node": "native_rider_intent/program_update_parity",
   "offset": 9416,
   "rtol": null,
   "shape": [
-   985
+   1010
   ]
  }
 ]

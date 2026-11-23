@@ -2231,12 +2231,12 @@
   "index": 159,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 4311,
+  "nbytes": 4336,
   "node": "native_rider_intent/policy_update_parity_with_delays",
   "offset": 165894,
   "rtol": null,
   "shape": [
-   4311
+   4336
   ]
  }
 ]

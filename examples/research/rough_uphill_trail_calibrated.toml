@@ -1,0 +1,71 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "research_rough_uphill_trail_calibrated"
+length_m = 92.0
+description = "Calibrated seated e-MTB trail climb: 0->14->22->28->0%, hardpack+wet blend, ISO 8608 roughness, single-contact StepUp ledges, wet_wood roots, and mud_lens G-out"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [8.0, 0.0], [14.0, 0.14], [32.0, 0.14], [38.0, 0.22], [54.0, 0.22], [60.0, 0.28], [76.0, 0.28], [82.0, 0.0], [92.0, 0.0]] }
+surface_sections = [{ start_m = 20.0, end_m = 46.0, surface = "wet", blend_m = 0.5 }]
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 12.0
+amplitude_m = 0.012
+correlation_length_m = 0.35
+spectrum = "iso8608"
+waviness = 2.0
+seed = 301
+
+[[obstacles]]
+type = "step_up"
+start_m = 24.0
+height_m = 0.04
+ramp_m = 0.45
+
+[[obstacles]]
+type = "roots"
+start_m = 27.0
+n_bumps = 4
+height_m = 0.020
+width_m = 0.65
+section_length_m = 7.0
+jitter = 0.15
+seed = 302
+surface = "wet_wood"
+surface_blend_m = 0.03
+
+[[obstacles]]
+type = "g_out"
+start_m = 39.0
+depth_m = 0.12
+dip_length_m = 5.0
+surface = "mud_lens"
+surface_blend_m = 0.25
+
+[[obstacles]]
+type = "roughness"
+start_m = 48.0
+section_length_m = 14.0
+amplitude_m = 0.014
+correlation_length_m = 0.40
+spectrum = "iso8608"
+waviness = 2.0
+seed = 303
+
+[[obstacles]]
+type = "step_up"
+start_m = 65.0
+height_m = 0.045
+ramp_m = 0.50
+
+[[obstacles]]
+type = "roughness"
+start_m = 68.0
+section_length_m = 14.0
+amplitude_m = 0.012
+correlation_length_m = 0.35
+spectrum = "iso8608"
+waviness = 2.0
+seed = 304

@@ -4317,12 +4317,12 @@
   "index": 308,
   "kind": "close",
   "label": "recorder.columns.values",
-  "nbytes": 281280,
+  "nbytes": 281600,
   "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
   "offset": 296052,
   "rtol": 1e-09,
   "shape": [
-   35160
+   35200
   ]
  },
  {
@@ -4333,7 +4333,7 @@
   "label": "recorder.columns.other",
   "nbytes": 2,
   "node": "native_research_environment/one_second_pair_with_one_e_minus_nine_gate",
-  "offset": 577332,
+  "offset": 577652,
   "rtol": null,
   "shape": [
    2

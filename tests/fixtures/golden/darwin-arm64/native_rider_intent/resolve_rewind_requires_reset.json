@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
   "offset": 8475,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  },
  {
@@ -63,7 +63,7 @@
   "label": "input.resolve.1",
   "nbytes": 3224,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 9871,
+  "offset": 9922,
   "rtol": null,
   "shape": [
    403
@@ -77,7 +77,7 @@
   "label": "output.control.1",
   "nbytes": 218,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 13095,
+  "offset": 13146,
   "rtol": null,
   "shape": [
    218
@@ -89,12 +89,12 @@
   "index": 6,
   "kind": "bitwise",
   "label": "output.state.1",
-  "nbytes": 1851,
+  "nbytes": 1928,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 13313,
+  "offset": 13364,
   "rtol": null,
   "shape": [
-   1851
+   1928
   ]
  },
  {
@@ -105,7 +105,7 @@
   "label": "input.resolve.2",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 15164,
+  "offset": 15292,
   "rtol": null,
   "shape": [
    402
@@ -119,7 +119,7 @@
   "label": "error.resolve.0",
   "nbytes": 0,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 18380,
+  "offset": 18508,
   "rtol": null,
   "shape": [
    0
@@ -133,7 +133,7 @@
   "label": "input.resolve.3",
   "nbytes": 3216,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 18380,
+  "offset": 18508,
   "rtol": null,
   "shape": [
    402
@@ -147,7 +147,7 @@
   "label": "output.control.2",
   "nbytes": 219,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 21596,
+  "offset": 21724,
   "rtol": null,
   "shape": [
    219
@@ -159,12 +159,12 @@
   "index": 11,
   "kind": "bitwise",
   "label": "output.state.2",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/resolve_rewind_requires_reset",
-  "offset": 21815,
+  "offset": 21943,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  }
 ]

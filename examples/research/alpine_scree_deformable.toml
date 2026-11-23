@@ -1,0 +1,54 @@
+# Track file for bike-ride. Heights/depths in the classes' own units (metres);
+# `*_mm` keys are also accepted when editing by hand. Obstacles may not overlap.
+
+name = "alpine_scree_deformable"
+length_m = 90.0
+description = "Calibrated deformable alpine scree climb: hardpack->loose(0.035m)->scree(0.050m)->hardpack with blend_m=0.5, ISO 8608 roughness, and single-contact StepUp ledges"
+surface = "hardpack"
+grade_profile = { knots = [[0.0, 0.0], [8.0, 0.0], [14.0, 0.08], [24.0, 0.08], [30.0, 0.10], [58.0, 0.10], [66.0, 0.12], [76.0, 0.12], [82.0, 0.0], [90.0, 0.0]] }
+surface_sections = [
+  { start_m = 20.0, end_m = 42.0, surface = "loose", blend_m = 0.5, layer_thickness_m = 0.035 },
+  { start_m = 42.0, end_m = 66.0, surface = "scree", blend_m = 0.5, layer_thickness_m = 0.050 }
+]
+
+[[obstacles]]
+type = "roughness"
+start_m = 10.0
+section_length_m = 12.0
+amplitude_m = 0.010
+correlation_length_m = 0.40
+spectrum = "iso8608"
+waviness = 2.0
+seed = 401
+
+[[obstacles]]
+type = "roughness"
+start_m = 26.0
+section_length_m = 14.0
+amplitude_m = 0.012
+correlation_length_m = 0.40
+spectrum = "iso8608"
+waviness = 2.0
+seed = 402
+
+[[obstacles]]
+type = "step_up"
+start_m = 44.0
+height_m = 0.025
+ramp_m = 0.55
+
+[[obstacles]]
+type = "roughness"
+start_m = 48.0
+section_length_m = 16.0
+amplitude_m = 0.010
+correlation_length_m = 0.40
+spectrum = "iso8608"
+waviness = 2.0
+seed = 403
+
+[[obstacles]]
+type = "step_up"
+start_m = 70.0
+height_m = 0.025
+ramp_m = 0.55

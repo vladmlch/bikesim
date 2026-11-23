@@ -47,12 +47,12 @@
   "index": 3,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/probe_advance_preserves_state",
   "offset": 8475,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  },
  {
@@ -61,12 +61,12 @@
   "index": 4,
   "kind": "bitwise",
   "label": "output.state.1",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 9871,
+  "offset": 9922,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  },
  {
@@ -77,7 +77,7 @@
   "label": "input.resolve.1",
   "nbytes": 3232,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 11267,
+  "offset": 11369,
   "rtol": null,
   "shape": [
    404
@@ -91,7 +91,7 @@
   "label": "output.control.1",
   "nbytes": 218,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 14499,
+  "offset": 14601,
   "rtol": null,
   "shape": [
    218
@@ -103,12 +103,12 @@
   "index": 7,
   "kind": "bitwise",
   "label": "output.state.2",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 14717,
+  "offset": 14819,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  },
  {
@@ -117,12 +117,12 @@
   "index": 8,
   "kind": "bitwise",
   "label": "output.state.3",
-  "nbytes": 1396,
+  "nbytes": 1447,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 16113,
+  "offset": 16266,
   "rtol": null,
   "shape": [
-   1396
+   1447
   ]
  },
  {
@@ -133,7 +133,7 @@
   "label": "input.resolve.2",
   "nbytes": 3224,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 17509,
+  "offset": 17713,
   "rtol": null,
   "shape": [
    403
@@ -147,7 +147,7 @@
   "label": "output.control.2",
   "nbytes": 218,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 20733,
+  "offset": 20937,
   "rtol": null,
   "shape": [
    218
@@ -159,12 +159,12 @@
   "index": 11,
   "kind": "bitwise",
   "label": "output.state.4",
-  "nbytes": 1851,
+  "nbytes": 1928,
   "node": "native_rider_intent/probe_advance_preserves_state",
-  "offset": 20951,
+  "offset": 21155,
   "rtol": null,
   "shape": [
-   1851
+   1928
   ]
  }
 ]

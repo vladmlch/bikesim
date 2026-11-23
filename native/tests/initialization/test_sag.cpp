@@ -576,8 +576,9 @@ std::string pedal_stage(const ReviewRig& rig,std::string_view side) {
     // pedal_recovery_ verbatim on !advance.
     const auto scenario=[&](ReviewRig& rig,const runtime::StepState& fresh,
                             bool initializing){
-        auto stage=fresh;stage.initializing=initializing;
-        rig.physical->restore(stage);
+        auto stage=std::make_unique<runtime::StepState>(fresh);
+        stage->initializing=initializing;
+        rig.physical->restore(*stage);
         const mjModel* rm=rig.stepper->model();const mjData* rd=rig.stepper->data();
         auto const rq=std::views::counted(rd->qpos,rm->nq);
         rq[static_cast<std::size_t>(joint_qpos(*rm,"crank_spin"))]=angle;

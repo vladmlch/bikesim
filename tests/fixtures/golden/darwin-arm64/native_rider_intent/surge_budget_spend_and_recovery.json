@@ -227,12 +227,12 @@
   "index": 17,
   "kind": "bitwise",
   "label": "output.state.0",
-  "nbytes": 938,
+  "nbytes": 963,
   "node": "native_rider_intent/surge_budget_spend_and_recovery",
   "offset": 7128,
   "rtol": null,
   "shape": [
-   938
+   963
   ]
  }
 ]

@@ -110,6 +110,16 @@ Config rot: 19 broken skill symlinks in the project (9 in `.agents/skills`,
 section plus deletion of `.devin/hooks.v1.json`. `AGENTS copy.md` left
 untouched.
 
+## Interlude — equilibrium fingerprint fix (branch fix/equilibrium-fingerprint-paths)
+
+Level 1 after stage 2 failed in `reference.equilibrium_state_file`: the pose
+fingerprint hashed absolute joint-file paths, so the pinned
+`savage_pneumatic.npz` was valid only in the worktree that recorded it.
+657f21a0 keys those files by content sha256 (non-legacy branch only) with a
+regression test; ca65fc62 re-records the pose (user-approved); f5925f1d
+fixes the re-record hint. Level 1 green (198/198, 114 s). This branch is
+rebased onto it; both merge into `main` together after one native gate.
+
 ## Stage 2 — hygiene and project-scoped skills
 
 2.1 **Drop irrelevant tracked skills.** `git rm` from both `.agents/skills`
@@ -124,8 +134,11 @@ outside the skill dirs; a hit is reported, not deleted around.
 2.2 **Project mode for `install.sh`** (llm-orchestrators,
 `lib/install.py` + `install.toml`). `install.sh --project <dir> [skill...]`
 links each skill into `<dir>/.claude/skills/<skill>` (agent `claude`) and
-`<dir>/.agents/skills/<skill>` (agent `agy`) per the manifest's `agents`
-list, with absolute symlinks; replaces a broken link; refuses to overwrite
+`<dir>/.agents/skills/<skill>` (agents `agy` and `devin`; Devin CLI reads
+the project's `.agents/skills`) per the manifest's `agents` list; codex keeps
+its one user-level skill (its codex-specific SKILL.md cannot share
+`.agents/skills`), and `--uninstall` never removes a skill without a project
+location, nor `[links]` or hooks; with absolute symlinks; replaces a broken link; refuses to overwrite
 a real directory or a link it does not own; writes each link path into
 `<git-common-dir>/info/exclude` (creating the file when absent). The
 user-level mode stops installing skills into `~/*`; `--uninstall` of the
@@ -165,11 +178,17 @@ Level 1. **R1**.
 working tree without writing git objects: sha256 over `git rev-parse HEAD`,
 `git diff HEAD --binary`, and the sorted list of untracked non-ignored
 files with size and mtime (contents not hashed: `output/` holds ~950 MB).
-Prints `nogit` outside a git work tree.
+Prints `nogit` unless `git rev-parse --show-toplevel` from the script's
+repo root equals that root (a scratch repo under `build/` must not walk up
+to the outer checkout's `.git`; R1 I1).
 
-3.2 **`check_change.sh` base.** Default stays `merge-base(HEAD, main)`. A
-base that resolves to `HEAD` is refused with a message naming the default
-and `--uncommitted` (check only uncommitted + untracked files). Update
+3.2 **`check_change.sh` base.** Default stays `merge-base(HEAD, main)`. An
+explicitly passed base that resolves to the `HEAD` commit is refused when
+`HEAD` has commits not in `main` (the efb8e415 case), with a message naming
+the default and `--uncommitted` (check only uncommitted + untracked files).
+On `main` itself, or with the default base, nothing is refused (R1 I2:
+`mise.toml` passes `main`; `change_docs_only` runs with `HEAD == main`).
+Also task 2.6 (AGENTS.md size warning) lands here, in the same file. Update
 `AGENTS.md:52` and the header comment: omit the base unless the branch is
 long-lived; never pass `HEAD`.
 

@@ -595,6 +595,60 @@ void test_pneumatic_settle_restore_round_trip() {
 }
 
 // ---------------------------------------------------------------------------
+// The equilibrium key binds joint file content, not the checkout: the
+// pneumatic configuration staged in two directories keys one pose, and
+// editing a joint file the physics config names changes the key.
+// ---------------------------------------------------------------------------
+// The request tree the pneumatic fixture reaches: the request, its physics
+// TOML, the track, and the two joint files the physics TOML names by path.
+constexpr std::array<std::string_view, 5> kPneumaticTree{
+    "requests/pneumatic_flat.toml", "config/viewer_physics_pneumatic.toml",
+    "config/rider_joint_envelope_anatomical.json",
+    "config/rider_strength_reference.json", "tracks/flat.toml"};
+
+void stage_pneumatic_tree(const std::filesystem::path &root) {
+    for (const auto relative : kPneumaticTree) {
+        const auto destination = root / std::filesystem::path(relative);
+        std::filesystem::create_directories(destination.parent_path());
+        std::filesystem::copy_file(bt::fixture(relative), destination);
+    }
+}
+
+// Settles the request with the cache off and returns the fingerprint its
+// settled pose records.
+[[nodiscard]] std::string
+settled_fingerprint(const std::filesystem::path &request_file) {
+    auto request = init::read_setup_request(request_file);
+    request.model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) the request always decodes a physics file
+    request.model.physics->equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) same
+    auto owner = init::make_setup(request);
+    (void)init::settle(*owner);
+    return init::state_array(owner->capture_state_file(), "fingerprint_sha256")
+        .strings()
+        .front();
+}
+
+void test_fingerprint_binds_joint_content_not_checkout() {
+    const bt::TemporaryDirectory first_dir("eq_key_first");
+    const bt::TemporaryDirectory second_dir("eq_key_second");
+    stage_pneumatic_tree(first_dir.path());
+    stage_pneumatic_tree(second_dir.path());
+    const auto first_request = first_dir.path() / "requests" / "pneumatic_flat.toml";
+    const auto second_request = second_dir.path() / "requests" / "pneumatic_flat.toml";
+    const auto first = settled_fingerprint(first_request);
+    bt::require(settled_fingerprint(second_request) == first,
+                "the same physics configuration keys one pose from any checkout");
+    {
+        std::ofstream file(second_dir.path() / "config" / "rider_strength_reference.json",
+                           std::ios::binary | std::ios::app);
+        bt::require(file.is_open(), "joint file append opens");
+        file << '\n';
+    }
+    bt::require(settled_fingerprint(second_request) != first,
+                "editing a joint file the physics config names changes the pose key");
+}
+
+// ---------------------------------------------------------------------------
 // Queue item 6 follow-up: capture_initial_state() serves the finalized
 // context — a PhysicalInitialState is a launch transfer, so a moving
 // initial_speed_mps start must carry the qvel finalize writes, not the
@@ -679,6 +733,7 @@ void check() {
     test_equilibrium_override_kwargs_reach_the_solve();
     test_post_episode_lifecycle_writes_no_cache_entry();
     test_pneumatic_settle_restore_round_trip();
+    test_fingerprint_binds_joint_content_not_checkout();
     test_savage_pneumatic_fixture_restores();
     test_capture_initial_state_keeps_launch_velocity();
 }

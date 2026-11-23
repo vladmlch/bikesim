@@ -6,6 +6,7 @@
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
+#include "../platform/files.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
@@ -168,6 +169,12 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     // The front-lift reaction steers the ride, never the rest pose, so it
     // leaves the key like the cache knobs beside it.
     std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file"||field.first=="front_lift_reaction";});
+    // The resolved joint paths are worktree-absolute spellings, which would
+    // make a pose valid only in the checkout that recorded it. The canonical
+    // key binds each joint file's bytes instead: the pose depends on what the
+    // files contain, not on where they live. The legacy branch keeps its
+    // historical payload byte-for-byte.
+    if(!legacy)for(auto& [key,item]:fields)if(key=="articulated"){auto& section=std::get<io::Value::Object>(item.data);for(auto& [name,path]:section)if((name=="joint_envelope_path"||name=="joint_strength_path")&&!io::is_null(path))path=io::Value{"sha256:"+platform::file_sha256(io::as_string(path,name))};}
     // Historical NPZ payloads predate the relaxation selector; the legacy
     // branch keeps them byte-for-byte. The canonical key binds it, like the
     // refine timing: the schedule shapes which rest the solve reaches.

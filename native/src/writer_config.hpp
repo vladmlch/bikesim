@@ -462,7 +462,7 @@ namespace nativecfg {
             }
             if (name.ends_with(".surface")) {
                 constexpr auto required = keys("name", "mu_peak", "mu_slide", "slip_stiffness_per_load", "stribeck_speed_mps");
-                constexpr auto optional = keys("crr_delta", "load_sensitivity");
+                constexpr auto optional = keys("crr_delta", "load_sensitivity", "layer_thickness_m");
                 exact_at(d, required, optional, d.path);
                 return;
             }
@@ -474,7 +474,7 @@ namespace nativecfg {
             }
             if (name == "tire.surface_map.sections") {
                 constexpr auto required = keys("start_m", "end_m", "surface");
-                constexpr auto optional = keys("blend_m");
+                constexpr auto optional = keys("blend_m", "layer_thickness_m");
                 exact_at(d, required, optional, d.path);
                 return;
             }
@@ -662,6 +662,9 @@ namespace nativecfg {
             c.stribeck_speed_mps = req_f64(d, "stribeck_speed_mps");
             c.crr_delta = opt_num(d, "crr_delta", 0.0);
             c.load_sensitivity = opt_num(d, "load_sensitivity", 0.0);
+            // Stage B: optional deformable-layer depth; absent = 0 keeps
+            // every existing wire document decoding identically.
+            c.layer_thickness_m = opt_num(d, "layer_thickness_m", 0.0);
             return c;
         }
 
@@ -860,6 +863,11 @@ namespace nativecfg {
                             req_dict(sec, "surface"),
                             section_path + ".surface"),
                         .blend_m = opt_num(sec, "blend_m", 0.0),
+                        // Stage B layer depth lives on the section row
+                        // (a placement choice), not inside the nested
+                        // material record.
+                        .layer_thickness_m =
+                            opt_num(sec, "layer_thickness_m", 0.0),
                     });
                 }
                 // Stage C obstacle-local micro spans — optional, closed

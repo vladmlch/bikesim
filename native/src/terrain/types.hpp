@@ -54,6 +54,11 @@ struct SurfaceSection {
     double end_m = 0.;
     std::string surface;
     double blend_m = 0.;
+    // Stage B deformable granular layer depth (Spec §Stage B): 0 keeps
+    // the rigid compatibility path; a nonzero depth in [0.012, 0.150]
+    // is valid only on the loose/scree materials and is omitted from
+    // serialization so existing tracks stay bit-identical.
+    double layer_thickness_m = 0.;
     void validate() const;
 };
 class SurfaceMap {

@@ -129,6 +129,7 @@ add_library(bike_core OBJECT
   "${_bike_native_dir}/src/tyre/profile.cpp"
   "${_bike_native_dir}/src/tyre/distance.cpp"
   "${_bike_native_dir}/src/tyre/station.cpp"
+  "${_bike_native_dir}/src/tyre/rut_memory.cpp"
   "${_bike_native_dir}/src/pneumatic/geometry.cpp"
   "${_bike_native_dir}/src/pneumatic/carcass.cpp"
   "${_bike_native_dir}/src/pneumatic/brush.cpp"
@@ -571,8 +572,18 @@ if(BUILD_TESTING)
   bike_rewrite_mujoco_load_name(native_station_tests
     "${BIKE_DEP_mujoco_LIBRARY}")
 
+  add_executable(native_rut_memory_tests "${_bike_native_tests_dir}/test_rut_memory.cpp")
+  bike_apply_native_policy(native_rut_memory_tests)
+  target_include_directories(native_rut_memory_tests SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(native_rut_memory_tests PRIVATE bike_core bike_engine
+    bike_rider_math)
+  bike_rewrite_mujoco_load_name(native_rut_memory_tests
+    "${BIKE_DEP_mujoco_LIBRARY}")
+
   add_test(NAME native_distance_tests COMMAND native_distance_tests)
   add_test(NAME native_station_tests COMMAND native_station_tests)
+  add_test(NAME native_rut_memory_tests COMMAND native_rut_memory_tests)
 endif()
 
 # The contract-test harness + domain regressions. Added after the native

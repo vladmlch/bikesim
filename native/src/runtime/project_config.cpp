@@ -242,6 +242,9 @@ Value tire(const mdl::BuildRequest& request,
                 {"end_m", real(s.end_m)},
                 {"surface", surface(trn::get_surface(s.surface), include_stage_a)}};
             if (s.blend_m != 0.) sec.emplace_back("blend_m", real(s.blend_m));
+            // Stage B deformable-layer depth: zero is omitted so the
+            // wire stays byte-identical to Stage A.
+            if (s.layer_thickness_m != 0.) sec.emplace_back("layer_thickness_m", real(s.layer_thickness_m));
             sections.push_back(Value{std::move(sec)});
         }
         Object map{{"surface", surface(trn::get_surface(track.surface), include_stage_a)},

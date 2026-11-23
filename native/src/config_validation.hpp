@@ -356,6 +356,26 @@ namespace nativecfg {
         validate(s.front, "config.tire.distributed.front");
         validate(s.rear, "config.tire.distributed.rear");
     }
+    // Stage B deformable-layer depth gate (shared by configured surfaces
+    // and resolved section rows): 0 is the compatibility path; a nonzero
+    // depth engages the granular layer only on loose/scree and only in
+    // the calibrated 12–150 mm band.
+    inline void validate_layer_thickness(double value,
+                                         std::string_view surface,
+                                         const std::string &p) {
+        if (value == 0.0) {
+            validation::nonnegative(value, p);
+            return;
+        }
+        validation::finite(value, p);
+        if (surface != "loose" && surface != "scree")
+            throw std::invalid_argument(
+                p + ": a nonzero layer_thickness_m is valid only on "
+                    "loose or scree");
+        if (value < 0.012 || value > 0.150)
+            throw std::invalid_argument(
+                p + ": layer_thickness_m must lie in [0.012, 0.150] m");
+    }
     inline void validate(const SurfaceSpec &s, std::string_view path = "config.tire.surface") {
         const std::string p(path);
         validation::positive(s.mu_peak, p + ".mu_peak");
@@ -366,6 +386,8 @@ namespace nativecfg {
         validation::nonnegative(s.crr_delta, p + ".crr_delta");
         validation::nonnegative(s.load_sensitivity, p + ".load_sensitivity");
         if (s.load_sensitivity > 0.5) throw std::invalid_argument(p + ".load_sensitivity");
+        validate_layer_thickness(s.layer_thickness_m, s.name,
+                                 p + ".layer_thickness_m");
     }
     inline void validate(const SurfaceMap &map, std::string_view path = "config.tire.surface_map") {
         const std::string p(path);
@@ -379,6 +401,9 @@ namespace nativecfg {
             if (section.start_m >= section.end_m) throw std::invalid_argument(sp + ": unordered interval");
             validation::nonnegative(section.blend_m, sp + ".blend_m");
             validate(section.surface, sp + ".surface");
+            validate_layer_thickness(section.layer_thickness_m,
+                                     section.surface.name,
+                                     sp + ".layer_thickness_m");
         }
         if (n != 0) {
             std::vector<std::size_t> order(n);

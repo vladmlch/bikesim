@@ -234,6 +234,9 @@ namespace biketyre {
             slot.bristle_deflection_m.reserve(n);
         used_.assign(bound, false);
         loss_scratch_.assign(n, 0.0);
+        soil_zero_forces_.assign(n, 0.0);
+        soil_delta_orig_.assign(n, 0.0);
+        soil_z_eq_cur_.assign(n, 0.0);
         sample_scratch_.resize(n);
         brushes_.resize(n + 1);
         // Bound-sized slot banks: evaluate() writes patch elements in
@@ -419,7 +422,7 @@ namespace biketyre {
             std::span<const double> hub_velocity_world_mps,
             double omega_forward_radps, const RoadProfile &road,
             const nativecfg::SurfaceMap &surface_map, double dt_s,
-            WheelOutputs &out) {
+            WheelOutputs &out, const SoilContact *soil) {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         const std::span<const double> &hub = hub_position_world_m;
         const std::span<const double> &velocity =
@@ -452,6 +455,39 @@ namespace biketyre {
                            .road_z_m = hits_scratch_.road_z_m};
         intersect_into(ring_, hub[0], hub[2],
                        tyre_.outer_radius_mm / 1000.0, road, hits);
+
+        // Stage B deformable layer: the ray/road approach re-solves
+        // against the rut memory's load path — each ray's effective
+        // tyre deflection shrinks by the coupled soil depression. The
+        // probe path shares this call verbatim (const state, scratch
+        // only); the committed depression lands through commit_pass
+        // after the carcass kernel fixes element forces.
+        const bool soil_active = soil != nullptr && soil->state != nullptr &&
+                                 soil->state->active();
+        if (soil_active) {
+            // The geometric approach lets the equilibrium depression
+            // z_eq = delta - delta_eff be recovered per ray — the
+            // displacement-driven input commit_pass reproduces on the
+            // nodes so the tire's effective deflection and the
+            // force×displacement bookkeeping agree.
+            std::ranges::copy(hits.delta_m, soil_delta_orig_.begin());
+            soil->state->solve_deflections(
+                    ring_, tyre_,
+                    tyre_.outer_radius_mm * 0.001 * ring_.dtheta_rad(),
+                    hits);
+            for (std::size_t i = 0; i < ring_.n(); ++i) {
+                const double ze =
+                        soil_delta_orig_[i] - hits.delta_m[i];
+                soil_z_eq_cur_[i] =
+                        (soil_delta_orig_[i] > 0.0 &&
+                         std::isfinite(hits.road_x_m[i]))
+                                ? std::max(0.0, ze)
+                                : 0.0;
+            }
+        } else {
+            std::ranges::fill(soil_z_eq_cur_.begin(),
+                              soil_z_eq_cur_.end(), 0.0);
+        }
 
         // model.py:215-237 — the fresh-airborne early-out: advect the
         // Maxwell memory, drop every patch state, report unloaded.
@@ -492,6 +528,13 @@ namespace biketyre {
             if (carcass_state_.initialized())
                 carcass_state_.assign(airborne_carcass_scratch_);
             patch_count_ = 0;
+            // Stage B: an airborne wheel commits a zero-force pass so
+            // the rut memory releases the elastic depth it carried.
+            if (soil != nullptr && soil->commit != nullptr)
+                soil->commit->commit_pass(ring_, tyre_,
+                                          soil_zero_forces_,
+                                          hits.road_x_m,
+                                          soil_z_eq_cur_);
             return;
         }
 
@@ -502,6 +545,15 @@ namespace biketyre {
                               dt_s, omega_forward_radps, speed_mps,
                               carcass_scratch_.buffers);
         const CarcassBuffers &carcass = carcass_scratch_.buffers;
+
+        // Stage B commit: the resolved element forces scatter onto the
+        // world-grid nodes through the conjugate hat map and advance
+        // the rut state on the load path (front wheel lands before the
+        // rear evaluates — the multipass rule).
+        if (soil != nullptr && soil->commit != nullptr)
+            soil->commit->commit_pass(ring_, tyre_,
+                                      carcass.elastic_force_n,
+                                      hits.road_x_m, soil_z_eq_cur_);
 
         // model.py:250-263 — contacting carcass produced no patch:
         // keep the rim fields the kernel committed.
@@ -672,6 +724,30 @@ namespace biketyre {
             contactlaw::finite_result({patch_crr, wheel_normal_load_n});
             rolling_crr += (normal_load_n / wheel_normal_load_n) * patch_crr;
             contactlaw::finite_result({rolling_crr});
+
+            // Stage B basal-slip ceiling (research 05 §2.2): on
+            // deformable ground the slope-coupled whole-layer slip
+            // limit caps the effective friction the brush may use —
+            // τ_avail = min(τ_local, τ_basal^max/α_τ) folded into a
+            // mu cap on the resolved patch surface. The scratch spec
+            // receives the capped row so the authored spec stays
+            // untouched.
+            if (soil != nullptr && soil->state != nullptr &&
+                soil->state->active()) {
+                const double patch_area_m2 =
+                        tyre_.casing_width_mm * 0.001 * contact_length_m;
+                const double mu_cap = soil->state->traction_mu_cap(
+                        centroid_world_m[0], patch_area_m2, normal_load_n);
+                if (std::isfinite(mu_cap) && mu_cap < surface->mu_slide) {
+                    if (surface != &surface_scratch_)
+                        surface_scratch_ = *surface;
+                    surface_scratch_.mu_peak =
+                            std::min(surface_scratch_.mu_peak, mu_cap);
+                    surface_scratch_.mu_slide =
+                            std::min(surface_scratch_.mu_slide, mu_cap);
+                    surface = &surface_scratch_;
+                }
+            }
 
             // model.py:319-348 — patch slip state, then the brush.
             // The migration emitted one slot per contact patch in the
@@ -844,13 +920,14 @@ namespace biketyre {
             std::span<const double> hub_position_world_m,
             std::span<const double> hub_velocity_world_mps,
             double omega_forward_radps, const RoadProfile &road,
-            const nativecfg::SurfaceMap &surface_map, double dt_s) {
+            const nativecfg::SurfaceMap &surface_map, double dt_s,
+            const SoilContact *soil) {
         // Stage into the scratch outputs, then the O(1) swap commit —
         // a thrown step leaves last_outputs_ holding the previous
         // complete result, matching self.last_outputs = outputs.
         evaluate_impl(hub_position_world_m, hub_velocity_world_mps,
                       omega_forward_radps, road, surface_map, dt_s,
-                      staging_);
+                      staging_, soil);
         std::swap(last_outputs_, staging_);
         return last_outputs_;
     }
@@ -860,14 +937,14 @@ namespace biketyre {
             std::span<const double> hub_velocity_world_mps,
             double omega_forward_radps, const RoadProfile &road,
             const nativecfg::SurfaceMap &surface_map, double dt_s,
-            WheelOutputs &out) {
+            WheelOutputs &out, const SoilContact *soil) {
         if (out.patch_slots.size() < max_patches())
             throw std::invalid_argument(
                     "evaluate_into: out.patch_slots must hold the "
                     "model's patch bound");
         evaluate_impl(hub_position_world_m, hub_velocity_world_mps,
                       omega_forward_radps, road, surface_map, dt_s,
-                      out);
+                      out, soil);
         // self.last_outputs = outputs — the semantic-state commit
         // applies to the caller-buffer path too.
         last_outputs_ = out;

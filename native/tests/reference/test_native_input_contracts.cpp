@@ -8,6 +8,7 @@
 // linux-aarch64.
 #include <algorithm>
 #include <array>
+#include <format>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -26,6 +27,7 @@
 #include "model/builder.hpp"
 #include "runtime/project_config.hpp"
 #include "runtime/value_readers.hpp"
+#include "terrain/trackfile.hpp"
 #include "writer_config.hpp"
 #include "writers/resistance.hpp"
 
@@ -1119,6 +1121,248 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
             "surface");
     }
 }
+
+// ---- Stage B: deformable layer depth (layer_thickness_m) contracts --------
+//
+// The depth is a placement choice: nonzero values are valid only on the
+// deformable loose/scree materials inside the calibrated [0.012, 0.150] m
+// band; 0.0 is the Stage A compatibility path and serializes absent.
+
+// Registry-resolved nativecfg::SurfaceSpec — the typed-config spelling the
+// writer's validate() gates read.
+[[nodiscard]] nativecfg::SurfaceSpec stage_b_surface_spec(std::string_view name) {
+    const auto &s = bike::terrain::get_surface(name);
+    return {.name = s.name, .mu_peak = s.mu_peak, .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .crr_delta = s.crr_delta, .load_sensitivity = s.load_sensitivity};
+}
+
+// The same record in wire spelling (project_config's surface() shape).
+[[nodiscard]] Value stage_b_wire_surface(std::string_view name) {
+    const auto &s = bike::terrain::get_surface(name);
+    return Value{Value::Object{
+        {"name", text(s.name)}, {"mu_peak", real(s.mu_peak)},
+        {"mu_slide", real(s.mu_slide)},
+        {"slip_stiffness_per_load", real(s.slip_stiffness_per_load)},
+        {"stribeck_speed_mps", real(s.stribeck_speed_mps)},
+        {"crr_delta", real(s.crr_delta)},
+        {"load_sensitivity", real(s.load_sensitivity)}}};
+}
+
+[[gnu::noinline]] void test_stage_b_layer_thickness_contracts() {
+    // 1. Material record (tire.surface_map.surface, every nested *.surface
+    //    dict, tire.pneumatic.surface): the band keys off the record name.
+    for (const std::string_view rigid : {"asphalt", "hardpack", "wet"}) {
+        auto bad = stage_b_surface_spec(rigid);
+        bad.layer_thickness_m = 0.05;
+        bt::invalid([&] { nativecfg::validate(bad); });
+    }
+    for (const std::string_view soft : {"loose", "scree"}) {
+        for (const double depth : {0.05, 0.012, 0.150}) {
+            auto good = stage_b_surface_spec(soft);
+            good.layer_thickness_m = depth;
+            nativecfg::validate(good);  // the band edges are inclusive
+        }
+        for (const double depth : {0.005, 0.5, -0.01}) {
+            auto bad = stage_b_surface_spec(soft);
+            bad.layer_thickness_m = depth;
+            bt::invalid([&] { nativecfg::validate(bad); });
+        }
+        auto zero = stage_b_surface_spec(soft);
+        zero.layer_thickness_m = 0.0;
+        nativecfg::validate(zero);  // Stage A compatibility depth
+    }
+    // 2. Section rows (tire.surface_map.sections[i].layer_thickness_m):
+    //    the same band keyed off the section's resolved surface name.
+    const auto hardpack = stage_b_surface_spec("hardpack");
+    for (const std::string_view rigid : {"asphalt", "hardpack", "wet"}) {
+        const nativecfg::SurfaceMap map{
+            .surface = hardpack,
+            .sections = {{.start_m = 1.0, .end_m = 3.0,
+                          .surface = stage_b_surface_spec(rigid),
+                          .blend_m = 0.0, .layer_thickness_m = 0.05}}};
+        bt::invalid([&] { nativecfg::validate(map); });
+    }
+    for (const std::string_view soft : {"loose", "scree"}) {
+        for (const double depth : {0.005, 0.5}) {
+            const nativecfg::SurfaceMap map{
+                .surface = hardpack,
+                .sections = {{.start_m = 1.0, .end_m = 3.0,
+                              .surface = stage_b_surface_spec(soft),
+                              .blend_m = 0.0, .layer_thickness_m = depth}}};
+            bt::invalid([&] { nativecfg::validate(map); });
+        }
+        const nativecfg::SurfaceMap ok{
+            .surface = hardpack,
+            .sections = {{.start_m = 1.0, .end_m = 3.0,
+                          .surface = stage_b_surface_spec(soft),
+                          .blend_m = 0.0, .layer_thickness_m = 0.05}}};
+        nativecfg::validate(ok);
+        // A zero depth on any section keeps the Stage A row valid.
+        const nativecfg::SurfaceMap zero{
+            .surface = hardpack,
+            .sections = {{.start_m = 1.0, .end_m = 3.0,
+                          .surface = stage_b_surface_spec("asphalt"),
+                          .blend_m = 0.0, .layer_thickness_m = 0.0}}};
+        nativecfg::validate(zero);
+    }
+    // A nested *.surface record's own layer field obeys the same rule
+    // against its own name even when the section row stays zero.
+    {
+        auto nested = stage_b_surface_spec("asphalt");
+        nested.layer_thickness_m = 0.05;
+        const nativecfg::SurfaceMap map{
+            .surface = hardpack,
+            .sections = {{.start_m = 1.0, .end_m = 3.0,
+                          .surface = nested,
+                          .blend_m = 0.0, .layer_thickness_m = 0.0}}};
+        bt::invalid([&] { nativecfg::validate(map); });
+    }
+    // 3. Wire spelling: the key is optional, defaults to 0.0, and the
+    //    resolved Stepper ingress enforces the same band.
+    {
+        Value wire = resolved_wire();
+        const auto decoded = nativecfg::decode(wire);
+        const auto &sm =
+            decoded.tire.value().surface_map.value(); // NOLINT(bugprone-unchecked-optional-access)
+        bt::require(sm.sections.at(0).layer_thickness_m == 0.0,
+                    "absent layer_thickness_m decodes to the 0.0 default");
+        const auto &sm_obj = io::as_object(
+            at(wire, {"tire", "surface_map", "surface"}), "sm.surface");
+        bt::require(io::find_member(sm_obj, "layer_thickness_m") == nullptr,
+                    "resolved wire omits a zero default-surface layer depth");
+    }
+    for (const std::string_view rigid : {"asphalt", "hardpack", "wet"}) {
+        Value bad = resolved_wire();
+        auto &sec = at(bad, {"tire", "surface_map", "sections", "0"});
+        set(sec, "surface", stage_b_wire_surface(rigid));
+        set(sec, "layer_thickness_m", real(0.05));
+        error<std::invalid_argument>(
+            [&] { (void)resolved_stepper(bad); }, "layer_thickness_m");
+    }
+    for (const std::string_view soft : {"loose", "scree"}) {
+        for (const double depth : {0.005, 0.5}) {
+            Value bad = resolved_wire();
+            auto &sec = at(bad, {"tire", "surface_map", "sections", "0"});
+            set(sec, "surface", stage_b_wire_surface(soft));
+            set(sec, "layer_thickness_m", real(depth));
+            error<std::invalid_argument>(
+                [&] { (void)resolved_stepper(bad); }, "layer_thickness_m");
+        }
+        Value good = resolved_wire();
+        auto &sec = at(good, {"tire", "surface_map", "sections", "0"});
+        set(sec, "surface", stage_b_wire_surface(soft));
+        set(sec, "layer_thickness_m", real(0.05));
+        (void)resolved_stepper(good);  // valid control
+    }
+    // 4. Track-file domain: terrain::SurfaceSection::validate inside
+    //    TrackSpec::validate, the TOML ingress, and dump_track's
+    //    nonzero-only emission.
+    for (const std::string_view rigid : {"asphalt", "hardpack", "wet"}) {
+        auto track = bike::terrain::flat(30.0);
+        track.surface_sections = {{.start_m = 5.0, .end_m = 10.0,
+                                   .surface = std::string(rigid),
+                                   .blend_m = 0.0,
+                                   .layer_thickness_m = 0.05}};
+        bt::invalid([&] { track.validate(); });
+    }
+    for (const std::string_view soft : {"loose", "scree"}) {
+        for (const double depth : {0.005, 0.5}) {
+            auto track = bike::terrain::flat(30.0);
+            track.surface_sections = {{.start_m = 5.0, .end_m = 10.0,
+                                       .surface = std::string(soft),
+                                       .blend_m = 0.0,
+                                       .layer_thickness_m = depth}};
+            bt::invalid([&] { track.validate(); });
+        }
+        auto ok = bike::terrain::flat(30.0);
+        ok.surface_sections = {{.start_m = 5.0, .end_m = 10.0,
+                                .surface = std::string(soft),
+                                .blend_m = 0.0,
+                                .layer_thickness_m = 0.05}};
+        ok.validate();
+        const auto toml = std::format(
+            "name='layer'\nlength_m=30\nsurface_sections="
+            "[{{start_m=5.0,end_m=10.0,surface='{}',layer_thickness_m=0.05}}]\n",
+            soft);
+        (void)bike::terrain::track_from_dict(
+            bike::terrain::parse_track_toml(toml));
+    }
+    // TOML ingress rejects the same invalid spellings as TrackFileError
+    // (an invalid_argument), before any writer sees them.
+    bt::invalid([&] {
+        (void)bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
+            "name='bad'\nlength_m=30\nsurface_sections="
+            "[{start_m=5.0,end_m=10.0,surface='asphalt',layer_thickness_m=0.05}]\n"));
+    });
+    bt::invalid([&] {
+        (void)bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
+            "name='bad'\nlength_m=30\nsurface_sections="
+            "[{start_m=5.0,end_m=10.0,surface='scree',layer_thickness_m=0.005}]\n"));
+    });
+    bt::invalid([&] {
+        (void)bike::terrain::track_from_dict(bike::terrain::parse_track_toml(
+            "name='bad'\nlength_m=30\nsurface_sections="
+            "[{start_m=5.0,end_m=10.0,surface='scree',layer_thickness_m=0.5}]\n"));
+    });
+    {
+        auto track = bike::terrain::flat(30.0);
+        track.surface_sections = {{.start_m = 5.0, .end_m = 10.0,
+                                   .surface = "scree", .blend_m = 0.0,
+                                   .layer_thickness_m = 0.05}};
+        const std::string dumped = bike::terrain::dump_track(track);
+        bt::require(dumped.find("layer_thickness_m") != std::string::npos,
+                    "nonzero layer depth serializes into the track file");
+        const auto reparsed = bike::terrain::track_from_dict(
+            bike::terrain::parse_track_toml(dumped));
+        bt::require(reparsed.surface_sections.at(0).layer_thickness_m == 0.05,
+                    "layer depth round-trips through the track file");
+        auto zero = bike::terrain::flat(30.0);
+        zero.surface_sections = {{.start_m = 5.0, .end_m = 10.0,
+                                  .surface = "scree", .blend_m = 0.0,
+                                  .layer_thickness_m = 0.0}};
+        bt::require(bike::terrain::dump_track(zero)
+                        .find("layer_thickness_m") == std::string::npos,
+                    "zero layer depth is omitted from the track dump");
+    }
+    // 5. project_writer_config emits the wire key iff the placement
+    //    carries a nonzero depth — the pneumatic backend's surface_map
+    //    row is the only consumer.
+    {
+        auto track = std::make_unique<bike::terrain::TrackSpec>(
+            bike::terrain::flat(30.0));
+        track->surface = "asphalt";
+        track->surface_sections = {
+            {.start_m = 5.0, .end_m = 10.0, .surface = "scree",
+             .blend_m = 0.0, .layer_thickness_m = 0.05},
+            {.start_m = 12.0, .end_m = 18.0, .surface = "hardpack",
+             .blend_m = 0.0, .layer_thickness_m = 0.0}};
+        auto req = std::make_unique<bike::model::BuildRequest>();
+        req->mode = "ride";
+        req->rider = bike::configuration::RiderSpecs{};
+        req->rider->variant = "articulated_planar";
+        req->physics = bike::configuration::load_physics(
+            bt::fixture("config/viewer_physics_pneumatic.toml"));
+        req->field = bike::terrain::HeightFieldSpec::for_track(*track);
+        const auto model =
+            bike::model::compile_mjcf(bike::model::generate_mjcf(*req));
+        Value projected =
+            runtime::project_writer_config(*req, *model, *track);
+        const auto &secs = io::as_array(
+            at(projected, {"tire", "surface_map", "sections"}), "sm.sections");
+        const auto &sec0 = io::as_object(secs.at(0), "sec0");
+        const auto &sec1 = io::as_object(secs.at(1), "sec1");
+        const auto *layer0 = io::find_member(sec0, "layer_thickness_m");
+        const auto *layer1 = io::find_member(sec1, "layer_thickness_m");
+        bt::require(layer0 != nullptr &&
+                        io::as_double(*layer0, "sec0.layer_thickness_m") ==
+                            0.05,
+                    "nonzero section depth projects onto the wire row");
+        bt::require(layer1 == nullptr,
+                    "zero section depth omits the wire key");
+    }
+}
 } // namespace
 
 // Each contract body is noinline so its by-value Value snapshots live in
@@ -1157,5 +1401,6 @@ int main() {
         test_stage_a_surface_map_order_and_gap_contracts();
         test_stage_a_configured_pneumatic_surface_projection();
         test_stage_a_negative_blend_rejected_by_projection();
+        test_stage_b_layer_thickness_contracts();
     });
 }

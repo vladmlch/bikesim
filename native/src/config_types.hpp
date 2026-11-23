@@ -258,17 +258,23 @@ namespace nativecfg {
 
     // SurfaceSpec (terrain/surface.py:31-88) with the registry name already
     // resolved — the writer only ever calls mu(slip) and reads .name.
+    // Stage B adds the optional deformable-layer depth a configured
+    // uniform surface carries; zero keeps the wire byte-identical.
     struct SurfaceSpec {
         std::string name;
         double mu_peak{}, mu_slide{}, slip_stiffness_per_load{}, stribeck_speed_mps{};
         double crr_delta{}, load_sensitivity{};
+        double layer_thickness_m{};
     };
 
-    // SurfaceSection — a half-open material interval on the track axis.
+    // SurfaceSection — a half-open material interval on the track axis;
+    // Stage B adds the optional deformable-layer depth the placement
+    // carries (zero = rigid compatibility path).
     struct SurfaceSection {
         double start_m{}, end_m{};
         SurfaceSpec surface;
         double blend_m{};
+        double layer_thickness_m{};
     };
 
     // MicroSurfaceSpan — Stage C obstacle-local material overlay (Spec

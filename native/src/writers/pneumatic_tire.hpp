@@ -207,6 +207,27 @@ public:
         return out;
     }
 
+    // Stage B deformable granular layer: engaged when the resolved
+    // surface map carries a positive layer_thickness_m on a loose or
+    // scree section. The committed soil elastic energy already folds
+    // into elastic_energy_j()/stored_energy(); these are the direct
+    // accessors plus the sparse state-diff face the reset/restore
+    // paths use.
+    [[nodiscard]] bool has_deformable_layer() const noexcept {
+        return rut_memory_.has_value();
+    }
+    [[nodiscard]] const biketyre::RutMemory *rut_memory() const noexcept {
+        return rut_memory_ ? &*rut_memory_ : nullptr;
+    }
+    [[nodiscard]] double soil_elastic_energy_j() const noexcept {
+        return rut_memory_ ? rut_memory_->soil_elastic_energy_j() : 0.0;
+    }
+    [[nodiscard]] double ground_plastic_loss_step_j() const noexcept {
+        return rut_memory_ ? rut_memory_->step_plastic_loss_j() : 0.0;
+    }
+    [[nodiscard]] biketyre::RutStateDiff rut_state() const;
+    void restore_rut_state(const biketyre::RutStateDiff &diff);
+
     // Post-commit counters (pneumatic_tire_forces.py:472-474).
     [[nodiscard]] double elastic_energy_j() const noexcept {
         return elastic_energy_j_;
@@ -246,7 +267,8 @@ private:
             const std::array<std::unique_ptr<biketyre::PneumaticTyreModel>,
                              2> &tyres,
             double &energy_out, double &brush_loss_out,
-            double &radial_power_out);
+            double &radial_power_out,
+            const biketyre::SoilContact *soil = nullptr);
     // NOLINTEND(bugprone-easily-swappable-parameters)
 
     // _radial_energy_j (pneumatic_tire_forces.py:57-66) over a fresh
@@ -279,6 +301,20 @@ private:
     // engaged once at construction — the writer never runs without it.
     std::optional<biketyre::RoadProfile> profile_;
     nativecfg::SurfaceMap surface_map_;
+    // Stage B 1D rut memory over the profile grid — engaged iff a
+    // deformable (loose/scree) section carries layer_thickness_m > 0.
+    // rut_backup_ is the pre-evaluate rollback twin of backup_.
+    std::optional<biketyre::RutMemory> rut_memory_, rut_backup_;
+    // Canonical-state rut block: rut.count plus rut_slots_ node-record
+    // slots (index, z_max, z_p, z_e). The slot bound caps serialized
+    // dirty nodes; set_state stages the validated diff here so the
+    // no-throw commit only applies it.
+    std::size_t rut_slots_ = 0;
+    biketyre::RutStateDiff rut_diff_stage_;
+    std::size_t prepared_rut_count_ = 0;
+    // Front-tire contact half-width [m] cached at construction so the
+    // no-throw rut commit never re-derives it through engaged().
+    double rut_half_width_m_ = 0.0;
     // _WheelBinding fields per ('front','rear') insertion order.
     std::array<int, 2> bodies_{}, geoms_{}, spin_dofs_{};
     std::array<double, 2> radii_{};

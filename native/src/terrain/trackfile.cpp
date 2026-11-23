@@ -251,6 +251,9 @@ Value track_value(const TrackSpec& track,bool identity){
         for(const auto& s:mapping.sections()){
             Value::Object sec{{"start_m",detail::number(s.start_m)},{"end_m",detail::number(s.end_m)},{"surface",Value{s.surface}}};
             if(s.blend_m!=0.)sec.emplace_back("blend_m",detail::number(s.blend_m));
+            // Stage B: a zero layer depth is omitted so every existing
+            // track keeps its exact field set and sha identity.
+            if(s.layer_thickness_m!=0.)sec.emplace_back("layer_thickness_m",detail::number(s.layer_thickness_m));
             sections.push_back(Value{std::move(sec)});
         }
         out.emplace_back("surface_sections",Value{std::move(sections)});
@@ -454,7 +457,7 @@ for(const auto& o:hand)reserved.emplace_back(o.start_m(),o.end_m());
         const auto& obj=bike::io::as_object(entry,"surface section");
         for(const auto& [key,val]:obj){
             (void)val;
-            if(key!="start_m"&&key!="end_m"&&key!="surface"&&key!="blend_m")
+            if(key!="start_m"&&key!="end_m"&&key!="surface"&&key!="blend_m"&&key!="layer_thickness_m")
                 throw TrackFileError("surface section: unknown key '"+key+"'");
         }
         const auto* start_v=detail::member(entry,"start_m");
@@ -462,11 +465,13 @@ for(const auto& o:hand)reserved.emplace_back(o.start_m(),o.end_m());
         const auto* surf_v=detail::member(entry,"surface");
         if(!start_v||!end_v||!surf_v)throw TrackFileError("surface section needs start_m, end_m and surface");
         const auto* blend_v=detail::member(entry,"blend_m");
+        const auto* layer_v=detail::member(entry,"layer_thickness_m");
         SurfaceSection s{
             .start_m=bike::io::as_double(*start_v,"surface.start_m"),
             .end_m=bike::io::as_double(*end_v,"surface.end_m"),
             .surface=bike::io::as_string(*surf_v,"surface.surface"),
-            .blend_m=blend_v?bike::io::as_double(*blend_v,"surface.blend_m"):0.
+            .blend_m=blend_v?bike::io::as_double(*blend_v,"surface.blend_m"):0.,
+            .layer_thickness_m=layer_v?bike::io::as_double(*layer_v,"surface.layer_thickness_m"):0.
         };
         try{s.validate();}catch(const std::invalid_argument& e){throw TrackFileError(e.what());}
         track.surface_sections.push_back(std::move(s));

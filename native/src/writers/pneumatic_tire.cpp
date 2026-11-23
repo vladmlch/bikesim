@@ -240,6 +240,26 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
             "pneumatic tires need a track surface map or a configured "
             "surface");
     }
+    // Stage B deformable granular layer: the 1D rut memory engages iff
+    // the default material or a loose/scree section carries
+    // layer_thickness_m > 0; otherwise the optionals stay disengaged
+    // and every path stays bitwise.
+    const bool deformable_base =
+        biketyre::is_deformable_surface(surface_map_.surface.name) &&
+        surface_map_.surface.layer_thickness_m > 0.0;
+    if (deformable_base ||
+        std::ranges::any_of(surface_map_.sections, [](const auto &sec) {
+            return biketyre::is_deformable_surface(sec.surface.name) &&
+                   sec.layer_thickness_m > 0.0;
+        })) {
+        rut_memory_.emplace(engaged(profile_), surface_map_);
+        rut_backup_.emplace(engaged(profile_), surface_map_);
+        // The front wheel is the compacting pass that defines the
+        // rut's yield surface — cache its half-width for the no-throw
+        // commit/restore paths (they cannot call engaged()).
+        rut_half_width_m_ =
+                0.5 * pneu.front.casing_width_mm * 0.001;
+    }
     // :92-99 — self.wheels, resolved in dict-literal order.
     const WheelBinding front =
             resolve_wheel(m_, "front_wheel", "front_wheel_spin",
@@ -355,9 +375,19 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
         diagnostics_stage_[s].surface.reserve(surface_capacity);
     }
     // :136-146 — the canonical wire columns, built once: side-major,
-    // ray-major leaf order, then carcass/rim/patch records.
+    // ray-major leaf order, then carcass/rim/patch records. Stage B
+    // appends a sparse rut block (rut.count + rut.node.* records) only
+    // when the deformable layer engages — a disengaged writer keeps
+    // the exact Stage A row.
+    // Stage B rut block capacity: the sparse diff can dirty every grid
+    // node on a full-length deformable ride (130 m at dx = 5 mm ->
+    // 26001 nodes), so the slot bound IS the profile grid — sized from
+    // the engaged RutMemory, never an arbitrary fixed cap that a long
+    // scree track could overflow inside state().
+    rut_slots_ = rut_memory_ ? rut_memory_->node_count() : 0;
     const std::size_t side_cols = 4 * n + 8 + 3 * max_patches_;
-    const std::size_t cols = 2 * side_cols;
+    const std::size_t cols =
+            2 * side_cols + (rut_slots_ > 0 ? 1 + 4 * rut_slots_ : 0);
     state_names_.reserve(cols);
     canonical_.reserve(cols);
     wire_cols_.resize(cols);
@@ -394,6 +424,22 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
                 state_names_.push_back(std::move(name));
             }
     }
+    if (rut_slots_ > 0) {
+        static const std::array<const char *, 4> kRutLeaves{
+                "index", "z_max_m", "z_p_m", "z_e_m"};
+        {
+            const std::string name = "rut.count";
+            canonical_.emplace(name, state_names_.size());
+            state_names_.push_back(name);
+        }
+        for (std::size_t k = 0; k < rut_slots_; ++k)
+            for (const char *leaf: kRutLeaves) {
+                std::string name =
+                        std::format("rut.node.{:04d}.{}", k, leaf);
+                canonical_.emplace(name, state_names_.size());
+                state_names_.push_back(std::move(name));
+            }
+    }
     // self.reset() (:122) — the member initializers hold the cleared
     // values already; the models were fresh-constructed.
 }
@@ -404,6 +450,10 @@ void PneumaticTireWriter::reset() {
     // capacity — like DistributedTireWriter::reset.
     for (const auto &tyre: tyres_)
         tyre->reset();
+    // Stage B: the rut memory and its energy/loss accumulators clear
+    // with the wheels.
+    if (rut_memory_)
+        rut_memory_->reset();
     static const TireSnapshot empty_snapshot;
     static const TireDiagnostics empty_diagnostics{};
     for (TireSnapshot &snap: snapshots_)
@@ -429,7 +479,9 @@ std::vector<double> PneumaticTireWriter::state() const {
     const std::size_t width = max_patches_;
     const std::size_t side_cols = 4 * n + 8 + 3 * width;
     const double nan = std::numeric_limits<double>::quiet_NaN();
-    std::vector<double> row(2 * side_cols, nan);
+    std::vector<double> row(
+            2 * side_cols + (rut_slots_ > 0 ? 1 + 4 * rut_slots_ : 0),
+            nan);
     for (std::size_t s = 0; s < 2; ++s) {
         const biketyre::PneumaticTyreModel &tyre = *tyres_[s];
         const std::size_t base = s * side_cols;
@@ -488,6 +540,25 @@ std::vector<double> PneumaticTireWriter::state() const {
                     static_cast<double>(patches[k].stop);
             row[rim + 7 + 3 * k + 2] = patches[k].kappa_prime;
         }
+    }
+    // Stage B rut block: the sparse diff flattens to node records in
+    // index order (index, z_max_m, z_p_m, z_e_m); slots past the dirty
+    // count stay NaN, so a virgin layer serializes as count = 0.
+    if (rut_memory_) {
+        const biketyre::RutStateDiff diff = rut_memory_->snapshot();
+        if (diff.z_max_m.size() > rut_slots_)
+            throw std::runtime_error(
+                    "rut state exceeds the serialized slot bound");
+        const std::size_t base = 2 * side_cols;
+        row[base] = static_cast<double>(diff.z_max_m.size());
+        std::size_t at = 0, slot = 0;
+        for (const auto &[b, e]: diff.spans)
+            for (std::size_t g = b; g < e; ++g, ++at, ++slot) {
+                row[base + 1 + 4 * slot + 0] = static_cast<double>(g);
+                row[base + 1 + 4 * slot + 1] = diff.z_max_m[at];
+                row[base + 1 + 4 * slot + 2] = diff.z_p_m[at];
+                row[base + 1 + 4 * slot + 3] = diff.z_e_m[at];
+            }
     }
     return row;
 }
@@ -677,6 +748,65 @@ void PneumaticTireWriter::prepare_state(
                                .rim_active = rim_active == 1.0,
                                .patch_count = count};
     }
+    // Stage B rut block — the same validate-everything discipline as
+    // the wheel halves: count bound, per-slot finiteness/domain rules,
+    // strictly increasing node indices merged into spans, and the
+    // NaN-outside-count convention the patch slots use.
+    if (rut_memory_) {
+        const std::size_t base = 2 * side_cols;
+        const double count_value = wire_cols_[base];
+        if (!std::isfinite(count_value) || count_value < 0.0 ||
+            count_value != std::trunc(count_value) ||
+            count_value > static_cast<double>(rut_slots_))
+            throw std::runtime_error(
+                    "tire state column rut.count must be an integer "
+                    "inside the slot bound");
+        const std::size_t count = static_cast<std::size_t>(count_value);
+        rut_diff_stage_.spans.clear();
+        rut_diff_stage_.z_max_m.clear();
+        rut_diff_stage_.z_p_m.clear();
+        rut_diff_stage_.z_e_m.clear();
+        std::uint32_t previous_index = 0;
+        for (std::size_t k = 0; k < count; ++k) {
+            const double index = wire_cols_[base + 1 + 4 * k + 0];
+            const double zm = wire_cols_[base + 1 + 4 * k + 1];
+            const double zp = wire_cols_[base + 1 + 4 * k + 2];
+            const double ze = wire_cols_[base + 1 + 4 * k + 3];
+            if (!std::isfinite(index) ||
+                index != std::trunc(index) || index < 0.0 ||
+                index >= static_cast<double>(rut_memory_->node_count()))
+                throw std::runtime_error(std::format(
+                        "tire state rut.node.{:04d}.index outside the "
+                        "profile grid", k));
+            const auto gi = static_cast<std::uint32_t>(index);
+            if (k != 0 && gi <= previous_index)
+                throw std::runtime_error(
+                        "tire state rut.node.* records must be in "
+                        "strictly increasing index order");
+            if (!std::isfinite(zm) || !std::isfinite(zp) ||
+                !std::isfinite(ze) || zm < 0.0 || zp < 0.0 ||
+                ze < 0.0 || zp > zm || ze > zm)
+                throw std::runtime_error(std::format(
+                        "tire state rut.node.{:04d} carries an invalid "
+                        "(z_max, z_p, z_e) triple", k));
+            if (!rut_diff_stage_.spans.empty() &&
+                rut_diff_stage_.spans.back().second == gi)
+                ++rut_diff_stage_.spans.back().second;
+            else
+                rut_diff_stage_.spans.emplace_back(gi, gi + 1);
+            rut_diff_stage_.z_max_m.push_back(zm);
+            rut_diff_stage_.z_p_m.push_back(zp);
+            rut_diff_stage_.z_e_m.push_back(ze);
+            previous_index = gi;
+        }
+        for (std::size_t k = count; k < rut_slots_; ++k)
+            for (std::size_t leaf = 0; leaf < 4; ++leaf)
+                if (std::isfinite(wire_cols_[base + 1 + 4 * k + leaf]))
+                    throw std::runtime_error(std::format(
+                            "tire state rut.node.{:04d} is set past "
+                            "rut.count", k));
+        prepared_rut_count_ = count;
+    }
 }
 
 void PneumaticTireWriter::commit_prepared_state() noexcept {
@@ -711,11 +841,35 @@ void PneumaticTireWriter::commit_prepared_state() noexcept {
                                           patch_stage_[s])
                                           .first(prepared_scalars_[s].patch_count));
     }
+    // Stage B rut commit: prepare_state already ran every domain gate
+    // restore() would, so the capacity-bound apply stays no-throw. The
+    // front tyre's half-width re-derives the unload stiffness — the
+    // compacting wheel defines the rut's yield surface.
+    if (rut_memory_)
+        rut_memory_->apply_diff(rut_diff_stage_, rut_half_width_m_);
     last_time_s_.reset();
+}
+
+biketyre::RutStateDiff PneumaticTireWriter::rut_state() const {
+    return rut_memory_ ? rut_memory_->snapshot()
+                       : biketyre::RutStateDiff{};
+}
+
+void PneumaticTireWriter::restore_rut_state(
+        const biketyre::RutStateDiff &diff) {
+    if (!rut_memory_)
+        throw std::invalid_argument(
+                "rut state restore needs an engaged deformable layer");
+    rut_memory_->restore(diff, rut_half_width_m_);
 }
 
 // _intersect (pneumatic_tire_forces.py:295-303) into the shared
 // hit-buffer scratch — caller reads `out` before the next call.
+// Stage B: on a deformable layer the geometric approach is not the
+// tyre deflection — the committed rut memory re-solves each ray's
+// equilibrium depression (const, scratch-only) so the energy and
+// penetration channels see the same effective deflection the force
+// path used. Rigid profiles keep the oracle's raw intersect bitwise.
 void PneumaticTireWriter::intersect_at(
         const biketyre::PneumaticTyreModel &tyre, double hub_x_m,
         double hub_z_m, biketyre::RayHitBuffers &out) const {
@@ -726,6 +880,12 @@ void PneumaticTireWriter::intersect_at(
     biketyre::intersect_into(tyre.ring(), hub_x_m, hub_z_m,
                              tyre.tyre().outer_radius_mm / 1000.0,
                              engaged(profile_), out);
+    if (rut_memory_ && rut_memory_->active())
+        rut_memory_->solve_deflections(
+                tyre.ring(), tyre.tyre(),
+                tyre.tyre().outer_radius_mm * 0.001 *
+                        tyre.ring().dtheta_rad(),
+                out);
 }
 
 // Air, carcass, Maxwell and rim elastic energy, summed over the rays.
@@ -780,7 +940,9 @@ double PneumaticTireWriter::stored_energy(const mjData *d) const {
                 tyre, std::span<const double>(hits.delta_m));
         energy += shear_energy_j(tyre);
     }
-    return energy;
+    // Stage B: the committed soil elastic depression is stored energy
+    // the same as the carcass's — the exact-balance audit folds it.
+    return energy + soil_elastic_energy_j();
 }
 
 // Caller precondition: `d` is the live mjData of the model this writer
@@ -852,25 +1014,41 @@ void PneumaticTireWriter::accumulate_validated(const mjData *d,
     // construction-sized backup bank.
     backup_[0]->assign(*tyres_[0]);
     backup_[1]->assign(*tyres_[1]);
+    if (rut_memory_ && rut_backup_) {
+        rut_backup_->assign(*rut_memory_);
+        rut_memory_->begin_step();
+    }
     try {
         double energy = 0.0, brush_loss = 0.0, radial_power = 0.0;
+        const biketyre::SoilContact soil{
+            .state = rut_memory_ ? &*rut_memory_ : nullptr,
+            .commit = rut_memory_ ? &*rut_memory_ : nullptr};
+        // Stage B multipass: front commits its plastic sinkage inside
+        // its own evaluate before the rear wheel evaluates — the rear
+        // rides the preconsolidated rut on the same step. The step
+        // coverage window opened by begin_step() spans both passes.
         evaluate_wheels(d, dt, time, out, tyres_, energy, brush_loss,
-                        radial_power);
+                        radial_power, &soil);
+        if (rut_memory_) rut_memory_->finish_step();
         // :471-474 — the atomic commit after both wheels evaluate.
         snapshots_[0] = snapshot_stage_[0];
         snapshots_[1] = snapshot_stage_[1];
         diagnostics_[0] = diagnostics_stage_[0];
         diagnostics_[1] = diagnostics_stage_[1];
         committed_ = true;
-        elastic_energy_j_ = energy;
-        brush_loss_step_j_ = brush_loss;
+        elastic_energy_j_ = energy + soil_elastic_energy_j();
+        brush_loss_step_j_ =
+                brush_loss + ground_plastic_loss_step_j();
         radial_dissipation_power_w_ = radial_power;
         last_time_s_ = time;
     } catch (...) {
         // :468-470 — `self.states = backup`: restore BOTH models'
-        // semantic state before the error propagates.
+        // semantic state before the error propagates — and the rut
+        // memory's, so a rejected step is a full rollback.
         tyres_[0]->assign(*backup_[0]);
         tyres_[1]->assign(*backup_[1]);
+        if (rut_memory_ && rut_backup_)
+            rut_memory_->assign(*rut_backup_);
         throw;
     }
 }
@@ -885,7 +1063,8 @@ void PneumaticTireWriter::evaluate_wheels(
         const std::array<std::unique_ptr<biketyre::PneumaticTyreModel>,
                          2> &tyres,
         double &energy_out, double &brush_loss_out,
-        double &radial_power_out) {
+        double &radial_power_out,
+        const biketyre::SoilContact *soil) {
     // NOLINTEND(bugprone-easily-swappable-parameters)
     std::ranges::fill(out, 0.0); // :360 — np.zeros(model.nv)
     const std::size_t nv = static_cast<std::size_t>(nv_);
@@ -914,7 +1093,7 @@ void PneumaticTireWriter::evaluate_wheels(
                 std::span<const mjtNum>(velocity6_).subspan(
                         model_access::kXYZ, model_access::kXYZ),
                 static_cast<double>(velocity6_[1]), engaged(profile_),
-                surface_map_, dt);
+                surface_map_, dt, soil);
         // :383-386 — every patch force maps through mj_jac at ITS
         // centroid, sequentially: result += jacp.T @ patch.force. The
         // ContactPatch pass (:387-398) is a second loop like the
@@ -1143,8 +1322,14 @@ void PneumaticTireWriter::probe_compute_into(const mjData *d, double dt,
     probe_[0]->assign(*tyres_[0]);
     probe_[1]->assign(*tyres_[1]);
     double energy = 0.0, brush_loss = 0.0, radial_power = 0.0;
+    // Probe purity: the probe bank solves against the committed rut
+    // state (read-only) but its commit pointer stays null — a probe
+    // can never deposit or release soil.
+    const biketyre::SoilContact soil{
+        .state = rut_memory_ ? &*rut_memory_ : nullptr, .commit = nullptr};
     evaluate_wheels(d, dt, static_cast<double>(d->time), out, probe_,
-                    energy, brush_loss, radial_power);
+                    energy, brush_loss, radial_power,
+                    rut_memory_ ? &soil : nullptr);
     probe_snapshots_ = snapshot_stage_;
     probe_committed_ = true;
 }

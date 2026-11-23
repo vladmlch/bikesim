@@ -11,9 +11,12 @@
 #include "research/evidence.hpp"
 #include "runtime/runtime.hpp"
 #include "runtime/samples.hpp"
+#include "stepper.hpp"
 #include "support/fixture_test.hpp"
 #include "support/golden.hpp"
 #include "terrain/trackfile.hpp"
+#include "tyre/rut_memory.hpp"
+#include "validation/runtime_access.hpp"
 #include "writers/distributed_tire.hpp"
 #include "writers/pneumatic_tire.hpp"
 #include "writers/tire_common.hpp"
@@ -1550,6 +1553,543 @@ struct StageCWireFriction {
                 "energy_quality <= 0.05");
 }
 
+// ---- Stage B: deformable granular layer (layer_thickness_m) -------------
+//
+// RutMemory is the world-fixed 1D soil grid the pneumatic writer engages
+// when a loose/scree section carries a positive layer depth. These legs
+// pin the writer contract — profile-sized serialized capacity, the
+// front-then-rear multipass commit, probe purity, the bedrock sinkage
+// bound and the allocation-free warm path — then the full ride gate.
+
+// Two-wheel pneumatic stand on a flat scree layer: the front wheel
+// slides on x/z joints, the rear wheel is world-fixed at x = 0.8 — both
+// footprints land inside the [0.5, 4.0] scree section so every committed
+// pass deposits into the same 1D rut grid. The profile is deliberately
+// longer than the retired 8192-slot wire cap so the serialized rut block
+// proves it is sized from the profile grid, not a fixed constant.
+[[nodiscard]] nativecfg::TireConfig
+stage_b_deformable_config(std::string_view tier) {
+    auto cfg = bt::pneumatic::configuration(tier);
+    cfg.surface_mode = "track";
+    if (!cfg.pneumatic.has_value())
+        throw std::logic_error("fixture needs pneumatic configuration");
+    cfg.pneumatic->surface.reset();
+    const auto x_grid =
+            bike::geometry::detail::np_linspace(-1.0, 60.0, 12201);
+    cfg.pneumatic->profile = {
+            .x0_m = x_grid.front(), .dx_m = x_grid[1] - x_grid[0],
+            .z_m = std::vector<double>(x_grid.size(), 0.0)};
+    cfg.surface_map = nativecfg::SurfaceMap{
+            .surface = surface("hardpack"),
+            .sections = {{.start_m = 0.5, .end_m = 4.0,
+                          .surface = surface("scree"), .blend_m = 0.0,
+                          .layer_thickness_m = 0.05}}};
+    return cfg;
+}
+
+void same_rut_state(const biketyre::RutStateDiff &a,
+                    const biketyre::RutStateDiff &b) {
+    bt::require(a.spans == b.spans, "rut state spans unchanged");
+    bitwise_equal(a.z_max_m, b.z_max_m);
+    bitwise_equal(a.z_p_m, b.z_p_m);
+    bitwise_equal(a.z_e_m, b.z_e_m);
+}
+
+// Drop every node record whose grid index lies in [lo, hi) — used to
+// erase the rear wheel's rut footprint from a snapshot while leaving the
+// front wheel's bitwise identical, so a step-loss difference isolates
+// the rear wheel's virgin-vs-compacted soil response.
+[[nodiscard]] biketyre::RutStateDiff
+rut_state_without_nodes(const biketyre::RutStateDiff &src,
+                        std::uint32_t lo, std::uint32_t hi) {
+    biketyre::RutStateDiff out;
+    std::size_t at = 0;
+    for (const auto &[b, e] : src.spans) {
+        std::uint32_t run_b = 0;
+        bool open = false;
+        for (std::uint32_t g = b; g < e; ++g, ++at) {
+            if (g >= lo && g < hi) {
+                if (open) {
+                    out.spans.emplace_back(run_b, g);
+                    open = false;
+                }
+                continue;
+            }
+            if (!open) {
+                run_b = g;
+                open = true;
+            }
+            out.z_max_m.push_back(src.z_max_m[at]);
+            out.z_p_m.push_back(src.z_p_m[at]);
+            out.z_e_m.push_back(src.z_e_m[at]);
+        }
+        if (open) out.spans.emplace_back(run_b, e);
+    }
+    return out;
+}
+
+[[gnu::noinline]] void test_stage_b_deformable_layer_writer() {
+    namespace pneu = bt::pneumatic;
+    constexpr double dt = 0.0005;
+    // 8 mm of geometric penetration on both wheels gives a comparable
+    // static load; the front z slide then equalizes the loads exactly.
+    // The rear body gains a vertical slide through rear_extra so both
+    // hubs can follow the yielded rut — a fixed rear hub bridges a rut
+    // deeper than its approach and unloads entirely.
+    pneu::Rig rig("fast", dt, 0.008, pneu::rear_radius() - 0.008,
+                  "<joint name=\"rear_root_z\" type=\"slide\" "
+                  "axis=\"0 0 1\"/>");
+    const auto cfg = stage_b_deformable_config("fast");
+    rig.tire = std::make_unique<PneumaticTireWriter>(
+            rig.engine.model.get(), rig.engine.data.get(), cfg);
+    bt::require(rig.tire->has_deformable_layer() &&
+                    rig.tire->rut_memory() != nullptr,
+                "positive scree layer depth engages rut memory");
+    const biketyre::RutMemory &rut = *rig.tire->rut_memory();
+    const std::size_t nodes = rut.node_count();
+    bt::require(nodes == 12201,
+                "rut capacity is the profile grid node count");
+
+    const auto *m = rig.engine.model.get();
+    auto *d = rig.engine.data.get();
+    const auto qpos = model_access::mutable_buffer(d->qpos, m->nq, "qpos");
+    const auto qvel = model_access::mutable_buffer(d->qvel, m->nv, "qvel");
+    std::vector<double> out(static_cast<std::size_t>(m->nv), 0.0);
+    std::vector<double> probe_out(static_cast<std::size_t>(m->nv), 0.0);
+    qpos[0] = 0.55;
+    qpos[1] = 0.0;
+    qvel[0] = 2.0;
+    qvel[1] = 0.0;
+    qvel[2] = 2.0 / pneu::front_radius();
+    qvel[3] = 2.0 / pneu::rear_radius();
+    ::engine::forward(m, d);
+    const auto step_once = [&] {
+        bt::require(rig.tire->try_compute_into(d, dt, out) == CoreStatus::ok,
+                    "deformable warm compute succeeds");
+        d->time += dt;
+    };
+    const auto normal_loads = [&] {
+        const auto &diag = rig.tire->diagnostic_storage();
+        return std::pair{diag[0].normal_load_n, diag[1].normal_load_n};
+    };
+
+    // ---- Serialized capacity: the rut block spans the whole grid ------
+    {
+        const auto &names = rig.tire->state_names();
+        const std::size_t n_rays =
+                static_cast<std::size_t>(cfg.pneumatic->n_rays); // NOLINT(bugprone-unchecked-optional-access) stage_b_deformable_config always engages pneumatic
+        const std::size_t max_patches = (n_rays + 1) / 2;
+        const std::size_t side_cols = 4 * n_rays + 8 + 3 * max_patches;
+        const std::size_t rut_base = 2 * side_cols;
+        bt::require(names.size() == rut_base + 1 + 4 * nodes,
+                    "state names cover every profile-grid rut slot");
+        bt::require(names[rut_base] == "rut.count" &&
+                        names.back() == "rut.node.12200.z_e_m",
+                    "rut block runs rut.count through the last grid node");
+        const auto virgin_row = rig.tire->state();
+        bt::require(virgin_row.size() == names.size() &&
+                        virgin_row[rut_base] == 0.0,
+                    "virgin rut serializes count 0 over the full row");
+        // The decisive capacity proof: a canonical row dirtying EVERY
+        // grid node (12201 > the retired 8192 cap) must decode — the
+        // slot bound is the grid, not a fixed constant.
+        auto full = virgin_row;
+        full[rut_base] = static_cast<double>(nodes);
+        for (std::size_t k = 0; k < nodes; ++k) {
+            full[rut_base + 1 + 4 * k + 0] = static_cast<double>(k);
+            full[rut_base + 1 + 4 * k + 1] = 0.001;
+            full[rut_base + 1 + 4 * k + 2] = 0.0;
+            full[rut_base + 1 + 4 * k + 3] = 0.0;
+        }
+        rig.tire->set_state(names, full);
+        bt::require(rig.tire->rut_state().z_max_m.size() == nodes,
+                    "full-grid rut row restores past the retired cap");
+        rig.tire->restore_rut_state(biketyre::RutStateDiff{});
+    }
+
+    // ---- Front wheel compacts virgin scree; rear follows 1.23 m behind
+    // Roll the front wheel from x = 0.55 through the rear wheel's line
+    // at x = 0.8 to its parked position — the 1.23 m follow distance the
+    // multipass measurement uses.
+    for (int i = 0; i < 1600 && qpos[0] < 2.03; ++i) {
+        step_once();
+        qpos[0] = std::min(2.03, qpos[0] + 0.001);
+        ::engine::forward(m, d);
+    }
+    bt::require(qpos[0] >= 2.03, "front wheel reached the follow position");
+    for (int i = 0; i < 300; ++i) {
+        step_once();
+    }
+    // The yielded scree left ruts far deeper than the 8 mm design
+    // approach: the coupled solve caps the equilibrium depression at
+    // the geometric approach, so both tyres went effectively airborne.
+    // Drop each hub by its footprint's committed depression — the
+    // depressed surface then sits ~8 mm under the undeformed-road
+    // approach again and the design penetration is restored. The
+    // rear slide added through rear_extra makes the rear hub movable;
+    // qpos[4] is its z coordinate (joint order: spin then slide).
+    {
+        // Interpolated committed surface depression (z_p + z_e) at the
+        // hub's own x — the drop that re-centres the design approach on
+        // the compacted surface. A footprint max would over-drop where
+        // the rut is nonuniform.
+        const auto rut_drop = [&](double hub_x) {
+            const double u = (hub_x - rut.x0_m()) / rut.dx_m();
+            if (u < 0.0 || u >= static_cast<double>(nodes - 1)) return 0.0;
+            const std::size_t g = static_cast<std::size_t>(std::floor(u));
+            const double a = u - static_cast<double>(g);
+            const double h = std::max(rut.h_s_m()[g],
+                                      rut.h_s_m()[g + 1]);
+            if (!(h > 0.0)) return 0.0;
+            const double s0 = rut.z_p_m()[g] + rut.z_e_m()[g];
+            const double s1 = rut.z_p_m()[g + 1] + rut.z_e_m()[g + 1];
+            return (1.0 - a) * s0 + a * s1;
+        };
+        const double drop_f = rut_drop(qpos[0]);
+        const double drop_r = rut_drop(0.8);
+        qpos[1] -= drop_f;
+        qpos[4] -= drop_r;
+        ::engine::forward(m, d);
+        for (int i = 0; i < 300; ++i) step_once();
+    }
+
+    // The front wheel's pass left a plastic rut: z_p > 0 on nodes only
+    // it covered (x in [1.0, 1.9] — past the rear wheel's reach).
+    {
+        bool plastic_rut = false;
+        for (std::size_t g = 0; g < nodes; ++g) {
+            const double x =
+                    rut.x0_m() + static_cast<double>(g) * rut.dx_m();
+            if (x >= 1.0 && x <= 1.9 && rut.z_p_m()[g] > 0.0 &&
+                rut.z_max_m()[g] > 0.0)
+                plastic_rut = true;
+        }
+        bt::require(plastic_rut,
+                    "front pass leaves z_p > 0 on virgin scree");
+    }
+
+    // Equal normal load: the rear slide stays trimmed at its rut-follow
+    // pose, so a Newton iteration on the front z slide alone matches
+    // the front wheel's load to the rear wheel's.
+    double equalized_rear_load = 0.0;
+    {
+        const auto loads_a = normal_loads();
+        const double wfa = loads_a.first;
+        qpos[1] += 0.002;
+        ::engine::forward(m, d);
+        for (int i = 0; i < 100; ++i) step_once();
+        const auto loads_b = normal_loads();
+        const double stiffness = (loads_b.first - wfa) / 0.002; // dW/dz < 0
+        double z = qpos[1];
+        for (int it = 0; it < 6 && std::abs(stiffness) > 1e-9; ++it) {
+            const auto [wf, wr] = normal_loads();
+            if (std::abs(wf - wr) <= std::max(0.5, 0.005 * wr)) break;
+            z += (wr - wf) / stiffness;
+            qpos[1] = z;
+            ::engine::forward(m, d);
+            for (int i = 0; i < 120; ++i) step_once();
+        }
+        const auto [wf_end, wr_end] = normal_loads();
+        equalized_rear_load = wr_end;
+        bt::require(std::abs(wf_end - wr_end) <=
+                            std::max(1.0, 0.02 * wr_end),
+                    "front and rear wheels carry equal normal load");
+        bt::require(wr_end > 20.0, "wheels carry a real soil load");
+        bt::require(rig.tire->soil_elastic_energy_j() > 0.0,
+                    "loaded deformable layer stores elastic soil energy");
+    }
+
+    // ---- Multipass: rear on the front wheel's compacted rut -----------
+    // Park the front wheel past the scree section on rigid hardpack:
+    // its own rut commits identically in both variants but its
+    // chassis-coupled transient would otherwise leak into the plastic
+    // ledger, so the windows below price the rear wheel alone.
+    qpos[0] = 5.0;
+    ::engine::forward(m, d);
+    for (int i = 0; i < 400; ++i) step_once();
+    // `followed` is the rut the pass left; `virgin_at_rear` removes only
+    // the rear footprint's nodes, so the front wheel's soil state — and
+    // therefore its commit — is bitwise identical in both restores.
+    const biketyre::RutStateDiff followed = rig.tire->rut_state();
+    const std::uint32_t rear_lo = static_cast<std::uint32_t>(
+            (0.65 - rut.x0_m()) / rut.dx_m());
+    const std::uint32_t rear_hi = static_cast<std::uint32_t>(
+            (0.95 - rut.x0_m()) / rut.dx_m());
+    const biketyre::RutStateDiff virgin_at_rear =
+            rut_state_without_nodes(followed, rear_lo, rear_hi);
+    bt::require(!virgin_at_rear.z_max_m.empty() &&
+                    virgin_at_rear.z_max_m.size() <
+                            followed.z_max_m.size(),
+                "rear footprint nodes removed from the virgin variant");
+    // For each variant the rear hub (qpos[4]) is trimmed until the rear
+    // load sits at the equalized target, then a fixed window measures
+    // the plastic work the pass commits. The virgin variant's softer
+    // nodes keep yielding — strictly more plastic work at the same
+    // normal load; the compacted rut mostly reloads elastically.
+    const auto multipass = [&](const biketyre::RutStateDiff &diff,
+                               double &plastic_j) {
+        rig.tire->restore_rut_state(diff);
+        // Price the whole pass — equalization settling plus the steady
+        // window. A static wheel reaches its rut equilibrium during the
+        // load trim, so a post-equalization window alone reads ~0 even
+        // on virgin soil; the compaction difference the multipass rule
+        // is about is committed across the full run at equal load.
+        const double p0 =
+                rig.tire->rut_memory()->total_plastic_loss_j();
+        double z = qpos[4];
+        for (int it = 0; it < 14; ++it) {
+            for (int i = 0; i < 80; ++i) step_once();
+            const double load = normal_loads().second;
+            if (std::abs(load - equalized_rear_load) <=
+                    0.02 * equalized_rear_load)
+                break;
+            // qpos[4] is hub height (+ up): raising it unloads the wheel.
+            // Positive feedback requires z += (load - target)/stiffness.
+            z += (load - equalized_rear_load) / 60000.0;
+            qpos[4] = z;
+            ::engine::forward(m, d);
+        }
+        // A steady window closes the pass so the plastic total reflects
+        // the settled rut, not a mid-transient frame.
+        for (int i = 0; i < 120; ++i) step_once();
+        plastic_j =
+                rig.tire->rut_memory()->total_plastic_loss_j() - p0;
+    };
+    double loss_followed = 0.0, loss_virgin = 0.0;
+    multipass(followed, loss_followed);
+    const auto loads_f = normal_loads();
+    multipass(virgin_at_rear, loss_virgin);
+    const auto loads_v = normal_loads();
+    bt::require(loss_virgin > 0.0,
+                "virgin scree commits plastic soil work");
+    bt::require(loss_followed < loss_virgin,
+                "rear wheel on the compacted rut dissipates strictly "
+                "less plastic work than on virgin soil");
+    bt::require(std::abs(loads_f.second - loads_v.second) <=
+                            0.05 * std::max(loads_f.second, loads_v.second) &&
+                        std::abs(loads_f.first - loads_v.first) <=
+                            0.05 * std::max(loads_f.first, loads_v.first),
+                "multipass comparison runs at equal normal load");
+
+    // ---- Bedrock bound, monotone force, 1800 N ramp, zero allocs -----
+    rig.tire->restore_rut_state(biketyre::RutStateDiff{});
+    qpos[0] = 1.5; // front away from the rear line
+    qpos[1] = 0.0;
+    qpos[4] = 0.0; // rear slide back to the design penetration
+    ::engine::forward(m, d);
+    for (int i = 0; i < 200; ++i) step_once();
+
+    // The authored scree law is C1 and monotone hardening toward bedrock:
+    // the analytic slope tracks the central finite difference and the
+    // barrier term stiffens the virgin branch well before h_s.
+    {
+        const std::size_t g_law = 600; // x = 2.0 m — mid scree section
+        const double hs = rut.h_s_m()[g_law];
+        const double b_m =
+                0.5 * cfg.pneumatic->front.casing_width_mm * 0.001; // NOLINT(bugprone-unchecked-optional-access) stage_b_deformable_config always engages pneumatic
+        bt::require(hs == 0.05,
+                    "scree node carries the authored layer depth");
+        const double eps = 1e-6;
+        double prev_p = rut.pressure_virgin(g_law, 0.0, b_m);
+        for (int k = 1; k <= 40; ++k) {
+            const double z = 0.95 * hs * k / 40.0;
+            const double p = rut.pressure_virgin(g_law, z, b_m);
+            const double slope_fd =
+                    (rut.pressure_virgin(g_law, z + eps, b_m) -
+                     rut.pressure_virgin(g_law, z - eps, b_m)) /
+                    (2.0 * eps);
+            const double slope_an =
+                    rut.pressure_virgin_slope(g_law, z, b_m);
+            bt::require(p > prev_p,
+                        "virgin pressure law is monotone in z");
+            bt::require(std::abs(slope_fd - slope_an) <=
+                                1e-3 * std::max(1.0, std::abs(slope_an)),
+                        "virgin pressure law is C1 — analytic slope "
+                        "matches the finite difference");
+            prev_p = p;
+        }
+        bt::require(rut.pressure_virgin_slope(g_law, 0.9 * hs, b_m) >
+                        rut.pressure_virgin_slope(g_law, 0.3 * hs, b_m),
+                    "bedrock barrier hardens the virgin pressure slope");
+    }
+
+    // Ramp the front penetration until the normal load reaches 1800 N.
+    // Every committed node must keep z_max strictly below h_s, the
+    // normal force must stay monotone, and the whole warm path must
+    // perform zero heap allocations.
+    double prev_load = -1.0;
+    bool reached_1800 = false;
+    allocation_counter::reset();
+    for (int level = 0; level < 30 && !reached_1800; ++level) {
+        qpos[1] -= 0.002; // 2 mm deeper each level
+        ::engine::forward(m, d);
+        for (int i = 0; i < 500; ++i) {
+            step_once();
+            bt::require(rig.tire->stored_energy(d) ==
+                            rig.tire->elastic_energy_j(),
+                        "stored energy bitwise equals the elastic field");
+            bt::require(rig.tire->soil_elastic_energy_j() >= 0.0 &&
+                            rig.tire->ground_plastic_loss_step_j() >= 0.0 &&
+                            rig.tire->brush_loss_step_j() >= 0.0,
+                        "nonnegative soil and tyre dissipation");
+        }
+        const auto ramp_loads = normal_loads();
+        const double wf = ramp_loads.first;
+        bt::require(wf >= prev_load - 0.5,
+                    "normal force is monotone under increasing penetration");
+        prev_load = wf;
+        for (std::size_t g = 0; g < nodes; ++g) {
+            const double hs_g = rut.h_s_m()[g];
+            if (hs_g > 0.0)
+                bt::require(rut.z_max_m()[g] < hs_g,
+                            "sinkage stays strictly below the layer");
+        }
+        if (wf >= 1800.0) reached_1800 = true;
+        if (qpos[1] < -0.06) break; // 68 mm penetration — past rim strike
+    }
+    bt::require(reached_1800, "load ramp reaches the 1800 N bound");
+    bt::require(rig.tire->soil_elastic_energy_j() > 0.0,
+                "loaded deformable layer stores elastic soil energy");
+    bt::require(allocation_counter::count() == std::size_t{0},
+                "deformable warm path performs zero heap allocations");
+
+    // ---- Probe purity: advance=false mutates zero rut state ----------
+    {
+        const auto rut_before = rig.tire->rut_state();
+        const auto state_before = rig.tire->state();
+        const double elastic_before = rig.tire->elastic_energy_j();
+        const double brush_before = rig.tire->brush_loss_step_j();
+        const double soil_before = rig.tire->soil_elastic_energy_j();
+        rig.tire->probe_compute_into(d, dt, probe_out);
+        same_rut_state(rut_before, rig.tire->rut_state());
+        bitwise_equal(state_before, rig.tire->state());
+        bt::require(rig.tire->elastic_energy_j() == elastic_before &&
+                        rig.tire->brush_loss_step_j() == brush_before &&
+                        rig.tire->soil_elastic_energy_j() == soil_before,
+                    "probe leaves every committed energy field bitwise");
+    }
+}
+
+[[gnu::noinline]] void test_stage_b_deformable_layer_ride_energy_gate() {
+    namespace research = bike::research;
+    namespace sw = runtime::sample_wire;
+    const auto root =
+            bt::oracle::root().parent_path().parent_path().parent_path();
+    auto owner = std::make_unique<research::ResearchRequest>();
+    auto &request = *owner;
+    request.setup.model.physics = bike::configuration::load_physics(
+            root / "examples/research/viewer_physics_pneumatic.toml");
+    request.setup.model.mode = "ride";
+    request.setup.model.crank_joint = true;
+    request.setup.model.rider =
+            bike::model::rider_from_args("articulated_planar");
+    request.setup.track = bike::terrain::track_from_dict(
+            bike::terrain::parse_track_toml(
+                    "name = \"stage_b_deformable\"\nlength_m = 120.0\n"
+                    "surface = \"asphalt\"\n"
+                    "grade_profile = { knots = [[0.0, 0.01], [120.0, 0.01]] }\n"
+                    "[[surface_sections]]\nstart_m = 20.0\nend_m = 60.0\n"
+                    "surface = \"scree\"\nblend_m = 0.4\n"
+                    "layer_thickness_m = 0.05\n"
+                    "[[surface_sections]]\nstart_m = 70.0\nend_m = 115.0\n"
+                    "surface = \"hardpack\"\nblend_m = 0.4\n"));
+    request.experiment.duration_s = 45.0;
+    request.experiment.record_decimation = 1;
+    request.experiment.stop_on_model_violation = true;
+    request.experiment.control_period_s =
+            request.setup.model.physics->research.control_period_s;
+    request.experiment.actuator_delay_s =
+            request.setup.model.physics->research.actuator_delay_s;
+    request.sensors.delivery.latency_s =
+            request.setup.model.physics->research.sensor_latency_s;
+    request.sensors.delivery.maximum_age_s =
+            request.setup.model.physics->research.sensor_maximum_age_s;
+    request.sensors.sample_period_s = 0.005;
+    auto prepared = research::prepare_environment(std::move(owner));
+    const auto period = prepared->bootstrap.config.control_steps;
+    const auto max_steps = prepared->bootstrap.config.max_steps;
+    auto rt = std::make_unique<runtime::NativeRideRuntime>(
+            std::move(prepared->bootstrap.ride));
+    while (!rt->snapshot().outcome.has_value() &&
+           rt->snapshot().step < max_steps) {
+        const auto result =
+                rt->advance(rt->snapshot().step + period,
+                            runtime::RideControl{}, 0., 0., std::nullopt);
+        if (!rt->recorded_intervals().empty() &&
+            rt->recorded_intervals().back()->qpos[0] >= 74.0)
+            break;
+        if (result.reason == "outcome") break;
+    }
+    const auto snapshot = rt->snapshot();
+    bt::require(!snapshot.first_failure.has_value(),
+                "deformable ride has no first failure");
+    const auto rows = rt->recorded_intervals();
+    bt::require(!rows.empty() && rows.back()->qpos[0] >= 72.0,
+                "rider carries both wheels across scree into hardpack");
+    std::size_t energy_rows = 0;
+    std::size_t bad_rows = 0;
+    for (const auto &row : rows) {
+        bt::require(research::model_violations(*row).empty(),
+                    "no model violations on the deformable ride");
+        const auto &tires =
+                sw::object(sw::required(row->channels, "tires"));
+        for (const char *side : {"front", "rear"}) {
+            const auto &wheel =
+                    sw::object(sw::required(tires, side));
+            bt::require(sw::number(sw::required(
+                                    wheel, "dissipated_power_w")) >= 0.0,
+                            "nonnegative tyre dissipation on deformable "
+                            "soil");
+            bt::require(sw::number(sw::required(
+                                    wheel, "brush_loss_j")) >= 0.0,
+                            "nonnegative brush loss on deformable soil");
+        }
+        // Strict energy accounting on every measured step: the residual
+        // ratio gate the other ride legs use, applied per row.
+        const auto *energy_w = sw::find(row->channels, "energy");
+        bt::require(energy_w != nullptr,
+                    "every measured step carries the energy channel");
+        const auto eq =
+                research::energy_quality(sw::object(*energy_w), 0.05);
+        bad_rows += !(eq.acceptable && eq.residual_ratio <= 0.05);
+        ++energy_rows;
+    }
+    bt::require(energy_rows == rows.size(),
+                "energy quality checked on every recorded step");
+    bt::require(bad_rows == 0,
+                "strict energy accounting on every measured step");
+
+    // Rut engagement proof plus probe purity at the PhysicalStep level:
+    // the canonical tire state carries the rut block, the ride left a
+    // nonzero dirty-node count, and a non-advancing probe leaves the
+    // whole tire state — rut included — bitwise unchanged.
+    std::vector<std::string> tire_names;
+    std::vector<double> state_before;
+    bike::validation::RuntimeRigAccess::inspect(
+            *rt, [&](const Stepper &stepper,
+                     const runtime::PhysicalStep &) {
+                tire_names = stepper.tire_state_names();
+                state_before = stepper.tire_state();
+            });
+    const auto rut_col = std::ranges::find(tire_names, "rut.count");
+    bt::require(rut_col != tire_names.end(),
+                "deformable ride engages the rut state block");
+    const std::size_t rut_idx =
+            static_cast<std::size_t>(rut_col - tire_names.begin());
+    bt::require(state_before[rut_idx] > 0.0,
+                "the ride deposited a nonzero rut node count");
+    bt::require(tire_names.back().starts_with("rut.node."),
+                "rut block is sized from the ride profile grid");
+    (void)rt->probe_step_inputs(runtime::RideControl{}, 0., 0.);
+    std::vector<double> state_after;
+    bike::validation::RuntimeRigAccess::inspect(
+            *rt, [&](const Stepper &stepper,
+                     const runtime::PhysicalStep &) {
+                state_after = stepper.tire_state();
+            });
+    bitwise_equal(state_before, state_after);
+}
+
 } // namespace
 
 // bt::run catches exceptions from the test body and reports failure.
@@ -1573,8 +2113,10 @@ int main() {
         test_micro_span_unsorted_wire_equivalent();
         test_distributed_roots_wet_wood_diagnostics();
         test_distributed_roots_wet_wood_ride_energy_gate();
+        test_stage_b_deformable_layer_writer();
         test_pneumatic_world_rolling_moment_no_caliper_reaction();
         test_pneumatic_boundary_crossing_smoothness_and_stored_energy();
         test_pneumatic_60m_mixed_surface_ride_energy_gate();
+        test_stage_b_deformable_layer_ride_energy_gate();
     });
 }

@@ -586,11 +586,11 @@ bool schema_entry(std::string_view name, std::string_view &required,
         {.name = "surface", .entry =
          {.required = "name mu_peak mu_slide slip_stiffness_per_load "
           "stribeck_speed_mps",
-          .optional = "crr_delta load_sensitivity"}},
+          .optional = "crr_delta load_sensitivity layer_thickness_m"}},
         {.name = "tire.surface_map", .entry = {.required = "surface sections",
           .optional = "micro_spans"}},
         {.name = "tire.surface_map.sections", .entry = {.required = "start_m end_m surface",
-          .optional = "blend_m"}},
+          .optional = "blend_m layer_thickness_m"}},
         // Stage C obstacle-local micro-span rows mirror the section rows.
         {.name = "tire.surface_map.micro_spans", .entry = {.required = "start_m end_m surface",
           .optional = "blend_m"}},

@@ -76,6 +76,12 @@ void SurfaceSection::validate() const {
     if(!(0.<=start_m && start_m<end_m)) throw std::invalid_argument("surface interval must satisfy 0 <= start < end");
     detail::nonnegative(blend_m,"SurfaceSection.blend_m");
     (void)get_surface(surface);
+    if(layer_thickness_m!=0.){
+        if(surface!="loose"&&surface!="scree")
+            throw std::invalid_argument("SurfaceSection.layer_thickness_m: a nonzero layer depth is valid only on loose or scree");
+        if(layer_thickness_m<.012||layer_thickness_m>.150)
+            throw std::invalid_argument("SurfaceSection.layer_thickness_m must lie in [0.012, 0.150] m");
+    }
 }
 SurfaceMap::SurfaceMap(SurfaceSpec surface,std::vector<SurfaceSection> sections):surface_(std::move(surface)),sections_(std::move(sections)) {
     std::ranges::stable_sort(sections_,[](const auto& a,const auto& b){return a.start_m<b.start_m;});

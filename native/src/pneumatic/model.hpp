@@ -38,6 +38,7 @@
 #include "brush.hpp"           // DiscretisedBrush, BrushResult
 #include "carcass.hpp"         // CarcassState, CarcassBuffers, RimStrikeEvent
 #include "geometry.hpp"        // RayRing, RayHitBuffers, RoadProfile
+#include "../tyre/rut_memory.hpp" // SoilContact — Stage B deformable layer
 #include "../writers/tire_common.hpp"
 
 namespace biketyre {
@@ -191,11 +192,17 @@ namespace biketyre {
         // DiscretisedBrush.step() is the one documented partial-commit
         // boundary (its kappa_prime is committed when a later check
         // throws, exactly like the oracle's own mutation order).
+        // `soil` is the optional Stage-B deformable-layer handle: when
+        // non-null and active the ray/road approach is re-solved against
+        // the rut memory before the carcass kernel (probe calls pass a
+        // null-commit handle and mutate nothing). The defaulted null
+        // keeps every existing call bitwise identical.
         const WheelOutputs &
         evaluate(std::span<const double> hub_position_world_m,
                  std::span<const double> hub_velocity_world_mps,
                  double omega_forward_radps, const RoadProfile &road,
-                 const nativecfg::SurfaceMap &surface_map, double dt_s);
+                 const nativecfg::SurfaceMap &surface_map, double dt_s,
+                 const SoilContact *soil = nullptr);
 
         // The caller-buffer twin: identical values written into `out`
         // (which must have patch_slots.size() >= the model's patch
@@ -209,7 +216,8 @@ namespace biketyre {
                            double omega_forward_radps,
                            const RoadProfile &road,
                            const nativecfg::SurfaceMap &surface_map,
-                           double dt_s, WheelOutputs &out);
+                           double dt_s, WheelOutputs &out,
+                           const SoilContact *soil = nullptr);
 
         // reset (model.py:167-171) — clears carcass, bristle and
         // per-patch slip history; last_outputs() becomes
@@ -324,7 +332,8 @@ namespace biketyre {
                            double omega_forward_radps,
                            const RoadProfile &road,
                            const nativecfg::SurfaceMap &surface_map,
-                           double dt_s, WheelOutputs &out);
+                           double dt_s, WheelOutputs &out,
+                           const SoilContact *soil);
 
         nativecfg::PneumaticTyreSpec tyre_;
         bool discretised_ = false;
@@ -350,6 +359,15 @@ namespace biketyre {
             CarcassBuffers buffers;
         } carcass_scratch_;
         std::vector<double> loss_scratch_;
+        // Zero-filled force row — the Stage-B airborne commit's
+        // scatter input; written only at construction.
+        std::vector<double> soil_zero_forces_;
+        // Stage-B per-ray equilibrium depression bookkeeping: the
+        // geometric approach delta_orig lets the coupled solve recover
+        // z_eq = delta - delta_eff per ray; commit_pass gathers z_eq
+        // back onto the nodes so the committed rut state reproduces
+        // the surface the tyre actually equilibrated against.
+        std::vector<double> soil_delta_orig_, soil_z_eq_cur_;
         std::vector<tirecommon::SurfaceSample> sample_scratch_;
         nativecfg::SurfaceSpec surface_scratch_;
         std::vector<char> used_;

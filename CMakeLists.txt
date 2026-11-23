@@ -183,8 +183,11 @@ target_include_directories(bike_core SYSTEM PRIVATE
 # Track-B build identity for runtime/provenance.cpp — the
 # research_build_identity.hpp generated for bike_core so the product
 # carries the native_source_sha256 fingerprint. The manifest algorithm:
-# every first-party native/{src,cmake} file hashed as sorted
-# "relative_path=sha256" lines relative to native/.
+# every first-party native/{src,cmake} file except the check tooling under
+# native/src/tools/, hashed as sorted "relative_path=sha256" lines relative
+# to native/. The tooling is excluded because it never runs inside the
+# simulation (it is linked only into the check/validation executables), and
+# its edits must not invalidate pinned equilibrium poses that bind this digest.
 file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   RELATIVE "${_bike_native_dir}"
   "${_bike_native_dir}/src/*.cpp"
@@ -194,6 +197,7 @@ file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   "${_bike_native_dir}/cmake/*.cmake"
   "${_bike_native_dir}/cmake/*.in")
 list(REMOVE_DUPLICATES _runtime_identity_inputs)
+list(FILTER _runtime_identity_inputs EXCLUDE REGEX "^src/tools/")
 list(SORT _runtime_identity_inputs)
 set(_runtime_identity_manifest "")
 foreach(_relative IN LISTS _runtime_identity_inputs)

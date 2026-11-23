@@ -323,3 +323,11 @@ the final tree (it must pass its own new precondition). Fast-forward
   lines.
 - agy 1.5.10 crashes: check whether 1.5.15 still shows them before acting.
 - The 5e1af40a slow failure.
+- Queue (user ruling 2026-11-23): bind pinned poses to an explicit list of
+  physics/model sources instead of the whole native/{src,cmake} glob, with
+  a guard that every simulation source is listed or excluded on purpose.
+  Today any edit there (comments included) makes `savage_pneumatic.npz`
+  stale and fails `reference.equilibrium_state_file` on darwin-arm64; this
+  plan only drops `native/src/tools/` from the glob.
+- Stack budgets (`-Wframe-larger-than`, `-Wstack-usage`) never ran: they
+  need an optimized build, not the frontends sweep (dropped in 44979530).

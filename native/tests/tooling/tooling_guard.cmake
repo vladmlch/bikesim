@@ -1,0 +1,228 @@
+# tooling_guard — contract for tools/guard.sh: every deny and allow example from
+# its header, stdin input, a usage error, and --cwd / working-directory
+# resolution for rm. The guard only parses; no command runs. Stays in the
+# ordinary (non-slow) CTest set.
+#
+# Commands are CMake bracket arguments ([==[ ... ]==]) so $, quotes, backticks
+# and semicolons reach the guard byte for byte.
+#
+# Required -D inputs: REPO_ROOT, SCRATCH_DIR.
+foreach(_required REPO_ROOT SCRATCH_DIR)
+  if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
+    message(FATAL_ERROR "tooling_guard requires -D${_required}")
+  endif()
+endforeach()
+file(REMOVE_RECURSE "${SCRATCH_DIR}")
+file(MAKE_DIRECTORY "${SCRATCH_DIR}")
+set(_failures "")
+set(_guard "${REPO_ROOT}/tools/guard.sh")
+
+# guard_case(<name> <allow|deny> <command> [CWD <dir>] [WD <dir>] [ENV <k=v>] [STDIN])
+#   CWD  passes --cwd <dir>            (default: REPO_ROOT)
+#   WD   runs the guard in <dir>, no --cwd
+#   ENV  sets a variable in the guard's environment
+#   STDIN feeds <command> on stdin instead of as the argument
+# allow: exit 0 with no output. deny: exit 2 and exactly one stderr line
+# starting "guard: denied: ".
+function(guard_case name expect command)
+  set(_cwd_args "--cwd" "${REPO_ROOT}")
+  set(_wd "${REPO_ROOT}")
+  set(_envs "")
+  set(_stdin OFF)
+  set(_i 3)
+  while(_i LESS ARGC)
+    set(_key "${ARGV${_i}}")
+    math(EXPR _i "${_i} + 1")
+    if("${_key}" STREQUAL "STDIN")
+      set(_stdin ON)
+    elseif("${_key}" STREQUAL "CWD")
+      set(_cwd_args "--cwd" "${ARGV${_i}}")
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "WD")
+      set(_cwd_args "")
+      set(_wd "${ARGV${_i}}")
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "ENV")
+      list(APPEND _envs "${ARGV${_i}}")
+      math(EXPR _i "${_i} + 1")
+    else()
+      message(FATAL_ERROR "guard_case ${name}: unknown option ${_key}")
+    endif()
+  endwhile()
+  set(_base_env "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS ${_envs})
+  if(_stdin)
+    file(WRITE "${SCRATCH_DIR}/stdin_${name}.txt" "${command}")
+    execute_process(COMMAND ${_base_env} bash "${_guard}" ${_cwd_args}
+      WORKING_DIRECTORY "${_wd}"
+      INPUT_FILE "${SCRATCH_DIR}/stdin_${name}.txt"
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  else()
+    execute_process(COMMAND ${_base_env} bash "${_guard}" ${_cwd_args} "${command}"
+      WORKING_DIRECTORY "${_wd}"
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  endif()
+  string(STRIP "${_err}" _errs)
+  string(FIND "${_errs}" "\n" _nl)
+  string(FIND "${_errs}" "guard: denied: " _pfx)
+  if(expect STREQUAL "allow")
+    if(NOT _rc EQUAL 0 OR NOT "${_out}${_err}" STREQUAL "")
+      set(_failures "${_failures}\n  ${name}: expected allow, got rc=${_rc}, output '${_out}${_err}'" PARENT_SCOPE)
+    endif()
+  else()
+    if(NOT _rc EQUAL 2 OR NOT _pfx EQUAL 0 OR NOT _nl EQUAL -1 OR NOT "${_out}" STREQUAL "")
+      set(_failures "${_failures}\n  ${name}: expected deny (rc 2, one 'guard: denied:' line), got rc=${_rc}, stdout '${_out}', stderr '${_err}'" PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# --- deny: git -----------------------------------------------------------------
+guard_case(deny_reset_hard deny [==[git reset --hard HEAD~1]==])
+guard_case(deny_reset_hard_after_and deny [==[git status && git reset --hard]==])
+guard_case(deny_reset_hard_git_c deny [==[git -c core.x=1 reset --hard]==])
+guard_case(deny_clean_dry_run deny [==[git clean -n]==])
+guard_case(deny_clean_fdx deny [==[git clean -fdx]==])
+guard_case(deny_push deny [==[git push]==])
+guard_case(deny_push_dry_run deny [==[git push --dry-run origin main]==])
+guard_case(deny_push_after_semicolon deny [==[make; git push]==])
+guard_case(deny_push_after_newline deny [==[make
+git push]==])
+guard_case(deny_push_after_or deny [==[false || git push]==])
+guard_case(deny_push_after_pipe deny [==[echo x | git push]==])
+guard_case(deny_push_after_background deny [==[make & git push]==])
+guard_case(deny_push_in_parens deny [==[(git push)]==])
+guard_case(deny_push_in_brace_group deny [==[{ git push; }]==])
+guard_case(deny_push_git_c deny [==[git -C native push]==])
+guard_case(deny_push_absolute_path deny [==[/usr/bin/git push]==])
+guard_case(deny_push_env_prefix deny [==[env GIT_TRACE=1 git push]==])
+guard_case(deny_push_command_prefix deny [==[command git push]==])
+guard_case(deny_push_assignment_prefix deny [==[GIT_X=1 git push]==])
+guard_case(deny_push_quoted_command_word deny [==["git" push]==])
+guard_case(deny_push_after_redirect deny [==[git push > out.txt]==])
+guard_case(deny_push_after_fd_redirect deny [==[git push 2>&1]==])
+guard_case(deny_push_in_while_body deny [==[while true; do git push; done]==])
+guard_case(deny_stash deny [==[git stash]==])
+guard_case(deny_stash_pop deny [==[git stash pop]==])
+guard_case(deny_stash_git_c deny [==[git -C native stash list]==])
+guard_case(deny_stash_in_command_substitution deny [==[echo "$(git stash)"]==])
+guard_case(deny_push_in_backticks deny [==[echo `git push`]==])
+guard_case(deny_push_in_double_quoted_substitution deny [==[git commit -m "$(git push)"]==])
+guard_case(deny_push_variable_subcommand deny [==[git $SUB]==])
+guard_case(deny_push_substituted_command_name deny [==[$(echo git) push]==])
+
+# --- deny: golden re-record ----------------------------------------------------
+guard_case(deny_golden_prefix deny [==[BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_export deny [==[export BIKE_GOLDEN_RECORD=1]==])
+guard_case(deny_golden_env deny [==[env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_env_option deny [==[env -i BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_quoted_value deny [==[BIKE_GOLDEN_RECORD="1" ./run]==])
+guard_case(deny_golden_after_and deny [==[make && BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_in_subshell deny [==[(BIKE_GOLDEN_RECORD=1 ./run)]==])
+guard_case(deny_misspelt_prefix deny [==[BIKE_RECORD_GOLDENS=1 ./run]==])
+guard_case(deny_misspelt_export deny [==[export BIKE_RECORD_GOLDENS=1]==])
+guard_case(deny_misspelt_env deny [==[env BIKE_RECORD_GOLDENS=1 ./run]==])
+guard_case(deny_golden_guard_env_zero deny [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=0)
+
+# --- deny: rm outside the repository ------------------------------------------
+guard_case(deny_rm_root deny [==[rm -rf /]==])
+guard_case(deny_rm_fr_root deny [==[rm -fr /]==])
+guard_case(deny_rm_separate_flags deny [==[rm -r -f /tmp/x]==])
+guard_case(deny_rm_long_flags deny [==[rm --recursive --force /tmp/x]==])
+guard_case(deny_rm_tilde deny [==[rm -rf ~]==])
+guard_case(deny_rm_home_variable deny [==[rm -rf $HOME]==])
+guard_case(deny_rm_home_variable_quoted deny [==[rm -rf "$HOME/x"]==])
+guard_case(deny_rm_home_braced deny [==[rm -rf ${HOME}/x]==])
+guard_case(deny_rm_parent deny [==[rm -rf ..]==])
+guard_case(deny_rm_parent_relative deny [==[rm -rf ../x]==])
+guard_case(deny_rm_absolute_tmp deny [==[rm -rf /tmp/bike-scratch]==])
+guard_case(deny_rm_glob_root deny [==[rm -rf /*]==])
+guard_case(deny_rm_glob_escape deny [==[rm -rf build/*/../../..]==])
+guard_case(deny_rm_unexpanded_variable deny [==[rm -rf $DIR]==])
+guard_case(deny_rm_brace_expansion deny [==[rm -rf {/,build}]==])
+guard_case(deny_rm_empty_target deny [==[rm -rf ""]==])
+guard_case(deny_rm_repository_root deny [==[rm -rf .]==])
+guard_case(deny_rm_dot_git deny [==[rm -rf .git]==])
+guard_case(deny_rm_dot_git_objects deny [==[rm -rf .git/objects]==])
+guard_case(deny_rm_hidden_glob deny [==[rm -rf .*]==])
+guard_case(deny_rm_tilde_user deny [==[rm -rf ~root/x]==])
+guard_case(deny_rm_mixed_targets deny [==[rm -rf build /tmp/x]==])
+guard_case(deny_rm_substituted_target deny [==[rm -rf $(pwd)]==])
+guard_case(deny_rm_cwd_outside_relative deny [==[rm -rf build]==] CWD /)
+guard_case(deny_rm_wd_outside_relative deny [==[rm -rf build]==] WD /)
+guard_case(deny_rm_wd_native_parent deny [==[rm -rf ../../x]==] WD ${REPO_ROOT}/native)
+guard_case(deny_rm_cd_outside deny [==[cd / && rm -rf build]==])
+guard_case(deny_rm_cd_semicolon deny [==[cd / ; rm -rf build]==])
+guard_case(deny_rm_cd_then_parent deny [==[cd native && rm -rf ../../x]==])
+guard_case(deny_rm_cd_unknown deny [==[cd "$X" && rm -rf build]==])
+guard_case(deny_rm_cd_dash deny [==[cd - && rm -rf build]==])
+guard_case(deny_rm_popd deny [==[popd && rm -rf build]==])
+
+# --- allow: quoted text, comments, heredocs, safe rm ---------------------------
+guard_case(allow_commit_message_push allow [==[git commit -m "do not git push"]==])
+guard_case(allow_commit_message_reset allow [==[git commit -m "never git reset --hard"]==])
+guard_case(allow_log_grep_reset allow [==[git log --grep reset]==])
+guard_case(allow_log_grep_quoted_push allow [==[git log --grep "git push"]==])
+guard_case(allow_echo_double_stash allow [==[echo "git stash"]==])
+guard_case(allow_echo_single_push allow [==[echo 'git push']==])
+guard_case(allow_echo_unquoted_words allow [==[echo git push]==])
+guard_case(allow_echo_escaped_word allow [==[echo \git push]==])
+guard_case(allow_git_status allow [==[git status]==])
+guard_case(allow_git_reset_soft allow [==[git reset --soft HEAD~1]==])
+guard_case(allow_git_reset_mixed allow [==[git reset HEAD~1]==])
+guard_case(allow_git_pushover allow [==[git pushover]==])
+guard_case(allow_git_c_status allow [==[git -C native status]==])
+guard_case(allow_git_c_log_grep allow [==[git -C native log --grep reset]==])
+guard_case(allow_comment_push allow [==[echo hi # git push]==])
+guard_case(allow_grep_text allow [==[grep -r "git push" tools]==])
+guard_case(allow_double_quoted_separator allow [==[echo "a; git push"]==])
+guard_case(allow_empty_command allow [==[]==])
+guard_case(allow_substitution_commit_message allow [==[git commit -m "$(cat msg)"]==])
+guard_case(allow_substitution_date allow [==[echo "$(date)"]==])
+guard_case(allow_arithmetic_shift allow [==[echo $((1 << 2))]==])
+guard_case(allow_heredoc_body_text allow [==[cat > NOTES.md <<'EOF'
+git push is banned
+EOF]==])
+guard_case(allow_heredoc_apostrophe_body allow [==[cat <<'EOF'
+don't do it
+EOF
+git status]==])
+guard_case(allow_rm_build_tmp allow [==[rm -rf build/tmp]==])
+guard_case(allow_rm_dot_slash allow [==[rm -rf ./build/tmp/]==])
+guard_case(allow_rm_glob_inside allow [==[rm -rf build/*]==])
+guard_case(allow_rm_parent_inside allow [==[rm -rf native/../build/tmp]==])
+guard_case(allow_rm_recursive_only allow [==[rm -r /tmp/x]==])
+guard_case(allow_rm_force_only allow [==[rm -f /tmp/x]==])
+guard_case(allow_rm_then_status allow [==[rm -rf build/tmp; git status]==])
+guard_case(allow_rm_redirected allow [==[rm -rf build/tmp 2>/dev/null]==])
+guard_case(allow_rm_quoted_text allow [==[echo "rm -rf /"]==])
+guard_case(allow_rm_cd_inside allow [==[cd native && rm -rf ../build/tmp]==])
+guard_case(allow_rm_cwd_native allow [==[rm -rf tmp]==] CWD ${REPO_ROOT}/native)
+guard_case(allow_rm_cwd_native_parent allow [==[rm -rf ../build/tmp]==] CWD ${REPO_ROOT}/native)
+guard_case(allow_rm_wd_native_parent allow [==[rm -rf ../build/tmp]==] WD ${REPO_ROOT}/native)
+guard_case(allow_golden_zero allow [==[BIKE_GOLDEN_RECORD=0 ./run]==])
+guard_case(allow_golden_text allow [==[echo BIKE_GOLDEN_RECORD=1]==])
+guard_case(allow_golden_with_guard_env allow [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_misspelt_with_guard_env allow [==[export BIKE_RECORD_GOLDENS=1]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+
+# --- stdin input ---------------------------------------------------------------
+guard_case(stdin_deny_push deny [==[make
+git push]==] STDIN)
+guard_case(stdin_allow_status allow [==[git status]==] STDIN)
+
+# --- usage errors fail closed --------------------------------------------------
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+  bash "${_guard}" --cwd "${SCRATCH_DIR}/does-not-exist" "git status"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 2)
+  set(_failures "${_failures}\n  usage_missing_cwd: expected exit 2, got ${_rc}")
+endif()
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+  bash "${_guard}" --bogus "git status"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 2)
+  set(_failures "${_failures}\n  usage_unknown_option: expected exit 2, got ${_rc}")
+endif()
+
+if(NOT _failures STREQUAL "")
+  message(FATAL_ERROR "tooling_guard contract failed:${_failures}")
+endif()
+message(STATUS "tooling_guard contract passed")

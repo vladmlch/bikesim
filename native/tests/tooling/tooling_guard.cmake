@@ -19,16 +19,21 @@ file(MAKE_DIRECTORY "${SCRATCH_DIR}")
 set(_failures "")
 set(_guard "${REPO_ROOT}/tools/guard.sh")
 
-# guard_case(<name> <allow|deny> <command> [CWD <dir>] [WD <dir>] [ENV <k=v>] [STDIN])
-#   CWD  passes --cwd <dir>            (default: REPO_ROOT)
+# guard_case(<name> <allow|deny> <command> [CWD <dir>] [WD <dir>] [ENV <k=v>]
+#            [GUARD <repo>] [STDIN])
+#   CWD  passes --cwd <dir>            (default: the guard's repository root)
 #   WD   runs the guard in <dir>, no --cwd
 #   ENV  sets a variable in the guard's environment
+#   GUARD runs <repo>/tools/guard.sh instead of the checkout's copy
 #   STDIN feeds <command> on stdin instead of as the argument
 # allow: exit 0 with no output. deny: exit 2 and exactly one stderr line
 # starting "guard: denied: ".
 function(guard_case name expect command)
-  set(_cwd_args "--cwd" "${REPO_ROOT}")
-  set(_wd "${REPO_ROOT}")
+  set(_root "${REPO_ROOT}")
+  set(_cwd "")
+  set(_cwd_given OFF)
+  set(_wd "")
+  set(_wd_given OFF)
   set(_envs "")
   set(_stdin OFF)
   set(_i 3)
@@ -38,11 +43,15 @@ function(guard_case name expect command)
     if("${_key}" STREQUAL "STDIN")
       set(_stdin ON)
     elseif("${_key}" STREQUAL "CWD")
-      set(_cwd_args "--cwd" "${ARGV${_i}}")
+      set(_cwd "${ARGV${_i}}")
+      set(_cwd_given ON)
       math(EXPR _i "${_i} + 1")
     elseif("${_key}" STREQUAL "WD")
-      set(_cwd_args "")
       set(_wd "${ARGV${_i}}")
+      set(_wd_given ON)
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "GUARD")
+      set(_root "${ARGV${_i}}")
       math(EXPR _i "${_i} + 1")
     elseif("${_key}" STREQUAL "ENV")
       list(APPEND _envs "${ARGV${_i}}")
@@ -51,6 +60,16 @@ function(guard_case name expect command)
       message(FATAL_ERROR "guard_case ${name}: unknown option ${_key}")
     endif()
   endwhile()
+  set(_guard "${_root}/tools/guard.sh")
+  if(_wd_given)
+    set(_cwd_args "")
+  else()
+    if(NOT _cwd_given)
+      set(_cwd "${_root}")
+    endif()
+    set(_cwd_args "--cwd" "${_cwd}")
+    set(_wd "${_root}")
+  endif()
   set(_base_env "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS ${_envs})
   if(_stdin)
     file(WRITE "${SCRATCH_DIR}/stdin_${name}.txt" "${command}")
@@ -104,12 +123,33 @@ guard_case(deny_push_after_fd_redirect deny [==[git push 2>&1]==])
 guard_case(deny_push_in_while_body deny [==[while true; do git push; done]==])
 guard_case(deny_stash deny [==[git stash]==])
 guard_case(deny_stash_pop deny [==[git stash pop]==])
-guard_case(deny_stash_git_c deny [==[git -C native stash list]==])
+guard_case(deny_stash_git_c deny [==[git -C native stash pop]==])
+guard_case(deny_stash_apply deny [==[git stash apply]==])
+guard_case(deny_stash_list_then_drop deny [==[git stash list && git stash drop]==])
 guard_case(deny_stash_in_command_substitution deny [==[echo "$(git stash)"]==])
 guard_case(deny_push_in_backticks deny [==[echo `git push`]==])
 guard_case(deny_push_in_double_quoted_substitution deny [==[git commit -m "$(git push)"]==])
 guard_case(deny_push_variable_subcommand deny [==[git $SUB]==])
 guard_case(deny_push_substituted_command_name deny [==[$(echo git) push]==])
+# Substitutions the shell runs are checked even where the text looks like data:
+# an unquoted heredoc body, arithmetic, a case word and a case arm body.
+guard_case(deny_push_in_unquoted_heredoc deny [==[cat <<EOF
+$(git push)
+EOF]==])
+guard_case(deny_push_backticks_in_unquoted_heredoc deny [==[cat <<EOF
+`git push`
+EOF]==])
+guard_case(deny_push_in_arithmetic deny [==[echo $(( $(git push) + 1 ))]==])
+guard_case(deny_push_in_case_word deny [==[case $(git push) in a) echo;; esac]==])
+guard_case(deny_push_in_case_arm deny [==[case $x in a) git push;; esac]==])
+guard_case(deny_push_in_double_quoted_case_pattern deny [==[case $x in "$(git push)") echo;; esac]==])
+# A cd inside a subshell ends with the subshell: the later rm is judged from the
+# repository root, where ../build/tmp is outside.
+guard_case(deny_rm_cd_in_subshell_does_not_leak deny [==[(cd native) && rm -rf ../build/tmp]==])
+guard_case(deny_rm_cd_outside_in_subshell deny [==[(cd / && rm -rf build)]==])
+# ANSI-C quoting: the escaped quote does not end the word.
+guard_case(deny_push_after_ansi_quote deny [==[echo $'it\'s' ; git push]==])
+guard_case(deny_unterminated_quote deny [==[echo "unterminated]==])
 
 # --- deny: golden re-record ----------------------------------------------------
 guard_case(deny_golden_prefix deny [==[BIKE_GOLDEN_RECORD=1 ./run]==])
@@ -180,6 +220,30 @@ guard_case(deny_rm_tmp_and_outside deny [==[rm -rf /tmp/x /etc/y]==])
 get_filename_component(_repo_parent "${REPO_ROOT}" DIRECTORY)
 guard_case(deny_rm_tmpdir_holds_repo deny "rm -rf ${_repo_parent}/sibling" ENV TMPDIR=${_repo_parent})
 
+# --- repository-root scratch links: .scratch and .work -------------------------
+# The checkout keeps .scratch as a symlink to a directory outside it. A fake
+# repository with the same layout checks that the link's physical target is a
+# scratch root: inside it is allowed, the directory itself stays denied. The
+# target is resolved with REALPATH so the cases hold wherever the build tree is.
+set(_alias_repo "${SCRATCH_DIR}/alias_repo")
+set(_alias_target "${SCRATCH_DIR}/ssd_scratch")
+file(MAKE_DIRECTORY "${_alias_repo}/tools" "${_alias_target}/agy")
+file(COPY "${_guard}" DESTINATION "${_alias_repo}/tools")
+file(CREATE_LINK "${_alias_target}" "${_alias_repo}/.scratch" SYMBOLIC)
+get_filename_component(_alias_phys "${_alias_target}" REALPATH)
+guard_case(allow_rm_scratch_link_child allow [==[rm -rf .scratch/agy/probe]==] GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_link_absolute allow "rm -rf ${_alias_repo}/.scratch/agy/probe" GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_physical_child allow "rm -rf ${_alias_phys}/agy/probe" GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_link_cwd_relative allow [==[rm -rf agy/probe]==] GUARD ${_alias_repo} CWD ${_alias_repo}/.scratch)
+guard_case(allow_rm_scratch_physical_cwd_relative allow [==[rm -rf agy/probe]==] GUARD ${_alias_repo} CWD ${_alias_phys})
+guard_case(allow_rm_scratch_subshell_cd allow [==[(cd .scratch && rm -rf agy/probe)]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_link_root deny [==[rm -rf .scratch]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_link_root_slash deny [==[rm -rf .scratch/]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_root deny "rm -rf ${_alias_phys}" GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_root_slash deny "rm -rf ${_alias_phys}/" GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_cwd_root deny [==[rm -rf .]==] GUARD ${_alias_repo} CWD ${_alias_repo}/.scratch)
+guard_case(deny_rm_scratch_link_escape deny [==[rm -rf .scratch/../../x]==] GUARD ${_alias_repo})
+
 # --- allow: quoted text, comments, heredocs, safe rm ---------------------------
 guard_case(allow_commit_message_push allow [==[git commit -m "do not git push"]==])
 guard_case(allow_commit_message_reset allow [==[git commit -m "never git reset --hard"]==])
@@ -202,6 +266,39 @@ guard_case(allow_empty_command allow [==[]==])
 guard_case(allow_substitution_commit_message allow [==[git commit -m "$(cat msg)"]==])
 guard_case(allow_substitution_date allow [==[echo "$(date)"]==])
 guard_case(allow_arithmetic_shift allow [==[echo $((1 << 2))]==])
+guard_case(allow_arithmetic_expansion allow [==[echo $(( 1 + 2 ))]==])
+guard_case(allow_arithmetic_expansion_variable allow [==[echo $(( $x + 1 ))]==])
+guard_case(allow_arithmetic_expansion_braced allow [==[echo $(( ${#arr[@]} - 1 ))]==])
+guard_case(allow_arithmetic_command allow [==[(( i++ ))]==])
+guard_case(allow_arithmetic_command_then_echo allow [==[(( $x > 0 )) && echo yes]==])
+# Markdown backticks and $(...) inside single quotes are text, not commands.
+guard_case(allow_backticks_in_single_quoted_message allow [==[git commit -m 'fix `foo`']==])
+guard_case(allow_push_in_backticks_in_single_quoted_message allow [==[git commit -m 'docs: ban `git push`']==])
+guard_case(allow_backtick_in_grep_pattern allow [==[grep '`' README.md]==])
+guard_case(allow_substitution_in_single_quotes allow [==[echo '$(git push)']==])
+guard_case(allow_ansi_quote_escape allow [==[echo $'it\'s' && git status]==])
+guard_case(allow_quoted_heredoc_backticks allow [==[git commit -F - <<'EOF'
+fix `x` and `git push`
+EOF]==])
+guard_case(allow_quoted_heredoc_fence allow [==[cat > doc.md <<'EOF'
+```bash
+git push
+```
+EOF]==])
+guard_case(allow_quoted_heredoc_substitution allow [==[cat <<"EOF"
+$(git push)
+EOF]==])
+guard_case(allow_case_arms allow [==[case "$x" in a) echo 1 ;; "$b") echo 2 ;; esac]==])
+guard_case(allow_case_arms_multiline allow [==[case $x in
+  a) echo 1 ;;
+  *) git status ;;
+esac
+git status]==])
+guard_case(allow_subshell_cd_inside allow [==[(cd native && rm -rf build/tmp)]==])
+guard_case(allow_stash_list allow [==[git stash list]==])
+guard_case(allow_stash_show allow [==[git stash show -p]==])
+guard_case(allow_stash_show_ref allow [==[git stash show stash@{0}]==])
+guard_case(allow_stash_list_git_c allow [==[git -C native stash list]==])
 guard_case(allow_heredoc_body_text allow [==[cat > NOTES.md <<'EOF'
 git push is banned
 EOF]==])

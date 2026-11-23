@@ -14,7 +14,9 @@
 #   git reset --hard   discards uncommitted work in the shared tree
 #   git clean          deletes untracked files another agent may be using
 #   git push           publishes work; only the user pushes
-#   git stash          drops other agents' work in the shared tree
+#   git stash          drops other agents' work in the shared tree. Only the
+#                      read-only forms `git stash list` and `git stash show`
+#                      are allowed; every other stash form is denied.
 #   BIKE_GOLDEN_RECORD=1, or the misspelt BIKE_RECORD_GOLDENS=1, as a prefix,
 #                      an export argument or an env argument: rewrites goldens.
 #                      Allowed when the guard's own environment has
@@ -23,38 +25,44 @@
 #                      and outside the scratch roots. A target strictly inside
 #                      $TMPDIR, /tmp or /private/tmp is allowed (lexical and
 #                      physical forms of the roots); a root itself, or anything
-#                      that resolves to one, is denied. Relative targets
-#                      resolve against --cwd (default: the current directory)
-#                      and against any earlier cd in the command. A target the
-#                      guard cannot decide statically (a $ expansion, braces,
-#                      ~user, a hidden-name glob) counts as outside. The
-#                      repository root and .git are denied even though they
-#                      are inside.
+#                      that resolves to one, is denied. The scratch roots also
+#                      include the physical directory each repository-root
+#                      symlink .scratch or .work names (when it is a symlink):
+#                      a target inside it is allowed, the directory itself is
+#                      denied, and a path through the link is judged by the
+#                      directory it names. Relative targets resolve against
+#                      --cwd (default: the current directory) and against any
+#                      earlier cd in the command; a subshell's cd ends with the
+#                      subshell. A target the guard cannot decide statically (a
+#                      $ expansion, braces, ~user, a hidden-name glob) counts as
+#                      outside. The repository root and .git are denied even
+#                      though they are inside.
 #   A command name or git subcommand that is not a literal word (a $ expansion).
 #
-# Parsing: the command is split on ; & | ( ) and newlines outside quotes.
-# Comments, heredoc bodies and redirection targets are skipped. $(...) and
-# `...` are checked as commands of their own; the word that held them becomes
-# a bare $, which the rules above treat as unknown.
+# Parsing: one left-to-right scan that tracks quoting. Single-quoted text,
+# comments and quoted heredoc bodies (<<'EOF', <<"EOF", <<\EOF) are text and
+# are skipped. $(...), `...` and $(...) inside double quotes or in an unquoted
+# heredoc body run, so each one is checked as a command of its own, in the
+# scope of the word that held it. $((...)) and ((...)) are arithmetic, not
+# commands. Words in a case pattern list are not command names. Each simple
+# command is checked when its separator is reached, so cd and subshell scope
+# follow the order the shell runs them. The word that held a substitution
+# becomes a bare $, which the rules above treat as unknown. An unterminated
+# quote or substitution is a syntax error in the shell, and is denied.
 #
 # A backstop against honest mistakes, not a sandbox: sudo, xargs, bash -c and
 # eval are not unwrapped, and a symlink inside the repository or a scratch root
-# is not followed: rm -rf /tmp/link/ is judged by the lexical path /tmp/link.
+# is not followed, except the repository-root .scratch and .work links named
+# above: rm -rf /tmp/link/ is judged by the lexical path /tmp/link.
 set -euo pipefail
 
-GUARD_ROOT=""   # physical repository root
-GUARD_BASE=""   # directory relative rm targets resolve against; "" = unknown
-GUARD_TMP=()    # scratch roots an rm may clear inside (guard_scratch_roots)
-RESOLVED=""     # output of guard_resolve
-EXPANDED=""     # output of guard_expand
-GUARD_CLOSE=0   # output of guard_find_close: index of the matching )
-GW=()           # tokenizer output: words, quotes removed
-GS=()           # tokenizer output: index of each simple command's first word
-G_BUF=""        # tokenizer state: word being built
-G_HAVE=0        # tokenizer state: a word is pending (may be empty when quoted)
-G_SKIP=0        # tokenizer state: the next word is a redirection target
-G_HDWAIT=0      # tokenizer state: the next word is a heredoc delimiter
-G_HDQ=""        # tokenizer state: queued heredoc delimiters, each ended by a newline
+GUARD_ROOT=""    # physical repository root
+GUARD_BASE=""    # directory relative rm targets resolve against; "" = unknown
+GUARD_TMP=()     # scratch roots an rm may clear inside (guard_scratch_roots)
+GUARD_LINK=()    # repository-root scratch links (.scratch, .work) that are symlinks
+GUARD_LINK_TO=() # physical directory each GUARD_LINK names, same order
+RESOLVED=""      # output of guard_resolve
+ARITH_END=""     # output of guard_arith_end: index of the first ) of the closing ))
 
 fail() {
   printf 'guard: %s\n' "$1" >&2
@@ -67,252 +75,501 @@ guard_deny() {
   exit 2
 }
 
-# --- tokenizer --------------------------------------------------------------
+# --- scanner ----------------------------------------------------------------
+#
+# guard_verdict owns the text (G_STR, G_LEN) and the position (G_POS). guard_scan
+# owns the state of one command level: the words of the current simple command
+# (GW), queued heredocs (G_HD), the subshell base stack (G_STK), the case state
+# (G_CS) and the pending word (G_BUF and its flags). Bash local scoping is
+# dynamic, so the helpers below act on the state of the scan that calls them,
+# and a nested scan (a substitution) declares its own copies and leaves the
+# outer word untouched.
+#
+# G_CS holds one letter per open case: h (after `case`, up to `in`), p (pattern
+# list, up to `)`), b (arm body, up to `;;` or `esac`).
+
+# _guard_top — sets the caller's top to the innermost case state, or "".
+_guard_top() {
+  top=""
+  if [[ -n $G_CS ]]; then
+    top=${G_CS:${#G_CS}-1:1}
+  fi
+}
+
+# _guard_word — a finished word that is not a redirection target or heredoc
+# delimiter. It drives the case state; otherwise it joins the simple command.
+_guard_word() {
+  local top=""
+  _guard_top
+  case $top in
+    h)
+      if [[ $G_BUF == in ]]; then
+        G_CS=${G_CS%?}p
+      fi
+      ;;
+    p)
+      if [[ $G_BUF == "esac" ]]; then
+        G_CS=${G_CS%?}
+      fi
+      ;;
+    *)
+      if ((${#GW[@]} == 0)) && [[ $G_BUF == case ]]; then
+        G_CS+=h
+      elif ((${#GW[@]} == 0)) && [[ $top == b && $G_BUF == "esac" ]]; then
+        G_CS=${G_CS%?}
+      else
+        GW+=("$G_BUF")
+      fi
+      ;;
+  esac
+}
 
 # _guard_flush — ends the pending word. After a redirection operator the word
-# is dropped; a heredoc delimiter is queued; anything else joins GW.
+# is dropped; a heredoc delimiter is queued with its flags (quoted, dash).
 _guard_flush() {
+  local dash=0
   if ((G_HAVE)); then
     if ((G_HDWAIT)); then
-      G_HDQ+="$G_BUF"$'\n'
+      if ((G_HDWAIT == 2)); then
+        dash=1
+      fi
+      G_HD+=("$G_HDRAW$dash$G_BUF")
       G_HDWAIT=0
     elif ((G_SKIP)); then
       G_SKIP=0
     else
-      GW+=("$G_BUF")
+      _guard_word
     fi
   fi
   G_BUF=""
   G_HAVE=0
+  G_HDRAW=0
 }
 
-# _guard_sep — ends the pending word and the simple command.
+# _guard_sep — ends the pending word and the simple command, and checks it.
 _guard_sep() {
   _guard_flush
-  GS+=("${#GW[@]}")
-}
-
-# _guard_skip_bodies <command> <index> — prints the index just past the
-# heredoc bodies queued in G_HDQ. <index> is the first character after the
-# newline that ends the line the heredocs were started on.
-_guard_skip_bodies() {
-  local s=$1 n=${#1} i=$2 nl=$'\n' d rest line t
-  while [[ -n $G_HDQ ]]; do
-    d=${G_HDQ%%"$nl"*}
-    G_HDQ=${G_HDQ#*"$nl"}
-    while ((i < n)); do
-      rest=${s:i}
-      line=${rest%%"$nl"*}
-      t=$line
-      while [[ $t == $'\t'* ]]; do
-        t=${t#$'\t'}
-      done
-      i=$((i + ${#line} + 1))
-      [[ $t == "$d" ]] && break
-    done
-  done
-  printf '%s\n' "$i"
-}
-
-# guard_tokenize <command> — fills GW and GS. A heredoc body is not tokenized
-# as commands; the pre-pass in guard_expand still checks $(...) inside it.
-guard_tokenize() {
-  local s=$1 n=${#1} i=0 c j nx op
+  if ((${#GW[@]})); then
+    guard_check_simple "${GW[@]}"
+  fi
   GW=()
-  GS=(0)
-  G_BUF=""
-  G_HAVE=0
   G_SKIP=0
-  G_HDWAIT=0
-  G_HDQ=""
-  while ((i < n)); do
-    c=${s:i:1}
-    case $c in
-      ' '|$'\t')
-        _guard_flush
-        i=$((i + 1))
-        ;;
-      $'\n')
-        _guard_sep
-        i=$((i + 1))
-        if [[ -n $G_HDQ ]]; then
-          i=$(_guard_skip_bodies "$s" "$i")
-          G_HDQ=""
-        fi
-        ;;
-      ';'|'|'|'('|')')
-        _guard_sep
-        i=$((i + 1))
-        ;;
+}
+
+# _guard_redir — a < or > operator, or &> (the caller handles a lone &). A word
+# of digits right before the operator is a file descriptor and is dropped.
+_guard_redir() {
+  local op=""
+  case $G_BUF in
+    ''|*[!0-9]*) _guard_flush ;;
+    *)
+      G_BUF=""
+      G_HAVE=0
+      ;;
+  esac
+  while ((G_POS < G_LEN)) && ((${#op} < 3)); do
+    case ${G_STR:G_POS:1} in
       '<'|'>'|'&')
-        if [[ $c == '&' && ${s:i+1:1} != '>' ]]; then
-          _guard_sep
-          i=$((i + 1))
-          continue
-        fi
-        # "2>file": a word of digits right before the operator is a descriptor.
-        case $G_BUF in
-          ''|*[!0-9]*) _guard_flush ;;
-          *) G_BUF=""; G_HAVE=0 ;;
-        esac
-        op=""
-        while ((i < n && ${#op} < 3)); do
-          case ${s:i:1} in
-            '<'|'>'|'&') op+=${s:i:1}; i=$((i + 1)) ;;
-            *) break ;;
-          esac
-        done
-        case $op in
-          '<<'|'<<-') G_HDWAIT=1 ;;
-          *) G_SKIP=1 ;;
-        esac
+        op+=${G_STR:G_POS:1}
+        G_POS=$((G_POS + 1))
         ;;
-      "'")
-        j=$((i + 1))
-        while ((j < n)) && [[ ${s:j:1} != "'" ]]; do
-          j=$((j + 1))
-        done
-        G_BUF+=${s:i+1:j-i-1}
-        G_HAVE=1
-        i=$((j + 1))
-        ;;
-      '"')
-        G_HAVE=1
-        i=$((i + 1))
-        while ((i < n)) && [[ ${s:i:1} != '"' ]]; do
-          c=${s:i:1}
-          nx=${s:i+1:1}
-          if [[ $c == \\ ]]; then
-            case $nx in
-              '"'|\\|'$'|'`')
-                G_BUF+=$nx
-                i=$((i + 2))
-                continue
-                ;;
-            esac
-          fi
-          G_BUF+=$c
-          i=$((i + 1))
-        done
-        i=$((i + 1))
-        ;;
-      \\)
-        nx=${s:i+1:1}
-        if [[ -n $nx && $nx != $'\n' ]]; then
-          G_BUF+=$nx
-          G_HAVE=1
-        fi
-        i=$((i + 2))
-        ;;
-      '#')
-        if ((G_HAVE)); then
-          G_BUF+=$c
-          i=$((i + 1))
-        else
-          j=$i
-          while ((j < n)) && [[ ${s:j:1} != $'\n' ]]; do
-            j=$((j + 1))
-          done
-          i=$j
-        fi
-        ;;
-      *)
-        G_BUF+=$c
-        G_HAVE=1
-        i=$((i + 1))
-        ;;
+      *) break ;;
     esac
   done
-  _guard_sep
+  case $op in
+    '<<')
+      G_HDWAIT=1
+      if [[ ${G_STR:G_POS:1} == '-' ]]; then
+        G_HDWAIT=2
+        G_POS=$((G_POS + 1))
+      fi
+      ;;
+    '<<<') G_SKIP=1 ;;
+    *)
+      # <(...) and >(...) start a subshell, not a redirection target.
+      if [[ ${G_STR:G_POS:1} != '(' ]]; then
+        G_SKIP=1
+      fi
+      ;;
+  esac
 }
 
-# --- pre-pass: command substitutions ----------------------------------------
+# _guard_bodies — called at the newline that ends the line the queued heredocs
+# were started on. A quoted delimiter makes the body text. An unquoted body is
+# scanned for the substitutions the shell runs inside it, then skipped.
+_guard_bodies() {
+  local e quoted dash d p line t rest bstart bend dend c
+  local nl=$'\n' k=0
+  local -a q
+  q=("${G_HD[@]}")
+  G_HD=()
+  while ((k < ${#q[@]})); do
+    e=${q[k]}
+    quoted=${e:0:1}
+    dash=${e:1:1}
+    d=${e:2}
+    bstart=$G_POS
+    bend=$G_LEN
+    dend=$G_LEN
+    p=$G_POS
+    while ((p < G_LEN)); do
+      rest=${G_STR:p}
+      line=${rest%%"$nl"*}
+      t=$line
+      if [[ $dash == 1 ]]; then
+        while [[ $t == $'\t'* ]]; do
+          t=${t#$'\t'}
+        done
+      fi
+      if [[ $t == "$d" ]]; then
+        bend=$p
+        dend=$((p + ${#line}))
+        break
+      fi
+      p=$((p + ${#line} + 1))
+    done
+    if [[ $quoted == 0 ]]; then
+      G_POS=$bstart
+      while ((G_POS < bend)); do
+        c=${G_STR:G_POS:1}
+        if [[ $c == \\ ]]; then
+          G_POS=$((G_POS + 2))
+        elif [[ $c == '`' || ( $c == '$' && ${G_STR:G_POS+1:1} == '(' ) ]]; then
+          guard_substitute
+        else
+          G_POS=$((G_POS + 1))
+        fi
+      done
+    fi
+    G_POS=$dend
+    if ((G_POS < G_LEN)); then
+      G_POS=$((G_POS + 1))
+    fi
+    k=$((k + 1))
+  done
+}
 
-# guard_find_close <command> <index> — sets GUARD_CLOSE to the ) that closes a
-# $( whose body starts at <index>. Quotes inside the body are skipped.
-guard_find_close() {
-  local s=$1 n=${#1} j=$2 depth=1 c q
-  while ((j < n)); do
-    c=${s:j:1}
+# guard_arith_end <index> — <index> is just past an opening (( or $((. Sets
+# ARITH_END to the index of the first ) of the closing )) and returns 0, or
+# returns 1 when there is none (bash then reads the text as a subshell).
+guard_arith_end() {
+  local p=$1 depth=0 c nx q
+  while ((p < G_LEN)); do
+    c=${G_STR:p:1}
+    nx=${G_STR:p+1:1}
     case $c in
       \\)
-        j=$((j + 2))
+        p=$((p + 2))
         continue
         ;;
       "'")
-        q=$((j + 1))
-        while ((q < n)) && [[ ${s:q:1} != "'" ]]; do
+        q=$((p + 1))
+        while ((q < G_LEN)) && [[ ${G_STR:q:1} != "'" ]]; do
           q=$((q + 1))
         done
-        j=$((q + 1))
+        p=$((q + 1))
         continue
         ;;
       '"')
-        q=$((j + 1))
-        while ((q < n)) && [[ ${s:q:1} != '"' ]]; do
-          if [[ ${s:q:1} == \\ ]]; then
+        q=$((p + 1))
+        while ((q < G_LEN)) && [[ ${G_STR:q:1} != '"' ]]; do
+          if [[ ${G_STR:q:1} == \\ ]]; then
             q=$((q + 1))
           fi
           q=$((q + 1))
         done
-        j=$((q + 1))
+        p=$((q + 1))
         continue
         ;;
       '(')
         depth=$((depth + 1))
         ;;
       ')')
-        depth=$((depth - 1))
         if ((depth == 0)); then
-          GUARD_CLOSE=$j
-          return 0
+          if [[ $nx == ')' ]]; then
+            ARITH_END=$p
+            return 0
+          fi
+        else
+          depth=$((depth - 1))
         fi
         ;;
     esac
-    j=$((j + 1))
+    p=$((p + 1))
   done
-  guard_deny "unterminated \$( substitution"
+  return 1
 }
 
-# guard_expand <command> — sets EXPANDED: each $(...) and `...` is checked as
-# a command of its own and replaced by a bare $. Quotes are ignored here on
-# purpose: a heredoc body with an apostrophe must not hide a live $( from the
-# scan, at the cost of checking a quoted $( that never runs.
-guard_expand() {
-  local s=$1 n=${#1} i=0 j c saved inner_len out=""
-  while ((i < n)); do
-    c=${s:i:1}
+# guard_arith_body <end> — scans arithmetic text up to <end> (the first ) of
+# the closing )). Only the substitutions inside it run; the rest is numbers and
+# operators. Leaves G_POS just past the closing ))
+guard_arith_body() {
+  local end=$1 c
+  while ((G_POS < end)); do
+    c=${G_STR:G_POS:1}
     if [[ $c == \\ ]]; then
-      out+=${s:i:2}
-      i=$((i + 2))
-    elif [[ $c == '$' && ${s:i+1:1} == '(' ]]; then
-      guard_find_close "$s" $((i + 2))
-      inner_len=$((GUARD_CLOSE - i - 2))
-      saved=$GUARD_BASE
-      guard_verdict "${s:i+2:inner_len}"
-      GUARD_BASE=$saved
-      out+='$'
-      i=$((GUARD_CLOSE + 1))
-    elif [[ $c == '`' ]]; then
-      j=$((i + 1))
-      while ((j < n)) && [[ ${s:j:1} != '`' ]]; do
-        if [[ ${s:j:1} == \\ ]]; then
-          j=$((j + 1))
-        fi
-        j=$((j + 1))
-      done
-      ((j < n)) || guard_deny "unterminated backtick substitution"
-      saved=$GUARD_BASE
-      guard_verdict "${s:i+1:j-i-1}"
-      GUARD_BASE=$saved
-      out+='$'
-      i=$((j + 1))
+      G_POS=$((G_POS + 2))
+    elif [[ $c == '`' || ( $c == '$' && ${G_STR:G_POS+1:1} == '(' ) ]]; then
+      guard_substitute
     else
-      out+=$c
-      i=$((i + 1))
+      G_POS=$((G_POS + 1))
     fi
   done
-  EXPANDED=$out
+  G_POS=$((end + 2))
+}
+
+# guard_substitute — G_POS is at a $( , $(( or ` that the shell would run. The
+# substitution is checked as a command of its own; G_POS is left just past it.
+# The caller appends the bare $ to its word. A cd inside the substitution does
+# not reach the caller.
+guard_substitute() {
+  local c=${G_STR:G_POS:1} n3=${G_STR:G_POS+2:1} saved j len end
+  if [[ $c == '`' ]]; then
+    j=$((G_POS + 1))
+    while ((j < G_LEN)) && [[ ${G_STR:j:1} != '`' ]]; do
+      if [[ ${G_STR:j:1} == \\ ]]; then
+        j=$((j + 1))
+      fi
+      j=$((j + 1))
+    done
+    if ((j >= G_LEN)); then
+      guard_deny "unterminated backtick substitution"
+    fi
+    len=$((j - G_POS - 1))
+    saved=$GUARD_BASE
+    guard_verdict "${G_STR:G_POS+1:len}"
+    GUARD_BASE=$saved
+    G_POS=$((j + 1))
+    return 0
+  fi
+  if [[ $n3 == '(' ]] && guard_arith_end $((G_POS + 3)); then
+    end=$ARITH_END
+    G_POS=$((G_POS + 3))
+    guard_arith_body "$end"
+    return 0
+  fi
+  saved=$GUARD_BASE
+  G_POS=$((G_POS + 2))
+  guard_scan sub
+  GUARD_BASE=$saved
+  G_POS=$((G_POS + 1))
+  return 0
+}
+
+# guard_scan <top|sub> — scans from G_POS. In sub mode it stops at the ) that
+# closes a $( with G_POS left on that ); in top mode it runs to the end.
+guard_scan() {
+  local mode=$1 c nx top="" j len n
+  local -a GW=() G_HD=() G_STK=()
+  local G_BUF="" G_CS="" G_HAVE=0 G_SKIP=0 G_HDWAIT=0 G_HDRAW=0
+  while ((G_POS < G_LEN)); do
+    c=${G_STR:G_POS:1}
+    nx=${G_STR:G_POS+1:1}
+    case $c in
+      ' '|$'\t')
+        _guard_flush
+        G_POS=$((G_POS + 1))
+        ;;
+      $'\n')
+        _guard_sep
+        G_POS=$((G_POS + 1))
+        if ((${#G_HD[@]})); then
+          _guard_bodies
+        fi
+        ;;
+      ';')
+        _guard_sep
+        _guard_top
+        if [[ $top == b && ( $nx == ';' || $nx == '&' ) ]]; then
+          G_POS=$((G_POS + 2))
+          if [[ $nx == ';' && ${G_STR:G_POS:1} == '&' ]]; then
+            G_POS=$((G_POS + 1))
+          fi
+          G_CS=${G_CS%?}p
+        else
+          G_POS=$((G_POS + 1))
+        fi
+        ;;
+      '&')
+        if [[ $nx == '>' ]]; then
+          _guard_redir
+        else
+          _guard_sep
+          G_POS=$((G_POS + 1))
+        fi
+        ;;
+      '<'|'>')
+        _guard_redir
+        ;;
+      '|')
+        _guard_top
+        if [[ $top == p ]]; then
+          _guard_flush
+        else
+          _guard_sep
+        fi
+        G_POS=$((G_POS + 1))
+        ;;
+      '(')
+        _guard_top
+        if [[ $top == h || $top == p ]]; then
+          _guard_flush
+        elif [[ $nx == '(' ]] && ((${#GW[@]} == 0 && G_HAVE == 0)) && guard_arith_end $((G_POS + 2)); then
+          local end=$ARITH_END
+          G_POS=$((G_POS + 2))
+          guard_arith_body "$end"
+          continue
+        else
+          _guard_sep
+          G_STK+=("$GUARD_BASE")
+        fi
+        G_POS=$((G_POS + 1))
+        ;;
+      ')')
+        _guard_top
+        if [[ $top == p ]]; then
+          _guard_flush
+          G_CS=${G_CS%?}b
+        elif ((${#G_STK[@]})); then
+          _guard_sep
+          n=${#G_STK[@]}
+          GUARD_BASE=${G_STK[n - 1]}
+          unset "G_STK[$((n - 1))]"
+        elif [[ $mode == sub ]]; then
+          _guard_sep
+          return 0
+        else
+          _guard_sep
+        fi
+        G_POS=$((G_POS + 1))
+        ;;
+      "'")
+        j=$((G_POS + 1))
+        while ((j < G_LEN)) && [[ ${G_STR:j:1} != "'" ]]; do
+          j=$((j + 1))
+        done
+        if ((j >= G_LEN)); then
+          guard_deny "unterminated quote"
+        fi
+        len=$((j - G_POS - 1))
+        G_BUF+=${G_STR:G_POS+1:len}
+        G_HAVE=1
+        if ((G_HDWAIT)); then
+          G_HDRAW=1
+        fi
+        G_POS=$((j + 1))
+        ;;
+      '"')
+        G_HAVE=1
+        if ((G_HDWAIT)); then
+          G_HDRAW=1
+        fi
+        G_POS=$((G_POS + 1))
+        while ((G_POS < G_LEN)) && [[ ${G_STR:G_POS:1} != '"' ]]; do
+          c=${G_STR:G_POS:1}
+          nx=${G_STR:G_POS+1:1}
+          if [[ $c == \\ ]]; then
+            case $nx in
+              '"'|\\|'$'|'`')
+                G_BUF+=$nx
+                G_POS=$((G_POS + 2))
+                continue
+                ;;
+            esac
+          elif [[ $c == '`' || ( $c == '$' && $nx == '(' ) ]]; then
+            guard_substitute
+            G_BUF+='$'
+            continue
+          fi
+          G_BUF+=$c
+          G_POS=$((G_POS + 1))
+        done
+        if ((G_POS >= G_LEN)); then
+          guard_deny "unterminated quote"
+        fi
+        G_POS=$((G_POS + 1))
+        ;;
+      \\)
+        nx=${G_STR:G_POS+1:1}
+        if [[ -z $nx ]]; then
+          G_POS=$((G_POS + 1))
+        elif [[ $nx == $'\n' ]]; then
+          G_POS=$((G_POS + 2))
+        else
+          G_BUF+=$nx
+          G_HAVE=1
+          if ((G_HDWAIT)); then
+            G_HDRAW=1
+          fi
+          G_POS=$((G_POS + 2))
+        fi
+        ;;
+      '#')
+        if ((G_HAVE)); then
+          G_BUF+=$c
+          G_POS=$((G_POS + 1))
+        else
+          j=$G_POS
+          while ((j < G_LEN)) && [[ ${G_STR:j:1} != $'\n' ]]; do
+            j=$((j + 1))
+          done
+          G_POS=$j
+        fi
+        ;;
+      '$')
+        if [[ $nx == '(' ]]; then
+          guard_substitute
+          G_BUF+='$'
+          G_HAVE=1
+        elif [[ $nx == "'" ]]; then
+          # $'...' is ANSI-C quoting: a backslash escapes the next character.
+          j=$((G_POS + 2))
+          while ((j < G_LEN)) && [[ ${G_STR:j:1} != "'" ]]; do
+            if [[ ${G_STR:j:1} == \\ ]]; then
+              j=$((j + 1))
+            fi
+            j=$((j + 1))
+          done
+          if ((j >= G_LEN)); then
+            guard_deny "unterminated quote"
+          fi
+          len=$((j - G_POS - 2))
+          G_BUF+='$'"${G_STR:G_POS+2:len}"
+          G_HAVE=1
+          G_POS=$((j + 1))
+        elif [[ $nx == '"' ]]; then
+          # $"..." is a locale-translated double-quoted string: quote it as one.
+          G_POS=$((G_POS + 1))
+        else
+          G_BUF+='$'
+          G_HAVE=1
+          G_POS=$((G_POS + 1))
+        fi
+        ;;
+      '`')
+        guard_substitute
+        G_BUF+='$'
+        G_HAVE=1
+        ;;
+      *)
+        G_BUF+=$c
+        G_HAVE=1
+        G_POS=$((G_POS + 1))
+        ;;
+    esac
+  done
+  if [[ $mode == sub ]]; then
+    guard_deny "unterminated \$( substitution"
+  fi
+  _guard_sep
+  return 0
+}
+
+# guard_verdict <command> — scans one command text. Returns only when every
+# simple command in it passes; a denial exits 2.
+guard_verdict() {
+  local G_STR=$1 G_LEN=${#1} G_POS=0
+  guard_scan top
 }
 
 # --- simple-command rules ---------------------------------------------------
@@ -376,7 +633,12 @@ guard_check_git() {
       ;;
     clean) guard_deny "git clean deletes untracked files another agent may be using" ;;
     push) guard_deny "git push: only the user publishes work" ;;
-    stash) guard_deny "git stash drops other agents' work in the shared tree" ;;
+    stash)
+      case ${1:-} in
+        list|show) ;;
+        *) guard_deny "git stash drops other agents' work in the shared tree; only 'git stash list' and 'git stash show' are allowed" ;;
+      esac
+      ;;
   esac
 }
 
@@ -426,9 +688,14 @@ guard_resolve() {
 # (on macOS /tmp is /private/tmp, and $TMPDIR sits under /var, a link to
 # /private/var). A root that is the repository root or holds it is dropped:
 # clearing it would clear the repository too. "/" is never a root.
+# Then each repository-root .scratch or .work that is a symlink adds the
+# physical directory it names as a root, and is recorded in GUARD_LINK so that
+# a path through the link is judged by that directory.
 guard_scratch_roots() {
-  local cand form phys
+  local cand form phys name
   GUARD_TMP=()
+  GUARD_LINK=()
+  GUARD_LINK_TO=()
   for cand in "${TMPDIR:-}" /tmp /private/tmp; do
     [[ -n $cand ]] || continue
     guard_resolve "" "$cand" || continue
@@ -440,6 +707,17 @@ guard_scratch_roots() {
       esac
       GUARD_TMP+=("$form")
     done
+  done
+  for name in .scratch .work; do
+    [[ -L $GUARD_ROOT/$name ]] || continue
+    phys=$(cd -P -- "$GUARD_ROOT/$name" 2>/dev/null && pwd -P) || continue
+    [[ -n $phys && $phys != / ]] || continue
+    case $GUARD_ROOT in
+      "$phys"|"$phys"/*) continue ;;
+    esac
+    GUARD_TMP+=("$phys")
+    GUARD_LINK+=("$GUARD_ROOT/$name")
+    GUARD_LINK_TO+=("$phys")
   done
 }
 
@@ -469,6 +747,17 @@ guard_check_rm_target() {
     esac
   done
   guard_resolve "$GUARD_BASE" "$t" || guard_deny "rm target cannot be resolved: $(printf '%q' "$t")"
+  # A repository-root scratch link is followed: rm clears the directory it names.
+  k=0
+  while ((k < ${#GUARD_LINK[@]})); do
+    case $RESOLVED in
+      "${GUARD_LINK[k]}"|"${GUARD_LINK[k]}"/*)
+        RESOLVED=${GUARD_LINK_TO[k]}${RESOLVED#"${GUARD_LINK[k]}"}
+        break
+        ;;
+    esac
+    k=$((k + 1))
+  done
   case $RESOLVED in
     "$GUARD_ROOT"|"$GUARD_ROOT/.git"|"$GUARD_ROOT/.git"/*)
       guard_deny "rm would remove the repository root or its .git: $(printf '%q' "$t")"
@@ -599,25 +888,6 @@ guard_check_simple() {
       done
       ;;
   esac
-}
-
-# guard_verdict <command> — checks every simple command in order. Returns
-# only when all of them pass; a denial exits 2.
-guard_verdict() {
-  local k=0 start end
-  local -a sc
-  guard_expand "$1"
-  guard_tokenize "$EXPANDED"
-  while ((k < ${#GS[@]} - 1)); do
-    start=${GS[k]}
-    end=${GS[k + 1]}
-    if ((end > start)); then
-      sc=("${GW[@]:start:end-start}")
-      guard_check_simple "${sc[@]}"
-    fi
-    k=$((k + 1))
-  done
-  return 0
 }
 
 main() {

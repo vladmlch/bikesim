@@ -284,13 +284,16 @@ std::string fingerprint(const std::filesystem::path& root) {
     // block in CMakeLists.txt: src tracks code files; cmake tracks build
     // scripts (a stray cmake/*.cpp is a probe, not a source). T63 retired
     // the transition graph's own native/CMakeLists.txt, so the manifest no
-    // longer seeds a root list file.
+    // longer seeds a root list file. src/tools/ (check tooling, never in the
+    // simulation) is excluded like the CMake block does, so tooling edits do
+    // not invalidate pinned poses.
     std::vector<std::filesystem::path> inputs;
     const std::pair<std::string_view, std::set<std::string>> scopes[] = { // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
         {"src", {".cpp", ".hpp", ".h", ".in"}}, {"cmake", {".cmake", ".in"}}};
     for (const auto& [directory, extensions] : scopes)
         for (const auto& entry : std::filesystem::recursive_directory_iterator(root / directory)) {
             if (!entry.is_regular_file()) continue;
+            if (entry.path().lexically_relative(root).generic_string().starts_with("src/tools/")) continue;
             if (extensions.contains(entry.path().extension().string()))
                 inputs.push_back(entry.path());
         }
@@ -321,6 +324,10 @@ void source_manifest() {
   rr::write_file(root / "build/bike_native.so", "not a source input");
   bt::require(fingerprint(root) == expected,
               "build trees never enter the source manifest");
+  std::filesystem::create_directories(root / "src/tools");
+  rr::write_file(root / "src/tools/check.cpp", "int check = 1;\n");
+  bt::require(fingerprint(root) == expected,
+              "check tooling under src/tools/ never enters the source manifest");
   rr::write_file(root / "src/core.hpp", "#pragma once\n// changed\n");
   bt::require(fingerprint(root) != expected,
               "header content changes are tracked");

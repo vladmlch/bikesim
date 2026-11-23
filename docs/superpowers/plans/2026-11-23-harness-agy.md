@@ -352,12 +352,17 @@ the final tree (it must pass its own new precondition). Fast-forward
   lines.
 - agy 1.5.10 crashes: check whether 1.5.15 still shows them before acting.
 - The 5e1af40a slow failure.
-- Queue (user ruling 2026-11-23): bind pinned poses to an explicit list of
-  physics/model sources instead of the whole native/{src,cmake} glob, with
-  a guard that every simulation source is listed or excluded on purpose.
-  Today any edit there (comments included) makes `savage_pneumatic.npz`
-  stale and fails `reference.equilibrium_state_file` on darwin-arm64; this
-  plan only drops `native/src/tools/` (f13041d8) and `native/cmake/Checks.cmake`
-  (79b9cf1f, check/test target registry only) from the glob.
+- Pinned pose (resolved 2026-11-23, user ruling "E"): any native/{src,cmake}
+  edit made `savage_pneumatic.npz` stale, and dropping the source digest
+  from its fingerprint is unsafe because a schema-1 state file restores
+  seven mjModel arrays (tendon stiffness/damping, dof_frictionloss, ...)
+  over the current model, so the post-load residual recheck would certify
+  stale code-derived values. The test profile now relies on the auto-cache
+  like `examples/research/viewer_physics_pneumatic.toml`; the fixture and
+  its staleness test are gone, `test_pneumatic_settle_restore_round_trip`
+  keeps the explicit-file path covered. Optional later physics task: a
+  minimal start state (coordinates + physical memory; parameters from the
+  current model, derived values recomputed) with a state-contract version
+  instead of the source digest.
 - Stack budgets (`-Wframe-larger-than`, `-Wstack-usage`) never ran: they
   need an optimized build, not the frontends sweep (dropped in 44979530).

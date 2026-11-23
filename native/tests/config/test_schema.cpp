@@ -1378,9 +1378,6 @@ void test_resolved_profiles() {
                       // declared defaults.
                       c.tires.front.mu = 0.8;
                       c.tires.rear.mu = 0.8;
-                      c.equilibrium_state_file =
-                          bt::fixture("config/poses/savage_pneumatic.npz")
-                              .string();
                       // Pneumatic profile likewise does not supply the
                       // welded-only F1 delivered/weld envelope fields —
                       // reset to defaults.

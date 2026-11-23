@@ -53,6 +53,12 @@ Three levels; pick the cheapest that covers the moment.
    then pass the commit before the stage, never `HEAD` (refused while the
    branch has commits beyond main). `--uncommitted` checks only uncommitted
    and untracked files. Each run journals a `change` row with `tree=<id>`.
+   Its GCC frontend compiles the changed TUs (`-c -O0`), so flow
+   diagnostics such as a returning `[[noreturn]]` fail here, not in full.
+   Level 1 is a hard precondition: `run_tests.sh native|full` refuses a
+   tree without a passed `change` row for the same `tree=<id>`, and
+   `native` refuses a tree whose `full` already passed. Bypass only with
+   `BIKE_GATE_OVERRIDE='<reason>'`; the reason is journaled.
 2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
    main branch** whose diff touches what the static-analysis sweeps read:
    C++ sources or headers (tests included), CMake files (any

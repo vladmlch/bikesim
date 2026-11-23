@@ -1910,6 +1910,8 @@ RawStep PhysicalStep::solve_tail(SolvedInputs in) {
         update_rider_senses(in.settle.entries, senses_wheel_x,
                             senses_frame_up, v);
         in.loss_step = loss_increment(components, in.qvel_mid, dt);
+        in.ground_plastic_loss_step = stepper_->has_tire()
+            ? stepper_->tire_writer().ground_plastic_loss_step_j() : 0.;
         if (rider_control_.has_value())
             in.rider_diag =
                 stepper_->rider_contacts().state().diagnostics;
@@ -2249,6 +2251,7 @@ RawStep PhysicalStep::publish_raw(SolvedInputs in) {
         raw.rider_control_terms = held_rider_terms_;
         raw.numerical_constraint_power_w = in.constraint_powers;
         raw.loss_step_j = loss_step;
+        raw.ground_plastic_loss_step_j = in.ground_plastic_loss_step;
         raw.mechanical_energy_j = total;
         raw.elastic_energy_j = std::move(elastic);
         raw.invalid_controller =
@@ -2618,9 +2621,12 @@ WireObject PhysicalStep::stored_terms() const {
     out.emplace_back("shock_bumper", Wire(susp.shock_bumper));
     out.emplace_back("shock_top_out", Wire(susp.shock_top_out));
     out.emplace_back("shock_upper_stop", Wire(susp.shock_upper_stop));
-    if (stepper_->has_tire())
-        wire_set(out, "tires",
-                 Wire(stepper_->tire_writer().stored_energy(d)));
+    if (stepper_->has_tire()) {
+        const auto tire = stepper_->tire_writer();
+        wire_set(out, "tires", Wire(tire.stored_energy(d)));
+        if (tire.has_deformable_layer())
+            wire_set(out, "soil", Wire(tire.soil_elastic_energy_j()));
+    }
     if (rider_control_.has_value())
         wire_set(out, "rider_joint_envelope",
                  Wire(rider_control_->envelope_forces(d).second));
@@ -2754,9 +2760,13 @@ double PhysicalStep::loss_increment(
     // One-way clutch engagement is solver work on a tendon limit, charged
     // to the closure channel (accounting.cpp raw_work), never a loss —
     // AGENTS.md «Передача», 2026-11-05.
-    if (stepper_->has_tire())
-        loss += stepper_->tire_writer().brush_loss_step_j() +
-            stepper_->tire_writer().radial_dissipation_power_w() * dt;
+    if (stepper_->has_tire()) {
+        const auto tire = stepper_->tire_writer();
+        loss += tire.brush_loss_step_j() +
+            tire.radial_dissipation_power_w() * dt;
+        if (tire.has_deformable_layer())
+            loss += tire.ground_plastic_loss_step_j();
+    }
     if (stepper_->has_rider_contacts()) {
         const auto &rc = stepper_->rider_contacts().state();
         loss += rc.loss_step_j + rc.radial_dissipation_power_w * dt;

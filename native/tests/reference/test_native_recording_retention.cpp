@@ -430,6 +430,7 @@ WireObject energy_channels() {
             {"loss_j", Wire{0.25}},
             {"loss_step_j", Wire{0.001}},
             {"rider_end_stop_loss_step_j", Wire{0.0}},
+            {"ground_plastic_loss_step_j", Wire{0.0}},
             {"solver_constraint_work_j", Wire{0.0}},
             {"energy_scale_j", Wire{10.0}},
             {"muscle_signed_j", Wire{1.0}},

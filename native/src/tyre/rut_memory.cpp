@@ -18,6 +18,7 @@ namespace biketyre {
 namespace {
 
 constexpr double kGravity = 9.81;
+constexpr double kBekkerToeEpsM = 1e-4; // 0.1 mm grain-scale C1 toe regularization
 constexpr std::size_t kSolveIterations = 24;
 
 // Smoothstep S(u) = u^2(3-2u) on [0,1], clamped — the same C1 Hermite
@@ -28,16 +29,19 @@ constexpr std::size_t kSolveIterations = 24;
 }
 
 // Section weight at x: smoothstep collars of half-width blend_m/2 on
-// each edge (the same collar geometry for_each_transition walks).
+// each edge (the same collar geometry for_each_transition walks). When
+// extend_left is true (sections[0].start_m == 0.0), the section covers
+// x < 0 without a left collar, matching tire_common.cpp.
 [[nodiscard]] double section_weight(const nativecfg::SurfaceSection &s,
-                                    double x) noexcept {
+                                    double x, bool extend_left) noexcept {
     double wl = 1.0, wr = 1.0;
     if (s.blend_m > 0.0) {
         const double half = 0.5 * s.blend_m;
-        wl = smoothstep((x - (s.start_m - half)) / s.blend_m);
+        wl = extend_left ? 1.0
+                         : smoothstep((x - (s.start_m - half)) / s.blend_m);
         wr = 1.0 - smoothstep((x - (s.end_m - half)) / s.blend_m);
     } else {
-        wl = (x >= s.start_m) ? 1.0 : 0.0;
+        wl = (extend_left || x >= s.start_m) ? 1.0 : 0.0;
         wr = (x < s.end_m) ? 1.0 : 0.0;
     }
     return std::min(wl, wr);
@@ -97,44 +101,56 @@ struct PressureLaw {
     const SoilLayerParams &p;
     double h, b;
     [[nodiscard]] double operator()(double z) const noexcept {
+        if (!(h > 0.0)) return 0.0;
+        const double zz = std::max(0.0, z);
         const double zo = p.zeta_o * h;
-        const double over = std::max(0.0, z - zo);
-        const double ramp = smoothstep((z - zo) / (p.zeta_w * h));
-        return p.k0_pa * std::pow(z / b, p.n) +
-               p.b_hp_pa * ramp * (std::exp(p.c_hp * over / b) - 1.0);
+        const double over = std::max(0.0, zz - zo);
+        const double ramp = smoothstep((zz - zo) / (p.zeta_w * h));
+        const double base = p.k0_pa * (std::pow((zz + kBekkerToeEpsM) / b, p.n) -
+                                       std::pow(kBekkerToeEpsM / b, p.n));
+        const double barrier = (ramp > 0.0 && over > 0.0)
+                ? p.b_hp_pa * ramp * (std::exp(p.c_hp * over / b) - 1.0)
+                : 0.0;
+        return base + barrier;
     }
     [[nodiscard]] double slope(double z) const noexcept {
+        if (!(h > 0.0)) return 0.0;
+        const double zz = std::max(0.0, z);
         const double zo = p.zeta_o * h;
-        const double over = std::max(0.0, z - zo);
-        const double u = (z - zo) / (p.zeta_w * h);
+        const double over = std::max(0.0, zz - zo);
+        const double u = (zz - zo) / (p.zeta_w * h);
         const double s = smoothstep(u), t = std::clamp(u, 0.0, 1.0);
         const double ds = (u > 0.0 && u < 1.0)
                 ? 6.0 * t * (1.0 - t) / (p.zeta_w * h) : 0.0;
-        const double e = std::exp(p.c_hp * over / b) - 1.0;
-        const double de = over > 0.0
-                ? (p.c_hp / b) * std::exp(p.c_hp * over / b) : 0.0;
-        const double base = z > 0.0
-                ? p.k0_pa * p.n * std::pow(z / b, p.n - 1.0) / b : 0.0;
-        return base + p.b_hp_pa * (ds * e + s * de);
+        double barrier_slope = 0.0;
+        if (over > 0.0) {
+            const double ex = std::exp(p.c_hp * over / b);
+            const double de = (p.c_hp / b) * ex;
+            barrier_slope = p.b_hp_pa *
+                    ((ds != 0.0 ? ds * (ex - 1.0) : 0.0) + s * de);
+        }
+        const double base =
+                p.k0_pa * p.n * std::pow((zz + kBekkerToeEpsM) / b, p.n - 1.0) / b;
+        return base + barrier_slope;
     }
 };
 
 } // namespace
 
 const SoilLayerParams &soil_params_for(std::string_view name) noexcept {
-    // Authored Stage B constants (research 05/06, `authored`/`unpinned`
-    // provenance): loose gravel over hardpack vs loose scree over
-    // bedrock — scree is softer in the virgin branch yet stiffer at
-    // the bedrock barrier and slips basally on a lower bed friction.
+    // Authored Stage B constants (Spec §4.1, user decision 2026-11-23):
+    // loose gravel over hardpack vs loose scree over bedrock — scree is
+    // softer in the virgin branch yet stiffer at the bedrock barrier and
+    // slips basally on a lower bed friction.
     static const SoilLayerParams kLoose{
-        .k0_pa = 1.8e5, .n = 1.0, .zeta_o = 0.45, .zeta_w = 0.30,
-        .b_hp_pa = 6.0e5, .c_hp = 7.0, .beta_u = 6.0,
-        .mu_basal = 0.62, .c_bed_pa = 0.0, .rho_b_kg_m3 = 1750.0,
+        .k0_pa = 180e3, .n = 0.80, .zeta_o = 0.45, .zeta_w = 0.30,
+        .b_hp_pa = 500e3, .c_hp = 4.5, .beta_u = 6.0,
+        .mu_basal = 0.52, .c_bed_pa = 0.0, .rho_b_kg_m3 = 1650.0,
         .alpha_tau = 1.0, .alpha_n = 0.55};
     static const SoilLayerParams kScree{
-        .k0_pa = 1.1e5, .n = 1.0, .zeta_o = 0.40, .zeta_w = 0.30,
-        .b_hp_pa = 9.0e5, .c_hp = 8.0, .beta_u = 7.0,
-        .mu_basal = 0.53, .c_bed_pa = 0.0, .rho_b_kg_m3 = 2000.0,
+        .k0_pa = 130e3, .n = 0.85, .zeta_o = 0.40, .zeta_w = 0.30,
+        .b_hp_pa = 650e3, .c_hp = 5.0, .beta_u = 5.0,
+        .mu_basal = 0.42, .c_bed_pa = 0.0, .rho_b_kg_m3 = 1750.0,
         .alpha_tau = 1.0, .alpha_n = 0.45};
     if (name == "scree") return kScree;
     return kLoose; // the deformable domain is exactly {loose, scree}
@@ -167,17 +183,19 @@ RutMemory::RutMemory(const RoadProfile &road, const nativecfg::SurfaceMap &map)
         grade_[g] = std::atan((z[gp] - z[gm]) / (x[gp] - x[gm]));
         double h = 0.0, w_acc = 0.0, w_sum = 0.0;
         SoilLayerParams p{};
-        for (const auto &sec : map.sections) {
+        for (std::size_t si = 0; si < map.sections.size(); ++si) {
+            const auto &sec = map.sections[si];
+            const bool extend_left = (si == 0 && sec.start_m == 0.0);
+            const double w = section_weight(sec, x[g], extend_left);
+            if (w <= 0.0) continue;
+            w_sum += w;
             if (!is_deformable_surface(sec.surface.name) ||
                 sec.layer_thickness_m <= 0.0)
                 continue;
-            const double w = section_weight(sec, x[g]);
-            if (w <= 0.0) continue;
             const double wt = w * sec.layer_thickness_m;
             h += wt;
             p = mix_params(p, soil_params_for(sec.surface.name), w_acc, wt);
             w_acc += wt;
-            w_sum += w;
         }
         if (base_deformable) {
             // The default material fills the section-free remainder —
@@ -429,9 +447,9 @@ void RutMemory::commit_pass(const RayRing &ring,
         // stored elastic energy, not the true compaction work.
         zm_new = std::max(zm_new, z_max_m_[g]);
         zp_new = std::max(zp_new, z_p_m_[g]);
-        // Keep the serialized invariants exactly: zp <= zm, ze <= zm.
+        // Keep the serialized invariants exactly: zp <= zm, ze <= zm - zp.
         zp_new = std::min(zp_new, zm_new);
-        const double ze_new = std::clamp(z_new - zp_new, 0.0, zm_new);
+        const double ze_new = std::clamp(z_new - zp_new, 0.0, zm_new - zp_new);
         const double u_new = 0.5 * ku * ze_new * ze_new;
         // Exact hysteresis dissipation (research 06 §1.2): the work the
         // tire did on this node along the committed depression path is
@@ -586,7 +604,9 @@ void RutMemory::restore(const RutStateDiff &diff, double b_m) {
                          ze = diff.z_e_m[at];
             if (!(zm >= 0.0 && zp >= 0.0 && ze >= 0.0) ||
                 !std::isfinite(zm) || !std::isfinite(zp) ||
-                !std::isfinite(ze) || zp > zm || ze > zm)
+                !std::isfinite(ze) || zp > zm || ze > zm - zp ||
+                (zm > 0.0 && !(h_s_m_[g] > 0.0)) ||
+                (h_s_m_[g] > 0.0 && zm > h_s_m_[g]))
                 throw std::invalid_argument(
                         "rut state diff: invalid node value");
         }

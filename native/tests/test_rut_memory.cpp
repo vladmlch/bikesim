@@ -332,6 +332,149 @@ namespace {
                        "thickness on a rigid surface must reject");
     }
 
+    void spec_constants_and_c1_toe_regularization() {
+        const auto &loose = biketyre::soil_params_for("loose");
+        require(loose.k0_pa == 180e3 && loose.n == 0.80 &&
+                loose.zeta_o == 0.45 && loose.zeta_w == 0.30 &&
+                loose.b_hp_pa == 500e3 && loose.c_hp == 4.5 &&
+                loose.beta_u == 6.0 && loose.mu_basal == 0.52 &&
+                loose.c_bed_pa == 0.0 && loose.rho_b_kg_m3 == 1650.0 &&
+                loose.alpha_tau == 1.0 && loose.alpha_n == 0.55,
+                "loose soil constants match Spec 4.1 verbatim");
+        const auto &scree = biketyre::soil_params_for("scree");
+        require(scree.k0_pa == 130e3 && scree.n == 0.85 &&
+                scree.zeta_o == 0.40 && scree.zeta_w == 0.30 &&
+                scree.b_hp_pa == 650e3 && scree.c_hp == 5.0 &&
+                scree.beta_u == 5.0 && scree.mu_basal == 0.42 &&
+                scree.c_bed_pa == 0.0 && scree.rho_b_kg_m3 == 1750.0 &&
+                scree.alpha_tau == 1.0 && scree.alpha_n == 0.45,
+                "scree soil constants match Spec 4.1 verbatim");
+
+        const biketyre::RoadProfile road = make_road();
+        const double b_m = 0.5 * make_tyre().casing_width_mm * 0.001;
+        for (const std::string_view name : {"loose", "scree"}) {
+            nativecfg::SurfaceMap map;
+            map.surface = spec("hardpack");
+            nativecfg::SurfaceSection sec;
+            sec.start_m = 10.0;
+            sec.end_m = 20.0;
+            sec.surface = spec(name);
+            sec.layer_thickness_m = 0.05;
+            map.sections.push_back(sec);
+            const biketyre::RutMemory rut(road, map);
+            const std::size_t g = static_cast<std::size_t>(12.0 / 0.005);
+            const double hs = rut.h_s_m()[g];
+            require(rut.pressure_virgin(g, 0.0, b_m) == 0.0,
+                    "regularized Bekker law vanishes at z = 0");
+            const double slope0 = rut.pressure_virgin_slope(g, 0.0, b_m);
+            require(std::isfinite(slope0) && slope0 > 0.0,
+                    "regularized Bekker slope at z = 0 is finite and positive");
+            constexpr double h_fd = 1e-8;
+            const double slope0_fd =
+                    (rut.pressure_virgin(g, h_fd, b_m) -
+                     rut.pressure_virgin(g, 0.0, b_m)) /
+                    h_fd;
+            require(std::abs(slope0_fd - slope0) <= 1e-3 * slope0,
+                    "analytic slope at z = 0 matches forward difference");
+            for (const double z : {1e-5, 1e-4, 5e-4, 0.01,
+                                   0.40 * hs, 0.45 * hs, 0.70 * hs, 0.95 * hs}) {
+                const double eps = std::min(1e-7, 0.25 * z);
+                const double fd =
+                        (rut.pressure_virgin(g, z + eps, b_m) -
+                         rut.pressure_virgin(g, z - eps, b_m)) /
+                        (2.0 * eps);
+                const double an = rut.pressure_virgin_slope(g, z, b_m);
+                require(std::isfinite(an) && an > 0.0,
+                        "virgin slope is finite and positive");
+                require(std::abs(fd - an) <= 1e-3 * std::max(1.0, std::abs(an)),
+                        "analytic slope matches centered FD across [0, h_s)");
+            }
+        }
+        // clear_step_loss clears the per-step plastic loss without touching
+        // cumulative plastic work or stored soil elastic energy.
+        biketyre::RutMemory rut(road, make_map());
+        const nativecfg::PneumaticTyreSpec tyre = make_tyre();
+        const biketyre::RayRing ring(36, 1.0);
+        Pass p = pass_at(12.0, 40.0);
+        rut.begin_step();
+        rut.commit_pass(ring, tyre, p.force, p.hits().road_x_m);
+        rut.finish_step();
+        const double total_before = rut.total_plastic_loss_j();
+        const double elastic_before = rut.soil_elastic_energy_j();
+        require(rut.step_plastic_loss_j() > 0.0, "virgin pass has plastic loss");
+        rut.clear_step_loss();
+        require(rut.step_plastic_loss_j() == 0.0 &&
+                rut.total_plastic_loss_j() == total_before &&
+                rut.soil_elastic_energy_j() == elastic_before,
+                "clear_step_loss clears only step_plastic_loss_j");
+    }
+
+    void section_masking_and_restore_bounds() {
+        // I2: a rigid section overrides a deformable base material instead
+        // of leaking soil underneath, and sections[0] at start_m = 0
+        // extends across x < 0.
+        std::vector<double> z(8401, 0.0);
+        const biketyre::RoadProfile road(-2.0, 0.005, std::move(z));
+        nativecfg::SurfaceMap map;
+        map.surface = spec("scree");
+        map.surface.layer_thickness_m = 0.05;
+        nativecfg::SurfaceSection rigid_sec;
+        rigid_sec.start_m = 10.0;
+        rigid_sec.end_m = 20.0;
+        rigid_sec.surface = spec("asphalt");
+        rigid_sec.layer_thickness_m = 0.0;
+        map.sections.push_back(rigid_sec);
+        biketyre::RutMemory rut(road, map);
+        const std::size_t g_rigid = static_cast<std::size_t>((15.0 - (-2.0)) / 0.005);
+        const std::size_t g_soft = static_cast<std::size_t>((5.0 - (-2.0)) / 0.005);
+        require(rut.h_s_m()[g_rigid] == 0.0,
+                "rigid section masks deformable base layer");
+        require(rut.h_s_m()[g_soft] > 0.049 && rut.h_s_m()[g_soft] < 0.051,
+                "base deformable layer remains active outside rigid section");
+
+        // sections[0] starting at 0.0 extends to x < 0.
+        nativecfg::SurfaceMap map0;
+        map0.surface = spec("hardpack");
+        nativecfg::SurfaceSection start_sec;
+        start_sec.start_m = 0.0;
+        start_sec.end_m = 10.0;
+        start_sec.surface = spec("loose");
+        start_sec.blend_m = 0.4;
+        start_sec.layer_thickness_m = 0.04;
+        map0.sections.push_back(start_sec);
+        const biketyre::RutMemory rut0(road, map0);
+        const std::size_t g_neg = static_cast<std::size_t>((-0.5 - (-2.0)) / 0.005);
+        require(rut0.h_s_m()[g_neg] > 0.039 && rut0.h_s_m()[g_neg] < 0.041,
+                "sections[0] at start_m = 0 extends across x < 0");
+
+        // C2: restore rejects rigid-node zm > 0, zm > h_s, and ze > zm - zp.
+        const double b_m = 0.03;
+        biketyre::RutStateDiff bad_rigid;
+        bad_rigid.spans = {{static_cast<std::uint32_t>(g_rigid),
+                            static_cast<std::uint32_t>(g_rigid + 1)}};
+        bad_rigid.z_max_m = {0.005};
+        bad_rigid.z_p_m = {0.002};
+        bad_rigid.z_e_m = {0.001};
+        require_throws([&] { rut.restore(bad_rigid, b_m); },
+                       "restore rejects nonzero rut on rigid node");
+        biketyre::RutStateDiff bad_depth;
+        bad_depth.spans = {{static_cast<std::uint32_t>(g_soft),
+                            static_cast<std::uint32_t>(g_soft + 1)}};
+        bad_depth.z_max_m = {0.06};
+        bad_depth.z_p_m = {0.02};
+        bad_depth.z_e_m = {0.01};
+        require_throws([&] { rut.restore(bad_depth, b_m); },
+                       "restore rejects zm > h_s");
+        biketyre::RutStateDiff bad_ze;
+        bad_ze.spans = {{static_cast<std::uint32_t>(g_soft),
+                         static_cast<std::uint32_t>(g_soft + 1)}};
+        bad_ze.z_max_m = {0.02};
+        bad_ze.z_p_m = {0.015};
+        bad_ze.z_e_m = {0.01};
+        require_throws([&] { rut.restore(bad_ze, b_m); },
+                       "restore rejects ze > zm - zp");
+    }
+
     // NOLINTNEXTLINE(bugprone-throwing-static-initialization,cert-err58-cpp) the registry holds only literal string_view/function-pointer pairs
     const std::array cases{
             TestCase{.name = "layer_field_resolves",
@@ -349,6 +492,10 @@ namespace {
                      .run = snapshot_restore_roundtrip},
             TestCase{.name = "validation_band",
                      .run = validation_band},
+            TestCase{.name = "spec_constants_and_c1_toe_regularization",
+                     .run = spec_constants_and_c1_toe_regularization},
+            TestCase{.name = "section_masking_and_restore_bounds",
+                     .run = section_masking_and_restore_bounds},
     };
 } // namespace
 

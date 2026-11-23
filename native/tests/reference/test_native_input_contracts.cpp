@@ -1164,11 +1164,19 @@ void patch_side_schema(const Value& snaps, std::string_view side) {
             good.layer_thickness_m = depth;
             nativecfg::validate(good);  // the band edges are inclusive
         }
-        for (const double depth : {0.005, 0.5, -0.01}) {
+        for (const double depth : {0.005, 0.5, -0.01, std::numeric_limits<double>::quiet_NaN()}) {
             auto bad = stage_b_surface_spec(soft);
             bad.layer_thickness_m = depth;
             bt::invalid([&] { nativecfg::validate(bad); });
         }
+        // Terrain SurfaceSection::validate() must also reject NaN layer_thickness_m.
+        bt::invalid([&] {
+            const bike::terrain::SurfaceSection bad_sec{
+                .start_m = 5.0, .end_m = 10.0, .surface = std::string(soft),
+                .blend_m = 0.0,
+                .layer_thickness_m = std::numeric_limits<double>::quiet_NaN()};
+            bad_sec.validate();
+        });
         auto zero = stage_b_surface_spec(soft);
         zero.layer_thickness_m = 0.0;
         nativecfg::validate(zero);  // Stage A compatibility depth

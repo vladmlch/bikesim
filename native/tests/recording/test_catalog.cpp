@@ -74,7 +74,9 @@ void catalog_contract() {
     // 520 added channel_rider_launch (2 identity keys + 6 leaves).
     // 521 added channel_energy.rider_end_stop_loss_step_j (launch part 4,
     // task 3's anatomical end-stop loss line).
-    bt::require(count == 521, "full reviewed catalog retains all 521 repeated/nested descriptor occurrences");
+    // 522 added channel_energy.ground_plastic_loss_step_j (Stage B
+    // deformable ground plastic compaction loss line).
+    bt::require(count == 522, "full reviewed catalog retains all 522 repeated/nested descriptor occurrences");
     const auto golden = io::parse_json(bt::text(bt::fixture("recording/catalog_welded.json")));
     const auto& coordinates = io::as_array(rec::value::require(rec::value::require(golden,"coordinates"),"qpos"),"qpos");
     std::vector<rec::JointCoords> joints;

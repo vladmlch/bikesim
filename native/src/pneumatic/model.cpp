@@ -246,6 +246,7 @@ namespace biketyre {
         last_outputs_.patch_slots.resize(bound);
         staging_.patch_slots.resize(bound);
         write_empty(last_outputs_, tyre_);
+        write_empty(staging_, tyre_);
     }
 
     void PneumaticTyreModel::reset() {
@@ -738,14 +739,32 @@ namespace biketyre {
                         tyre_.casing_width_mm * 0.001 * contact_length_m;
                 const double mu_cap = soil->state->traction_mu_cap(
                         centroid_world_m[0], patch_area_m2, normal_load_n);
-                if (std::isfinite(mu_cap) && mu_cap < surface->mu_slide) {
-                    if (surface != &surface_scratch_)
-                        surface_scratch_ = *surface;
-                    surface_scratch_.mu_peak =
-                            std::min(surface_scratch_.mu_peak, mu_cap);
-                    surface_scratch_.mu_slide =
-                            std::min(surface_scratch_.mu_slide, mu_cap);
-                    surface = &surface_scratch_;
+                if (std::isfinite(mu_cap)) {
+                    if (mu_cap < surface->mu_peak) {
+                        if (surface != &surface_scratch_)
+                            surface_scratch_ = *surface;
+                        surface_scratch_.mu_peak =
+                                std::min(surface_scratch_.mu_peak, mu_cap);
+                        surface_scratch_.mu_slide =
+                                std::min(surface_scratch_.mu_slide, mu_cap);
+                        surface = &surface_scratch_;
+                    }
+                    if (discretised_ && uniform == nullptr) {
+                        for (std::size_t j = 0; j < w; ++j) {
+                            auto &samp = sample_scratch_[j];
+                            if (samp.load_sensitivity != 0.0) {
+                                const double factor =
+                                        tirecommon::load_sensitivity_factor(
+                                                wheel_normal_load_n,
+                                                samp.load_sensitivity);
+                                samp.mu_peak *= factor;
+                                samp.mu_slide *= factor;
+                                samp.load_sensitivity = 0.0;
+                            }
+                            samp.mu_peak = std::min(samp.mu_peak, mu_cap);
+                            samp.mu_slide = std::min(samp.mu_slide, mu_cap);
+                        }
+                    }
                 }
             }
 

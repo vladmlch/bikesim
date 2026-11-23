@@ -458,6 +458,24 @@ double TireWriterView::radial_dissipation_power_w() const {
     }, writer_);
 }
 
+bool TireWriterView::has_deformable_layer() const noexcept {
+    if (const auto *const *p = std::get_if<PneumaticTireWriter *>(&writer_))
+        return (*p)->has_deformable_layer();
+    return false;
+}
+
+double TireWriterView::soil_elastic_energy_j() const noexcept {
+    if (const auto *const *p = std::get_if<PneumaticTireWriter *>(&writer_))
+        return (*p)->soil_elastic_energy_j();
+    return 0.0;
+}
+
+double TireWriterView::ground_plastic_loss_step_j() const noexcept {
+    if (const auto *const *p = std::get_if<PneumaticTireWriter *>(&writer_))
+        return (*p)->ground_plastic_loss_step_j();
+    return 0.0;
+}
+
 void TireWriterView::set_state(std::span<const std::string> names,
                                std::span<const double> row) const {
     std::visit([&](auto *w) { w->set_state(names, row); }, writer_);

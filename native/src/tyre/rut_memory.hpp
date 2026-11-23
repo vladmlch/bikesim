@@ -38,7 +38,6 @@ namespace biketyre {
 class RoadProfile;
 class RayRing;
 struct RayHitBuffers;
-struct RayHits;
 class RutMemory;
 
 // Sparse restore image of the deformable layer: merged half-open node
@@ -146,6 +145,7 @@ public:
         return plastic_loss_j_;
     }
     void begin_step() noexcept;
+    void clear_step_loss() noexcept { step_plastic_loss_j_ = 0.0; }
 
     // Sparse state I/O for reset/settle/episode restore. restore()
     // re-derives the per-node unload stiffness under the given contact
@@ -196,7 +196,7 @@ private:
     double plastic_loss_j_ = 0.0;
     // Construction-sized scratch: per-ray solve rows and the commit
     // scatter/gather rows. Mutable: probe calls write scratch only.
-    mutable std::vector<double> scratch_z_, scratch_f_, scratch_zt_,
+    mutable std::vector<double> scratch_f_, scratch_zt_,
             scratch_zw_;
     mutable std::vector<char> covered_;
     mutable std::vector<std::uint32_t> nodes_idx_;

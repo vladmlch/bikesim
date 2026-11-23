@@ -105,6 +105,7 @@ struct RawStep {
     std::vector<std::pair<std::string, double>>
         numerical_constraint_power_w;
     double loss_step_j = 0.;
+    double ground_plastic_loss_step_j = 0.;
     // The energy/momentum solve runs on measured intervals only
     // (raw.full): disengaged optionals are the oracle's None raws, and
     // period close forwards the closing measured datum to the rest.
@@ -584,7 +585,8 @@ private:
         std::optional<std::string> contact_crash{};
         WireObject sensors{}, tires{}, drive{};
         writers::RiderContactsDiagnostics rider_diag{};
-        double loss_step = 0., linkage_error = 0., shock_limit_power = 0.;
+        double loss_step = 0., ground_plastic_loss_step = 0.,
+               linkage_error = 0., shock_limit_power = 0.;
         std::vector<double> solved_actuator{};
         std::vector<double> solved_passive{}; // oracle parity; currently unread
     };

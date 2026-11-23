@@ -76,6 +76,7 @@ void SurfaceSection::validate() const {
     if(!(0.<=start_m && start_m<end_m)) throw std::invalid_argument("surface interval must satisfy 0 <= start < end");
     detail::nonnegative(blend_m,"SurfaceSection.blend_m");
     (void)get_surface(surface);
+    detail::finite(layer_thickness_m,"SurfaceSection.layer_thickness_m");
     if(layer_thickness_m!=0.){
         if(surface!="loose"&&surface!="scree")
             throw std::invalid_argument("SurfaceSection.layer_thickness_m: a nonzero layer depth is valid only on loose or scree");

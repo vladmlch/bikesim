@@ -87,6 +87,9 @@ public:
     [[nodiscard]] double elastic_energy_j() const;
     [[nodiscard]] double brush_loss_step_j() const;
     [[nodiscard]] double radial_dissipation_power_w() const;
+    [[nodiscard]] bool has_deformable_layer() const noexcept;
+    [[nodiscard]] double soil_elastic_energy_j() const noexcept;
+    [[nodiscard]] double ground_plastic_loss_step_j() const noexcept;
     void set_state(std::span<const std::string> names,
                    std::span<const double> row) const;
     // Initialization-only two-phase material restore. The same decoder is

@@ -228,6 +228,10 @@ namespace biketyre {
                     "a loaded patch must have positive half-length");
 
         const double mu = surface_mu(surface, sliding_speed_mps);
+        if (mu <= 0.0)
+            return {.force_n = 0.0,
+                    .fully_sliding = sigma_x(kappa_prime) != 0.0,
+                    .friction_coefficient = 0.0};
         const double c_px =
                 tread_stiffness_n_m2(normal_load_n, half_length_m,
                                      surface, explicit_stiffness_n_m2);

@@ -878,6 +878,26 @@ R"CATALOG({
           "frame": "n/a",
           "path": [
             "energy",
+            "ground_plastic_loss_step_j"
+          ],
+          "aliases": [],
+          "shape": null,
+          "axes": null,
+          "except_keys": [],
+          "children": [],
+          "key": "ground_plastic_loss_step_j",
+          "dtype": "double",
+          "unit": "J",
+          "phase": "interval",
+          "optional": false,
+          "measurement": "derived",
+          "source": "src/bike_sim/sim/ride/physical_runtime.py::PhysicalRuntime._loss_increment",
+          "description": "deformable ground plastic compaction dissipation of this interval (included in loss_step_j; Stage B)"
+        },
+        {
+          "frame": "n/a",
+          "path": [
+            "energy",
             "solver_constraint_work_j"
           ],
           "aliases": [],

@@ -253,12 +253,17 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
                    sec.layer_thickness_m > 0.0;
         })) {
         rut_memory_.emplace(engaged(profile_), surface_map_);
-        rut_backup_.emplace(engaged(profile_), surface_map_);
-        // The front wheel is the compacting pass that defines the
-        // rut's yield surface — cache its half-width for the no-throw
-        // commit/restore paths (they cannot call engaged()).
-        rut_half_width_m_ =
-                0.5 * pneu.front.casing_width_mm * 0.001;
+        if (rut_memory_->active()) {
+            rut_backup_.emplace(engaged(profile_), surface_map_);
+            // The front wheel is the compacting pass that defines the
+            // rut's yield surface — cache its half-width for the no-throw
+            // commit/restore paths (they cannot call engaged()). Assumes
+            // equal front/rear casing widths (true on shipped profiles).
+            rut_half_width_m_ =
+                    0.5 * pneu.front.casing_width_mm * 0.001;
+        } else {
+            rut_memory_.reset();
+        }
     }
     // :92-99 — self.wheels, resolved in dict-literal order.
     const WheelBinding front =
@@ -348,7 +353,10 @@ PneumaticTireWriter::PneumaticTireWriter(const mjModel *m,
         // name this writer's map can emit — the rollback/probe banks
         // get the same reserve because assign() and probe evaluate()
         // write those slots too.
-        tyres_[s]->prewarm_detailed_brushes();
+        if (discretised_) {
+            tyres_[s]->prewarm_detailed_brushes();
+            probe_[s]->prewarm_detailed_brushes();
+        }
         for (biketyre::PneumaticTyreModel *model:
              {tyres_[s].get(), backup_[s].get(), probe_[s].get()})
             model->reserve_patch_names(surface_capacity);
@@ -783,9 +791,12 @@ void PneumaticTireWriter::prepare_state(
                 throw std::runtime_error(
                         "tire state rut.node.* records must be in "
                         "strictly increasing index order");
+            const double hs = rut_memory_->h_s_m()[gi];
             if (!std::isfinite(zm) || !std::isfinite(zp) ||
                 !std::isfinite(ze) || zm < 0.0 || zp < 0.0 ||
-                ze < 0.0 || zp > zm || ze > zm)
+                ze < 0.0 || zp > zm || ze > zm - zp ||
+                (zm > 0.0 && !(hs > 0.0)) ||
+                (hs > 0.0 && zm > hs))
                 throw std::runtime_error(std::format(
                         "tire state rut.node.{:04d} carries an invalid "
                         "(z_max, z_p, z_e) triple", k));
@@ -940,9 +951,9 @@ double PneumaticTireWriter::stored_energy(const mjData *d) const {
                 tyre, std::span<const double>(hits.delta_m));
         energy += shear_energy_j(tyre);
     }
-    // Stage B: the committed soil elastic depression is stored energy
-    // the same as the carcass's — the exact-balance audit folds it.
-    return energy + soil_elastic_energy_j();
+    // Tire-only elastic energy; soil elastic energy is reported
+    // separately through soil_elastic_energy_j().
+    return energy;
 }
 
 // Caller precondition: `d` is the live mjData of the model this writer
@@ -1036,9 +1047,8 @@ void PneumaticTireWriter::accumulate_validated(const mjData *d,
         diagnostics_[0] = diagnostics_stage_[0];
         diagnostics_[1] = diagnostics_stage_[1];
         committed_ = true;
-        elastic_energy_j_ = energy + soil_elastic_energy_j();
-        brush_loss_step_j_ =
-                brush_loss + ground_plastic_loss_step_j();
+        elastic_energy_j_ = energy;
+        brush_loss_step_j_ = brush_loss;
         radial_dissipation_power_w_ = radial_power;
         last_time_s_ = time;
     } catch (...) {

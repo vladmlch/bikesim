@@ -754,6 +754,11 @@ void same_model_state(const biketyre::PneumaticTyreModel &a, const biketyre::Pne
         }
     }
     const auto &energy = sw::object(sw::required(rows.back()->channels, "energy"));
+    const auto &elastic = sw::object(sw::required(energy, "elastic_energy_j"));
+    bt::require(sw::find(elastic, "soil") == nullptr,
+                "rigid ride omits soil from elastic_energy_j");
+    bt::require(sw::number(sw::required(energy, "ground_plastic_loss_step_j")) == 0.0,
+                "rigid ride reports zero ground_plastic_loss_step_j");
     const auto eq = research::energy_quality(energy, 0.05);
     bt::require(eq.acceptable && eq.residual_ratio <= 0.05,
                 "60 m mixed-surface pneumatic ride satisfies energy_quality <= 0.05");
@@ -1691,19 +1696,61 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
                         virgin_row[rut_base] == 0.0,
                     "virgin rut serializes count 0 over the full row");
         // The decisive capacity proof: a canonical row dirtying EVERY
-        // grid node (12201 > the retired 8192 cap) must decode — the
-        // slot bound is the grid, not a fixed constant.
-        auto full = virgin_row;
-        full[rut_base] = static_cast<double>(nodes);
-        for (std::size_t k = 0; k < nodes; ++k) {
-            full[rut_base + 1 + 4 * k + 0] = static_cast<double>(k);
-            full[rut_base + 1 + 4 * k + 1] = 0.001;
-            full[rut_base + 1 + 4 * k + 2] = 0.0;
-            full[rut_base + 1 + 4 * k + 3] = 0.0;
+        // grid node (12201 > the retired 8192 cap) must decode on a
+        // whole-track deformable map — the slot bound is the grid, not a
+        // fixed constant.
+        {
+            auto whole_cfg = cfg;
+            auto scree_base = surface("scree");
+            scree_base.layer_thickness_m = 0.05;
+            whole_cfg.surface_map = nativecfg::SurfaceMap{
+                    .surface = scree_base, .sections = {}};
+            const auto whole_writer =
+                    std::make_unique<PneumaticTireWriter>(m, d, whole_cfg);
+            const auto &whole_names = whole_writer->state_names();
+            auto full = whole_writer->state();
+            full[rut_base] = static_cast<double>(nodes);
+            for (std::size_t k = 0; k < nodes; ++k) {
+                full[rut_base + 1 + 4 * k + 0] = static_cast<double>(k);
+                full[rut_base + 1 + 4 * k + 1] = 0.001;
+                full[rut_base + 1 + 4 * k + 2] = 0.0;
+                full[rut_base + 1 + 4 * k + 3] = 0.0;
+            }
+            whole_writer->set_state(whole_names, full);
+            bt::require(whole_writer->rut_state().z_max_m.size() == nodes,
+                        "full-grid rut row restores past the retired cap");
         }
-        rig.tire->set_state(names, full);
-        bt::require(rig.tire->rut_state().z_max_m.size() == nodes,
-                    "full-grid rut row restores past the retired cap");
+        // Negative C2 wire gates: set_state must reject dirtying a rigid
+        // node, zm > h_s, and ze > zm - zp.
+        {
+            auto bad_rigid = virgin_row;
+            bad_rigid[rut_base] = 1.0;
+            bad_rigid[rut_base + 1] = 0.0; // x = -1.0 m (rigid hardpack)
+            bad_rigid[rut_base + 2] = 0.001;
+            bad_rigid[rut_base + 3] = 0.0;
+            bad_rigid[rut_base + 4] = 0.0;
+            bt::pneumatic::rejects<std::runtime_error>(
+                    [&] { rig.tire->set_state(names, bad_rigid); },
+                    "invalid");
+            auto bad_depth = virgin_row;
+            bad_depth[rut_base] = 1.0;
+            bad_depth[rut_base + 1] = 600.0; // x = 2.0 m (scree, h_s = 0.05)
+            bad_depth[rut_base + 2] = 0.06;
+            bad_depth[rut_base + 3] = 0.01;
+            bad_depth[rut_base + 4] = 0.01;
+            bt::pneumatic::rejects<std::runtime_error>(
+                    [&] { rig.tire->set_state(names, bad_depth); },
+                    "invalid");
+            auto bad_ze = virgin_row;
+            bad_ze[rut_base] = 1.0;
+            bad_ze[rut_base + 1] = 600.0;
+            bad_ze[rut_base + 2] = 0.02;
+            bad_ze[rut_base + 3] = 0.015;
+            bad_ze[rut_base + 4] = 0.01;
+            bt::pneumatic::rejects<std::runtime_error>(
+                    [&] { rig.tire->set_state(names, bad_ze); },
+                    "invalid");
+        }
         rig.tire->restore_rut_state(biketyre::RutStateDiff{});
     }
 
@@ -1891,6 +1938,10 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
                     "scree node carries the authored layer depth");
         const double eps = 1e-6;
         double prev_p = rut.pressure_virgin(g_law, 0.0, b_m);
+        bt::require(prev_p == 0.0, "regularized virgin pressure vanishes at z = 0");
+        const double slope0 = rut.pressure_virgin_slope(g_law, 0.0, b_m);
+        bt::require(std::isfinite(slope0) && slope0 > 0.0,
+                    "regularized virgin slope is finite and positive at z = 0");
         for (int k = 1; k <= 40; ++k) {
             const double z = 0.95 * hs * k / 40.0;
             const double p = rut.pressure_virgin(g_law, z, b_m);
@@ -1960,7 +2011,10 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
         const double elastic_before = rig.tire->elastic_energy_j();
         const double brush_before = rig.tire->brush_loss_step_j();
         const double soil_before = rig.tire->soil_elastic_energy_j();
+        allocation_counter::reset();
         rig.tire->probe_compute_into(d, dt, probe_out);
+        bt::require(allocation_counter::count() == std::size_t{0},
+                    "deformable probe_compute_into performs zero heap allocations");
         same_rut_state(rut_before, rig.tire->rut_state());
         bitwise_equal(state_before, rig.tire->state());
         bt::require(rig.tire->elastic_energy_j() == elastic_before &&
@@ -1968,6 +2022,53 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
                         rig.tire->soil_elastic_energy_j() == soil_before,
                     "probe leaves every committed energy field bitwise");
     }
+    // I4: detailed tier probe_compute_into is also allocation-free.
+    {
+        const auto det_cfg = stage_b_deformable_config("detailed");
+        const auto det_writer =
+                std::make_unique<PneumaticTireWriter>(m, d, det_cfg);
+        allocation_counter::reset();
+        det_writer->probe_compute_into(d, 0.00025, probe_out);
+        bt::require(allocation_counter::count() == std::size_t{0},
+                    "detailed deformable probe_compute_into performs zero heap allocations");
+    }
+    // C1 + I1: steep scree slope where traction_mu_cap == 0.0 must not
+    // produce NaN at kappa_prime == 0.0 in lumped_brush or detailed brush,
+    // and heterogeneous detailed patches must honor traction_mu_cap.
+    {
+        const auto spec = bt::tyres::front_tyre();
+        const std::size_t n_pts = 401;
+        std::vector<double> z_steep(n_pts, 0.0);
+        for (std::size_t i = 0; i < n_pts; ++i)
+            z_steep[i] = 0.65 * (static_cast<double>(i) * 0.005); // grade 65% > mu_basal 0.42
+        const biketyre::RoadProfile steep_road(0.0, 0.005, std::move(z_steep));
+        const nativecfg::SurfaceMap steep_map{
+                .surface = surface("hardpack"),
+                .sections = {{.start_m = 0.5, .end_m = 1.5,
+                              .surface = surface("scree"), .blend_m = 0.2,
+                              .layer_thickness_m = 0.15}}};
+        const biketyre::RutMemory steep_rut(steep_road, steep_map);
+        const biketyre::SoilContact soil{.state = &steep_rut, .commit = nullptr};
+        const double x_hub = 1.0;
+        const double z_road = 0.65 * x_hub;
+        // Light touch on steep scree with zero slip (kappa_prime == 0.0):
+        // traction_mu_cap == 0.0.
+        const std::array<double, 3> hub{
+                x_hub, 0.0, z_road + spec.outer_radius_mm * 0.001 - 0.0008};
+        const std::array<double, 3> vel{0.0, 0.0, 0.0};
+        for (const bool detailed : {false, true}) {
+            biketyre::PneumaticTyreModel model(spec, 64, 75.0, detailed);
+            const auto &wheel_out = model.evaluate(
+                    hub, vel, 0.0, steep_road, steep_map, 0.0005, &soil);
+            bt::require(std::isfinite(wheel_out.force_world_n[0]) &&
+                            std::isfinite(wheel_out.force_world_n[2]),
+                        "mu_cap == 0 with kappa_prime == 0 stays finite");
+        }
+    }
+    rig.tire->clear_settled_loss();
+    bt::require(rig.tire->brush_loss_step_j() == 0.0 &&
+                    rig.tire->ground_plastic_loss_step_j() == 0.0,
+                "clear_settled_loss clears both tire brush and soil plastic step losses");
 }
 
 [[gnu::noinline]] void test_stage_b_deformable_layer_ride_energy_gate() {
@@ -2027,7 +2128,12 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
     bt::require(!rows.empty() && rows.back()->qpos[0] >= 72.0,
                 "rider carries both wheels across scree into hardpack");
     std::size_t energy_rows = 0;
-    std::size_t bad_rows = 0;
+    std::size_t bad_eq_rows = 0;
+    double max_residual_ratio = 0.0;
+    double max_soil_elastic_j = 0.0;
+    double sum_ground_plastic_j = 0.0;
+    bool saw_soil_elastic_positive = false;
+    bool saw_ground_plastic_positive = false;
     for (const auto &row : rows) {
         bt::require(research::model_violations(*row).empty(),
                     "no model violations on the deformable ride");
@@ -2045,19 +2151,43 @@ rut_state_without_nodes(const biketyre::RutStateDiff &src,
                             "nonnegative brush loss on deformable soil");
         }
         // Strict energy accounting on every measured step: the residual
-        // ratio gate the other ride legs use, applied per row.
+        // ratio gate the other ride legs use, applied per row, plus the
+        // separated soil elastic and ground plastic loss channels.
         const auto *energy_w = sw::find(row->channels, "energy");
         bt::require(energy_w != nullptr,
                     "every measured step carries the energy channel");
-        const auto eq =
-                research::energy_quality(sw::object(*energy_w), 0.05);
-        bad_rows += !(eq.acceptable && eq.residual_ratio <= 0.05);
+        const auto &energy_obj = sw::object(*energy_w);
+        const auto &elastic_obj =
+                sw::object(sw::required(energy_obj, "elastic_energy_j"));
+        const double soil_elastic =
+                sw::number(sw::required(elastic_obj, "soil"));
+        const double ground_plastic = sw::number(
+                sw::required(energy_obj, "ground_plastic_loss_step_j"));
+        bt::require(soil_elastic >= 0.0 && ground_plastic >= 0.0,
+                    "soil elastic energy and ground plastic loss are "
+                    "nonnegative");
+        saw_soil_elastic_positive |= soil_elastic > 0.0;
+        saw_ground_plastic_positive |= ground_plastic > 0.0;
+        max_soil_elastic_j = std::max(max_soil_elastic_j, soil_elastic);
+        sum_ground_plastic_j += ground_plastic;
+        const auto eq = research::energy_quality(energy_obj, 0.05);
+        max_residual_ratio = std::max(max_residual_ratio, eq.residual_ratio);
+        bad_eq_rows += !(eq.acceptable && eq.residual_ratio <= 0.05);
         ++energy_rows;
     }
+    bt::require(saw_soil_elastic_positive,
+                "deformable ride records positive elastic_energy_j.soil");
+    bt::require(saw_ground_plastic_positive,
+                "deformable ride records positive ground_plastic_loss_step_j "
+                "on virgin compaction");
     bt::require(energy_rows == rows.size(),
                 "energy quality checked on every recorded step");
-    bt::require(bad_rows == 0,
-                "strict energy accounting on every measured step");
+    bt::require(bad_eq_rows == 0,
+                std::format("strict energy accounting failed: bad_eq={}, "
+                            "max_ratio={:.6f}, max_soil_e={:.6f} J, "
+                            "sum_plastic={:.6f} J",
+                            bad_eq_rows, max_residual_ratio,
+                            max_soil_elastic_j, sum_ground_plastic_j));
 
     // Rut engagement proof plus probe purity at the PhysicalStep level:
     // the canonical tire state carries the rut block, the ride left a

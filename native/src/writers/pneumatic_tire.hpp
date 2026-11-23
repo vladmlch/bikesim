@@ -209,10 +209,10 @@ public:
 
     // Stage B deformable granular layer: engaged when the resolved
     // surface map carries a positive layer_thickness_m on a loose or
-    // scree section. The committed soil elastic energy already folds
-    // into elastic_energy_j()/stored_energy(); these are the direct
-    // accessors plus the sparse state-diff face the reset/restore
-    // paths use.
+    // scree section. Soil elastic energy and plastic compaction work are
+    // kept separate from the tire-only elastic_energy_j()/stored_energy()
+    // and brush_loss_step_j() channels; PhysicalStep publishes them under
+    // elastic_energy_j["soil"] and energy["ground_plastic_loss_step_j"].
     [[nodiscard]] bool has_deformable_layer() const noexcept {
         return rut_memory_.has_value();
     }
@@ -235,7 +235,10 @@ public:
     [[nodiscard]] double brush_loss_step_j() const noexcept {
         return brush_loss_step_j_;
     }
-    void clear_settled_loss() noexcept { brush_loss_step_j_ = 0.; }
+    void clear_settled_loss() noexcept {
+        brush_loss_step_j_ = 0.;
+        if (rut_memory_) rut_memory_->clear_step_loss();
+    }
     [[nodiscard]] double radial_dissipation_power_w() const noexcept {
         return radial_dissipation_power_w_;
     }

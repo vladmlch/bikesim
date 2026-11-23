@@ -197,6 +197,7 @@ WireObject account_energy(AccountingState &state, const AccountingConfig &config
         {"active_work_j", Wire(e.active_work_j)}, {"external_work_j", Wire(e.external_work_j)},
         {"loss_j", Wire(e.loss_j)}, {"loss_step_j", Wire(raw.loss_step_j + end_stop_loss)},
         {"rider_end_stop_loss_step_j", Wire(end_stop_loss)},
+        {"ground_plastic_loss_step_j", Wire(raw.ground_plastic_loss_step_j)},
         {"solver_constraint_work_j", Wire(e.solver_work_j)}, {"energy_scale_j", Wire(e.energy_scale_j)},
         {"muscle_signed_j", Wire(e.muscle_signed_j)}, {"muscle_positive_j", Wire(e.muscle_positive_j)},
         {"motor_signed_j", Wire(e.motor_signed_j)}, {"motor_positive_j", Wire(e.motor_positive_j)},

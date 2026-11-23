@@ -45,6 +45,7 @@ Object energy_object() {
             {"loss_j", real(.25)},
             {"loss_step_j", real(.001)},
             {"rider_end_stop_loss_step_j", real(0.)},
+            {"ground_plastic_loss_step_j", real(0.)},
             {"solver_constraint_work_j", real(0.)},
             {"energy_scale_j", real(10.)},
             {"muscle_signed_j", real(1.)},

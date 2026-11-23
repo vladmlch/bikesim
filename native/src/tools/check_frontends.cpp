@@ -63,6 +63,20 @@ std::vector<std::string> default_frontend_flags() {
     return flags;
 }
 
+// GCC frontend mode, shared by the flag probe and the per-TU argv so the probe
+// proves the flags the sweep passes. A restricted run (--only-sources, level 1
+// of tools/check_change.sh) compiles each selected TU with -c -O0 -o /dev/null,
+// so middle-end flow diagnostics such as -Winvalid-noreturn fire. The
+// unrestricted sweep (519 TUs) keeps -fsyntax-only: a real compile per TU costs
+// ~236 s there, against ~90 s for -fsyntax-only. It is affordable only on a
+// handful of TUs. Level 1 is required before the native and full gates
+// (tools/run_tests.sh), so the real compile still runs before them, and the
+// whole-image odr sweep in full compiles every TU.
+std::vector<std::string> gcc_frontend_mode(bool restricted) {
+    if (restricted) return {"-c", "-O0", "-o", "/dev/null"};
+    return {"-fsyntax-only"};
+}
+
 // repr() of a Python str list — used in the frontend-probe diagnostics so
 // the message keeps the oracle's exact rendering.
 std::string repr_str_list(const std::vector<std::string> &items) {
@@ -99,7 +113,7 @@ struct FrontendFlagProbe {
 };
 FrontendFlagProbe probe_frontend_warning_flags(
     const fs::path &tool, const fs::path &work_directory, // NOLINT(bugprone-easily-swappable-parameters) positional signature mirrors the Python reference API
-    const fs::path &log_directory) {
+    const fs::path &log_directory, const std::vector<std::string> &mode) {
     const fs::path probe_directory = work_directory / "warning-probe";
     std::error_code ec;
     fs::create_directories(probe_directory, ec);
@@ -111,10 +125,10 @@ FrontendFlagProbe probe_frontend_warning_flags(
             throw CheckError("cannot write frontend warning probe: " +
                              probe_source.string());
     }
-    // Same mode as the frontends sweep, so the probe proves the flags the
-    // sweep will actually pass (see tool_argv).
-    std::vector<std::string> base{tool.string(), "-std=c++23", "-c", "-O0",
-                                  "-o", "/dev/null"};
+    // Same mode as the sweep, so the probe proves the flags it will pass (see
+    // gcc_frontend_mode).
+    std::vector<std::string> base{tool.string(), "-std=c++23"};
+    base.insert(base.end(), mode.begin(), mode.end());
     for (const std::string_view flag: kGccRequiredFlags)
         base.emplace_back(flag);
     // Oracle: [tool, *base, probe_source] — the probe TU must reach the
@@ -215,13 +229,15 @@ std::string padded_index(std::size_t index) {
 }
 
 // _tool_argv: per-kind process argv construction. `frontend_flags` is the
-// probed (or default) GCC warning set for the gcc-side kinds.
+// probed (or default) GCC warning set for the gcc-side kinds; `gcc_mode` is
+// gcc_frontend_mode for this run.
 std::vector<std::string> tool_argv(const std::string &kind,
                                    const fs::path &tool,
                                    const CompileEntry &entry,
                                    const Value &context, const fs::path &build,
                                    const std::string &run_id, std::size_t index,
-                                   const std::vector<std::string> &frontend_flags) {
+                                   const std::vector<std::string> &frontend_flags,
+                                   const std::vector<std::string> &gcc_mode) {
     const fs::path &source = entry.source;
     const std::vector<std::string> launcher = compiler_launcher(context);
     if (kind == "tidy")
@@ -262,14 +278,15 @@ std::vector<std::string> tool_argv(const std::string &kind,
     if (kind == "frontends") {
         // [*launcher, tool, ...]: the configured compiler launcher wraps
         // the secondary frontend invocation exactly as the oracle spells it.
-        // -c -O0 rather than -fsyntax-only: -fsyntax-only stops before the
-        // middle end, so flow diagnostics such as -Winvalid-noreturn never
-        // fire. -fanalyzer is not passed: under -fsyntax-only it is a no-op
-        // (the analyzer runs in the middle end, so it reported nothing), and
-        // under -c it costs ~4 s per TU, so it is not run per TU.
+        // Mode per gcc_frontend_mode: -c -O0 on restricted runs, where flow
+        // diagnostics such as -Winvalid-noreturn must fire; -fsyntax-only on
+        // the full sweep. -fanalyzer is not passed in either mode: under
+        // -fsyntax-only it is a no-op (the analyzer runs in the middle end),
+        // and under -c it costs ~4 s per TU, so it is not run per TU.
         std::vector<std::string> argv(launcher.begin(), launcher.end());
-        argv.insert(argv.end(), {tool.string(), "-std=c++23", "-c", "-O0",
-                                 "-o", "/dev/null"});
+        argv.push_back(tool.string());
+        argv.emplace_back("-std=c++23");
+        argv.insert(argv.end(), gcc_mode.begin(), gcc_mode.end());
         argv.insert(argv.end(), gcc_args.begin(), gcc_args.end());
         argv.insert(argv.end(), frontend_flags.begin(), frontend_flags.end());
         argv.push_back(source.string());
@@ -544,11 +561,13 @@ int run_sweep(const std::string &kind, const fs::path &build,
                          tool_health_failed;
 
     std::vector<std::string> frontend_flags = default_frontend_flags();
+    const std::vector<std::string> gcc_mode =
+        gcc_frontend_mode(only_sources.has_value());
     if (kind == "frontends" || kind == "odr") {
         try {
             FrontendFlagProbe probe = probe_frontend_warning_flags(
                 tool, build_dir / "native_check_work" / kind / run_id,
-                log_directory);
+                log_directory, gcc_mode);
             frontend_flags = std::move(probe.flags);
             Array applied;
             for (const std::string &flag: frontend_flags)
@@ -594,7 +613,7 @@ int run_sweep(const std::string &kind, const fs::path &build,
         TuOutcome &out = outcomes[index];
         const std::vector<std::string> argv =
             tool_argv(kind, tool, entry, context, build_dir, run_id, index,
-                      frontend_flags);
+                      frontend_flags, gcc_mode);
         std::string name = padded_index(index);
         name += '-';
         name += entry.source.stem().string();

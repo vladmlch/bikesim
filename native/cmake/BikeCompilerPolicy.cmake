@@ -436,9 +436,10 @@ set(_bike_gcc_warning_candidates
   # lane keeps the 8192-byte contract; the sanitizer lane's 24576 bump stacks
   # on top of whichever budget the family selected.
   # NOTE: the GCC frontends sweep (check_frontends.cpp) carries no stack
-  # budget: it compiles each TU at -O0, whose frames are inflated, so it
-  # cannot check this lane's codegen frames. A sweep-side budget needs an
-  # optimized build and is tracked separately.
+  # budget: its full run is -fsyntax-only (no codegen frames) and its level-1
+  # run compiles at -O0, whose frames are inflated, so it cannot check this
+  # lane's codegen frames. A sweep-side budget needs an optimized build and is
+  # tracked separately.
   -Wstack-usage=16384 -Wframe-larger-than=16384 -Wstack-protector)
 
 # Required flags — safety/numerics contract, fail closed when unsupported.

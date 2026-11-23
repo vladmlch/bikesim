@@ -1,6 +1,6 @@
 # tooling_gate — fast contract for the gate launchers (tools/run_tests.sh,
-# tools/run_native_checks.sh) driven against stub cmake/ctest/checks
-# executables. Runs no compiler and no real sweep, so it stays in the
+# tools/run_native_checks.sh, tools/check_change.sh) driven against stub
+# cmake/ctest/checks executables. Runs no compiler and no real sweep, so it stays in the
 # ordinary (non-slow) CTest set.
 #
 # Required -D inputs: REPO_ROOT, SCRATCH_DIR.
@@ -133,11 +133,13 @@ set(_repo "${SCRATCH_DIR}/repo")
 file(MAKE_DIRECTORY "${_repo}/tools" "${_repo}/build/native-release")
 file(COPY "${REPO_ROOT}/tools/run_tests.sh" "${REPO_ROOT}/tools/run_native_checks.sh"
           "${REPO_ROOT}/tools/native_common.sh" DESTINATION "${_repo}/tools")
+file(COPY "${REPO_ROOT}/tools/lib" DESTINATION "${_repo}/tools")
+# STUB_FAIL_cmake / STUB_FAIL_ctest make the stub exit non-zero (default 0).
 foreach(_tool cmake ctest)
   file(WRITE "${_stub_dir}/${_tool}"
     "#!/usr/bin/env bash\n"
     "printf '${_tool} %s\\n' \"$*\" >> \"\${STUB_LOG}\"\n"
-    "exit 0\n")
+    "exit \"\${STUB_FAIL_${_tool}:-0}\"\n")
   file(CHMOD "${_stub_dir}/${_tool}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE)
 endforeach()
 set(_state "${SCRATCH_DIR}/state")
@@ -286,6 +288,179 @@ gate_run(change_docs_only EXPECT_EXIT 0 ENV ${_gate_env}
 expect_file_lines(change_docs_only "${_log}"
   "cmake --build --preset release"
   "ctest --preset release")
+
+# --- check_change.sh: base rule, --uncommitted, tree id, journal, AGENTS.md ---
+# tree_id_run(<var> <dir>) — stdout of tools/lib/tree_id.sh <dir> into <var>
+# (caller scope); a non-zero exit is a contract failure.
+function(tree_id_run var dir)
+  execute_process(COMMAND bash "${_repo}/tools/lib/tree_id.sh" "${dir}"
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT _rc EQUAL 0)
+    set(_failures "${_failures}\n  tree_id(${dir}): exit ${_rc}: ${_err}" PARENT_SCOPE)
+  endif()
+  set(${var} "${_out}" PARENT_SCOPE)
+endfunction()
+
+# scratch_git(<name> <git args...>) — git in the scratch repo; failure is a
+# contract failure.
+function(scratch_git name)
+  execute_process(COMMAND git -c user.name=t -c user.email=t@t ${ARGN}
+    WORKING_DIRECTORY "${_repo}" RESULT_VARIABLE _rc
+    OUTPUT_QUIET ERROR_VARIABLE _err)
+  if(NOT _rc EQUAL 0)
+    set(_failures "${_failures}\n  ${name}: git ${ARGN} failed: ${_err}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# The tree id is a 64-digit sha256, stable on an unchanged tree, the same
+# from the sourced function, and unmoved by a bare touch of a tracked file.
+tree_id_run(_id_a "${_repo}")
+string(LENGTH "${_id_a}" _id_len)
+if(NOT _id_len EQUAL 64 OR NOT _id_a MATCHES "^[0-9a-f]+$")
+  set(_failures "${_failures}\n  tree_id_shape: '${_id_a}' is not a sha256 hex digest")
+endif()
+tree_id_run(_id_b "${_repo}")
+if(NOT _id_b STREQUAL _id_a)
+  set(_failures "${_failures}\n  tree_id_stable: '${_id_a}' then '${_id_b}' on an unchanged tree")
+endif()
+execute_process(COMMAND bash -c [=[source "$1"; bike_tree_id "$2"]=] bash
+  "${_repo}/tools/lib/tree_id.sh" "${_repo}"
+  RESULT_VARIABLE _src_rc OUTPUT_VARIABLE _sourced OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _src_rc EQUAL 0 OR NOT _sourced STREQUAL _id_a)
+  set(_failures "${_failures}\n  tree_id_sourced: '${_sourced}' (exit ${_src_rc}), script gave '${_id_a}'")
+endif()
+# Touching a tracked file (same bytes, newer mtime) must neither change the
+# id nor rewrite .git/index. The sleep makes the mtime newer than the index.
+file(SHA256 "${_repo}/.git/index" _index_before)
+execute_process(COMMAND "${CMAKE_COMMAND}" -E sleep 2)
+file(WRITE "${_repo}/native/src/x.cpp" "int x() { return 0; }\n")
+tree_id_run(_id_c "${_repo}")
+file(SHA256 "${_repo}/.git/index" _index_after)
+if(NOT _index_before STREQUAL _index_after)
+  set(_failures "${_failures}\n  tree_id_index: tree_id rewrote .git/index")
+endif()
+if(NOT _id_c STREQUAL _id_a)
+  set(_failures "${_failures}\n  tree_id_touch: touching a tracked file changed the id")
+endif()
+# An edit to a tracked file and a new untracked file each change the id.
+file(APPEND "${_repo}/docs/a.md" "edit\n")
+tree_id_run(_id_d "${_repo}")
+if(_id_d STREQUAL _id_c)
+  set(_failures "${_failures}\n  tree_id_edit: an edit to docs/a.md left the id unchanged")
+endif()
+file(WRITE "${_repo}/docs/new.md" "# new\n")
+tree_id_run(_id_e "${_repo}")
+if(_id_e STREQUAL _id_d)
+  set(_failures "${_failures}\n  tree_id_untracked: a new untracked file left the id unchanged")
+endif()
+# The id does not depend on the caller's directory: run from the real checkout
+# root, which has no docs/new.md, it must still see the scratch repo's files.
+execute_process(COMMAND bash "${_repo}/tools/lib/tree_id.sh" "${_repo}"
+  WORKING_DIRECTORY "${REPO_ROOT}"
+  RESULT_VARIABLE _cwd_rc OUTPUT_VARIABLE _id_cwd OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _cwd_rc EQUAL 0 OR NOT _id_cwd STREQUAL _id_e)
+  set(_failures "${_failures}\n  tree_id_cwd: from the checkout root '${_id_cwd}' (exit ${_cwd_rc}), expected '${_id_e}'")
+endif()
+# A plain directory nested in the checkout's build/ tree has no repository of
+# its own: it must report nogit, not borrow the outer checkout's HEAD.
+set(_plain "${SCRATCH_DIR}/plain")
+file(MAKE_DIRECTORY "${_plain}")
+file(WRITE "${_plain}/f.txt" "x\n")
+execute_process(COMMAND bash "${_repo}/tools/lib/tree_id.sh" "${_plain}"
+  RESULT_VARIABLE _plain_rc OUTPUT_VARIABLE _plain_id OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT _plain_rc EQUAL 0 OR NOT _plain_id STREQUAL "nogit")
+  set(_failures "${_failures}\n  tree_id_nogit: '${_plain_id}' (exit ${_plain_rc}) for a dir without its own .git")
+endif()
+
+# On main itself an explicit HEAD or main base is accepted, as before.
+gate_run(base_head_on_main EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "passed in"
+  COMMAND bash "${_repo}/tools/check_change.sh" HEAD)
+gate_run(base_main_on_main EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "passed in"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+
+# Branch with its own commits beyond main: an explicit HEAD base is refused
+# before any build runs; an explicit main base is still accepted.
+scratch_git(feature_branch checkout -q -b feature)
+file(WRITE "${_repo}/native/src/y.cpp" "int y() { return 1; }\n")
+file(WRITE "${_repo}/docs/b.md" "# b\n")
+scratch_git(feature_commit add docs/a.md docs/b.md native/src/y.cpp)
+scratch_git(feature_commit commit -q -m feature)
+file(REMOVE "${_log}")
+gate_run(base_head_refused EXPECT_EXIT 2 ENV ${_gate_env}
+  EXPECT_OUTPUT "--uncommitted" "default: main"
+  COMMAND bash "${_repo}/tools/check_change.sh" HEAD)
+if(EXISTS "${_log}")
+  set(_failures "${_failures}\n  base_head_refused: a refused base still ran the build")
+endif()
+gate_run(base_main_on_branch EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "1 changed C++ file(s) (changes since main)"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+
+# --uncommitted sees only the uncommitted x.cpp, not the committed y.cpp.
+file(WRITE "${_repo}/native/src/x.cpp" "int x() { return 1; }\n")
+file(REMOVE "${_log}")
+gate_run(uncommitted_only EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "1 changed C++ file(s) (uncommitted changes)"
+  COMMAND bash "${_repo}/tools/check_change.sh" --uncommitted)
+expect_file_lines(uncommitted_only "${_log}"
+  "cmake --build --preset release"
+  "ctest --preset release"
+  "checks cppcheck jobs=unset"
+  "${_repo}/native/src/x.cpp"
+  "checks frontends jobs=unset"
+  "${_repo}/native/src/x.cpp"
+  "checks tidy jobs=unset"
+  "${_repo}/native/src/x.cpp")
+gate_run(uncommitted_with_base EXPECT_EXIT 2 ENV ${_gate_env}
+  EXPECT_OUTPUT "takes no base"
+  COMMAND bash "${_repo}/tools/check_change.sh" --uncommitted main)
+
+# A passing run journals one change row: 11 columns, jobs from BIKE_CPU_COUNT,
+# and tree= equal to the id of the tree it checked (unchanged by the run).
+file(REMOVE "${_state}/timings.tsv")
+gate_run(journal_change_pass EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "passed in"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(LENGTH _journal _journal_count)
+list(GET _journal -1 _last)
+tree_id_run(_id_now "${_repo}")
+if(NOT _journal_count EQUAL 1
+   OR NOT _last MATCHES "^[^\t]+\t[^\t]+\t[0-9a-f]+\tchange\trelease\t-\t8\tpassed\t[0-9]+\tselected=[0-9]+\ttree=[0-9a-f]+$"
+   OR NOT _last MATCHES "\ttree=${_id_now}$")
+  set(_failures "${_failures}\n  journal_change_pass: journal '${_journal}', tree '${_id_now}'")
+endif()
+
+# A failing run is journaled too, with status failed and the exit kept.
+gate_run(journal_change_fail EXPECT_EXIT 3 ENV ${_gate_env} "STUB_FAIL_ctest=3"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+file(STRINGS "${_state}/timings.tsv" _journal)
+list(LENGTH _journal _journal_count)
+list(GET _journal -1 _last)
+if(NOT _journal_count EQUAL 2 OR NOT _last MATCHES "\tchange\trelease\t-\t8\tfailed\t[0-9]+\tselected=[0-9]+\ttree=${_id_now}$")
+  set(_failures "${_failures}\n  journal_change_fail: journal '${_journal}'")
+endif()
+
+# AGENTS.md above 18000 bytes gets a warning naming the size and agy's 24000
+# cap; at exactly 18000 bytes there is none.
+string(REPEAT "a" 18000 _agents_quiet)
+file(WRITE "${_repo}/AGENTS.md" "${_agents_quiet}")
+gate_run(agents_size_quiet EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "passed in"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+string(FIND "${agents_size_quiet_output}" "agy truncates" _pos)
+if(NOT _pos EQUAL -1)
+  set(_failures "${_failures}\n  agents_size_quiet: warned at 18000 bytes")
+endif()
+string(REPEAT "a" 18001 _agents_over)
+file(WRITE "${_repo}/AGENTS.md" "${_agents_over}")
+gate_run(agents_size_warning EXPECT_EXIT 0 ENV ${_gate_env}
+  EXPECT_OUTPUT "AGENTS.md is 18001 bytes" "agy truncates rule files at 24000 bytes"
+  COMMAND bash "${_repo}/tools/check_change.sh" main)
+file(REMOVE "${_repo}/AGENTS.md")
 
 # (run_tests.sh cases are appended by later tasks above this line.)
 

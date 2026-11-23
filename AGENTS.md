@@ -49,7 +49,10 @@ Three levels; pick the cheapest that covers the moment.
    stage (≤5 min): incremental build, every ordinary test, cppcheck/frontends/
    clang-tidy on the changed TUs and the TUs including a changed header.
    A stage is the smallest group of tasks that leaves the tree building
-   and green; pass the commit before the stage as `base`.
+   and green. Omit `base` (default `main`) unless the branch is long-lived;
+   then pass the commit before the stage, never `HEAD` (refused while the
+   branch has commits beyond main). `--uncommitted` checks only uncommitted
+   and untracked files. Each run journals a `change` row with `tree=<id>`.
 2. **Full** — `bash tools/run_tests.sh native` **once per merge into the
    main branch** whose diff touches what the static-analysis sweeps read:
    C++ sources or headers (tests included), CMake files (any

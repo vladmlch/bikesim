@@ -152,13 +152,9 @@ fi
 
 # Shared gate state (journal; active-gate registry in later tasks): the git
 # common dir is shared by every worktree of this repository.
-if [[ -z "${BIKE_GATE_STATE_DIR:-}" ]]; then
-  if common_dir="$(git -C "$REPO_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
-    BIKE_GATE_STATE_DIR="$common_dir/bike-gate"
-  else
-    BIKE_GATE_STATE_DIR="$REPO_ROOT/build/bike-gate"
-  fi
-fi
+# shellcheck source=/dev/null
+source "$REPO_ROOT/tools/lib/gate_state.sh"
+BIKE_GATE_STATE_DIR="$(bike_gate_state_dir "$REPO_ROOT")"
 mkdir -p "$BIKE_GATE_STATE_DIR"
 cpu_count="${BIKE_CPU_COUNT:-$(getconf _NPROCESSORS_ONLN)}"
 

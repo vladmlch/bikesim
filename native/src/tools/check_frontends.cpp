@@ -29,13 +29,14 @@ constexpr std::array<std::string_view, 2> kGccRequiredFlags{
 
 // _GCC_OPTIONAL_WARNING_FLAGS: probed per run — a batch rejection probes
 // each spelling individually so one unsupported name drops only itself.
-constexpr std::array<std::string_view, 51> kGccOptionalWarningFlags{
+// -fanalyzer is deliberately absent: see the frontends branch of tool_argv.
+constexpr std::array<std::string_view, 50> kGccOptionalWarningFlags{
     "-Wall", "-Wextra", "-Wconversion",
     "-Wsign-conversion", "-Wdouble-promotion", "-Wshadow", "-Wcast-qual",
     "-Wformat=2", "-Wundef", "-Wimplicit-fallthrough", "-Wnon-virtual-dtor",
     "-Wold-style-cast", "-Woverloaded-virtual", "-Wnull-dereference",
     "-Wlogical-op", "-Wduplicated-cond", "-Wuseless-cast",
-    "-Wstringop-overflow=4", "-fanalyzer", "-Warith-conversion",
+    "-Wstringop-overflow=4", "-Warith-conversion",
     "-Wduplicated-branches", "-Wrestrict", "-Wformat-signedness",
     "-Wformat-overflow=2", "-Wformat-truncation=2", "-Wextra-semi",
     "-Wredundant-tags", "-Wcast-function-type", "-Wcast-align=strict",
@@ -107,8 +108,10 @@ FrontendFlagProbe probe_frontend_warning_flags(
             throw CheckError("cannot write frontend warning probe: " +
                              probe_source.string());
     }
-    std::vector<std::string> base{tool.string(), "-std=c++23",
-                                  "-fsyntax-only"};
+    // Same mode as the frontends sweep, so the probe proves the flags the
+    // sweep will actually pass (see tool_argv).
+    std::vector<std::string> base{tool.string(), "-std=c++23", "-c", "-O0",
+                                  "-o", "/dev/null"};
     for (const std::string_view flag: kGccRequiredFlags)
         base.emplace_back(flag);
     // Oracle: [tool, *base, probe_source] — the probe TU must reach the
@@ -256,9 +259,14 @@ std::vector<std::string> tool_argv(const std::string &kind,
     if (kind == "frontends") {
         // [*launcher, tool, ...]: the configured compiler launcher wraps
         // the secondary frontend invocation exactly as the oracle spells it.
+        // -c -O0 rather than -fsyntax-only: -fsyntax-only stops before the
+        // middle end, so flow diagnostics such as -Winvalid-noreturn never
+        // fire. -fanalyzer is not passed: under -fsyntax-only it is a no-op
+        // (the analyzer runs in the middle end, so it reported nothing), and
+        // under -c it costs ~4 s per TU, so it is not run per TU.
         std::vector<std::string> argv(launcher.begin(), launcher.end());
-        argv.insert(argv.end(), {tool.string(), "-std=c++23",
-                                 "-fsyntax-only"});
+        argv.insert(argv.end(), {tool.string(), "-std=c++23", "-c", "-O0",
+                                 "-o", "/dev/null"});
         argv.insert(argv.end(), gcc_args.begin(), gcc_args.end());
         argv.insert(argv.end(), frontend_flags.begin(), frontend_flags.end());
         argv.push_back(source.string());

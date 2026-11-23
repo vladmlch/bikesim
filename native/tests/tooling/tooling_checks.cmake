@@ -2592,6 +2592,69 @@ expect_json(b29_gxx_sibling
   "${_fx_gxx}/gcc-13/bin/g++-13" tool)
 
 # ---------------------------------------------------------------------------
+# GNU frontend compiles (-c -O0), so flow diagnostics fire. A [[noreturn]]
+# function whose covered switch reaches the end is -Winvalid-noreturn, which
+# -fsyntax-only never emits: 771cbbb2 passed the frontends kind and only the
+# slow odr sweep caught it (fixed in e4bb0e6d). The control differs by a
+# throw after the switch and must pass with the same real GNU driver.
+foreach(_gnu_case IN ITEMS reject control)
+  set(_gnu "${SCRATCH_DIR}/gnu-frontend-${_gnu_case}")
+  file(MAKE_DIRECTORY "${_gnu}/native/src" "${_gnu}/build")
+  file(WRITE "${_gnu}/suppressions.json"
+    "{\"schema_version\":1,\"suppressions\":[]}\n")
+  b29_fixture_context("${_gnu}/build" "${_gnu}/native"
+    "{\"bike_native\":${_b29_tc}}" "${_gnu}/suppressions.json")
+  if(_gnu_case STREQUAL "reject")
+    file(WRITE "${_gnu}/native/src/noreturn.cpp"
+      "enum class E { a };\n"
+      "[[noreturn]] void f(E e);\n"
+      "[[noreturn]] void f(E e) {\n"
+      "    switch (e) {\n"
+      "        case E::a: throw 1;\n"
+      "    }\n"
+      "}\n")
+  else()
+    file(WRITE "${_gnu}/native/src/noreturn.cpp"
+      "enum class E { a };\n"
+      "[[noreturn]] void f(E e);\n"
+      "[[noreturn]] void f(E e) {\n"
+      "    switch (e) {\n"
+      "        case E::a: throw 1;\n"
+      "    }\n"
+      "    throw 2;\n"
+      "}\n")
+  endif()
+  file(WRITE "${_gnu}/build/native_sources.json"
+    "{\"schema_version\":1,\"first_party_roots\":[\"${_gnu}/native\"],"
+    "\"sources\":[{\"path\":\"${_gnu}/native/src/noreturn.cpp\","
+    "\"target\":\"bike_native\",\"context\":\"bike_native:fixture\"}]}\n")
+  b29_ccdb_entry(_gnu_entry "${_gnu}" "${_gnu}/native/src/noreturn.cpp"
+    "CMakeFiles/bike_native.dir/noreturn.cpp.o")
+  file(WRITE "${_gnu}/build/compile_commands.json" "[${_gnu_entry}]\n")
+endforeach()
+
+# the noreturn violation is rejected by the real GNU frontend sweep, and the
+# record carries the GNU diagnostic (not an unrelated setup failure)
+run_case(b29_gnu_noreturn_rejected EXPECT_EXIT FAIL
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "${CHECKS_BINARY}" --kind frontends
+        --build "${SCRATCH_DIR}/gnu-frontend-reject/build")
+set(_gnu_reject_sum
+  "${SCRATCH_DIR}/gnu-frontend-reject/build/native_check_summaries/frontends.json")
+expect_json(b29_gnu_noreturn_rejected "${_gnu_reject_sum}" "failed" status)
+expect_json_substring(b29_gnu_noreturn_rejected "${_gnu_reject_sum}"
+  "'noreturn' function does return" records 0 stderr)
+
+# valid-input control: the same path with the throw after the switch passes
+run_case(b29_gnu_noreturn_control EXPECT_EXIT 0
+  COMMAND "${CMAKE_COMMAND}" -E env ${_b29_clean_env}
+        "${CHECKS_BINARY}" --kind frontends
+        --build "${SCRATCH_DIR}/gnu-frontend-control/build")
+expect_json(b29_gnu_noreturn_control
+  "${SCRATCH_DIR}/gnu-frontend-control/build/native_check_summaries/frontends.json"
+  "passed" status)
+
+# ---------------------------------------------------------------------------
 # Schema-2 platform context — the produced context on the real host.
 # _ctx is reused as JSON scratch by the contract-fixture mutations above; a
 # dedicated variable keeps the path spelling stable here.

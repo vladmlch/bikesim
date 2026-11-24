@@ -6,6 +6,7 @@
 #include "../engine_call.hpp"
 #include "../io/hash.hpp"
 #include "../io/json.hpp"
+#include "../platform/files.hpp"
 #include "../rider/state_codec.hpp"
 #include "../runtime/step.hpp"
 #include "../stepper.hpp"
@@ -160,6 +161,14 @@ void install_material(SetupContext& context,Material& state){
     if(context.stepper.has_rider_contacts())context.stepper.rider_contacts_restart_clock();
     context.stepper.note_posvel_stale();
 }
+// An unreadable joint file is a broken configuration, not a cache miss. It is
+// named here, before any solve, instead of surfacing later as a bare
+// system_error from the cache save after the settle has already run.
+std::string joint_file_sha256(std::string_view field,const std::string& path){
+    try{return platform::file_sha256(path);}
+    catch(const std::bad_alloc&){throw;}
+    catch(const std::exception&){throw std::invalid_argument("articulated."+std::string(field)+": "+path+": not readable");}
+}
 std::string context_fingerprint(const SetupContext& context,bool legacy){
     if(legacy&&(!context.legacy_source_identity||!context.legacy_track_identity))
         throw std::invalid_argument("historical NPZ validation requires explicit legacy source provenance");
@@ -168,6 +177,12 @@ std::string context_fingerprint(const SetupContext& context,bool legacy){
     // The front-lift reaction steers the ride, never the rest pose, so it
     // leaves the key like the cache knobs beside it.
     std::erase_if(fields,[](const auto& field){return field.first=="equilibrium_cache_enabled"||field.first=="equilibrium_state_file"||field.first=="front_lift_reaction";});
+    // The resolved joint paths are worktree-absolute spellings, which would
+    // make a pose valid only in the checkout that recorded it. The canonical
+    // key binds each joint file's bytes instead: the pose depends on what the
+    // files contain, not on where they live. The legacy branch keeps its
+    // historical payload byte-for-byte.
+    if(!legacy)for(auto& [key,item]:fields)if(key=="articulated"){auto& section=std::get<io::Value::Object>(item.data);for(auto& [name,path]:section)if((name=="joint_envelope_path"||name=="joint_strength_path")&&!io::is_null(path))path=io::Value{"sha256:"+joint_file_sha256(name,io::as_string(path,name))};}
     // Historical NPZ payloads predate the relaxation selector; the legacy
     // branch keeps them byte-for-byte. The canonical key binds it, like the
     // refine timing: the schedule shapes which rest the solve reaches.
@@ -239,7 +254,12 @@ std::filesystem::path equilibrium_cache_path(const SetupContext& context){
     std::filesystem::path directory;if(context.cache_directory)directory=*context.cache_directory;else if(const char* value=std::getenv("BIKE_SIM_EQUILIBRIUM_CACHE_DIR");value&&*value)directory=value;else directory=std::filesystem::temp_directory_path()/"bike_sim_equilibrium";
     return directory/(fingerprint(context)+".npz");
 }
-std::optional<StateFile> load_equilibrium_cache(const SetupContext& context){try{auto state=read_state_file(equilibrium_cache_path(context));settle_metadata(context,state);return state;}catch(const std::bad_alloc&){throw;}catch(const std::exception&){return std::nullopt;}}
+std::optional<StateFile> load_equilibrium_cache(const SetupContext& context){
+    // The path is the configuration's key, so a broken configuration throws here,
+    // outside the miss-tolerant block: only a missing or foreign cache file is a miss.
+    const auto path=equilibrium_cache_path(context);
+    try{auto state=read_state_file(path);settle_metadata(context,state);return state;}catch(const std::bad_alloc&){throw;}catch(const std::exception&){return std::nullopt;}
+}
 StateFile load_equilibrium_state(const SetupContext& context,const std::filesystem::path& file){
     try{auto state=read_state_file(file);const auto expected=state.schema_version==0?legacy_equilibrium_fingerprint(context):fingerprint(context);if(!find(state,"fingerprint_sha256")||fingerprint(state)!=expected)throw std::invalid_argument("fingerprint mismatch: pose belongs to another configuration");settle_metadata(context,state);return state;}
     catch(const std::bad_alloc&){throw;}

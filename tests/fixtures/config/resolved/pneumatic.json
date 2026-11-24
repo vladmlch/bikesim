@@ -194,7 +194,7 @@
   "equilibrium_refine_after_s": 1.0,
   "equilibrium_refine_period_s": 3.0,
   "equilibrium_relaxation": "cycle",
-  "equilibrium_state_file": "/Users/vladislav.molchanov/Desktop/tmp/mujoco_clean/.worktrees/python-free-cpp/tests/fixtures/migration/config/poses/savage_pneumatic.npz",
+  "equilibrium_state_file": null,
   "front_lift_reaction": {
     "clear_s": 0.3,
     "decision_s": 0.1,

@@ -19,7 +19,7 @@ ctest --test-dir build/native-release -R "${usage_pattern?}" --no-tests=error --
 
 [tasks.check]
 description = "Level 1: check_change.sh against main or the given base (≤5 min)"
-usage = 'arg "[base]" help="Commit before the stage" default="main"'
+usage = 'arg "[base]" help="Omit unless the branch is long-lived; never HEAD (refused while the branch has commits beyond main)" default="main"'
 run = 'bash tools/check_change.sh "${usage_base?}"'
 
 [tasks.native]

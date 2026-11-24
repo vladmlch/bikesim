@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# tools/agy/agym — starts agy with this repository's defaults.
+#
+#   agym [agy arguments...]     run agy in the repository root with the defaults below
+#   agym --parse-log FILE       report a quota reset found in FILE; runs no agy
+#   agym --help
+#
+# Defaults: --dangerously-skip-permissions, --log-file <per-session log under
+# $AGYM_LOG_DIR>, and --add-dir for the physical paths of .scratch and .deps. A
+# target that is not reachable (the SSD not mounted, say) is skipped with a note.
+# Every other argument passes through to agy.
+#
+# Why skip-permissions: relaunches after a plain `agy` without it were the main
+# babysitting cause in week 1. The safety net is the repository's PreToolUse hook:
+# .agents/hooks.json runs tools/agy/pretool-guard.sh, which asks tools/guard.sh
+# about every shell command, and the hook is verified to fire under
+# skip-permissions.
+#
+# On exit the session log is scanned. The latest 429 that announces a reset
+# ("Resets in <duration>" or "reset after <duration>") prints the local reset
+# time and the `agym --conversation=<id>` line to resume with (see
+# lib_agym.sh). The exit status is agy's.
+set -euo pipefail
+
+# Follow symlinks to this file (~/.local/bin/agym points here) to find the repo.
+self=${BASH_SOURCE[0]}
+while [[ -L $self ]]; do
+  target=$(readlink "$self")
+  case $target in
+    /*) self=$target ;;
+    *) self="$(dirname -- "$self")/$target" ;;
+  esac
+done
+script_dir=$(cd -- "$(dirname -- "$self")" && pwd -P)
+repo=$(cd -- "$script_dir/../.." && pwd -P)
+# shellcheck source=tools/agy/lib_agym.sh
+. "$script_dir/lib_agym.sh"
+
+usage() {
+  cat <<'EOF'
+usage: agym [agy arguments...]
+       agym --parse-log FILE
+       agym --help
+
+Runs agy in the repository root with --dangerously-skip-permissions, a
+per-session --log-file, and --add-dir for .scratch and .deps (each skipped with a
+note when its target is not reachable). Arguments pass through to agy. After agy
+exits, a 429 quota reset in its log is reported with the resume line.
+--parse-log runs only that report, on FILE.
+EOF
+}
+
+case ${1-} in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  --parse-log)
+    [[ $# -eq 2 ]] || {
+      usage >&2
+      exit 2
+    }
+    agym_report_quota "$2"
+    exit 0
+    ;;
+esac
+
+note() {
+  printf 'agym: %s\n' "$1" >&2
+}
+
+add_dirs=()
+for name in .scratch .deps; do
+  if phys=$(cd -P -- "$repo/$name" 2>/dev/null && pwd -P); then
+    add_dirs+=(--add-dir "$phys")
+  else
+    note "skipping --add-dir for $name: its target is not reachable (is the SSD mounted?)"
+  fi
+done
+
+log_dir=${AGYM_LOG_DIR:-$HOME/.gemini/antigravity-cli/log}
+mkdir -p -- "$log_dir"
+log="$log_dir/agym-$(date -u +%Y%m%dT%H%M%SZ)-$$.log"
+
+cd -- "$repo"
+rc=0
+agy --dangerously-skip-permissions --log-file "$log" ${add_dirs[@]+"${add_dirs[@]}"} "$@" || rc=$?
+agym_report_quota "$log" || true
+exit "$rc"

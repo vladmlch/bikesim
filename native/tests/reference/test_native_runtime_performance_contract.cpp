@@ -22,8 +22,8 @@
 #include "../../src/runtime/setup_values.hpp"
 
 #include <cmath>
-#include <cstdio>
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <optional>
 #include <string>
@@ -229,10 +229,9 @@ bool boolean(const Value& v, std::string_view key) {
 // f'1x mean achieved RTF >= {VISUAL_1X_MEAN_RTF_MIN}' — the pending-gate
 // needle formatted from the named constant.
 [[nodiscard]] std::string visual_gate_needle() {
-    char buffer[32]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
-    std::snprintf(buffer, sizeof(buffer), "1x mean achieved RTF >= %g", // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
-                  kVisual1xMeanRtfMin);
-    return buffer; // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+    // {:g} is printf's %g spelling; the needle has no fixed-size buffer to
+    // overflow when the threshold changes.
+    return std::format("1x mean achieved RTF >= {:g}", kVisual1xMeanRtfMin);
 }
 std::string joined_gates(const Value& v) {
     std::string out;

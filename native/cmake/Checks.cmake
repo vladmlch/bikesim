@@ -170,6 +170,38 @@ if(BUILD_TESTING)
   set_tests_properties(tooling_gate PROPERTIES LABELS "tooling" TIMEOUT 120)
 endif()
 
+# --- tooling_guard: tools/guard.sh deny/allow contract -----------------------
+# Parses only (no command runs), so it stays in the ordinary CTest set.
+if(BUILD_TESTING)
+  add_test(NAME tooling_guard
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_guard"
+      -P "${_checks_native_dir}/tests/tooling/tooling_guard.cmake")
+  set_tests_properties(tooling_guard PROPERTIES LABELS "tooling" TIMEOUT 120)
+endif()
+
+# --- tooling_agym: tools/agy/agym launcher and quota-reset parser -----------
+# Runs the wrapper under a fake agy on PATH; nothing contacts agy.
+if(BUILD_TESTING)
+  add_test(NAME tooling_agym
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_agym"
+      -P "${_checks_native_dir}/tests/tooling/tooling_agym.cmake")
+  set_tests_properties(tooling_agym PROPERTIES LABELS "tooling" TIMEOUT 120)
+endif()
+
+# --- tooling_reports: tools/agy/check-reports.sh shard report completeness ---
+if(BUILD_TESTING)
+  add_test(NAME tooling_reports
+    COMMAND "${CMAKE_COMMAND}"
+      -D "REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+      -D "SCRATCH_DIR=${CMAKE_BINARY_DIR}/tooling_reports"
+      -P "${_checks_native_dir}/tests/tooling/tooling_reports.cmake")
+  set_tests_properties(tooling_reports PROPERTIES LABELS "tooling" TIMEOUT 120)
+endif()
+
 if(BUILD_TESTING)
   add_test(NAME tooling_sweep_engine
     COMMAND "${CMAKE_COMMAND}"

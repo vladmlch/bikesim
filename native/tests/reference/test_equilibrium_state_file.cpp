@@ -29,7 +29,6 @@
 #include "io/json.hpp"
 #include "io/npy.hpp"
 #include "io/value.hpp"
-#include "platform/provenance.hpp"
 #include "model/builder.hpp"
 #include "model/mapping.hpp"
 #include "model/rider_geometry.hpp"
@@ -86,9 +85,8 @@ welded_request(const std::filesystem::path &cache_directory,
     return request;
 }
 
-// The pneumatic request on the Savage climb — the configuration the
-// checked-in savage_pneumatic.npz certifies — with cache and pose pins
-// under each test's control.
+// The pneumatic request on the Savage climb (the profile's track and
+// rider), with cache and pose pins under each test's control.
 [[nodiscard]] init::SetupRequest
 pneumatic_savage_request(const std::filesystem::path &cache_directory) {
     auto request = init::read_setup_request(
@@ -101,29 +99,6 @@ pneumatic_savage_request(const std::filesystem::path &cache_directory) {
     request.model.physics->equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) same
     request.cache_directory = cache_directory;
     return request;
-}
-
-// A checked-in pose file binds the build that authored it: provider
-// identity, the native source digest and the compiled-model hash all feed
-// its fingerprint, so on another platform or after source edits the file
-// is legitimately foreign. Compare the digests its metadata records
-// against the ones make_setup resolved — the fresh-settle round trip
-// covers every build this predicate excludes.
-[[nodiscard]] bool
-same_build_identity(const init::SetupOwner &owner,
-                    const io::Value &metadata) {
-    const auto &stored = io::as_object(metadata, "state metadata");
-    const auto setup_metadata = owner.metadata();
-    const auto &current = io::as_object(setup_metadata, "setup metadata");
-    for (const std::string_view key :
-         {"provider_identity", "source_identity", "model_sha256"}) {
-        const auto *want = io::find_member(stored, key);
-        const auto *have = io::find_member(current, key);
-        if (want == nullptr || have == nullptr ||
-            io::as_string(*want, key) != io::as_string(*have, key))
-            return false;
-    }
-    return true;
 }
 
 [[nodiscard]] std::vector<std::filesystem::path>
@@ -518,49 +493,6 @@ void test_post_episode_lifecycle_writes_no_cache_entry() {
 }
 
 // ---------------------------------------------------------------------------
-// Queue item 6 (2026-11-15): the checked-in pneumatic pose
-// tests/fixtures/config/poses/savage_pneumatic.npz — the file
-// viewer_physics_pneumatic.toml pins through equilibrium_state_file — must
-// restore through the explicit path and pass the residual recheck. Its
-// material has to carry the pre-finalize carcass memory: a pose captured
-// after finalize commits delta_prev := delta(qpos), so the restore probe
-// sees delta - delta_prev == 0, the hysteresis term collapses and the
-// measured residual jumps above the 0.05 contract.
-//
-// The fixture's fingerprint binds the build that authored it; on a foreign
-// platform or after source edits the file is intentionally rejected, so
-// this test runs only where the recorded build identity matches — the
-// fresh round trip above covers capture->restore on every other build.
-// ---------------------------------------------------------------------------
-void test_savage_pneumatic_fixture_restores() {
-    auto request = init::read_setup_request(
-        bt::fixture("requests/pneumatic_flat.toml"));
-    request.track = bike::terrain::load_track(
-        bt::fixture("tracks/rough_uphill_savage.toml"));
-    request.model.field =
-        bike::terrain::HeightFieldSpec::for_track(request.track);
-    const auto &pose_path =
-        *request.model.physics->equilibrium_state_file; // NOLINT(bugprone-unchecked-optional-access) load_physics resolves the pinned path
-    const auto stored = init::read_state_file(pose_path);
-    auto owner = init::make_setup(request);
-    if (!same_build_identity(*owner, stored.metadata)) {
-        if (bike::platform::key() == "darwin-arm64")
-            bt::require(false, "pinned savage_pneumatic pose is stale; re-record it with bike-settle --physics-config viewer_physics_pneumatic.toml --track rough_uphill_savage --rider articulated_planar --out tests/fixtures/config/poses/savage_pneumatic.npz");
-        std::cerr << "Skipping test_savage_pneumatic_fixture_restores on " << bike::platform::key() << ": build identity mismatch\n";
-        return;
-    }
-    const auto eq = init::settle(*owner);
-    bt::require(eq.cache_hit, "the pinned fixture serves without settling");
-    bt::require(eq.state_file && *eq.state_file == pose_path,
-                "the served pose is the checked-in savage fixture");
-    bt::require(
-        init::state_array(stored, "residual_qacc").doubles().front() <= .05,
-        "the stored residual honors the contract");
-    bt::require(eq.residual_qacc <= .05,
-                "the restored pneumatic pose passes the residual recheck");
-}
-
-// ---------------------------------------------------------------------------
 // Queue item 6 follow-up: the repaired capture -> restore path proven on a
 // fresh solve, with no build-bound checked-in file. Settle the pneumatic
 // Savage configuration, write the served pose and restore it through the
@@ -592,6 +524,84 @@ void test_pneumatic_settle_restore_round_trip() {
     bt::require(init::state_array(reloaded, "qpos").bytes ==
                     init::state_array(pose, "qpos").bytes,
                 "the restored qpos equals the settled pose bitwise");
+}
+
+// ---------------------------------------------------------------------------
+// The equilibrium key binds joint file content, not the checkout: the
+// pneumatic configuration staged in two directories keys one pose, and
+// editing a joint file the physics config names changes the key.
+// ---------------------------------------------------------------------------
+// The request tree the pneumatic fixture reaches: the request, its physics
+// TOML, the track, and the two joint files the physics TOML names by path.
+constexpr std::array<std::string_view, 5> kPneumaticTree{
+    "requests/pneumatic_flat.toml", "config/viewer_physics_pneumatic.toml",
+    "config/rider_joint_envelope_anatomical.json",
+    "config/rider_strength_reference.json", "tracks/flat.toml"};
+
+void stage_pneumatic_tree(const std::filesystem::path &root) {
+    for (const auto relative : kPneumaticTree) {
+        const auto destination = root / std::filesystem::path(relative);
+        std::filesystem::create_directories(destination.parent_path());
+        std::filesystem::copy_file(bt::fixture(relative), destination);
+    }
+}
+
+// Settles the request with the cache off and returns the fingerprint its
+// settled pose records.
+[[nodiscard]] std::string
+settled_fingerprint(const std::filesystem::path &request_file) {
+    auto request = init::read_setup_request(request_file);
+    request.model.physics->equilibrium_cache_enabled = false; // NOLINT(bugprone-unchecked-optional-access) the request always decodes a physics file
+    request.model.physics->equilibrium_state_file.reset(); // NOLINT(bugprone-unchecked-optional-access) same
+    auto owner = init::make_setup(request);
+    (void)init::settle(*owner);
+    return init::state_array(owner->capture_state_file(), "fingerprint_sha256")
+        .strings()
+        .front();
+}
+
+void test_fingerprint_binds_joint_content_not_checkout() {
+    const bt::TemporaryDirectory first_dir("eq_key_first");
+    const bt::TemporaryDirectory second_dir("eq_key_second");
+    stage_pneumatic_tree(first_dir.path());
+    stage_pneumatic_tree(second_dir.path());
+    const auto first_request = first_dir.path() / "requests" / "pneumatic_flat.toml";
+    const auto second_request = second_dir.path() / "requests" / "pneumatic_flat.toml";
+    const auto first = settled_fingerprint(first_request);
+    bt::require(settled_fingerprint(second_request) == first,
+                "the same physics configuration keys one pose from any checkout");
+    {
+        std::ofstream file(second_dir.path() / "config" / "rider_strength_reference.json",
+                           std::ios::binary | std::ios::app);
+        bt::require(file.is_open(), "joint file append opens");
+        file << '\n';
+    }
+    bt::require(settled_fingerprint(second_request) != first,
+                "editing a joint file the physics config names changes the pose key");
+}
+
+// ---------------------------------------------------------------------------
+// An unreadable joint file the cache key hashes fails settle by field name, before any solve.
+// ---------------------------------------------------------------------------
+void test_unreadable_joint_file_fails_before_settle() {
+    const bt::TemporaryDirectory dir("eq_joint_missing");
+    const auto cache_dir = dir.path() / "cache";
+    const auto missing = dir.path() / "absent_envelope.json";
+    // A lumped rider on the default physical profile builds no joints, so
+    // nothing else opens the envelope file; the welded profile's pinned planar
+    // attachments would demand an articulated rider.
+    auto request = welded_request(cache_dir, true);
+    request.model.rider->variant = "lumped"; // NOLINT(bugprone-unchecked-optional-access) the welded fixture always declares a rider
+    request.model.physics = cfg::default_physics(); // NOLINT(bugprone-unchecked-optional-access) the request always decodes a physics file
+    request.model.physics->physics_mode = "physical"; // NOLINT(bugprone-unchecked-optional-access) set just above
+    cfg::post_init(*request.model.physics); // NOLINT(bugprone-unchecked-optional-access) set just above
+    request.model.physics->equilibrium_cache_enabled = true; // NOLINT(bugprone-unchecked-optional-access) set just above
+    request.model.physics->articulated.joint_envelope_path = missing.string(); // NOLINT(bugprone-unchecked-optional-access) set just above
+    auto owner = init::make_setup(request);
+    expect_invalid("joint_envelope_path",
+                   [&] { (void)init::settle(*owner); });
+    bt::require(!std::filesystem::exists(cache_dir) || npz_files(cache_dir).empty(),
+                "the rejected configuration writes no cache entry");
 }
 
 // ---------------------------------------------------------------------------
@@ -679,7 +689,8 @@ void check() {
     test_equilibrium_override_kwargs_reach_the_solve();
     test_post_episode_lifecycle_writes_no_cache_entry();
     test_pneumatic_settle_restore_round_trip();
-    test_savage_pneumatic_fixture_restores();
+    test_fingerprint_binds_joint_content_not_checkout();
+    test_unreadable_joint_file_fails_before_settle();
     test_capture_initial_state_keeps_launch_velocity();
 }
 

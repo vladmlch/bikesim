@@ -1,0 +1,630 @@
+# tooling_guard — contract for tools/guard.sh: every deny and allow example from
+# its header, stdin input, a usage error, and --cwd / working-directory
+# resolution for rm. The guard only parses; no command runs. Also covers the
+# agy and Claude PreToolUse adapters (payload shapes, fail-open rule, verdict
+# format) and .agents/hooks.json, which is run as written from .agents/.
+# Stays in the ordinary (non-slow) CTest set.
+#
+# Commands are CMake bracket arguments ([==[ ... ]==]) so $, quotes, backticks
+# and semicolons reach the guard byte for byte.
+#
+# Required -D inputs: REPO_ROOT, SCRATCH_DIR.
+foreach(_required REPO_ROOT SCRATCH_DIR)
+  if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
+    message(FATAL_ERROR "tooling_guard requires -D${_required}")
+  endif()
+endforeach()
+file(REMOVE_RECURSE "${SCRATCH_DIR}")
+file(MAKE_DIRECTORY "${SCRATCH_DIR}")
+set(_failures "")
+set(_guard "${REPO_ROOT}/tools/guard.sh")
+
+# guard_case(<name> <allow|deny> <command> [CWD <dir>] [WD <dir>] [ENV <k=v>]
+#            [GUARD <repo>] [STDIN])
+#   CWD  passes --cwd <dir>            (default: the guard's repository root)
+#   WD   runs the guard in <dir>, no --cwd
+#   ENV  sets a variable in the guard's environment
+#   GUARD runs <repo>/tools/guard.sh instead of the checkout's copy
+#   STDIN feeds <command> on stdin instead of as the argument
+# allow: exit 0 with no output. deny: exit 2 and exactly one stderr line
+# starting "guard: denied: ".
+function(guard_case name expect command)
+  set(_root "${REPO_ROOT}")
+  set(_cwd "")
+  set(_cwd_given OFF)
+  set(_wd "")
+  set(_wd_given OFF)
+  set(_envs "")
+  set(_stdin OFF)
+  set(_i 3)
+  while(_i LESS ARGC)
+    set(_key "${ARGV${_i}}")
+    math(EXPR _i "${_i} + 1")
+    if("${_key}" STREQUAL "STDIN")
+      set(_stdin ON)
+    elseif("${_key}" STREQUAL "CWD")
+      set(_cwd "${ARGV${_i}}")
+      set(_cwd_given ON)
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "WD")
+      set(_wd "${ARGV${_i}}")
+      set(_wd_given ON)
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "GUARD")
+      set(_root "${ARGV${_i}}")
+      math(EXPR _i "${_i} + 1")
+    elseif("${_key}" STREQUAL "ENV")
+      list(APPEND _envs "${ARGV${_i}}")
+      math(EXPR _i "${_i} + 1")
+    else()
+      message(FATAL_ERROR "guard_case ${name}: unknown option ${_key}")
+    endif()
+  endwhile()
+  set(_guard "${_root}/tools/guard.sh")
+  if(_wd_given)
+    set(_cwd_args "")
+  else()
+    if(NOT _cwd_given)
+      set(_cwd "${_root}")
+    endif()
+    set(_cwd_args "--cwd" "${_cwd}")
+    set(_wd "${_root}")
+  endif()
+  set(_base_env "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS ${_envs})
+  if(_stdin)
+    file(WRITE "${SCRATCH_DIR}/stdin_${name}.txt" "${command}")
+    execute_process(COMMAND ${_base_env} bash "${_guard}" ${_cwd_args}
+      WORKING_DIRECTORY "${_wd}"
+      INPUT_FILE "${SCRATCH_DIR}/stdin_${name}.txt"
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  else()
+    execute_process(COMMAND ${_base_env} bash "${_guard}" ${_cwd_args} "${command}"
+      WORKING_DIRECTORY "${_wd}"
+      RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  endif()
+  string(STRIP "${_err}" _errs)
+  string(FIND "${_errs}" "\n" _nl)
+  string(FIND "${_errs}" "guard: denied: " _pfx)
+  if(expect STREQUAL "allow")
+    if(NOT _rc EQUAL 0 OR NOT "${_out}${_err}" STREQUAL "")
+      set(_failures "${_failures}\n  ${name}: expected allow, got rc=${_rc}, output '${_out}${_err}'" PARENT_SCOPE)
+    endif()
+  else()
+    if(NOT _rc EQUAL 2 OR NOT _pfx EQUAL 0 OR NOT _nl EQUAL -1 OR NOT "${_out}" STREQUAL "")
+      set(_failures "${_failures}\n  ${name}: expected deny (rc 2, one 'guard: denied:' line), got rc=${_rc}, stdout '${_out}', stderr '${_err}'" PARENT_SCOPE)
+    endif()
+  endif()
+endfunction()
+
+# --- deny: git -----------------------------------------------------------------
+guard_case(deny_reset_hard deny [==[git reset --hard HEAD~1]==])
+guard_case(deny_reset_hard_after_and deny [==[git status && git reset --hard]==])
+guard_case(deny_reset_hard_git_c deny [==[git -c core.x=1 reset --hard]==])
+guard_case(deny_clean_dry_run deny [==[git clean -n]==])
+guard_case(deny_clean_fdx deny [==[git clean -fdx]==])
+guard_case(deny_push deny [==[git push]==])
+guard_case(deny_push_dry_run deny [==[git push --dry-run origin main]==])
+guard_case(deny_push_after_semicolon deny [==[make; git push]==])
+guard_case(deny_push_after_newline deny [==[make
+git push]==])
+guard_case(deny_push_after_or deny [==[false || git push]==])
+guard_case(deny_push_after_pipe deny [==[echo x | git push]==])
+guard_case(deny_push_after_background deny [==[make & git push]==])
+guard_case(deny_push_in_parens deny [==[(git push)]==])
+guard_case(deny_push_in_brace_group deny [==[{ git push; }]==])
+guard_case(deny_push_git_c deny [==[git -C native push]==])
+guard_case(deny_push_git_c_config deny [==[git -c core.x=y push]==])
+guard_case(deny_push_git_exec_path_separate deny [==[git --exec-path /x push]==])
+guard_case(deny_push_git_exec_path_attached deny [==[git --exec-path=/x push]==])
+guard_case(deny_push_git_dir_attached deny [==[git --git-dir=.git --work-tree=. push]==])
+guard_case(deny_push_git_dir_separate deny [==[git --git-dir .git push]==])
+guard_case(deny_reset_hard_no_pager deny [==[git --no-pager reset --hard]==])
+guard_case(deny_push_unknown_long_option_before_push deny [==[git --unknown-flag push]==])
+guard_case(deny_push_env_split_string deny [==[env -S 'git push']==])
+guard_case(deny_push_absolute_path deny [==[/usr/bin/git push]==])
+guard_case(deny_push_env_prefix deny [==[env GIT_TRACE=1 git push]==])
+guard_case(deny_push_command_prefix deny [==[command git push]==])
+guard_case(deny_push_assignment_prefix deny [==[GIT_X=1 git push]==])
+guard_case(deny_push_quoted_command_word deny [==["git" push]==])
+guard_case(deny_push_after_redirect deny [==[git push > out.txt]==])
+guard_case(deny_push_after_fd_redirect deny [==[git push 2>&1]==])
+guard_case(deny_push_in_while_body deny [==[while true; do git push; done]==])
+guard_case(deny_stash deny [==[git stash]==])
+guard_case(deny_stash_pop deny [==[git stash pop]==])
+guard_case(deny_stash_git_c deny [==[git -C native stash pop]==])
+guard_case(deny_stash_apply deny [==[git stash apply]==])
+guard_case(deny_stash_list_then_drop deny [==[git stash list && git stash drop]==])
+guard_case(deny_stash_in_command_substitution deny [==[echo "$(git stash)"]==])
+guard_case(deny_push_in_backticks deny [==[echo `git push`]==])
+guard_case(deny_push_in_double_quoted_substitution deny [==[git commit -m "$(git push)"]==])
+guard_case(deny_push_variable_subcommand deny [==[git $SUB]==])
+guard_case(deny_push_substituted_command_name deny [==[$(echo git) push]==])
+# Substitutions the shell runs are checked even where the text looks like data:
+# an unquoted heredoc body, arithmetic, a case word and a case arm body.
+guard_case(deny_push_in_unquoted_heredoc deny [==[cat <<EOF
+$(git push)
+EOF]==])
+guard_case(deny_push_backticks_in_unquoted_heredoc deny [==[cat <<EOF
+`git push`
+EOF]==])
+guard_case(deny_push_in_arithmetic deny [==[echo $(( $(git push) + 1 ))]==])
+guard_case(deny_push_in_case_word deny [==[case $(git push) in a) echo;; esac]==])
+guard_case(deny_push_in_case_arm deny [==[case $x in a) git push;; esac]==])
+guard_case(deny_push_in_double_quoted_case_pattern deny [==[case $x in "$(git push)") echo;; esac]==])
+# A reserved word does not hide the command after it: the conditional or
+# arithmetic command that follows ends where its own syntax ends, and the
+# command after that is still checked.
+guard_case(deny_push_after_then_in_if deny [==[if true; then git push; fi]==])
+guard_case(deny_rm_after_do_in_for deny [==[for x in 1; do rm -rf /etc; done]==])
+guard_case(deny_push_after_cond deny [==[[[ -n "$x" && "$y" == z ]] && git push]==])
+guard_case(deny_push_after_cond_in_if deny [==[if [[ -f "$f" && "$a" != "$b" ]]; then git push; fi]==])
+guard_case(deny_push_in_cond_substitution deny [==[[[ -n "$(git push)" && "$y" == z ]]]==])
+# A quoted word is never a reserved word, and a redirected one is a command name:
+# bash runs `case` and `[[` as commands here, so the git push after them runs.
+guard_case(deny_push_after_quoted_case deny [==["case" x; git push]==])
+guard_case(deny_push_after_redirected_case deny [==[>/dev/null case x; git push]==])
+guard_case(deny_push_after_quoted_cond_word deny [==["[[" a && git push]==])
+# An unclosed conditional is a shell syntax error; denied, so it cannot hide a command.
+guard_case(deny_push_after_unterminated_cond deny [==[[[ a && git push]==])
+# A cd inside a subshell ends with the subshell: the later rm is judged from the
+# repository root, where ../build/tmp is outside.
+guard_case(deny_rm_cd_in_subshell_does_not_leak deny [==[(cd native) && rm -rf ../build/tmp]==])
+guard_case(deny_rm_cd_outside_in_subshell deny [==[(cd / && rm -rf build)]==])
+# ANSI-C quoting: the escaped quote does not end the word.
+guard_case(deny_push_after_ansi_quote deny [==[echo $'it\'s' ; git push]==])
+guard_case(deny_unterminated_quote deny [==[echo "unterminated]==])
+
+# --- deny: golden re-record ----------------------------------------------------
+guard_case(deny_golden_prefix deny [==[BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_export deny [==[export BIKE_GOLDEN_RECORD=1]==])
+guard_case(deny_golden_env deny [==[env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_env_option deny [==[env -i BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_quoted_value deny [==[BIKE_GOLDEN_RECORD="1" ./run]==])
+guard_case(deny_golden_after_and deny [==[make && BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_in_subshell deny [==[(BIKE_GOLDEN_RECORD=1 ./run)]==])
+guard_case(deny_misspelt_prefix deny [==[BIKE_RECORD_GOLDENS=1 ./run]==])
+guard_case(deny_misspelt_export deny [==[export BIKE_RECORD_GOLDENS=1]==])
+guard_case(deny_misspelt_env deny [==[env BIKE_RECORD_GOLDENS=1 ./run]==])
+guard_case(deny_golden_guard_env_zero deny [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=0)
+# Wrappers that run a command with an environment: the assignment is still seen.
+guard_case(deny_golden_cmake_env deny [==[cmake -E env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_cmake_env_double_dash deny [==[cmake -E env -- BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_usr_bin_env deny [==[/usr/bin/env BIKE_GOLDEN_RECORD=1 ./run]==])
+guard_case(deny_golden_env_split_string deny [==[env -S 'BIKE_GOLDEN_RECORD=1 ctest']==])
+guard_case(deny_golden_env_split_string_attached deny [==[env -iS"BIKE_GOLDEN_RECORD=1 ctest"]==])
+guard_case(deny_golden_env_unset_option deny [==[env --unset=PATH BIKE_GOLDEN_RECORD=1 ./run]==])
+
+# --- deny: rm outside the repository ------------------------------------------
+guard_case(deny_rm_root deny [==[rm -rf /]==])
+guard_case(deny_rm_fr_root deny [==[rm -fr /]==])
+guard_case(deny_rm_separate_flags deny [==[rm -r -f /etc/x]==])
+guard_case(deny_rm_long_flags deny [==[rm --recursive --force /etc/x]==])
+guard_case(deny_rm_tilde deny [==[rm -rf ~]==])
+guard_case(deny_rm_home_variable deny [==[rm -rf $HOME]==])
+guard_case(deny_rm_home_variable_quoted deny [==[rm -rf "$HOME/x"]==])
+guard_case(deny_rm_home_braced deny [==[rm -rf ${HOME}/x]==])
+guard_case(deny_rm_parent deny [==[rm -rf ..]==])
+guard_case(deny_rm_parent_relative deny [==[rm -rf ../x]==])
+guard_case(deny_rm_glob_root deny [==[rm -rf /*]==])
+guard_case(deny_rm_glob_escape deny [==[rm -rf build/*/../../..]==])
+guard_case(deny_rm_unexpanded_variable deny [==[rm -rf $DIR]==])
+guard_case(deny_rm_brace_expansion deny [==[rm -rf {/,build}]==])
+guard_case(deny_rm_empty_target deny [==[rm -rf ""]==])
+guard_case(deny_rm_repository_root deny [==[rm -rf .]==])
+guard_case(deny_rm_dot_git deny [==[rm -rf .git]==])
+guard_case(deny_rm_dot_git_objects deny [==[rm -rf .git/objects]==])
+guard_case(deny_rm_hidden_glob deny [==[rm -rf .*]==])
+guard_case(deny_rm_tilde_user deny [==[rm -rf ~root/x]==])
+guard_case(deny_rm_mixed_targets deny [==[rm -rf build /etc/x]==])
+guard_case(deny_rm_substituted_target deny [==[rm -rf $(pwd)]==])
+guard_case(deny_rm_cwd_outside_relative deny [==[rm -rf build]==] CWD /)
+guard_case(deny_rm_wd_outside_relative deny [==[rm -rf build]==] WD /)
+guard_case(deny_rm_wd_native_parent deny [==[rm -rf ../../x]==] WD ${REPO_ROOT}/native)
+guard_case(deny_rm_cd_outside deny [==[cd / && rm -rf build]==])
+guard_case(deny_rm_cd_semicolon deny [==[cd / ; rm -rf build]==])
+guard_case(deny_rm_cd_then_parent deny [==[cd native && rm -rf ../../x]==])
+guard_case(deny_rm_cd_unknown deny [==[cd "$X" && rm -rf build]==])
+guard_case(deny_rm_cd_dash deny [==[cd - && rm -rf build]==])
+guard_case(deny_rm_popd deny [==[popd && rm -rf build]==])
+
+# --- scratch roots: $TMPDIR, /tmp and /private/tmp ----------------------------
+# A target strictly inside a scratch root is allowed; the root itself, a
+# lexical escape out of it, and a $ expansion stay denied. TMPDIR is set per
+# case so the results do not depend on the caller's environment.
+guard_case(allow_rm_tmp_child allow [==[rm -rf /tmp/x]==])
+guard_case(allow_rm_tmp_child_trailing_slash allow [==[rm -rf /tmp/x/]==])
+guard_case(allow_rm_tmp_nested allow [==[rm -rf /tmp/a/b/../c]==])
+guard_case(allow_rm_private_tmp_child allow [==[rm -rf /private/tmp/x]==])
+guard_case(allow_rm_tmpdir_child allow [==[rm -rf /var/folders/zz/T/x]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmp_root deny [==[rm -rf /tmp]==])
+guard_case(deny_rm_tmp_root_trailing_slash deny [==[rm -rf /tmp/]==])
+guard_case(deny_rm_tmp_root_dot deny [==[rm -rf /tmp/.]==])
+guard_case(deny_rm_tmp_parent_escape deny [==[rm -rf /tmp/../etc]==])
+guard_case(deny_rm_tmp_sibling_prefix deny [==[rm -rf /tmpx/y]==])
+guard_case(deny_rm_private_tmp_root deny [==[rm -rf /private/tmp]==])
+guard_case(deny_rm_tmpdir_root deny [==[rm -rf /var/folders/zz/T]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmpdir_variable deny [==[rm -rf "$TMPDIR"]==])
+guard_case(deny_rm_tmp_and_outside deny [==[rm -rf /tmp/x /etc/y]==])
+# A TMPDIR that holds the repository is not a scratch root: clearing it would
+# clear the checkout's siblings, and the repository itself stays protected.
+get_filename_component(_repo_parent "${REPO_ROOT}" DIRECTORY)
+guard_case(deny_rm_tmpdir_holds_repo deny "rm -rf ${_repo_parent}/sibling" ENV TMPDIR=${_repo_parent})
+
+# --- repository-root scratch links: .scratch and .work -------------------------
+# The checkout keeps .scratch as a symlink to a directory outside it. A fake
+# repository with the same layout checks that the link's physical target is a
+# scratch root: inside it is allowed, the directory itself stays denied. The
+# target is resolved with REALPATH so the cases hold wherever the build tree is.
+set(_alias_repo "${SCRATCH_DIR}/alias_repo")
+set(_alias_target "${SCRATCH_DIR}/ssd_scratch")
+file(MAKE_DIRECTORY "${_alias_repo}/tools" "${_alias_target}/agy")
+file(COPY "${_guard}" DESTINATION "${_alias_repo}/tools")
+file(CREATE_LINK "${_alias_target}" "${_alias_repo}/.scratch" SYMBOLIC)
+get_filename_component(_alias_phys "${_alias_target}" REALPATH)
+guard_case(allow_rm_scratch_link_child allow [==[rm -rf .scratch/agy/probe]==] GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_link_absolute allow "rm -rf ${_alias_repo}/.scratch/agy/probe" GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_physical_child allow "rm -rf ${_alias_phys}/agy/probe" GUARD ${_alias_repo})
+guard_case(allow_rm_scratch_link_cwd_relative allow [==[rm -rf agy/probe]==] GUARD ${_alias_repo} CWD ${_alias_repo}/.scratch)
+guard_case(allow_rm_scratch_physical_cwd_relative allow [==[rm -rf agy/probe]==] GUARD ${_alias_repo} CWD ${_alias_phys})
+guard_case(allow_rm_scratch_subshell_cd allow [==[(cd .scratch && rm -rf agy/probe)]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_link_root deny [==[rm -rf .scratch]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_link_root_slash deny [==[rm -rf .scratch/]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_root deny "rm -rf ${_alias_phys}" GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_root_slash deny "rm -rf ${_alias_phys}/" GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_cwd_root deny [==[rm -rf .]==] GUARD ${_alias_repo} CWD ${_alias_repo}/.scratch)
+guard_case(deny_rm_scratch_link_escape deny [==[rm -rf .scratch/../../x]==] GUARD ${_alias_repo})
+
+# --- wildcards that clear a protected directory --------------------------------
+# A wildcard made only of * and ? matches every entry of its parent: denied
+# when the parent is the repository root, a scratch root or .scratch/.work.
+guard_case(deny_rm_repo_root_star deny [==[rm -rf *]==])
+guard_case(deny_rm_repo_root_dot_star deny [==[rm -rf ./*]==])
+guard_case(deny_rm_repo_root_question_star deny [==[rm -rf ?*]==])
+guard_case(deny_rm_tmp_star deny [==[rm -rf /tmp/*]==])
+guard_case(deny_rm_tmpdir_star deny [==[rm -rf /var/folders/zz/T/*]==] ENV TMPDIR=/var/folders/zz/T/)
+guard_case(deny_rm_tmpdir_variable_star deny [==[rm -rf "$TMPDIR"/*]==])
+guard_case(deny_rm_scratch_link_star deny [==[rm -rf .scratch/*]==] GUARD ${_alias_repo})
+guard_case(deny_rm_scratch_physical_star deny "rm -rf ${_alias_phys}/*" GUARD ${_alias_repo})
+guard_case(allow_rm_build_star allow [==[rm -rf build/*]==])
+guard_case(allow_rm_tmp_child_star allow [==[rm -rf /tmp/mydir/*]==])
+guard_case(allow_rm_scratch_child_star allow [==[rm -rf .scratch/agy/*]==] GUARD ${_alias_repo})
+
+# --- repository-root symlinks that leave the repository ------------------------
+# .deps is the shared dependency cache, a symlink to a directory outside the
+# checkout. A target through a repository-root symlink that resolves outside is
+# denied; a symlink that resolves inside the repository is followed.
+set(_outside_cache "${SCRATCH_DIR}/shared_cache")
+file(MAKE_DIRECTORY "${_outside_cache}" "${_alias_repo}/inner")
+file(CREATE_LINK "${_outside_cache}" "${_alias_repo}/.deps" SYMBOLIC)
+file(CREATE_LINK "${_outside_cache}" "${_alias_repo}/cache_link" SYMBOLIC)
+file(CREATE_LINK "${_alias_repo}/inner" "${_alias_repo}/inner_link" SYMBOLIC)
+guard_case(deny_rm_deps_link deny [==[rm -rf .deps]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_slash deny [==[rm -rf .deps/]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_star deny [==[rm -rf .deps/*]==] GUARD ${_alias_repo})
+guard_case(deny_rm_deps_link_child deny [==[rm -rf .deps/x]==] GUARD ${_alias_repo})
+guard_case(deny_rm_other_outside_link deny [==[rm -rf cache_link/x]==] GUARD ${_alias_repo})
+guard_case(allow_rm_inside_link_child allow [==[rm -rf inner_link/x]==] GUARD ${_alias_repo})
+# The checkout's own .deps link, when it exists: the same denial on the real tree.
+if(IS_SYMLINK "${REPO_ROOT}/.deps")
+  guard_case(deny_rm_checkout_deps deny [==[rm -rf .deps]==])
+  guard_case(deny_rm_checkout_deps_slash deny [==[rm -rf .deps/]==])
+  guard_case(deny_rm_checkout_deps_star deny [==[rm -rf .deps/*]==])
+endif()
+
+# --- allow: quoted text, comments, heredocs, safe rm ---------------------------
+guard_case(allow_commit_message_push allow [==[git commit -m "do not git push"]==])
+guard_case(allow_commit_message_reset allow [==[git commit -m "never git reset --hard"]==])
+guard_case(allow_log_grep_reset allow [==[git log --grep reset]==])
+guard_case(allow_log_grep_quoted_push allow [==[git log --grep "git push"]==])
+guard_case(allow_echo_double_stash allow [==[echo "git stash"]==])
+guard_case(allow_echo_single_push allow [==[echo 'git push']==])
+guard_case(allow_echo_unquoted_words allow [==[echo git push]==])
+guard_case(allow_echo_escaped_word allow [==[echo \git push]==])
+guard_case(allow_git_status allow [==[git status]==])
+guard_case(allow_git_reset_soft allow [==[git reset --soft HEAD~1]==])
+guard_case(allow_git_reset_mixed allow [==[git reset HEAD~1]==])
+guard_case(allow_git_pushover allow [==[git pushover]==])
+guard_case(allow_git_c_status allow [==[git -C native status]==])
+guard_case(allow_git_c_log_grep allow [==[git -C native log --grep reset]==])
+guard_case(allow_comment_push allow [==[echo hi # git push]==])
+guard_case(allow_grep_text allow [==[grep -r "git push" tools]==])
+guard_case(allow_double_quoted_separator allow [==[echo "a; git push"]==])
+guard_case(allow_empty_command allow [==[]==])
+guard_case(allow_substitution_commit_message allow [==[git commit -m "$(cat msg)"]==])
+guard_case(allow_substitution_date allow [==[echo "$(date)"]==])
+guard_case(allow_arithmetic_shift allow [==[echo $((1 << 2))]==])
+guard_case(allow_arithmetic_expansion allow [==[echo $(( 1 + 2 ))]==])
+guard_case(allow_arithmetic_expansion_variable allow [==[echo $(( $x + 1 ))]==])
+guard_case(allow_arithmetic_expansion_braced allow [==[echo $(( ${#arr[@]} - 1 ))]==])
+guard_case(allow_arithmetic_command allow [==[(( i++ ))]==])
+guard_case(allow_arithmetic_command_then_echo allow [==[(( $x > 0 )) && echo yes]==])
+# Markdown backticks and $(...) inside single quotes are text, not commands.
+guard_case(allow_backticks_in_single_quoted_message allow [==[git commit -m 'fix `foo`']==])
+guard_case(allow_push_in_backticks_in_single_quoted_message allow [==[git commit -m 'docs: ban `git push`']==])
+guard_case(allow_backtick_in_grep_pattern allow [==[grep '`' README.md]==])
+guard_case(allow_substitution_in_single_quotes allow [==[echo '$(git push)']==])
+guard_case(allow_ansi_quote_escape allow [==[echo $'it\'s' && git status]==])
+guard_case(allow_quoted_heredoc_backticks allow [==[git commit -F - <<'EOF'
+fix `x` and `git push`
+EOF]==])
+guard_case(allow_quoted_heredoc_fence allow [==[cat > doc.md <<'EOF'
+```bash
+git push
+```
+EOF]==])
+guard_case(allow_quoted_heredoc_substitution allow [==[cat <<"EOF"
+$(git push)
+EOF]==])
+guard_case(allow_case_arms allow [==[case "$x" in a) echo 1 ;; "$b") echo 2 ;; esac]==])
+guard_case(allow_case_arms_multiline allow [==[case $x in
+  a) echo 1 ;;
+  *) git status ;;
+esac
+git status]==])
+# [[ ... ]] is a conditional: && || ( ) < > inside it are operators on operands,
+# not separators or redirections, so the command after ]] is still checked.
+guard_case(allow_cond_and_or_operands allow [==[[[ -n "$x" && "$y" == z || -z "$w" ]] && echo ok]==])
+guard_case(allow_cond_in_if allow [==[if [[ -f "$f" && "$a" != "$b" ]]; then echo ok; fi]==])
+guard_case(allow_cond_grouping_and_comparisons allow [==[[[ ( "$x" < "$y" ) && "$a" > "$b" ]] && echo ok]==])
+guard_case(allow_cond_multiline allow [==[[[ -n "$x"
+  && "$y" == z ]] && echo ok]==])
+guard_case(allow_cond_in_while allow [==[while [[ $i -lt 3 && "$j" == x ]]; do i=$((i+1)); done]==])
+# Arithmetic after if, while and until is a (( )) command, not a subshell.
+guard_case(allow_arithmetic_if allow [==[if (( $x > 1 )); then echo a; fi]==])
+guard_case(allow_arithmetic_while allow [==[while (( i < 3 )); do i=$((i+1)); done]==])
+guard_case(allow_arithmetic_until allow [==[until (( i >= 3 )); do i=$((i+1)); done]==])
+# case after a reserved word (do, then, else, {, !) is a case statement.
+guard_case(allow_case_after_do allow [==[for f in *; do case "$f" in a) echo a;; esac; done]==])
+guard_case(allow_case_after_then allow [==[if true; then case x in x) :;; esac; fi]==])
+guard_case(allow_case_after_else allow [==[if false; then :; else case x in x) :;; esac; fi]==])
+guard_case(allow_case_after_brace allow [==[{ case x in x) :;; esac; }]==])
+guard_case(allow_case_after_bang allow [==[! case x in y) :;; esac]==])
+guard_case(allow_subshell_cd_inside allow [==[(cd native && rm -rf build/tmp)]==])
+guard_case(allow_stash_list allow [==[git stash list]==])
+guard_case(allow_stash_show allow [==[git stash show -p]==])
+guard_case(allow_stash_show_ref allow [==[git stash show stash@{0}]==])
+guard_case(allow_stash_list_git_c allow [==[git -C native stash list]==])
+guard_case(allow_heredoc_body_text allow [==[cat > NOTES.md <<'EOF'
+git push is banned
+EOF]==])
+guard_case(allow_heredoc_apostrophe_body allow [==[cat <<'EOF'
+don't do it
+EOF
+git status]==])
+guard_case(allow_rm_build_tmp allow [==[rm -rf build/tmp]==])
+guard_case(allow_rm_dot_slash allow [==[rm -rf ./build/tmp/]==])
+guard_case(allow_rm_glob_inside allow [==[rm -rf build/*]==])
+guard_case(allow_rm_parent_inside allow [==[rm -rf native/../build/tmp]==])
+guard_case(allow_rm_recursive_only allow [==[rm -r /tmp/x]==])
+guard_case(allow_rm_force_only allow [==[rm -f /tmp/x]==])
+guard_case(allow_rm_then_status allow [==[rm -rf build/tmp; git status]==])
+guard_case(allow_rm_redirected allow [==[rm -rf build/tmp 2>/dev/null]==])
+guard_case(allow_rm_quoted_text allow [==[echo "rm -rf /"]==])
+guard_case(allow_rm_cd_inside allow [==[cd native && rm -rf ../build/tmp]==])
+guard_case(allow_rm_cwd_native allow [==[rm -rf tmp]==] CWD ${REPO_ROOT}/native)
+guard_case(allow_rm_cwd_native_parent allow [==[rm -rf ../build/tmp]==] CWD ${REPO_ROOT}/native)
+guard_case(allow_rm_wd_native_parent allow [==[rm -rf ../build/tmp]==] WD ${REPO_ROOT}/native)
+guard_case(allow_golden_zero allow [==[BIKE_GOLDEN_RECORD=0 ./run]==])
+guard_case(allow_golden_text allow [==[echo BIKE_GOLDEN_RECORD=1]==])
+guard_case(allow_golden_with_guard_env allow [==[BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_golden_cmake_env_with_guard_env allow [==[cmake -E env BIKE_GOLDEN_RECORD=1 ./run]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_golden_env_split_string_with_guard_env allow [==[env -S 'BIKE_GOLDEN_RECORD=1 ctest']==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+guard_case(allow_env_split_string_text allow [==[env -S 'echo BIKE_GOLDEN_RECORD=1']==])
+guard_case(allow_env_assignment_then_status allow [==[env FOO=1 git status]==])
+guard_case(allow_env_alone allow [==[env]==])
+guard_case(allow_git_no_pager_status allow [==[git --no-pager status]==])
+guard_case(allow_git_exec_path_status allow [==[git --exec-path /x status]==])
+guard_case(allow_git_git_dir_status allow [==[git --git-dir=.git status]==])
+guard_case(allow_misspelt_with_guard_env allow [==[export BIKE_RECORD_GOLDENS=1]==] ENV BIKE_GUARD_ALLOW_GOLDENS=1)
+
+# --- stdin input ---------------------------------------------------------------
+guard_case(stdin_deny_push deny [==[make
+git push]==] STDIN)
+guard_case(stdin_allow_status allow [==[git status]==] STDIN)
+
+# --- usage errors fail closed --------------------------------------------------
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+  bash "${_guard}" --cwd "${SCRATCH_DIR}/does-not-exist" "git status"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 2)
+  set(_failures "${_failures}\n  usage_missing_cwd: expected exit 2, got ${_rc}")
+endif()
+execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+  bash "${_guard}" --bogus "git status"
+  RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+if(NOT _rc EQUAL 2)
+  set(_failures "${_failures}\n  usage_unknown_option: expected exit 2, got ${_rc}")
+endif()
+
+# --- agy and Claude PreToolUse adapters ---------------------------------------
+# hook_run(<name> <script> <payload>) runs <script> from REPO_ROOT with <payload>
+# on stdin; @REPO@ in the payload becomes REPO_ROOT. Sets <name>_rc, <name>_out
+# and <name>_err in the caller, each stripped of surrounding whitespace.
+function(hook_run name script payload)
+  string(REPLACE "@REPO@" "${REPO_ROOT}" _payload "${payload}")
+  file(WRITE "${SCRATCH_DIR}/hook_${name}.in" "${_payload}")
+  execute_process(COMMAND "${CMAKE_COMMAND}" -E env --unset=BIKE_GUARD_ALLOW_GOLDENS
+    bash "${script}"
+    WORKING_DIRECTORY "${REPO_ROOT}"
+    INPUT_FILE "${SCRATCH_DIR}/hook_${name}.in"
+    RESULT_VARIABLE _rc OUTPUT_VARIABLE _out ERROR_VARIABLE _err)
+  string(STRIP "${_out}" _out)
+  string(STRIP "${_err}" _err)
+  set(${name}_rc "${_rc}" PARENT_SCOPE)
+  set(${name}_out "${_out}" PARENT_SCOPE)
+  set(${name}_err "${_err}" PARENT_SCOPE)
+endfunction()
+
+# agy_payload(<out> <tool> <command> <last-user-input>) — an agy PreToolUse
+# payload in the verified shape (see tools/agy/pretool-guard.sh).
+function(agy_payload out tool command last)
+  set(${out} "{\"cwd\":\"@REPO@\",\"hookEventName\":\"PreToolUse\",\"toolCall\":{\"args\":{\"CommandLine\":\"${command}\",\"toolSummary\":\"probe\",\"WaitMsBeforeAsync\":5000},\"id\":\"call_1\",\"name\":\"${tool}\"},\"workspacePaths\":[\"@REPO@\"],\"lastUserInput\":\"${last}\",\"conversationId\":\"test\"}" PARENT_SCOPE)
+endfunction()
+
+# agy_check(<name> <allow|deny|open> [<needle>]) — checks an agy hook result.
+#   allow: exit 0, stdout decision allow, empty stderr
+#   deny:  exit 0, stdout decision deny, reason contains <needle>, empty stderr
+#   open:  fail-open: exit 0, decision allow, stderr notes it with <needle>
+function(agy_check name expect)
+  set(_bad "")
+  set(_needle "${ARGV2}")
+  set(_out "${${name}_out}")
+  set(_err "${${name}_err}")
+  if(NOT ${name}_rc EQUAL 0)
+    string(APPEND _bad " exit=${${name}_rc}")
+  endif()
+  if(expect STREQUAL "open")
+    set(_want allow)
+  else()
+    set(_want "${expect}")
+  endif()
+  string(JSON _dec ERROR_VARIABLE _jerr GET "${_out}" decision)
+  if(NOT "${_jerr}" STREQUAL "NOTFOUND")
+    string(APPEND _bad " stdout is not a decision object: '${_out}'")
+  elseif(NOT "${_dec}" STREQUAL "${_want}")
+    string(APPEND _bad " decision '${_dec}', expected '${_want}'")
+  endif()
+  if(expect STREQUAL "deny")
+    string(FIND "${_out}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " reason lacks '${_needle}'")
+    endif()
+  endif()
+  if(expect STREQUAL "open")
+    string(FIND "${_err}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " stderr lacks fail-open note '${_needle}': '${_err}'")
+    endif()
+  elseif(NOT "${_err}" STREQUAL "")
+    string(APPEND _bad " unexpected stderr '${_err}'")
+  endif()
+  if(NOT _bad STREQUAL "")
+    set(_failures "${_failures}\n  ${name}:${_bad}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# claude_check(<name> <allow|deny|open> [<needle>]) — checks a Claude hook result.
+#   allow: exit 0, no stdout, empty stderr
+#   deny:  exit 2, no stdout, one stderr line containing <needle>
+#   open:  fail-open: exit 0, no stdout, stderr notes it with <needle>
+function(claude_check name expect)
+  set(_bad "")
+  set(_needle "${ARGV2}")
+  set(_out "${${name}_out}")
+  set(_err "${${name}_err}")
+  if(expect STREQUAL "deny")
+    set(_want_rc 2)
+  else()
+    set(_want_rc 0)
+  endif()
+  if(NOT ${name}_rc EQUAL _want_rc)
+    string(APPEND _bad " exit=${${name}_rc}, expected ${_want_rc}")
+  endif()
+  if(NOT "${_out}" STREQUAL "")
+    string(APPEND _bad " unexpected stdout '${_out}'")
+  endif()
+  if(expect STREQUAL "allow")
+    if(NOT "${_err}" STREQUAL "")
+      string(APPEND _bad " unexpected stderr '${_err}'")
+    endif()
+  else()
+    string(FIND "${_err}" "${_needle}" _pos)
+    if(_pos EQUAL -1)
+      string(APPEND _bad " stderr lacks '${_needle}': '${_err}'")
+    endif()
+    string(FIND "${_err}" "\n" _nl)
+    if(NOT _nl EQUAL -1)
+      string(APPEND _bad " stderr is more than one line")
+    endif()
+  endif()
+  if(NOT _bad STREQUAL "")
+    set(_failures "${_failures}\n  ${name}:${_bad}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+set(_agy_hook "${REPO_ROOT}/tools/agy/pretool-guard.sh")
+set(_claude_hook "${REPO_ROOT}/tools/claude/pretool-guard.sh")
+
+# --- agy: verdict JSON on stdout, only run_command is checked -----------------
+agy_payload(_p view_file "git push" "")
+hook_run(agy_allow_non_shell "${_agy_hook}" "${_p}")
+agy_check(agy_allow_non_shell allow)
+
+agy_payload(_p run_command "echo ok" "")
+hook_run(agy_allow_echo "${_agy_hook}" "${_p}")
+agy_check(agy_allow_echo allow)
+
+agy_payload(_p run_command "git push" "")
+hook_run(agy_deny_push "${_agy_hook}" "${_p}")
+agy_check(agy_deny_push deny "guard: denied: git push")
+
+# lastUserInput echoes the prompt; a push the user only mentioned must not deny.
+agy_payload(_p run_command "echo ok" "run git push now")
+hook_run(agy_allow_prompt_mentions_push "${_agy_hook}" "${_p}")
+agy_check(agy_allow_prompt_mentions_push allow)
+
+# --- agy: fail open on a payload the hook cannot read -------------------------
+hook_run(agy_open_garbage "${_agy_hook}" "not json {")
+agy_check(agy_open_garbage open "payload is not JSON")
+
+hook_run(agy_open_array "${_agy_hook}" "[1,2]")
+agy_check(agy_open_array open "payload is not JSON")
+
+hook_run(agy_open_no_command "${_agy_hook}" [==[{"toolCall":{"name":"run_command","args":{}}}]==])
+agy_check(agy_open_no_command open "no CommandLine")
+
+# --- Claude: exit codes, reason on stderr --------------------------------------
+hook_run(claude_allow_status "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"@REPO@"}]==])
+claude_check(claude_allow_status allow)
+
+hook_run(claude_deny_push "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"git push"},"cwd":"@REPO@"}]==])
+claude_check(claude_deny_push deny "guard: denied: git push")
+
+hook_run(claude_allow_non_bash "${_claude_hook}" [==[{"tool_name":"Edit","tool_input":{"command":"git push"},"cwd":"@REPO@"}]==])
+claude_check(claude_allow_non_bash allow)
+
+# The payload cwd is the base for relative rm targets: ../build/tmp is inside
+# the repository from native/ and outside it from the repository root.
+hook_run(claude_allow_cwd_native "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"rm -rf ../build/tmp"},"cwd":"@REPO@/native"}]==])
+claude_check(claude_allow_cwd_native allow)
+
+hook_run(claude_deny_cwd_root "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{"command":"rm -rf ../build/tmp"},"cwd":"@REPO@"}]==])
+claude_check(claude_deny_cwd_root deny "rm target is outside the repository")
+
+hook_run(claude_open_garbage "${_claude_hook}" "not json {")
+claude_check(claude_open_garbage open "payload is not JSON")
+
+hook_run(claude_open_no_command "${_claude_hook}" [==[{"tool_name":"Bash","tool_input":{}}]==])
+claude_check(claude_open_no_command open "no command string")
+
+# --- .agents/hooks.json: valid, and the command as written runs from .agents/ --
+file(READ "${REPO_ROOT}/.agents/hooks.json" _hooks)
+string(JSON _hook_cmd ERROR_VARIABLE _jerr GET "${_hooks}" guard PreToolUse 0 hooks 0 command)
+if(NOT "${_jerr}" STREQUAL "NOTFOUND")
+  set(_failures "${_failures}\n  hooks_json: ${_jerr}")
+else()
+  string(REGEX MATCH "^bash ([^ ]+)$" _hook_match "${_hook_cmd}")
+  if(NOT _hook_match)
+    set(_failures "${_failures}\n  hooks_json: command is not 'bash <path>': '${_hook_cmd}'")
+  else()
+    get_filename_component(_hook_script "${REPO_ROOT}/.agents/${CMAKE_MATCH_1}" ABSOLUTE)
+    if(NOT EXISTS "${_hook_script}")
+      set(_failures "${_failures}\n  hooks_json: '${CMAKE_MATCH_1}' does not name a file relative to .agents/")
+    endif()
+    agy_payload(_p run_command "git push" "")
+    string(REPLACE "@REPO@" "${REPO_ROOT}" _p "${_p}")
+    file(WRITE "${SCRATCH_DIR}/hooks_json.in" "${_p}")
+    execute_process(COMMAND bash -c "${_hook_cmd}"
+      WORKING_DIRECTORY "${REPO_ROOT}/.agents"
+      INPUT_FILE "${SCRATCH_DIR}/hooks_json.in"
+      RESULT_VARIABLE hooks_json_rc OUTPUT_VARIABLE hooks_json_out ERROR_VARIABLE hooks_json_err)
+    string(STRIP "${hooks_json_out}" hooks_json_out)
+    string(STRIP "${hooks_json_err}" hooks_json_err)
+    agy_check(hooks_json deny "guard: denied: git push")
+  endif()
+endif()
+
+if(NOT _failures STREQUAL "")
+  message(FATAL_ERROR "tooling_guard contract failed:${_failures}")
+endif()
+message(STATUS "tooling_guard contract passed")

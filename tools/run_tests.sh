@@ -47,9 +47,21 @@
 #
 # Every run ends with a per-stage seconds/exit table and appends one line
 # to $BIKE_GATE_STATE_DIR/timings.tsv (default: <git common dir>/bike-gate,
-# or <repo>/build/bike-gate outside git). BIKE_CPU_COUNT overrides the
-# detected CPU count used for --parallel and recorded as the journal's
-# jobs field.
+# or <repo>/build/bike-gate outside the repository's own top level).
+# Column 6 (from) is `-` for a complete run, the --from stage for a partial
+# one, and `uncommitted` for a check_change.sh --uncommitted row.
+# BIKE_CPU_COUNT overrides the detected CPU count used for --parallel and
+# recorded as the journal's jobs field. The 11th column is tree=<id>, the
+# tree this run checked (tools/lib/tree_id.sh, taken at start); an applied
+# override adds a 12th column, override=<reason>.
+#
+# Gate preconditions (native and full, release preset, no --from, inside a
+# git tree): the journal must hold a passed complete level-1 run (`change`
+# row with from `-`, written by tools/check_change.sh) for the current tree,
+# and native is also refused when a passed full run already covers that
+# tree. BIKE_GATE_OVERRIDE='<why>' skips both checks and is journaled on the
+# run. A refusal exits before the registry entry and the EXIT trap, so it
+# writes no journal row. quick and --from are not gated.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -72,6 +84,14 @@ Usage: bash tools/run_tests.sh [quick|native|full] [preset] [--from STAGE]
                 and the run is marked PARTIAL. Stages: ctest scripts cppcheck
                 context diagnostic-controls contracts frontends headers odr
                 tidy, plus slow package for full.
+
+Preconditions (native and full on the release preset, without --from, in a
+git tree): a passed level-1 run for the current tree is required first —
+run `bash tools/check_change.sh`. native is also refused when a passed full
+run already covers the tree. Refusals start nothing and journal nothing.
+  BIKE_GATE_OVERRIDE='<reason>'  skip both checks; the reason is journaled
+                                 on the run as override=<reason>.
+quick and --from runs are not gated.
 
 preset selects a configure preset from CMakePresets.json (default: release).
 Its binaryDir is the build directory: build/<preset>; release keeps
@@ -152,14 +172,52 @@ fi
 
 # Shared gate state (journal; active-gate registry in later tasks): the git
 # common dir is shared by every worktree of this repository.
-if [[ -z "${BIKE_GATE_STATE_DIR:-}" ]]; then
-  if common_dir="$(git -C "$REPO_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"; then
-    BIKE_GATE_STATE_DIR="$common_dir/bike-gate"
-  else
-    BIKE_GATE_STATE_DIR="$REPO_ROOT/build/bike-gate"
+# shellcheck source=/dev/null
+source "$REPO_ROOT/tools/lib/gate_state.sh"
+# shellcheck source=/dev/null
+source "$REPO_ROOT/tools/lib/tree_id.sh"
+BIKE_GATE_STATE_DIR="$(bike_gate_state_dir "$REPO_ROOT")"
+mkdir -p "$BIKE_GATE_STATE_DIR"
+# The tree this run checks, taken once before any stage. Every journal row
+# carries it; the preconditions below key on it.
+tree="$(bike_tree_id "$REPO_ROOT")"
+
+# journal_has <profile> — 0 when timings.tsv holds a passed release row of
+# that profile for $tree. Columns: 4 profile, 5 preset, 6 from, 8 status,
+# 11 tree=. Only a complete run counts (from is "-"): a --from partial run is
+# an intermediate re-check, and an uncommitted check_change row is not the
+# level-1 run of the committed tree.
+journal_has() {
+  local journal="$BIKE_GATE_STATE_DIR/timings.tsv"
+  [[ -f "$journal" ]] || return 1
+  awk -F'\t' -v p="$1" -v t="tree=$tree" \
+    '$4 == p && $5 == "release" && $6 == "-" && $8 == "passed" && $11 == t { found = 1 } END { exit !found }' \
+    "$journal"
+}
+
+# Gate preconditions. A refusal exits here, before the registry entry and the
+# EXIT trap, so it writes no journal row: a later lookup must never mistake one
+# for a real run. BIKE_GATE_OVERRIDE skips the checks and is journaled on this
+# run (tabs and newlines in the reason become spaces).
+gate_override=""
+if [[ ( "$profile" == native || "$profile" == full ) && "$preset" == release \
+      && -z "$from" && "$tree" != nogit ]]; then
+  if [[ -n "${BIKE_GATE_OVERRIDE:-}" ]]; then
+    gate_override="$(printf '%s' "$BIKE_GATE_OVERRIDE" | tr '\t\r\n' '   ')"
+    printf 'run_tests: note: BIKE_GATE_OVERRIDE set, gate preconditions skipped: %s\n' \
+      "$gate_override" >&2
+  elif ! journal_has change; then
+    printf 'run_tests: refusing %s: no passed level-1 run for tree %s (journal %s)\n' \
+      "$profile" "${tree:0:12}" "$BIKE_GATE_STATE_DIR/timings.tsv" >&2
+    printf "run_tests: run 'bash tools/check_change.sh' first, or set BIKE_GATE_OVERRIDE=<reason> to run anyway\n" >&2
+    exit 2
+  elif [[ "$profile" == native ]] && journal_has full; then
+    printf 'run_tests: refusing native: a passed full run already covers tree %s\n' "${tree:0:12}" >&2
+    printf 'run_tests: set BIKE_GATE_OVERRIDE=<reason> to run native anyway\n' >&2
+    exit 2
   fi
 fi
-mkdir -p "$BIKE_GATE_STATE_DIR"
+
 cpu_count="${BIKE_CPU_COUNT:-$(getconf _NPROCESSORS_ONLN)}"
 
 # Active-gate registry: one file per running native/full gate, named by its
@@ -229,11 +287,15 @@ finish() {
   if [[ -n "$from" ]]; then
     printf 'PARTIAL run (--from %s): not a final verification\n' "$from"
   fi
-  local head
+  local head override_col=""
   head="$(git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || printf 'nogit')"
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+  if [[ -n "$gate_override" ]]; then
+    override_col="$(printf '\toverride=%s' "$gate_override")"
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\ttree=%s%s\n' \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REPO_ROOT" "$head" "$profile" \
     "$preset" "${from:--}" "$jobs" "$status" "$total" "$summary" \
+    "$tree" "$override_col" \
     >> "$BIKE_GATE_STATE_DIR/timings.tsv"
   rm -f "$timings_file"
   exit "$rc"

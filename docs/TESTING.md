@@ -192,7 +192,7 @@ be overridden with `CLANG_TIDY`, `CPPCHECK`, and `GXX`; each
 override is resolved and checked before the sweep runs.
 
 ~~~bash
-cmake --build build/native-release --target check_frontends   # gcc -fsyntax-only + -fanalyzer (second frontend)
+cmake --build build/native-release --target check_frontends   # gcc -fsyntax-only, -Werror (second frontend); --only-sources (level 1) compiles -c -O0 -o /dev/null
 cmake --build build/native-release --target check_tidy        # clang-tidy, checks in native/.clang-tidy (includes the clang static analyzer)
 cmake --build build/native-release --target check_cppcheck    # cppcheck third engine
 cmake --build build/native-release --target check_odr         # g++ -flto -Wodr merge — cross-TU type conflicts

@@ -482,9 +482,11 @@ inline void flatten_into(const runtime::Wire &wire, const std::string &path,
                     leaves.other.emplace(path, bio::Value{std::move(marker)});
                 }
                 for (std::size_t index = 0; index < value.size(); ++index) {
-                    char suffix[16]; // NOLINT(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays) bounded label buffer for snprintf
-                    std::snprintf(suffix, sizeof(suffix), "[%08zu]", index); // NOLINT(cert-err33-c,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-pro-type-vararg) snprintf truncation return intentionally unused on the sized label buffer; label buffer decays into snprintf/sizeof by design; bounded snprintf is the sized-label API
-                    flatten_into(value[index], path + suffix, leaves); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) label buffer decays into snprintf/sizeof by design
+                    // Zero-padded to 8 digits like the golden labels. A
+                    // size_t index can have 20 digits, so a fixed char buffer
+                    // would truncate; std::format sizes the label itself.
+                    flatten_into(value[index],
+                                 path + std::format("[{:08}]", index), leaves);
                 }
             } else if constexpr (std::is_same_v<T, std::int64_t>) {
                 leaves.numeric[path] = {static_cast<double>(value)};

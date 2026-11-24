@@ -2,6 +2,7 @@
 #include "../configuration/load.hpp"
 #include "../diag.hpp"
 #include "../rider/state_codec.hpp"
+#include "../physics_core/spindle_m2k2_rider_bridge.hpp"
 #include "../writers/rider_contacts.hpp"
 #include <numbers>
 

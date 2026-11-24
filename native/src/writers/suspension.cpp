@@ -8,12 +8,13 @@
 #include "../config_validation.hpp"
 #include "../engine_call.hpp"
 #include "../model_access.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/suspension.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <exception>
-#include <limits>
 #include <format>
 #include <new>
 #include <numbers>
@@ -49,39 +50,160 @@ namespace {
         return piston_area_m2(s) * (s.neg_chamber_length_mm / 1000.0);
     }
 
-    // ForkAirSpring.compute_axial_force (air_spring.py:142-154) — inlines
-    // compute_pressures_pa:113-140 and compute_volumes:94-126 on their behalf.
+    bike::physics_core::AirSpringParams<double> to_core_air(
+            const nativecfg::AirSpringConfig &air) noexcept {
+        return {
+            .stanchion_inner_diam_mm = air.specs.stanchion_inner_diam_mm,
+            .total_travel_mm = air.specs.total_travel_mm,
+            .pos_chamber_length_mm = air.specs.pos_chamber_length_mm,
+            .neg_chamber_length_mm = air.specs.neg_chamber_length_mm,
+            .token_volume_cm3 = air.specs.token_volume_cm3,
+            .max_tokens = air.specs.max_tokens,
+            .gamma = air.specs.gamma,
+            .atm_pressure_pa = air.specs.atm_pressure_pa,
+            .num_tokens = air.num_tokens,
+            .gauge_pressure_psi = air.gauge_pressure_psi,
+        };
+    }
+
+    bike::physics_core::DamperCoreParams<double> to_core_damper(
+            const nativecfg::DamperCore &in) noexcept {
+        return {
+            .max_hsc = in.max_hsc,
+            .max_lsc = in.max_lsc,
+            .max_reb = in.max_reb,
+            .hsc_clicks = in.hsc_clicks,
+            .lsc_clicks = in.lsc_clicks,
+            .rebound_clicks = in.rebound_clicks,
+            .c_lsc_min = in.c_lsc_min,
+            .c_lsc_max = in.c_lsc_max,
+            .c_hsc_min = in.c_hsc_min,
+            .c_hsc_max = in.c_hsc_max,
+            .c_reb_min = in.c_reb_min,
+            .c_reb_max = in.c_reb_max,
+            .v_knee_comp = in.v_knee_comp,
+            .v_knee_reb = in.v_knee_reb,
+        };
+    }
+
+    bike::physics_core::SuspensionParams<double> to_core_suspension(
+            const nativecfg::SuspensionConfig &cfg) noexcept {
+        return {
+            .air_spring = to_core_air(cfg.air_spring),
+            .fork_damper = {
+                .core = to_core_damper(cfg.fork_damper.core),
+                .total_travel_mm = cfg.fork_damper.total_travel_mm,
+                .hbo_start_mm = cfg.fork_damper.hbo_start_mm,
+                .c_hbo_base = cfg.fork_damper.c_hbo_base,
+            },
+            .shock_damper = {
+                .core = to_core_damper(cfg.shock_damper.core),
+                .total_stroke_mm = cfg.shock_damper.total_stroke_mm,
+                .max_hbo = cfg.shock_damper.max_hbo,
+                .hbo_clicks = cfg.shock_damper.hbo_clicks,
+                .lockout_firm = static_cast<bike::physics_core::u8>(
+                    cfg.shock_damper.lockout_firm ? 1 : 0),
+                .hbo_start_mm = cfg.shock_damper.hbo_start_mm,
+                .c_hbo_min = cfg.shock_damper.c_hbo_min,
+                .c_hbo_max = cfg.shock_damper.c_hbo_max,
+                .lockout_preload_n = cfg.shock_damper.lockout_preload_n,
+                .lockout_stiffness = cfg.shock_damper.lockout_stiffness,
+            },
+            .coil = {
+                .rate_n_m = cfg.coil.rate_n_m,
+                .preload_mm = cfg.coil.preload_mm,
+                .stroke_mm = cfg.coil.stroke_mm,
+                .bumper_length_mm = cfg.coil.bumper_length_mm,
+                .bumper_peak_n = cfg.coil.bumper_peak_n,
+            },
+            .end_stops = {
+                .stiffness_n_m = cfg.end_stops.stiffness_n_m,
+                .damping_n_s_m = cfg.end_stops.damping_n_s_m,
+            },
+        };
+    }
+
+    [[noreturn]] void throw_suspension_error(
+            bike::physics_core::SuspDiagField field,
+            double travel_mm,
+            double v_disp,
+            double v_pos_0) {
+        using bike::physics_core::SuspDiagField;
+        switch (field) {
+            case SuspDiagField::air_displaced_volume:
+                throw std::overflow_error("ForkAirSpring.displaced_volume must be finite");
+            case SuspDiagField::air_initial_pos_volume:
+                throw std::overflow_error("ForkAirSpring.initial_positive_volume must be finite");
+            case SuspDiagField::air_initial_neg_volume:
+                throw std::overflow_error("ForkAirSpring.initial_negative_volume must be finite");
+            case SuspDiagField::air_volume_exhausted:
+                throw std::invalid_argument(std::format(
+                    "pneumatic volume exhausted at travel={:.1f} mm (displaced "
+                    "volume {:.1f} cm³ >= initial chamber volume {:.1f} cm³)",
+                    travel_mm, v_disp * 1e6, v_pos_0 * 1e6));
+            case SuspDiagField::air_pos_volume:
+                throw std::overflow_error("ForkAirSpring.positive_volume must be finite");
+            case SuspDiagField::air_neg_volume:
+                throw std::overflow_error("ForkAirSpring.negative_volume must be finite");
+            case SuspDiagField::air_abs_pressure:
+                throw std::overflow_error("ForkAirSpring.absolute_pressure must be finite");
+            case SuspDiagField::air_volumes_nonpositive:
+                throw std::invalid_argument("ForkAirSpring.volumes");
+            case SuspDiagField::air_pos_pressure:
+                throw std::overflow_error("ForkAirSpring.positive_pressure must be finite");
+            case SuspDiagField::air_neg_pressure:
+                throw std::overflow_error("ForkAirSpring.negative_pressure must be finite");
+            case SuspDiagField::air_axial_force:
+                throw std::overflow_error("ForkAirSpring.axial_force must be finite");
+            case SuspDiagField::charger3_zero_hbo_denom:
+                throw std::invalid_argument("Charger3Damper.hbo_start_mm: zero denominator");
+            case SuspDiagField::charger3_damper_force:
+                throw std::overflow_error("SuspensionWriter.damper_force must be finite");
+            case SuspDiagField::coil_spring_force:
+                throw std::overflow_error("CoilShock.spring_force must be finite");
+            case SuspDiagField::coil_bumper_force:
+                throw std::overflow_error("CoilShock.bumper_force must be finite");
+            case SuspDiagField::sd_nonfinite_state:
+                throw std::invalid_argument("non-finite shock damper state");
+            case SuspDiagField::sd_zero_hbo_denom:
+                throw std::invalid_argument("SuperDeluxeDamper.hbo_start_mm: zero denominator");
+            case SuspDiagField::sd_base_force:
+                throw std::overflow_error("SuperDeluxeDamper.base_force must be finite");
+            case SuspDiagField::sd_hbo_force:
+                throw std::overflow_error("SuperDeluxeDamper.hbo_force must be finite");
+            case SuspDiagField::sd_total_force:
+                throw std::overflow_error("SuperDeluxeDamper.force must be finite");
+            case SuspDiagField::end_stop_invalid_params:
+                throw std::invalid_argument("invalid end-stop parameters");
+            case SuspDiagField::end_stop_raw_force:
+                throw std::overflow_error("end_stop.raw_force must be finite");
+            case SuspDiagField::telemetry_force_or_energy:
+                throw std::overflow_error("SuspensionWriter.force_or_energy must be finite");
+            case SuspDiagField::invalid_damper_clicks_denom:
+                throw std::invalid_argument("invalid damper click range");
+            case SuspDiagField::none:
+                break;
+        }
+        throw std::invalid_argument("suspension evaluation failed");
+    }
+
+    // ForkAirSpring.compute_axial_force (air_spring.py:142-154) — delegates
+    // to shared physics_core::eval_air_axial_force<double, CpuExactToolkit>.
     double air_axial_force(const nativecfg::AirSpringConfig &air,
                            double travel_mm) {
-        const nativecfg::AirSpringSpec &s = air.specs;
-        const int tokens =
-                std::max(0, std::min(s.max_tokens, air.num_tokens));
-        const double travel_m =
-                std::max(0.0, std::min(s.total_travel_mm, travel_mm)) / 1000.0;
-        const double area = piston_area_m2(s);
-        const double v_pos_0 = base_pos_volume_m3(s) - tokens * token_volume_m3(s);
-        const double v_neg_0 = base_neg_volume_m3(s);
-        const double v_disp = validation::derived(area * travel_m, "ForkAirSpring.displaced_volume");
-        validation::derived(v_pos_0, "ForkAirSpring.initial_positive_volume");
-        validation::derived(v_neg_0, "ForkAirSpring.initial_negative_volume");
-        if (v_pos_0 <= 0. || v_neg_0 <= 0. || v_disp >= v_pos_0)
-            throw std::invalid_argument(std::format(
-                "pneumatic volume exhausted at travel={:.1f} mm (displaced "
-                "volume {:.1f} cm³ >= initial chamber volume {:.1f} cm³)",
-                travel_mm, v_disp * 1e6, v_pos_0 * 1e6));
-        const double v_pos = v_pos_0 - v_disp;
-        const double v_neg = v_neg_0 + v_disp;
-        validation::derived(v_pos, "ForkAirSpring.positive_volume");
-        validation::derived(v_neg, "ForkAirSpring.negative_volume");
-        const double p_abs_0 =
-                air.gauge_pressure_psi * kPsiToPa + s.atm_pressure_pa;
-        validation::derived(p_abs_0, "ForkAirSpring.absolute_pressure");
-        if (v_pos <= 0. || v_neg <= 0.) throw std::invalid_argument("ForkAirSpring.volumes");
-        const double p_pos = p_abs_0 * pyfloat::pow(v_pos_0 / v_pos, s.gamma);
-        const double p_neg = p_abs_0 * pyfloat::pow(v_neg_0 / v_neg, s.gamma);
-        validation::derived(p_pos, "ForkAirSpring.positive_pressure");
-        validation::derived(p_neg, "ForkAirSpring.negative_pressure");
-        return std::max(0.0, validation::derived(area * (p_pos - p_neg), "ForkAirSpring.axial_force"));
+        double out_force = 0.0;
+        double v_disp = 0.0;
+        double v_pos_0 = 0.0;
+        auto err = bike::physics_core::ErrCode::none;
+        auto diag = bike::physics_core::SuspDiagField::none;
+        const auto air_params = to_core_air(air);
+        const auto st = bike::physics_core::eval_air_axial_force<
+            double, bike::physics_core::CpuExactToolkit>(
+            &air_params, travel_mm, out_force, v_disp, v_pos_0, err, diag);
+        if (st != bike::physics_core::Status::ok) {
+            throw_suspension_error(diag, travel_mm, v_disp, v_pos_0);
+        }
+        return out_force;
     }
 
     // --- stored-energy helpers (physical_energy.py) ----------------------------
@@ -132,159 +254,7 @@ namespace {
         return std::max(energy, 0.);
     }
 
-    // --- damper helpers (physics/damper.py BaseDamper) -------------------------
-
-    struct Coeffs {
-        double c_lsc, c_hsc, c_reb;
-    };
-
-    // BaseDamper._calc_fractions_and_coeffs (damper.py:122-131); the frac_*
-    // intermediates are kept so the statement sequence is identical.
-    Coeffs calc_fractions_and_coeffs(const nativecfg::DamperCore &c) {
-        const double frac_lsc = std::clamp(c.lsc_clicks, 0, c.max_lsc) / static_cast<double>(c.max_lsc);
-        const double frac_hsc = std::clamp(c.hsc_clicks, 0, c.max_hsc) / static_cast<double>(c.max_hsc);
-        const double frac_reb = std::clamp(c.rebound_clicks, 0, c.max_reb) / static_cast<double>(c.max_reb);
-        const double c_lsc = c.c_lsc_min + (c.c_lsc_max - c.c_lsc_min) *
-                             pyfloat::pow(frac_lsc, 1.25);
-        const double c_hsc = c.c_hsc_min + (c.c_hsc_max - c.c_hsc_min) *
-                             pyfloat::pow(frac_hsc, 1.15);
-        const double c_reb = c.c_reb_min + (c.c_reb_max - c.c_reb_min) *
-                             pyfloat::pow(frac_reb, 1.20);
-        return {.c_lsc = c_lsc, .c_hsc = c_hsc, .c_reb = c_reb};
-    }
-
-    // BaseDamper._compute_base_damping (damper.py:133-150).
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror damper.py
-    double base_damping(const nativecfg::DamperCore &c, double v, double c_lsc,
-                        double c_hsc, double c_reb) {
-        if (v >= 0.0) {
-            if (v <= c.v_knee_comp)
-                return c_lsc * v * (1.0 + 0.35 * (v / c.v_knee_comp));
-            const double f_knee = c_lsc * c.v_knee_comp * 1.35;
-            const double v_excess = v - c.v_knee_comp;
-            return f_knee + c_hsc * pyfloat::pow(v_excess, 0.88) *
-                   pyfloat::pow(c.v_knee_comp, 0.12);
-        }
-        const double v_abs = -v;
-        if (v_abs <= c.v_knee_reb)
-            return -c_reb * v_abs * (1.0 + 0.25 * (v_abs / c.v_knee_reb));
-        const double f_knee = c_reb * c.v_knee_reb * 1.25;
-        const double v_excess = v_abs - c.v_knee_reb;
-        const double c_hs_reb = c_reb * 0.45;
-        return -(f_knee + c_hs_reb * pyfloat::pow(v_excess, 0.90) *
-                 pyfloat::pow(c.v_knee_reb, 0.10));
-    }
-
-    // Charger3Damper.compute_damping_force (damper.py:214-224).
-    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    double charger3_damping_force(const nativecfg::Charger3Config &d,
-                                  double velocity_mps, double travel_mm) {
-        // NOLINTEND(bugprone-easily-swappable-parameters)
-        const Coeffs k = calc_fractions_and_coeffs(d.core);
-        const double v = velocity_mps;
-        double f_damp = base_damping(d.core, v, k.c_lsc, k.c_hsc, k.c_reb);
-        if (travel_mm > d.hbo_start_mm && v > 0.0) {
-            if (d.total_travel_mm == d.hbo_start_mm) throw std::invalid_argument("Charger3Damper.hbo_start_mm: zero denominator");
-            const double hbo_prog = std::max(
-                0.0, std::min(1.0, (travel_mm - d.hbo_start_mm) /
-                                   (d.total_travel_mm - d.hbo_start_mm)));
-            f_damp += d.c_hbo_base * pyfloat::pow(hbo_prog, 2.0) * v;
-        }
-        return validation::derived(f_damp, "SuspensionWriter.damper_force");
-    }
-
-    struct DampingParts {
-        double base_n, hbo_n;
-    };
-
-    // SuperDeluxeDamper.compute_damping_components (damper.py:338-360).
-    // The legacy damper curve was removed with legacy mode (2026-11-04):
-    // only the physical decomposition remains.
-    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
-    DampingParts sd_damping_components(const nativecfg::SuperDeluxeConfig &d,
-                                       double velocity_mps, double stroke_mm) {
-        // NOLINTEND(bugprone-easily-swappable-parameters)
-        const double v = velocity_mps;
-        if (!std::isfinite(v) || !std::isfinite(stroke_mm))
-            throw std::invalid_argument("non-finite shock damper state");
-        const Coeffs k = calc_fractions_and_coeffs(d.core);
-        const double frac_hbo = std::clamp(d.hbo_clicks, 0, d.max_hbo) / static_cast<double>(d.max_hbo);
-        const double c_hbo =
-                d.c_hbo_min + (d.c_hbo_max - d.c_hbo_min) * pyfloat::pow(frac_hbo, 1.30);
-        double f_damp = std::numeric_limits<double>::quiet_NaN();
-        if (d.lockout_firm && v > 0.0) {
-            const double knee = 0.03;
-            const double low = d.lockout_stiffness;
-            const double high = 1.8 * k.c_hsc;
-            f_damp = (v < knee) ? low * v : low * knee + high * (v - knee);
-        } else {
-            f_damp = base_damping(d.core, v, k.c_lsc, k.c_hsc, k.c_reb);
-        }
-        double hbo = 0.0;
-        if (stroke_mm > d.hbo_start_mm && v > 0.0) {
-            if (d.total_stroke_mm == d.hbo_start_mm) throw std::invalid_argument("SuperDeluxeDamper.hbo_start_mm: zero denominator");
-            const double fraction =
-                    std::min(1.0, (stroke_mm - d.hbo_start_mm) /
-                                  (d.total_stroke_mm - d.hbo_start_mm));
-            hbo = c_hbo * pyfloat::pow(fraction, 2.0) * v;
-        }
-        return {.base_n = validation::derived(f_damp, "SuperDeluxeDamper.base_force"), .hbo_n = validation::derived(hbo, "SuperDeluxeDamper.hbo_force")};
-    }
-
-    // SuperDeluxeDamper.compute_damping_force (damper.py:330-336).
-    double sd_damping_force(const nativecfg::SuperDeluxeConfig &d,
-                            double velocity_mps, double stroke_mm) {
-        const DampingParts p =
-                sd_damping_components(d, velocity_mps, stroke_mm);
-        return validation::derived(p.base_n + p.hbo_n, "SuperDeluxeDamper.force");
-    }
-
-    // CoilShock.compute_spring_force (coil_shock.py:77-90).
-    double coil_spring_force(const nativecfg::CoilConfig &s, double stroke_mm) {
-        const double compression_mm =
-                std::max(0.0, stroke_mm + s.preload_mm);
-        return validation::derived(s.rate_n_m * compression_mm / 1000.0, "CoilShock.spring_force");
-    }
-
-    // CoilShock.compute_bumper_force (coil_shock.py:92-104).
-    double coil_bumper_force(const nativecfg::CoilConfig &s, double stroke_mm) {
-        const double excess_mm =
-                std::max(0.0, stroke_mm - s.bumper_engage_mm());
-        return validation::derived(s.bumper_peak_n *
-               pyfloat::pow(excess_mm / s.bumper_length_mm, 2.0), "CoilShock.bumper_force");
-    }
-
-    // physics/stops.py:6-46 — end_stop, including its parameter validation.
-    std::pair<double, double> end_stop(double q, double v, double lo, double hi,
-                                       double k, double c,
-                                       double upper_boundary_force_n = 0.0,
-                                       double upper_boundary_energy_j = 0.0) {
-        if (!std::isfinite(q) || !std::isfinite(v) || !std::isfinite(lo) ||
-            !std::isfinite(hi) || !std::isfinite(k) || !std::isfinite(c) ||
-            !std::isfinite(upper_boundary_force_n) ||
-            !std::isfinite(upper_boundary_energy_j) || hi <= lo || k < 0.0 ||
-            c < 0.0 || upper_boundary_force_n < 0.0 ||
-            upper_boundary_energy_j < 0.0)
-            throw std::invalid_argument("invalid end-stop parameters");
-
-        const double low_depth = std::max(lo - q, 0.0);
-        if (low_depth > 0.0)
-            return {
-                std::max(0.0, validation::derived(k * low_depth - c * v, "end_stop.raw_force")),
-                0.5 * k * pyfloat::pow(low_depth, 2.0)
-            };
-
-        const double high_depth = std::max(q - hi, 0.0);
-        if (high_depth > 0.0 || (q == hi && upper_boundary_force_n > 0.0)) {
-            const double elastic_force = upper_boundary_force_n + k * high_depth;
-            const double force = -std::max(0.0, validation::derived(elastic_force + c * v, "end_stop.raw_force"));
-            const double energy = upper_boundary_energy_j +
-                                  upper_boundary_force_n * high_depth +
-                                  0.5 * k * pyfloat::pow(high_depth, 2.0);
-            return {force, energy};
-        }
-        return {0.0, 0.0};
-    }
+    // stored-energy helpers (physical_energy.py) ----------------------------
 
     // forces.py:67-99 — _resolve_compression_joint, same checks and order.
     std::pair<int, int> resolve_compression_joint(const mjModel *m,
@@ -483,87 +453,28 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
     model_access::require_id(fork_dofadr_, nv_, "fork dof address");
     model_access::require_id(shock_qposadr_, nq_, "shock qpos address");
     model_access::require_id(shock_dofadr_, nv_, "shock dof address");
-    const double travel_mm =
-            qpos[static_cast<std::size_t>(fork_qposadr_)] * 1000.0;
+    const double fork_qpos_m =
+            qpos[static_cast<std::size_t>(fork_qposadr_)];
     const double fork_velocity_mps =
             qvel[static_cast<std::size_t>(fork_dofadr_)];
-    const double fork_spring = air_axial_force(cfg_.air_spring, travel_mm);
-    const double fork_damper =
-            charger3_damping_force(cfg_.fork_damper, fork_velocity_mps, travel_mm);
-    const double fork_total = fork_spring + fork_damper;
-
-    // forces.py:133-185 — the shock side.
-    const double stroke_mm =
-            qpos[static_cast<std::size_t>(shock_qposadr_)] * 1000.0;
+    const double shock_qpos_m =
+            qpos[static_cast<std::size_t>(shock_qposadr_)];
     const double shock_velocity_mps =
             qvel[static_cast<std::size_t>(shock_dofadr_)];
-    const double shock_spring = coil_spring_force(cfg_.coil, stroke_mm);
-    const double stroke_limit_mm = cfg_.coil.stroke_mm;
-    const double shock_bumper =
-            stroke_mm > stroke_limit_mm
-                ? 0.0
-                : coil_bumper_force(cfg_.coil, stroke_mm);
-    const double shock_damper =
-            sd_damping_force(cfg_.shock_damper, shock_velocity_mps, stroke_mm);
-    const double shock_hbo =
-            sd_damping_components(cfg_.shock_damper,
-                                  shock_velocity_mps, stroke_mm)
-            .hbo_n;
 
-    double top_out_force = 0.0, top_out_energy = 0.0;
-    double upper_force = 0.0, upper_energy = 0.0;
-    double bumper_energy = 0.0;
-    double coil_energy = 0.0;
-    {
-        // forces.py:154-179.
-        const nativecfg::EndStopConfig &stop = cfg_.end_stops;
-        const double stroke_m = stroke_mm / 1000.0;
-        const double limit_m = stroke_limit_mm / 1000.0;
-        if (stroke_m < 0.0) {
-            const auto [f, e] =
-                    end_stop(stroke_m, shock_velocity_mps, 0.0, limit_m,
-                             stop.stiffness_n_m, stop.damping_n_s_m);
-            top_out_force = f;
-            top_out_energy = e;
-        }
-        const double bumper_length_m = cfg_.coil.bumper_length_mm / 1000.0;
-        const double bumper_peak_n = cfg_.coil.bumper_peak_n;
-        const double bumper_full_energy =
-                bumper_peak_n * bumper_length_m / 3.0;
-        if (stroke_m <= limit_m) {
-            const double bumper_depth_m =
-                    std::max(0.0, stroke_m - (limit_m - bumper_length_m));
-            bumper_energy =
-                    bumper_peak_n * pyfloat::pow(bumper_depth_m, 3.0) /
-                    (3.0 * pyfloat::pow(bumper_length_m, 2.0));
-        } else {
-            const auto [f, e] =
-                    end_stop(stroke_m, shock_velocity_mps, 0.0, limit_m,
-                             stop.stiffness_n_m, stop.damping_n_s_m, bumper_peak_n,
-                             bumper_full_energy);
-            upper_force = f;
-            upper_energy = e;
-        }
-        const double coil_compression_m =
-                std::max(0.0, (stroke_mm + cfg_.coil.preload_mm) / 1000.0);
-        coil_energy =
-                0.5 * cfg_.coil.rate_n_m * pyfloat::pow(coil_compression_m, 2.0);
+    bike::physics_core::SuspensionResult<double> res{};
+    auto err = bike::physics_core::ErrCode::none;
+    const auto susp_params = to_core_suspension(cfg_);
+    const auto st = bike::physics_core::eval_suspension<
+        double, bike::physics_core::CpuExactToolkit>(
+        &susp_params, fork_qpos_m, fork_velocity_mps,
+        shock_qpos_m, shock_velocity_mps, res, err);
+    if (st != bike::physics_core::Status::ok) {
+        throw_suspension_error(
+            res.diag_field, fork_qpos_m * 1000.0,
+            res.err_v_disp_m3, res.err_v_pos0_m3);
     }
-
-    const double shock_top_out = -top_out_force;
-    const double shock_upper_stop = -upper_force;
-    const double shock_total = shock_spring + shock_bumper + shock_damper +
-                               shock_top_out + shock_upper_stop;
-
-    // SuspensionForceApplier's self.*_n scalars and potential_energy_j
-    // (forces.py:207-221) are still computed and validated here — the
-    // derived() gate keeps rejecting non-finite telemetry exactly as
-    // before. shock_total_n_ is retained because the oracle's
-    // validation/drive_suspension_rig.py reads the attribute post-hoc;
-    // the remaining scalars stayed write-only and are not retained.
-    for (const double value: {fork_total, shock_total, top_out_force, top_out_energy, upper_force, upper_energy, bumper_energy, coil_energy})
-        validation::derived(value, "SuspensionWriter.force_or_energy");
-    shock_total_n_ = shock_total;
+    shock_total_n_ = res.shock_total;
 
     // vector(dofadr, force) — compression-positive coordinates take the
     // negated force (forces.py:189-192). The member buffer takes the same
@@ -575,14 +486,14 @@ void SuspensionWriter::compute_validated(const mjData *d) const {
         qfrc[static_cast<std::size_t>(dofadr)] = -force_n;
     };
 
-    vector(0, fork_dofadr_, fork_spring);
-    vector(1, fork_dofadr_, fork_damper);
-    vector(2, shock_dofadr_, shock_spring);
-    vector(3, shock_dofadr_, shock_bumper);
-    vector(4, shock_dofadr_, shock_damper - shock_hbo);
-    vector(5, shock_dofadr_, shock_top_out);
-    vector(6, shock_dofadr_, shock_upper_stop);
-    vector(7, shock_dofadr_, shock_hbo);
+    vector(0, fork_dofadr_, res.fork_spring);
+    vector(1, fork_dofadr_, res.fork_damper);
+    vector(2, shock_dofadr_, res.shock_spring);
+    vector(3, shock_dofadr_, res.shock_bumper);
+    vector(4, shock_dofadr_, res.shock_damper - res.shock_hbo);
+    vector(5, shock_dofadr_, res.shock_top_out);
+    vector(6, shock_dofadr_, res.shock_upper_stop);
+    vector(7, shock_dofadr_, res.shock_hbo);
 }
 
 // suspension_energy (physical_energy.py:70-89) — the terms dict in its

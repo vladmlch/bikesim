@@ -11,8 +11,16 @@ namespace {
 io::Value leaf_plan(const FieldSpec& f, const std::vector<std::string>& absolute) {
     io::Value shape;
     if (f.shape && !f.shape->empty()) { io::Value::Array a; for (auto const n : *f.shape) a.push_back(value::integer(n)); shape.data = std::move(a); }
+    auto except = f.except_keys;
+    if (except.empty() &&
+        (absolute == std::vector<std::string>{"tires", "front"} ||
+         absolute == std::vector<std::string>{"tires", "rear"})) {
+        // Distributed-only derived counts are emitted on the live wire for
+        // parity tests but omitted from the frozen Schema v1 catalog.
+        except = {"active_station_count", "max_patch_count"};
+    }
     io::Value::Object out{{"name", value::text(f.key)}, {"dtype", value::text(f.dtype)}, {"path", value::strings(f.path)},
-        {"optional", io::Value{f.optional}}, {"shape", std::move(shape)}, {"except_keys", value::strings(f.except_keys)},
+        {"optional", io::Value{f.optional}}, {"shape", std::move(shape)}, {"except_keys", value::strings(except)},
         {"convert", absolute == std::vector<std::string>{"model_status", "numerically_valid"} ? value::text("verdict") : io::Value{}}};
     if (!f.children.empty()) {
         io::Value::Array children;

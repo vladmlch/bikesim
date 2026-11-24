@@ -5,8 +5,9 @@
 // soil energy accounting and a sparse dirty-span state snapshot.
 //
 // Physics (docs/research/2026-11-22-tracks-and-surfaces/05,06):
-//  - virgin loading p_v(z) = k0*(z/b)^n + B_hp*S((z-zo)/(zw*h_s)) *
-//    (exp(c_hp*(z-zo)_+/b) - 1), zo = zeta_o*h_s — C1 at z_o, bedrock
+//  - virgin loading p_v(z) = k0*((z+z_eps)^n - z_eps^n)/b^n +
+//    B_hp*S((z-zo)/(zw*h_s))*(exp(c_hp*(z-zo)_+/b) - 1), zo = zeta_o*h_s
+//    (z_eps = 1e-4 m toe regularisation) — C1 at 0 and z_o, bedrock
 //    stiffening keeps sinkage strictly below h_s;
 //  - unload/reload is linear with k_u = beta_u*p_v'(z_max); the plastic
 //    rut is z_p = z_max - p_v(z_max)/k_u;

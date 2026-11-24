@@ -82,12 +82,26 @@
 
 #include "../numeric_numpy.hpp"
 #include "../numeric_sum.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_pneumatic_brush.hpp"
 #include "../writers/pyfloat.hpp"
 #include "../writers/tire_common.hpp"
 #include "../contact/laws.hpp"
 
 namespace biketyre {
     namespace {
+        [[nodiscard]] bike::physics_core::PneumaticSurfaceSample<double>
+        to_surface_sample(const nativecfg::SurfaceSpec &surface) noexcept {
+            return {
+                .mu_peak = surface.mu_peak,
+                .mu_slide = surface.mu_slide,
+                .slip_stiffness_per_load = surface.slip_stiffness_per_load,
+                .stribeck_speed_mps = surface.stribeck_speed_mps,
+                .crr_delta = surface.crr_delta,
+                .load_sensitivity = surface.load_sensitivity
+            };
+        }
+
         // CPython float_pow(iv, 2.0) (Objects/floatobject.c): the
         // pre-pow special cases plus the post-pow ERANGE check, fixed
         // at the even integer exponent the oracle uses for
@@ -111,22 +125,16 @@ namespace biketyre {
 
     double surface_mu(const nativecfg::SurfaceSpec &surface,
                       double sliding_speed_mps) {
-        // surface.py:88 — array(sliding_speed_mps, ...): the oracle
-        // rejects a non-finite argument before evaluating the curve.
-        if (!std::isfinite(sliding_speed_mps))
+        double value = 0.0;
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::pneumatic_surface_mu<
+            double, bike::physics_core::CpuExactToolkit>(
+                to_surface_sample(surface), sliding_speed_mps, value, err);
+        if (st == bike::physics_core::Status::invalid_argument)
             throw std::invalid_argument(
                     "invalid shape or non-finite "
                     "SurfaceSpec.sliding_speed_mps");
-        // surface.py:89-90 — np.exp lowers to npy_exp -> libm exp.
-        const double decay =
-                std::exp(-std::fabs(sliding_speed_mps) /
-                         surface.stribeck_speed_mps);
-        const double value =
-                surface.mu_slide +
-                (surface.mu_peak - surface.mu_slide) * decay;
-        // surface.py:91 — derived_array(value, 'SurfaceSpec.mu') raises
-        // OverflowError on a non-finite coefficient.
-        if (!std::isfinite(value))
+        if (st != bike::physics_core::Status::ok)
             throw std::overflow_error(
                     "SurfaceSpec.mu: non-finite derived array");
         return value;
@@ -145,32 +153,17 @@ namespace biketyre {
                     "relaxation length and time step must not be "
                     "negative");
 
-        const double speed_mps = std::fabs(v_x_mps);
-        if (sigma_m == 0.0) {
-            if (speed_mps > 0.0)
-                return -v_s_mps / speed_mps;
-            // No rolling distance: the ratio has no finite algebraic
-            // target; the state holds (brush.py:62-64).
-            return kappa_prime;
-        }
-        if (speed_mps == 0.0)
-            return kappa_prime - v_s_mps * dt_s / sigma_m;
-
-        const double steady_kappa = -v_s_mps / speed_mps;
-        const double exponent = -speed_mps * dt_s / sigma_m;
-        return steady_kappa +
-               (kappa_prime - steady_kappa) * std::exp(exponent);
+        double out_kappa = 0.0;
+        auto err = bike::physics_core::ErrCode::none;
+        (void)bike::physics_core::pneumatic_relax<
+            double, bike::physics_core::CpuExactToolkit>(
+                kappa_prime, v_x_mps, v_s_mps, sigma_m, dt_s, out_kappa, err);
+        return out_kappa;
     }
 
     double sigma_x(double kappa_prime) noexcept {
-        // brush.py:90-94 — check order preserved: the locked-wheel
-        // limit first, then the isinf copysign (only +inf reaches it),
-        // then the ratio.
-        if (kappa_prime <= -1.0)
-            return -std::numeric_limits<double>::infinity();
-        if (std::isinf(kappa_prime))
-            return std::copysign(1.0, kappa_prime);
-        return kappa_prime / (1.0 + kappa_prime);
+        return bike::physics_core::pneumatic_sigma_x<
+            double, bike::physics_core::CpuExactToolkit>(kappa_prime);
     }
 
     double tread_stiffness_n_m2(
@@ -187,10 +180,18 @@ namespace biketyre {
                         std::to_string(value));
             return value;
         }
-        // `half_length_m ** 2` is CPython float.__pow__ — the
-        // overflow-raising libm pow, not a bare multiply.
-        return surface.slip_stiffness_per_load * normal_load_n /
-               (2.0 * py_pow2(half_length_m));
+        if (std::isnan(half_length_m) || std::isinf(half_length_m))
+            return surface.slip_stiffness_per_load * normal_load_n /
+                   (2.0 * py_pow2(half_length_m));
+        double c_px = 0.0;
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::pneumatic_tread_stiffness_n_m2<
+            double, bike::physics_core::CpuExactToolkit>(
+                normal_load_n, half_length_m, to_surface_sample(surface),
+                false, 0.0, c_px, err);
+        if (st == bike::physics_core::Status::overflow)
+            throw std::overflow_error("math range error");
+        return c_px;
     }
 
     BrushResult lumped_brush(
@@ -218,42 +219,34 @@ namespace biketyre {
         if (normal_load_n < 0.0)
             throw std::invalid_argument(
                     "normal load must not be negative");
-        if (normal_load_n == 0.0)
-            return {.force_n = 0.0,
-                    .fully_sliding = false,
-                    .friction_coefficient =
-                            surface_mu(surface, sliding_speed_mps)};
-        if (half_length_m <= 0.0)
+        if (normal_load_n > 0.0 && half_length_m <= 0.0)
             throw std::invalid_argument(
                     "a loaded patch must have positive half-length");
+        if (explicit_stiffness_n_m2.has_value() && normal_load_n > 0.0) {
+            const double value = *explicit_stiffness_n_m2;
+            if (!std::isfinite(value) || value < 0.0)
+                throw std::invalid_argument(
+                        "tread stiffness must be finite and "
+                        "nonnegative, got " +
+                        std::to_string(value));
+        }
 
-        const double mu = surface_mu(surface, sliding_speed_mps);
-        if (mu <= 0.0)
-            return {.force_n = 0.0,
-                    .fully_sliding = sigma_x(kappa_prime) != 0.0,
-                    .friction_coefficient = 0.0};
-        const double c_px =
-                tread_stiffness_n_m2(normal_load_n, half_length_m,
-                                     surface, explicit_stiffness_n_m2);
-        if (c_px == 0.0)
-            return {.force_n = 0.0,
-                    .fully_sliding = false,
-                    .friction_coefficient = mu};
-
-        const double theta = 2.0 * c_px *
-                             py_pow2(half_length_m) /
-                             (3.0 * mu * normal_load_n);
-        const double z = theta * sigma_x(kappa_prime);
-        if (std::fabs(z) >= 1.0)
-            return {.force_n = mu * normal_load_n *
-                              std::copysign(1.0, z),
-                    .fully_sliding = true,
-                    .friction_coefficient = mu};
-        const double force = 3.0 * mu * normal_load_n * z *
-                             (1.0 - std::fabs(z) + z * z / 3.0);
-        return {.force_n = force,
-                .fully_sliding = false,
-                .friction_coefficient = mu};
+        bike::physics_core::PneumaticBrushResult<double> res{};
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::pneumatic_lumped_brush<
+            double, bike::physics_core::CpuExactToolkit>(
+                kappa_prime, normal_load_n, half_length_m,
+                to_surface_sample(surface),
+                explicit_stiffness_n_m2.has_value(),
+                explicit_stiffness_n_m2.value_or(0.0),
+                sliding_speed_mps, res, err);
+        if (st == bike::physics_core::Status::overflow)
+            throw std::overflow_error("math range error");
+        if (st != bike::physics_core::Status::ok)
+            throw std::invalid_argument("invalid lumped brush input");
+        return {.force_n = res.force_n,
+                .fully_sliding = res.fully_sliding != 0,
+                .friction_coefficient = res.friction_coefficient};
     }
 
     // ---------------------------------------------------------------

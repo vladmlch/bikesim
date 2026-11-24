@@ -41,6 +41,7 @@ struct EncodePlanColumn {
     bool optional = false;
     std::int64_t shape = -1;              // >= 0 pins the x[] element count
     std::vector<std::string> except_keys; // members deeper leaves own
+    std::set<std::string> except_set;     // indexed lookup for column_owned
     std::string convert;                  // "" | "verdict"
     // True when a proper prefix at depth >= 2 is itself a leaf: routing
     // only enters non-leaf members (the root call still routes claimed
@@ -77,15 +78,16 @@ struct EncodePlanMask {
 //
 // Self-references: PathNode edges view the leaf column path members and
 // claimed roots, member_lookup views child `name` strings, and
-// column_owned points into `deeper` — every level is a container-stolen
-// member of the plan itself, so moving a whole EncodePlan keeps them
-// valid (map nodes and vector buffers move by steal). Mutating any plan
-// member after parse invalidates the compiled indexes, so parsed plans
-// are read-only artifacts for the emitters.
+// column_owned points into `deeper` or `leaf_columns[i].except_set` — every
+// level is a container-stolen member of the plan itself, so moving a whole
+// EncodePlan keeps them valid (map nodes and vector buffers move by steal).
+// Mutating any plan member after parse invalidates the compiled indexes, so
+// parsed plans are read-only artifacts for the emitters.
 struct EncodePlan {
     // Move-only like Piece: path_nodes edges view this plan's own
-    // leaf_columns/roots strings and column_owned points into `deeper`,
-    // so a copy would leave the views aimed at the source.
+    // leaf_columns/roots strings and column_owned points into `deeper` or
+    // `leaf_columns[i].except_set`, so a copy would leave the views aimed
+    // at the source.
     EncodePlan() = default;
     ~EncodePlan() = default;
     EncodePlan(const EncodePlan &) = delete;

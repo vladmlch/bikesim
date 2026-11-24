@@ -333,11 +333,8 @@ NATIVE_DIAG_IGNORE("-Wframe-larger-than")
     bt::require(cfg_pneumatic.tires.pneumatic.front.name ==
                     "Schwalbe Magic Mary 29x2.4",
                 "pneumatic front tyre default retained");
-    bt::require(cfg_pneumatic.equilibrium_state_file.has_value() &&
-                    *cfg_pneumatic.equilibrium_state_file ==
-                        bt::fixture("config/poses/savage_pneumatic.npz")
-                            .string(),
-                "equilibrium pose resolves profile-adjacent");
+    bt::require(!cfg_pneumatic.equilibrium_state_file.has_value(),
+                "pneumatic profile pins no equilibrium pose");
     expect_resolved(cfg_pneumatic, "config/resolved/pneumatic.json",
                     "config/resolved/pneumatic.json");
 }

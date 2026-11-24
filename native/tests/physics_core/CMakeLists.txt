@@ -1,0 +1,302 @@
+# Unit tests for native/src/physics_core/ foundations (host + Apple Metal parity).
+set(_physics_core_src_dir "${CMAKE_SOURCE_DIR}/native/src/physics_core")
+if(_physics_core_src_dir MATCHES "[\"\\\\]")
+  message(FATAL_ERROR
+    "physics_core source dir cannot contain quotes or backslashes: ${_physics_core_src_dir}")
+endif()
+set(_physics_core_test_config_header
+  "${CMAKE_CURRENT_BINARY_DIR}/bike_physics_core_test_config.h")
+file(CONFIGURE OUTPUT "${_physics_core_test_config_header}"
+  CONTENT "#pragma once\n#define BIKE_PHYSICS_CORE_SRC_DIR \"${_physics_core_src_dir}\"\n")
+
+set(_physics_core_math_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_physics_core_math.cpp")
+
+if(APPLE)
+  # Objective-C++ Metal parity helper: compiled in its own OBJECT library with
+  # EXPORT_COMPILE_COMMANDS OFF so check_frontends/check_tidy/check_cppcheck
+  # stay scoped to pure C++ translation units (matching bike_gpu_metal_runner_obj).
+  add_library(bike_physics_core_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_physics_core_metal_helper.mm")
+  bike_apply_native_policy(bike_physics_core_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_physics_core_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_physics_core_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_physics_core_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _physics_core_math_sources
+    $<TARGET_OBJECTS:bike_physics_core_metal_helper_obj>)
+endif()
+
+add_executable(test_physics_core_math ${_physics_core_math_sources})
+bike_apply_native_policy(test_physics_core_math)
+target_compile_options(test_physics_core_math PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_physics_core_math PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_physics_core_math SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_physics_core_math PRIVATE
+  bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_physics_core_math "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_physics_core_math PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_physics_core_math COMMAND test_physics_core_math)
+set_tests_properties(test_physics_core_math PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_terrain_scanner
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_terrain_scanner.cpp")
+bike_apply_native_policy(test_terrain_scanner)
+target_include_directories(test_terrain_scanner PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_terrain_scanner SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_terrain_scanner PRIVATE
+  bike_test_fixtures bike_terrain bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_terrain_scanner "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_terrain_scanner COMMAND test_terrain_scanner)
+set_tests_properties(test_terrain_scanner PROPERTIES LABELS "gpu;unit")
+
+set(_tyre_core_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core.cpp")
+
+if(APPLE)
+  add_library(bike_tyre_core_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core_metal_helper.mm")
+  bike_apply_native_policy(bike_tyre_core_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_core_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_tyre_core_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_tyre_core_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _tyre_core_sources
+    $<TARGET_OBJECTS:bike_tyre_core_metal_helper_obj>)
+endif()
+
+add_executable(test_tyre_core ${_tyre_core_sources})
+bike_apply_native_policy(test_tyre_core)
+target_compile_options(test_tyre_core PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_tyre_core PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_tyre_core SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_tyre_core PRIVATE bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_tyre_core "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_tyre_core PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_tyre_core COMMAND test_tyre_core)
+set_tests_properties(test_tyre_core PROPERTIES LABELS "gpu;unit")
+
+set(_sp2_force_laws_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws.cpp")
+
+if(APPLE)
+  add_library(bike_sp2_force_laws_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws_metal_helper.mm")
+  bike_apply_native_policy(bike_sp2_force_laws_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp2_force_laws_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_sp2_force_laws_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_sp2_force_laws_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _sp2_force_laws_sources
+    $<TARGET_OBJECTS:bike_sp2_force_laws_metal_helper_obj>)
+endif()
+
+add_executable(test_sp2_force_laws ${_sp2_force_laws_sources})
+bike_apply_native_policy(test_sp2_force_laws)
+target_compile_options(test_sp2_force_laws PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp2_force_laws PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_sp2_force_laws SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp2_force_laws PRIVATE
+  bike_test_fixtures bike_core bike_engine bike_tyre_upload)
+bike_rewrite_mujoco_load_name(test_sp2_force_laws "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_sp2_force_laws PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_sp2_force_laws COMMAND test_sp2_force_laws)
+set_tests_properties(test_sp2_force_laws PROPERTIES LABELS "gpu;unit")
+
+set(_sp3_drivetrain_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_drivetrain_controllers.cpp")
+
+if(APPLE)
+  add_library(bike_sp3_drivetrain_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_drivetrain_metal_helper.mm")
+  bike_apply_native_policy(bike_sp3_drivetrain_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_drivetrain_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_sp3_drivetrain_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_sp3_drivetrain_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _sp3_drivetrain_sources
+    $<TARGET_OBJECTS:bike_sp3_drivetrain_metal_helper_obj>)
+endif()
+
+add_executable(test_sp3_drivetrain_controllers ${_sp3_drivetrain_sources})
+bike_apply_native_policy(test_sp3_drivetrain_controllers)
+target_compile_options(test_sp3_drivetrain_controllers PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp3_drivetrain_controllers PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_sp3_drivetrain_controllers SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp3_drivetrain_controllers PRIVATE
+  bike_test_fixtures bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_sp3_drivetrain_controllers "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_sp3_drivetrain_controllers PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_sp3_drivetrain_controllers COMMAND test_sp3_drivetrain_controllers)
+set_tests_properties(test_sp3_drivetrain_controllers PROPERTIES LABELS "gpu;unit")
+
+set(_sp3_rider_monitors_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_rider_monitors.cpp")
+
+if(APPLE)
+  add_library(bike_sp3_rider_monitors_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_rider_monitors_metal_helper.mm")
+  bike_apply_native_policy(bike_sp3_rider_monitors_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp3_rider_monitors_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_sp3_rider_monitors_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_sp3_rider_monitors_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _sp3_rider_monitors_sources
+    $<TARGET_OBJECTS:bike_sp3_rider_monitors_metal_helper_obj>)
+endif()
+
+add_executable(test_sp3_rider_monitors ${_sp3_rider_monitors_sources})
+bike_apply_native_policy(test_sp3_rider_monitors)
+target_compile_options(test_sp3_rider_monitors PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp3_rider_monitors PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_sp3_rider_monitors SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp3_rider_monitors PRIVATE
+  bike_test_fixtures bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_sp3_rider_monitors "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_sp3_rider_monitors PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_sp3_rider_monitors COMMAND test_sp3_rider_monitors)
+set_tests_properties(test_sp3_rider_monitors PROPERTIES LABELS "gpu;unit")
+
+set(_sp4_spindle_m2k2_sources
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp4_spindle_m2k2.cpp")
+
+if(APPLE)
+  add_library(bike_sp4_spindle_metal_helper_obj OBJECT
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp4_spindle_metal_helper.mm")
+  bike_apply_native_policy(bike_sp4_spindle_metal_helper_obj)
+  set_source_files_properties(
+    "${CMAKE_CURRENT_SOURCE_DIR}/test_sp4_spindle_metal_helper.mm"
+    PROPERTIES
+      LANGUAGE CXX
+      COMPILE_OPTIONS "-x;objective-c++;-fobjc-arc;-std=c++20")
+  set_target_properties(bike_sp4_spindle_metal_helper_obj PROPERTIES
+    EXPORT_COMPILE_COMMANDS OFF)
+  target_include_directories(bike_sp4_spindle_metal_helper_obj SYSTEM PRIVATE
+    "${CMAKE_SOURCE_DIR}/native/src")
+  list(APPEND _sp4_spindle_m2k2_sources
+    $<TARGET_OBJECTS:bike_sp4_spindle_metal_helper_obj>)
+endif()
+
+add_executable(test_sp4_spindle_m2k2 ${_sp4_spindle_m2k2_sources})
+bike_apply_native_policy(test_sp4_spindle_m2k2)
+target_compile_options(test_sp4_spindle_m2k2 PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp4_spindle_m2k2 SYSTEM PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src"
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp4_spindle_m2k2 PRIVATE
+  bike_test_fixtures bike_app bike_validation bike_spindle_upload)
+bike_rewrite_mujoco_load_name(test_sp4_spindle_m2k2 "${BIKE_DEP_mujoco_LIBRARY}")
+if(APPLE)
+  target_link_libraries(test_sp4_spindle_m2k2 PRIVATE
+    "-framework Metal" "-framework Foundation")
+endif()
+
+add_test(NAME test_sp4_spindle_m2k2 COMMAND test_sp4_spindle_m2k2)
+set_tests_properties(test_sp4_spindle_m2k2 PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_tyre_pneumatic_core
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_tyre_pneumatic_core.cpp")
+bike_apply_native_policy(test_tyre_pneumatic_core)
+target_compile_options(test_tyre_pneumatic_core PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_tyre_pneumatic_core PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_tyre_pneumatic_core SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_tyre_pneumatic_core PRIVATE
+  bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_tyre_pneumatic_core "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_tyre_pneumatic_core COMMAND test_tyre_pneumatic_core)
+set_tests_properties(test_tyre_pneumatic_core PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_controllers_and_energy
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_controllers_and_energy.cpp")
+bike_apply_native_policy(test_controllers_and_energy)
+target_compile_options(test_controllers_and_energy PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_controllers_and_energy PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src")
+target_include_directories(test_controllers_and_energy SYSTEM PRIVATE
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_controllers_and_energy PRIVATE
+  bike_test_fixtures bike_model bike_core bike_engine)
+bike_rewrite_mujoco_load_name(test_controllers_and_energy "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_controllers_and_energy COMMAND test_controllers_and_energy)
+set_tests_properties(test_controllers_and_energy PROPERTIES LABELS "gpu;unit")
+
+add_executable(test_sp4_spindle_m0
+  "${CMAKE_CURRENT_SOURCE_DIR}/test_sp4_spindle_m0.cpp")
+bike_apply_native_policy(test_sp4_spindle_m0)
+target_compile_options(test_sp4_spindle_m0 PRIVATE
+  -include "${_physics_core_test_config_header}")
+target_include_directories(test_sp4_spindle_m0 SYSTEM PRIVATE
+  "${CMAKE_SOURCE_DIR}/native/src"
+  "${BIKE_DEP_mujoco_ROOT}/include")
+target_link_libraries(test_sp4_spindle_m0 PRIVATE
+  bike_test_fixtures bike_app bike_validation bike_spindle_upload)
+bike_rewrite_mujoco_load_name(test_sp4_spindle_m0 "${BIKE_DEP_mujoco_LIBRARY}")
+add_test(NAME test_sp4_spindle_m0 COMMAND test_sp4_spindle_m0)
+set_tests_properties(test_sp4_spindle_m0 PROPERTIES LABELS "gpu;unit")

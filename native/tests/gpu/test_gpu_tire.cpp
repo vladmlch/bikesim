@@ -1,29 +1,87 @@
-// native/tests/gpu/test_gpu_tire.cpp — Standalone C++23 unit test suite for
-// native/src/gpu/tire_kernel.hpp.
-#include "../../src/gpu/tire_kernel.hpp"
-// The station.cpp reference is linked from bike_core (the one compile of
-// that TU): the ODR sweep links every selected TU into one image, so a
-// textual #include of the .cpp here would define its symbols twice.
-#include "../../src/tyre/station.hpp"
+// native/tests/gpu/test_gpu_tire.cpp — C++23 parity & contract verification for
+// native/src/physics_core/tyre_gpu_step.hpp (compliant_2d + distributed_2d_reference)
+// against CPU FP64 TireWriter & DistributedTireWriter on welded.xml (nq=27).
+
+#include "../../src/diag.hpp"
+#include "../../src/gpu/batch_step.hpp"
+#include "../../src/gpu/model_assets.hpp"
+#include "../../src/gpu/runner_tyre_setup.hpp"
+#include "../../src/gpu/terrain_tables.hpp"
+#include "../../src/model_access.hpp"
+#include "../../src/physics_core/tyre_gpu_step.hpp"
+#include "../../src/physics_core/tyre_upload.hpp"
 #include "../../src/platform/argv.hpp"
+#include "../../src/writers/distributed_tire.hpp"
+#include "../../src/writers/pneumatic_tire.hpp"
+#include "../../src/writers/tire.hpp"
+
+#include <mujoco/mujoco.h>
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
+#include <filesystem>
+#include <format>
 #include <iostream>
+#include <limits>
+#include <memory>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
+#include <vector>
+
+extern "C" {
+#if defined(__APPLE__)
+int bike_metal_init(const char *gpu_src_dir);
+const char *bike_metal_device_name();
+
+int bike_metal_launch_init_states(
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuWorldConfig *d_configs,
+    int per_world_config,
+    bike::gpu::GpuWorldState *d_states,
+    const float *d_qpos
+);
+
+int bike_metal_launch_writers(
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuWorldConfig *d_configs,
+    int per_world_config,
+    bike::gpu::GpuWorldState *d_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+);
+#endif
+} // extern "C"
 
 namespace {
 
-using namespace bike::gpu;
+namespace fs = std::filesystem;
+using namespace bike::physics_core;
+using ModelPtr = std::unique_ptr<mjModel, decltype(&mj_deleteModel)>;
+using DataPtr = std::unique_ptr<mjData, decltype(&mj_deleteData)>;
 
-using TestFunction = void (*)();
+using TestFunction = void (*)(const fs::path &);
 
 struct TestCase {
     std::string_view name;
@@ -31,681 +89,978 @@ struct TestCase {
 };
 
 void require(bool condition, std::string_view message) {
-    if (!condition)
+    if (!condition) {
         throw std::runtime_error(std::string(message));
-}
-
-// Numeric helper used instead of printf-style messages. Templated on the
-// arithmetic type so float comparisons keep their original float semantics
-// instead of silently promoting to double.
-template <class T>
-void require_near(T actual, T expected, T tol, std::string_view what) {
-    if (!(std::abs(actual - expected) <= tol))
-        throw std::runtime_error(std::string(what) +
-                                 ": actual=" + std::to_string(actual) +
-                                 " expected=" + std::to_string(expected) +
-                                 " tol=" + std::to_string(tol));
-}
-
-// GpuModelIndices addresses are int for the kernel ABI (a disabled slot is
-// -1); container subscripts take size_t, so the explicit conversion lives in
-// one place.
-constexpr std::size_t to_index(int field) {
-    return static_cast<std::size_t>(field);
-}
-
-// Exact double-precision reference from native/src/tyre/station.cpp:52-73.
-std::pair<double, double> ref_station_density(double delta, const GpuHingeDensity &d) {
-    const std::span<const float> knots{d.knots_m};
-    const std::span<const float> stiffness{d.stiffness_n_m};
-    double force = 0.0;
-    double energy = 0.0;
-    for (int i = 0; i < d.num_knots; ++i) {
-        const double x = std::max(delta - static_cast<double>(knots[to_index(i)]), 0.0);
-        const double k = static_cast<double>(stiffness[to_index(i)]);
-        force += k * x;
-        energy += k * x * x;
     }
-    return {force, 0.5 * energy};
 }
 
-// (delta, rate, weight) are all doubles: as positional parameters they would
-// be trivially swappable at the call site, so the query is packed instead.
-struct RefStationQuery {
-    double delta;
-    double rate;
-    double weight;
+constexpr std::size_t to_index(int idx) {
+    return static_cast<std::size_t>(idx);
+}
+
+constexpr const char *kRelWeldedXml = "tests/fixtures/model/welded.xml";
+
+fs::path resolve_welded_xml(std::string_view arg) {
+    if (!arg.empty()) {
+        return {arg};
+    }
+    std::vector<fs::path> candidates;
+#ifdef BIKE_REPO_ROOT
+    candidates.emplace_back(fs::path(BIKE_REPO_ROOT) / kRelWeldedXml);
+#endif
+    candidates.emplace_back(kRelWeldedXml);
+    candidates.emplace_back(fs::path("..") / kRelWeldedXml);
+    candidates.emplace_back(fs::path("../..") / kRelWeldedXml);
+    candidates.emplace_back(fs::path("../../..") / kRelWeldedXml);
+    for (const fs::path &p : candidates) {
+        std::error_code ec;
+        if (fs::is_regular_file(p, ec)) {
+            return fs::canonical(p, ec);
+        }
+    }
+    return {};
+}
+
+double ground_profile_z(double x, bool rough_uphill) {
+    if (!rough_uphill) {
+        return 0.0;
+    }
+    const double slope = (x > 2.0) ? 0.15 * (x - 2.0) : 0.0;
+    return slope + 0.015 * std::sin(7.0 * x) + 0.008 * std::cos(13.0 * x);
+}
+
+void populate_welded_terrain(const mjModel *m, bool rough_uphill) {
+    const int hf_id = mj_name2id(m, mjOBJ_HFIELD, "road");
+    require(hf_id >= 0, "welded.xml must contain 'road' hfield");
+    const int terrain_geom = mj_name2id(m, mjOBJ_GEOM, "terrain");
+    require(terrain_geom >= 0, "welded.xml must contain 'terrain' geom");
+
+    const std::span<const int> hfield_nrow =
+        model_access::readonly_buffer(m->hfield_nrow, m->nhfield, "hfield_nrow");
+    const std::span<const int> hfield_ncol =
+        model_access::readonly_buffer(m->hfield_ncol, m->nhfield, "hfield_ncol");
+    const std::span<const int> hfield_adr =
+        model_access::readonly_buffer(m->hfield_adr, m->nhfield, "hfield_adr");
+    const std::span<const mjtNum> hfield_size =
+        model_access::readonly_buffer(m->hfield_size, 4 * m->nhfield, "hfield_size");
+    const std::span<const mjtNum> geom_pos =
+        model_access::readonly_buffer(m->geom_pos, 3 * m->ngeom, "geom_pos");
+    const std::span<float> hfield_data =
+        model_access::mutable_buffer(m->hfield_data, m->nhfielddata, "hfield_data");
+
+    const int nrow = hfield_nrow[to_index(hf_id)];
+    const int ncol = hfield_ncol[to_index(hf_id)];
+    const int adr = hfield_adr[to_index(hf_id)];
+    const double sx = static_cast<double>(hfield_size[4 * to_index(hf_id) + 0]);
+    const double sz = static_cast<double>(hfield_size[4 * to_index(hf_id) + 2]);
+    const double pos_x = static_cast<double>(geom_pos[3 * to_index(terrain_geom) + 0]);
+    const double pos_z = static_cast<double>(geom_pos[3 * to_index(terrain_geom) + 2]);
+    const double dx = (2.0 * sx) / static_cast<double>(ncol - 1);
+
+    for (int c = 0; c < ncol; ++c) {
+        const double lx = (c + 1 == ncol) ? sx : (static_cast<double>(c) * dx - sx);
+        const double wx = pos_x + lx;
+        const double wz = ground_profile_z(wx, rough_uphill);
+        const float norm_h = static_cast<float>((wz - pos_z) / sz);
+        for (int r = 0; r < nrow; ++r) {
+            hfield_data[to_index(adr + r * ncol + c)] = norm_h;
+        }
+    }
+}
+
+struct WeldedFixture {
+    ModelPtr m{nullptr, &mj_deleteModel};
+    DataPtr d{nullptr, &mj_deleteData};
+    int root_x_qpos = -1;
+    int root_z_qpos = -1;
+    int root_pitch_qpos = -1;
+    int fork_qpos = -1;
+    int front_spin_dof = -1;
+    int rear_spin_dof = -1;
+    int root_vx_dof = -1;
+    int root_vz_dof = -1;
+    int front_contact_geom = -1;
+    int rear_contact_geom = -1;
 };
 
-// Exact double-precision reference from native/src/tyre/station.cpp:77-101.
-// Ban #39: the radial loss is rate-independent hysteresis —
-// loss_factor * elastic * tanh(rate / hysteresis_rate_eps_mps) — not
-// the retired viscous damping_ns_m * rate.
-std::pair<double, double> ref_station_response(
-    const RefStationQuery &q,
-    const GpuHingeDensity &d
-) {
-    const auto [elastic, energy] = ref_station_density(q.delta, d);
-    const double force = q.delta > 0.0
-        ? std::max(0.0, elastic + static_cast<double>(d.loss_factor) *
-                   elastic * std::tanh(q.rate /
-                       static_cast<double>(d.hysteresis_rate_eps_mps)))
-        : 0.0;
-    return {q.weight * force, q.weight * energy};
-}
+WeldedFixture load_welded_fixture(const fs::path &xml_path, bool rough_uphill) {
+    std::array<char, 1024> err{};
+    mjModel *raw_m = mj_loadXML(xml_path.string().c_str(), nullptr, err.data(),
+                                static_cast<int>(err.size()));
+    require(raw_m != nullptr, std::string("mj_loadXML failed: ") + err.data());
+    ModelPtr m(raw_m, &mj_deleteModel);
+    require(m->nq == 27 && m->nv == 27, "welded.xml must have nq=nv=27");
 
-double rel_err(double got, double expected) {
-    const double denom = std::max(std::abs(expected), 1e-12);
-    return std::abs(got - expected) / denom;
-}
+    populate_welded_terrain(m.get(), rough_uphill);
+    DataPtr d(mj_makeData(m.get()), &mj_deleteData);
+    mj_resetData(m.get(), d.get());
 
-void test_station_density_and_response() {
-    GpuHingeDensity d{};
-    d.num_knots = 3;
-    d.knots_m[0] = 0.0f;
-    d.knots_m[1] = 0.008f;
-    d.knots_m[2] = 0.018f;
-    d.stiffness_n_m[0] = 55000.0f;
-    d.stiffness_n_m[1] = 85000.0f;
-    d.stiffness_n_m[2] = 140000.0f;
-    d.loss_factor = 0.05f;
-    d.hysteresis_rate_eps_mps = 0.01f;
+    const std::span<const int> jnt_qposadr =
+        model_access::readonly_buffer(m->jnt_qposadr, m->njnt, "jnt_qposadr");
+    const std::span<const int> jnt_dofadr =
+        model_access::readonly_buffer(m->jnt_dofadr, m->njnt, "jnt_dofadr");
 
-    // Equivalent nativecfg::HingeDensity for authoritative native biketyre::station_response
-    nativecfg::HingeDensity native_d{};
-    const std::span<const float> gpu_knots{d.knots_m};
-    const std::span<const float> gpu_stiffness{d.stiffness_n_m};
-    const std::size_t num_knots = to_index(d.num_knots);
-    native_d.knots_m.assign(
-        gpu_knots.first(num_knots).begin(), gpu_knots.first(num_knots).end());
-    native_d.stiffness_n_m.assign(
-        gpu_stiffness.first(num_knots).begin(), gpu_stiffness.first(num_knots).end());
-    native_d.damping_ns_m = 0.0;
-    native_d.loss_factor = static_cast<double>(d.loss_factor);
-    native_d.hysteresis_rate_eps_mps =
-        static_cast<double>(d.hysteresis_rate_eps_mps);
-
-    // 1. Negative and zero penetrations
-    for (const float delta : {-0.025f, -0.001f, 0.0f}) {
-        const GpuVec2 dens = gpu_station_density(delta, d);
-        require(dens.x == 0.0f, "station density force is zero at non-positive penetration");
-        require(dens.y == 0.0f, "station density energy is zero at non-positive penetration");
-
-        const GpuVec2 resp = gpu_station_response(delta, 1.5f, 0.19634954f, d);
-        require(resp.x == 0.0f, "station response force is zero at non-positive penetration");
-        require(resp.y == 0.0f, "station response energy is zero at non-positive penetration");
-
-        const GpuVec2 resp_alias = gpu_tire_station_response(delta, 1.5f, 0.19634954f, d);
-        require(resp_alias.x == 0.0f, "tire alias response force is zero at non-positive penetration");
-        require(resp_alias.y == 0.0f, "tire alias response energy is zero at non-positive penetration");
-
-        const auto [authoritative_rf, authoritative_re] = biketyre::station_response(
-            static_cast<double>(delta), 1.5, 0.19634954, native_d);
-        require(authoritative_rf == 0.0,
-                "authoritative station response force is zero at non-positive penetration");
-        require(authoritative_re == 0.0,
-                "authoritative station response energy is zero at non-positive penetration");
-    }
-
-    // 2. Multi-knot positive penetrations and varying rates
-    constexpr std::array<float, 5> kDeltas = {0.002f, 0.008f, 0.012f, 0.018f, 0.032f};
-    constexpr std::array<float, 4> kRates = {-5.0f, -0.2f, 0.0f, 1.25f};
-    const float weight = kTwoPi / 32.0f;
-
-    for (const float delta : kDeltas) {
-        const GpuVec2 gpu_d = gpu_station_density(delta, d);
-        const auto [ref_f, ref_e] = ref_station_density(static_cast<double>(delta), d);
-        require_near(rel_err(static_cast<double>(gpu_d.x), ref_f), 0.0, 1e-6,
-                     "station density force tracks the double reference");
-        require_near(rel_err(static_cast<double>(gpu_d.y), ref_e), 0.0, 1e-6,
-                     "station density energy tracks the double reference");
-
-        for (const float rate : kRates) {
-            const GpuVec2 gpu_r = gpu_station_response(delta, rate, weight, d);
-            const GpuVec2 gpu_alias = gpu_tire_station_response(delta, rate, weight, d);
-            require(gpu_alias.x == gpu_r.x, "tire alias response force matches station response");
-            require(gpu_alias.y == gpu_r.y, "tire alias response energy matches station response");
-
-            const auto [ref_rf, ref_re] = ref_station_response(
-                {.delta = static_cast<double>(delta),
-                 .rate = static_cast<double>(rate),
-                 .weight = static_cast<double>(weight)},
-                d
-            );
-            if (ref_rf == 0.0) {
-                require_near(gpu_r.x, 0.0f, 1e-6f,
-                             "station response force is zero when the reference clamps");
-            } else {
-                require_near(rel_err(static_cast<double>(gpu_r.x), ref_rf), 0.0, 1e-6,
-                             "station response force tracks the double reference");
-            }
-            require_near(rel_err(static_cast<double>(gpu_r.y), ref_re), 0.0, 1e-6,
-                         "station response energy tracks the double reference");
-
-            // Authoritative comparison against biketyre::station_response (native/src/tyre/station.cpp)
-            const auto [authoritative_rf, authoritative_re] = biketyre::station_response(
-                static_cast<double>(delta),
-                static_cast<double>(rate),
-                static_cast<double>(weight),
-                native_d
-            );
-            if (authoritative_rf == 0.0) {
-                require_near(gpu_r.x, 0.0f, 1e-6f,
-                             "station response force is zero when the authoritative reference clamps");
-            } else {
-                require_near(rel_err(static_cast<double>(gpu_r.x), authoritative_rf), 0.0, 1e-6,
-                             "station response force tracks the authoritative reference");
-            }
-            require_near(rel_err(static_cast<double>(gpu_r.y), authoritative_re), 0.0, 1e-6,
-                         "station response energy tracks the authoritative reference");
-        }
-    }
-}
-
-void test_heightfield_1d() {
-    // 1. Flat terrain: nx = 0, nz = 1
-    constexpr std::array<float, 5> kFlatHeights = {0.25f, 0.25f, 0.25f, 0.25f, 0.25f};
-    const GpuHeightfield1D flat_hf{
-        .heights_m = kFlatHeights.data(),
-        .num_samples = static_cast<int>(kFlatHeights.size()),
-        .x_min_m = -2.0f,
-        .dx_m = 1.0f,
-        .inv_dx_m = 1.0f
+    const auto find_qpos = [&](const char *jname) -> int {
+        const int jid = mj_name2id(m.get(), mjOBJ_JOINT, jname);
+        require(jid >= 0, std::string("missing joint: ") + jname);
+        return jnt_qposadr[to_index(jid)];
+    };
+    const auto find_dof = [&](const char *jname) -> int {
+        const int jid = mj_name2id(m.get(), mjOBJ_JOINT, jname);
+        require(jid >= 0, std::string("missing joint: ") + jname);
+        return jnt_dofadr[to_index(jid)];
     };
 
-    for (const float x : {-3.0f, -1.5f, 0.0f, 1.25f, 5.0f}) {
-        const GpuVec3 s = gpu_sample_heightfield_1d(flat_hf, x);
-        require_near(s.x, 0.25f, 1e-6f, "flat heightfield height is the constant elevation");
-        require_near(s.y, 0.0f, 1e-6f, "flat heightfield normal x is zero");
-        require_near(s.z, 1.0f, 1e-6f, "flat heightfield normal z is one");
-        require_near(s.y * s.y + s.z * s.z, 1.0f, 1e-6f,
-                     "flat heightfield normal is unit length");
-    }
+    const int root_x_qpos = find_qpos("root_x");
+    const int root_z_qpos = find_qpos("root_z");
+    const int root_pitch_qpos = find_qpos("root_pitch");
+    const int fork_qpos = find_qpos("fork_travel");
+    const int front_spin_dof = find_dof("front_wheel_spin");
+    const int rear_spin_dof = find_dof("rear_wheel_spin");
+    const int root_vx_dof = find_dof("root_x");
+    const int root_vz_dof = find_dof("root_z");
+    const int front_contact_geom = mj_name2id(raw_m, mjOBJ_GEOM, "geom_front_contact");
+    const int rear_contact_geom = mj_name2id(raw_m, mjOBJ_GEOM, "geom_rear_contact");
+    require(front_contact_geom >= 0 && rear_contact_geom >= 0,
+            "welded.xml must contain geom_front_contact and geom_rear_contact");
 
-    // 2. Sloped terrain with dh/dx = 0.25
-    constexpr std::array<float, 5> kSlopeHeights = {0.0f, 0.25f, 0.50f, 0.75f, 1.00f};
-    const GpuHeightfield1D slope_hf{
-        .heights_m = kSlopeHeights.data(),
-        .num_samples = static_cast<int>(kSlopeHeights.size()),
-        .x_min_m = 0.0f,
-        .dx_m = 1.0f,
-        .inv_dx_m = 1.0f
+    WeldedFixture fx{
+        .m = std::move(m),
+        .d = std::move(d),
+        .root_x_qpos = root_x_qpos,
+        .root_z_qpos = root_z_qpos,
+        .root_pitch_qpos = root_pitch_qpos,
+        .fork_qpos = fork_qpos,
+        .front_spin_dof = front_spin_dof,
+        .rear_spin_dof = rear_spin_dof,
+        .root_vx_dof = root_vx_dof,
+        .root_vz_dof = root_vz_dof,
+        .front_contact_geom = front_contact_geom,
+        .rear_contact_geom = rear_contact_geom,
     };
-
-    const GpuVec3 s_mid = gpu_sample_heightfield_1d(slope_hf, 1.5f);
-    const float expected_nx = -0.25f / std::sqrt(1.0f + 0.25f * 0.25f);
-    const float expected_nz = 1.0f / std::sqrt(1.0f + 0.25f * 0.25f);
-    require_near(s_mid.x, 0.375f, 1e-6f, "sloped heightfield interpolates the midpoint height");
-    require_near(s_mid.y, expected_nx, 1e-6f, "sloped heightfield normal x is -dh/dx scaled");
-    require_near(s_mid.z, expected_nz, 1e-6f, "sloped heightfield normal z is unit scaled");
-    require_near(s_mid.y * s_mid.y + s_mid.z * s_mid.z, 1.0f, 1e-6f,
-                 "sloped heightfield normal is unit length");
+    mj_forward(fx.m.get(), fx.d.get());
+    return fx;
 }
 
-void test_evaluate_wheel_contact_and_qfrc() {
-    constexpr std::array<float, 5> kFlatGround = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const GpuHeightfield1D hf{
-        .heights_m = kFlatGround.data(),
-        .num_samples = static_cast<int>(kFlatGround.size()),
-        .x_min_m = -10.0f,
-        .dx_m = 5.0f,
-        .inv_dx_m = 0.2f
-    };
+struct TickPose {
+    const char *label;
+    double root_x_offset;
+    double ground_drop_m;
+    double root_vx;
+    double root_vz;
+    double front_spin_delta;
+    double rear_spin_delta;
+    bool expect_contact;
+};
 
-    GpuTireParams params{};
-    params.nominal_radius_m = 0.351f;
-    params.section_radius_m = 0.030f;
-    params.num_stations = 32;
-    params.num_lateral_ribs = 1;
-
-    // 1. Wheel above ground -> zero load
-    {
-        GpuWheelStationState state{};
-        const GpuWheelContactOutput out = gpu_evaluate_wheel_contact(
-            0.0f, 0.50f, 2.0f, 0.0f, 5.0f, 0.001f, params, hf, &state);
-        require(out.active_stations == 0, "lifted wheel has no active stations");
-        require(out.normal_load_n == 0.0f, "lifted wheel carries no normal load");
-        require(out.fx_world_n == 0.0f, "lifted wheel produces no longitudinal force");
-        require(out.fz_world_n == 0.0f, "lifted wheel produces no vertical force");
-        require(out.spin_torque_nm == 0.0f, "lifted wheel produces no spin torque");
-        require(out.effective_radius_m == 0.0f, "lifted wheel reports zero effective radius");
-    }
-
-    // 2. Wheel penetrating ground -> positive normal load and effective_radius_m < nominal_radius_m
-    {
-        GpuWheelStationState state{};
-        const float wheel_z = 0.330f; // 21 mm bottom penetration
-        const float vx = 4.0f;
-        const float omega_free = vx / params.nominal_radius_m;
-        const GpuWheelContactOutput out = gpu_evaluate_wheel_contact(
-            0.0f, wheel_z, vx, 0.0f, omega_free, 0.001f, params, hf, &state);
-        require(out.active_stations > 1, "penetrating wheel activates multiple stations");
-        require(out.normal_load_n > 0.0f, "penetrating wheel carries positive normal load");
-        require(out.fz_world_n > 0.0f, "penetrating wheel produces positive vertical force");
-        require(out.effective_radius_m > 0.0f, "penetrating wheel reports a positive effective radius");
-        require(out.effective_radius_m < params.nominal_radius_m,
-                "penetrating wheel effective radius drops below nominal");
-    }
-
-    // 3. Driving vs braking spin torque when wheel_omega * r != vx
-    {
-        GpuWheelStationState state_drive{};
-        const float wheel_z = 0.330f;
-        const float vx = 3.0f;
-        const float omega_drive = (vx + 2.0f) / params.nominal_radius_m; // omega * r > vx
-        const GpuWheelContactOutput out_drive = gpu_evaluate_wheel_contact(
-            0.0f, wheel_z, vx, 0.0f, omega_drive, 0.001f, params, hf, &state_drive);
-        require(out_drive.fx_world_n > 0.0f, "overdriven wheel pushes forward");
-        require(out_drive.spin_torque_nm < 0.0f, "overdriven wheel drags on the spin DOF");
-
-        GpuWheelStationState state_brake{};
-        const float omega_brake = (vx - 2.0f) / params.nominal_radius_m; // omega * r < vx
-        const GpuWheelContactOutput out_brake = gpu_evaluate_wheel_contact(
-            0.0f, wheel_z, vx, 0.0f, omega_brake, 0.001f, params, hf, &state_brake);
-        require(out_brake.fx_world_n < 0.0f, "underdriven wheel drags backward");
-        require(out_brake.spin_torque_nm > 0.0f, "underdriven wheel pulls on the spin DOF");
-    }
-
-    // 4. Multi-rib 3D ray scaling: num_stations = 60, num_lateral_ribs = 15 (900 rays)
-    //    and num_stations = 110, num_lateral_ribs = 70 (7700 rays)
-    for (const auto [nst, nrib] : std::array<std::pair<int, int>, 2>{{{60, 15}, {110, 70}}}) {
-        GpuTireParams params_3d = params;
-        params_3d.num_stations = nst;
-        params_3d.num_lateral_ribs = nrib;
-        GpuWheelStationState state_3d{};
-        const GpuWheelContactOutput out_3d = gpu_evaluate_wheel_contact(
-            0.0f, 0.325f, 3.5f, -0.1f, 12.0f, 0.001f, params_3d, hf, &state_3d);
-        require(out_3d.active_stations > 0, "multi-rib wheel activates stations");
-        require(gpu_isfinite(out_3d.fx_world_n), "multi-rib longitudinal force is finite");
-        require(gpu_isfinite(out_3d.fz_world_n), "multi-rib vertical force is finite");
-        require(gpu_isfinite(out_3d.spin_torque_nm), "multi-rib spin torque is finite");
-        require(gpu_isfinite(out_3d.normal_load_n), "multi-rib normal load is finite");
-        require(gpu_isfinite(out_3d.effective_radius_m), "multi-rib effective radius is finite");
-        require(out_3d.normal_load_n > 0.0f, "multi-rib wheel carries positive normal load");
-        require(out_3d.effective_radius_m > 0.0f, "multi-rib wheel reports a positive effective radius");
-        require(out_3d.effective_radius_m < params_3d.nominal_radius_m,
-                "multi-rib effective radius drops below nominal");
-    }
-
-    // 5. Both-wheels qfrc projection
-    {
-        const GpuModelIndices idx{};
-        GpuWheelStationState front_state{};
-        GpuWheelStationState rear_state{};
-        std::array<float, kMaxNv> qfrc{};
-        GpuWheelContactOutput front_out{};
-        GpuWheelContactOutput rear_out{};
-
-        gpu_write_both_wheels_qfrc(
-            0.0f, 0.55f,
-            0.60f, 0.330f, 3.0f, 0.0f, 12.0f,
-            -0.55f, 0.330f, 3.0f, 0.0f, 12.0f,
-            0.001f,
-            params, params,
-            hf, idx,
-            &front_state, &rear_state,
-            qfrc.data(),
-            &front_out, &rear_out
-        );
-
-        require(qfrc[to_index(idx.root_x_dof)] > 0.0f, "both wheels drive root_x forward");
-        require(qfrc[to_index(idx.root_z_dof)] > 0.0f, "both wheels push root_z upward");
-        require(gpu_isfinite(qfrc[to_index(idx.root_pitch_dof)]),
-                "root pitch torque is finite");
-        require_near(qfrc[to_index(idx.front_wheel_spin_dof)], front_out.spin_torque_nm, 1e-6f,
-                     "front spin DOF receives the front spin torque");
-        require_near(qfrc[to_index(idx.rear_wheel_spin_dof)], rear_out.spin_torque_nm, 1e-6f,
-                     "rear spin DOF receives the rear spin torque");
-    }
-}
-
-void test_gpu_write_both_wheels_suspension_coupling() {
-    constexpr std::array<float, 5> kFlatGround = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-    const GpuHeightfield1D hf{
-        .heights_m = kFlatGround.data(),
-        .num_samples = static_cast<int>(kFlatGround.size()),
-        .x_min_m = -10.0f,
-        .dx_m = 5.0f,
-        .inv_dx_m = 0.2f
-    };
-
-    GpuTireParams params{};
-    params.nominal_radius_m = 0.351f;
-    params.section_radius_m = 0.030f;
-    params.num_stations = 32;
-    params.num_lateral_ribs = 1;
-
-    const GpuModelIndices idx{};
-    require(idx.fork_travel_dof >= 0, "fork travel DOF is enabled");
-    require(idx.main_pivot_dof >= 0, "main pivot DOF is enabled");
-    require(idx.horst_pivot_dof >= 0, "horst pivot DOF is enabled");
-
-    // 1. Front wheel in contact: check fork_travel_dof projection (e_fork.x * fx + e_fork.y * fz)
-    {
-        std::array<float, static_cast<std::size_t>(kMaxNbody) * 3> xpos{};
-        const float com_x = 0.0f;
-        const float com_z = 0.55f;
-        xpos[to_index(3 * idx.frame_body + 0)] = com_x;
-        xpos[to_index(3 * idx.frame_body + 2)] = com_z;
-
-        // Steer and fork lower define fork axis
-        xpos[to_index(3 * idx.steer_body + 0)] = 0.50f;
-        xpos[to_index(3 * idx.steer_body + 2)] = 0.80f;
-        xpos[to_index(3 * idx.fork_lower_body + 0)] = 0.60f;
-        xpos[to_index(3 * idx.fork_lower_body + 2)] = 0.50f;
-
-        // Front wheel embedded 21 mm into terrain
-        xpos[to_index(3 * idx.front_wheel_body + 0)] = 0.60f;
-        xpos[to_index(3 * idx.front_wheel_body + 2)] = 0.330f;
-
-        // Rear wheel lifted safely above ground
-        xpos[to_index(3 * idx.rear_wheel_body + 0)] = -0.55f;
-        xpos[to_index(3 * idx.rear_wheel_body + 2)] = 0.60f;
-
-        std::array<float, kMaxNv> qvel{};
-        qvel[to_index(idx.root_x_dof)] = 2.0f;
-        qvel[to_index(idx.front_wheel_spin_dof)] = 2.0f / params.nominal_radius_m;
-
-        std::array<float, kMaxNv> qfrc{};
-        GpuWheelStationState front_state{};
-        GpuWheelStationState rear_state{};
-        GpuWheelContactOutput front_out{};
-        GpuWheelContactOutput rear_out{};
-
-        gpu_write_both_wheels_qfrc(
-            xpos.data(),
-            qvel.data(),
-            0.001f,
-            params, params,
-            hf, idx,
-            &front_state, &rear_state,
-            qfrc.data(),
-            &front_out, &rear_out
-        );
-
-        require(front_out.active_stations > 0, "front wheel activates stations");
-        require(front_out.normal_load_n > 0.0f, "front wheel carries positive normal load");
-        require(front_out.fz_world_n > 0.0f, "front wheel produces positive vertical force");
-        require(rear_out.active_stations == 0, "lifted rear wheel has no active stations");
-
-        const GpuVec2 e_fork = gpu_fork_axis_world(idx, xpos.data(), 0.0f);
-        const float expected_fork_f = e_fork.x * front_out.fx_world_n + e_fork.y * front_out.fz_world_n;
-        require(expected_fork_f != 0.0f, "fork projection of the contact force is non-zero");
-        require_near(qfrc[to_index(idx.fork_travel_dof)], expected_fork_f, 1e-5f,
-                     "fork travel DOF receives the projected fork-axis force");
-    }
-
-    // 2. Rear wheel in contact: check main_pivot_dof and horst_pivot_dof torques
-    {
-        std::array<float, static_cast<std::size_t>(kMaxNbody) * 3> xpos{};
-        const float com_x = 0.0f;
-        const float com_z = 0.55f;
-        xpos[to_index(3 * idx.frame_body + 0)] = com_x;
-        xpos[to_index(3 * idx.frame_body + 2)] = com_z;
-
-        // Front wheel lifted
-        xpos[to_index(3 * idx.front_wheel_body + 0)] = 0.60f;
-        xpos[to_index(3 * idx.front_wheel_body + 2)] = 0.60f;
-
-        // Rear pivot anchors
-        xpos[to_index(3 * idx.chainstay_body + 0)] = -0.05f;
-        xpos[to_index(3 * idx.chainstay_body + 2)] = 0.58f;
-        xpos[to_index(3 * idx.seatstay_body + 0)] = -0.38f;
-        xpos[to_index(3 * idx.seatstay_body + 2)] = 0.57f;
-
-        // Rear wheel in contact (21 mm penetration)
-        xpos[to_index(3 * idx.rear_wheel_body + 0)] = -0.55f;
-        xpos[to_index(3 * idx.rear_wheel_body + 2)] = 0.330f;
-
-        std::array<float, kMaxNv> qvel{};
-        qvel[to_index(idx.root_x_dof)] = 2.0f;
-        qvel[to_index(idx.rear_wheel_spin_dof)] = 2.0f / params.nominal_radius_m;
-
-        std::array<float, kMaxNv> qfrc{};
-        GpuWheelStationState front_state{};
-        GpuWheelStationState rear_state{};
-        GpuWheelContactOutput front_out{};
-        GpuWheelContactOutput rear_out{};
-
-        gpu_write_both_wheels_qfrc(
-            xpos.data(),
-            qvel.data(),
-            0.001f,
-            params, params,
-            hf, idx,
-            &front_state, &rear_state,
-            qfrc.data(),
-            &front_out, &rear_out
-        );
-
-        require(front_out.active_stations == 0, "lifted front wheel has no active stations");
-        require(rear_out.active_stations > 0, "rear wheel activates stations");
-        require(rear_out.normal_load_n > 0.0f, "rear wheel carries positive normal load");
-        require(rear_out.fz_world_n > 0.0f, "rear wheel produces positive vertical force");
-
-        const GpuVec2 a_main = gpu_rear_pivot_anchor_world(
-            idx.chainstay_body, xpos.data(), com_x, com_z, kMainPivotLocalDxM, kMainPivotLocalDzM);
-        const GpuVec2 a_horst = gpu_horst_pivot_anchor_world(
-            idx.seatstay_body, xpos.data(), com_x, com_z, 0.0f, 0.0f);
-
-        const float expected_main_torque =
-            (rear_out.contact_z_m - a_main.y) * rear_out.fx_world_n -
-            (rear_out.contact_x_m - a_main.x) * rear_out.fz_world_n;
-        const float expected_horst_torque =
-            (rear_out.contact_z_m - a_horst.y) * rear_out.fx_world_n -
-            (rear_out.contact_x_m - a_horst.x) * rear_out.fz_world_n;
-
-        require(expected_main_torque != 0.0f, "main pivot torque arm is non-zero");
-        require(expected_horst_torque != 0.0f, "horst pivot torque arm is non-zero");
-        require_near(qfrc[to_index(idx.main_pivot_dof)], expected_main_torque, 1e-5f,
-                     "main pivot DOF receives the contact torque about its anchor");
-        require_near(qfrc[to_index(idx.horst_pivot_dof)], expected_horst_torque, 1e-5f,
-                     "horst pivot DOF receives the contact torque about its anchor");
-    }
-
-    // 3. Normal damping load sensitivity to suspension joint velocity
-    {
-        std::array<float, static_cast<std::size_t>(kMaxNbody) * 3> xpos{};
-        const float com_x = 0.0f;
-        const float com_z = 0.55f;
-        xpos[to_index(3 * idx.frame_body + 0)] = com_x;
-        xpos[to_index(3 * idx.frame_body + 2)] = com_z;
-
-        xpos[to_index(3 * idx.steer_body + 0)] = 0.50f;
-        xpos[to_index(3 * idx.steer_body + 2)] = 0.80f;
-        xpos[to_index(3 * idx.fork_lower_body + 0)] = 0.60f;
-        xpos[to_index(3 * idx.fork_lower_body + 2)] = 0.50f;
-        xpos[to_index(3 * idx.front_wheel_body + 0)] = 0.60f;
-        xpos[to_index(3 * idx.front_wheel_body + 2)] = 0.330f;
-
-        xpos[to_index(3 * idx.chainstay_body + 0)] = -0.05f;
-        xpos[to_index(3 * idx.chainstay_body + 2)] = 0.58f;
-        xpos[to_index(3 * idx.seatstay_body + 0)] = -0.38f;
-        xpos[to_index(3 * idx.seatstay_body + 2)] = 0.57f;
-        xpos[to_index(3 * idx.rear_wheel_body + 0)] = -0.55f;
-        xpos[to_index(3 * idx.rear_wheel_body + 2)] = 0.330f;
-
-        // Front fork velocity coupling:
-        std::array<float, kMaxNv> qvel_v0{};
-        std::array<float, kMaxNv> qvel_vfork{};
-        qvel_vfork[to_index(idx.fork_travel_dof)] = 1.0f;
-
-        std::array<float, kMaxNv> qfrc_v0{};
-        std::array<float, kMaxNv> qfrc_vfork{};
-        GpuWheelStationState st_f0{}, st_r0{}, st_fv{}, st_rv{};
-        GpuWheelContactOutput out_f0{}, out_r0{}, out_fv{}, out_rv{};
-
-        gpu_write_both_wheels_qfrc(
-            xpos.data(), qvel_v0.data(), 0.001f, params, params, hf, idx,
-            &st_f0, &st_r0, qfrc_v0.data(), &out_f0, &out_r0);
-        gpu_write_both_wheels_qfrc(
-            xpos.data(), qvel_vfork.data(), 0.001f, params, params, hf, idx,
-            &st_fv, &st_rv, qfrc_vfork.data(), &out_fv, &out_rv);
-
-        // Positive fork slide velocity compresses fork lower, moving front wheel downwards,
-        // increasing penetration rate and damping normal load
-        require(std::abs(out_fv.normal_load_n - out_f0.normal_load_n) > 5.0f,
-                "fork slide velocity changes the front normal load through damping");
-
-        // Rear suspension main pivot velocity coupling:
-        std::array<float, kMaxNv> qvel_vmain{};
-        qvel_vmain[to_index(idx.main_pivot_dof)] = 2.0f;
-        std::array<float, kMaxNv> qfrc_vmain{};
-        GpuWheelStationState st_f_main{}, st_r_main{};
-        GpuWheelContactOutput out_f_main{}, out_r_main{};
-
-        gpu_write_both_wheels_qfrc(
-            xpos.data(), qvel_vmain.data(), 0.001f, params, params, hf, idx,
-            &st_f_main, &st_r_main, qfrc_vmain.data(), &out_f_main, &out_r_main);
-
-        require(std::abs(out_r_main.normal_load_n - out_r0.normal_load_n) > 5.0f,
-                "main pivot velocity changes the rear normal load through damping");
-
-        // Rear suspension horst pivot velocity coupling:
-        std::array<float, kMaxNv> qvel_vhorst{};
-        qvel_vhorst[to_index(idx.horst_pivot_dof)] = 2.0f;
-        std::array<float, kMaxNv> qfrc_vhorst{};
-        GpuWheelStationState st_f_horst{}, st_r_horst{};
-        GpuWheelContactOutput out_f_horst{}, out_r_horst{};
-
-        gpu_write_both_wheels_qfrc(
-            xpos.data(), qvel_vhorst.data(), 0.001f, params, params, hf, idx,
-            &st_f_horst, &st_r_horst, qfrc_vhorst.data(), &out_f_horst, &out_r_horst);
-
-        require(std::abs(out_r_horst.normal_load_n - out_r0.normal_load_n) > 5.0f,
-                "horst pivot velocity changes the rear normal load through damping");
-    }
-}
-
-void test_fork_axis_world_top_out_and_pitch() {
-    const GpuModelIndices idx{};
-
-    // Blocker 3 regression:
-    // In model.xml at zero pitch, steer_body is at (+0.532605, +0.538145) relative to frame_body,
-    // and fork_travel slide axis is (-0.43837105, +0.89879410).
-    // When fork_travel <= 0 (top-out), xpos[fork_lower] - xpos[steer] vanishes or reverses sign.
-    // Verify gpu_fork_axis_world NEVER flips sign across compressed, zero, and top-out states.
-    std::array<float, static_cast<std::size_t>(kMaxNbody) * 3> xpos{};
-    xpos[to_index(3 * idx.frame_body + 0)] = 2.0f;
-    xpos[to_index(3 * idx.frame_body + 2)] = 0.56f;
-    xpos[to_index(3 * idx.steer_body + 0)] = 2.0f + 0.532605f;
-    xpos[to_index(3 * idx.steer_body + 2)] = 0.56f + 0.538145f;
-
-    for (const float travel_m : {0.060f, 0.0f, -0.006f, -0.025f}) {
-        xpos[to_index(3 * idx.fork_lower_body + 0)] =
-            xpos[to_index(3 * idx.steer_body + 0)] - 0.43837105f * travel_m;
-        xpos[to_index(3 * idx.fork_lower_body + 2)] =
-            xpos[to_index(3 * idx.steer_body + 2)] + 0.89879410f * travel_m;
-
-        const GpuVec2 e_fork = gpu_fork_axis_world(idx, xpos.data(), 0.0f);
-        require_near(e_fork.x, -0.43837105f, 1e-4f,
-                     "fork axis x never flips across compressed and top-out states");
-        require_near(e_fork.y, 0.89879410f, 1e-4f,
-                     "fork axis z never flips across compressed and top-out states");
-        // Upward normal force (+700 N) must ALWAYS project to positive (compressive) fork_travel force
-        const float f_fork = e_fork.y * 700.0f;
-        require(f_fork > 600.0f, "upward load projects to a compressive fork force");
-    }
-
-    // Fallback when xpos is nullptr must match (-0.43837105, 0.89879410) at zero pitch
-    // and rotate consistently with root_pitch_rad.
-    const GpuVec2 e_fb0 = gpu_fork_axis_world(idx, nullptr, 0.0f);
-    require_near(e_fb0.x, -0.43837105f, 1e-5f, "fork axis fallback x at zero pitch");
-    require_near(e_fb0.y, 0.89879410f, 1e-5f, "fork axis fallback z at zero pitch");
-
-    const float pitch = 0.25f;
-    const GpuVec2 e_fb_p = gpu_fork_axis_world(idx, nullptr, pitch);
-    const float exp_fx = std::cos(pitch) * (-0.43837105f) + std::sin(pitch) * 0.89879410f;
-    const float exp_fz = -std::sin(pitch) * (-0.43837105f) + std::cos(pitch) * 0.89879410f;
-    require_near(e_fb_p.x, exp_fx, 1e-5f, "fork axis fallback x rotates with root pitch");
-    require_near(e_fb_p.y, exp_fz, 1e-5f, "fork axis fallback z rotates with root pitch");
-
-    // Rear pivot fallback must also rotate frame-local offsets by root_pitch_rad
-    const GpuVec2 a_main_p = gpu_rear_pivot_anchor_world(
-        idx.chainstay_body, nullptr, 1.0f, 0.5f, kMainPivotLocalDxM, kMainPivotLocalDzM, pitch);
-    const float exp_mx = 1.0f + std::cos(pitch) * kMainPivotLocalDxM + std::sin(pitch) * kMainPivotLocalDzM;
-    const float exp_mz = 0.5f - std::sin(pitch) * kMainPivotLocalDxM + std::cos(pitch) * kMainPivotLocalDzM;
-    require_near(a_main_p.x, exp_mx, 1e-5f, "main pivot anchor x rotates with root pitch");
-    require_near(a_main_p.y, exp_mz, 1e-5f, "main pivot anchor z rotates with root pitch");
-}
-
-// Seatstay (horst) anchor without xpos when main_pivot != 0. The fallback must rotate the seatstay
-// offset by root_pitch + main_pivot (gpu_horst_pivot_anchor_fallback). Checks:
-//  1. the fallback equals an independent double-precision evaluation of the chain
-//     R(root_pitch) * kMainPivotLocal + R(root_pitch + main_pivot) * kSeatstayFromChainstay;
-//  2. gpu_horst_pivot_anchor_world with xpos == nullptr returns the same anchor;
-//  3. project_rear_wheel_force_to_qfrc with xpos == nullptr writes the horst torque about that anchor;
-//  4. the pre-fix anchor (kHorstPivotLocal rotated by root_pitch only) is about 17 mm away at
-//     main_pivot = 0.05 rad, so checks 1-3 fail for it.
-void test_horst_pivot_fallback_main_pivot() {
-    const GpuModelIndices idx{};
-    constexpr float kComX = 0.10f;
-    constexpr float kComZ = 0.55f;
-    constexpr float kPx = -0.52f;
-    constexpr float kPz = 0.33f;
-    constexpr float kFx = 300.0f;
-    constexpr float kFz = 150.0f;
-
-    for (const float pitch : {0.0f, 0.08f, -0.12f}) {
-        for (const float main_pivot : {0.0f, 0.05f, -0.05f}) {
-            const double rp = static_cast<double>(pitch);
-            const double total = rp + static_cast<double>(main_pivot);
-            const double ref_x = static_cast<double>(kComX)
-                + std::cos(rp) * static_cast<double>(kMainPivotLocalDxM)
-                + std::sin(rp) * static_cast<double>(kMainPivotLocalDzM)
-                + std::cos(total) * static_cast<double>(kSeatstayFromChainstayDxM)
-                + std::sin(total) * static_cast<double>(kSeatstayFromChainstayDzM);
-            const double ref_z = static_cast<double>(kComZ)
-                - std::sin(rp) * static_cast<double>(kMainPivotLocalDxM)
-                + std::cos(rp) * static_cast<double>(kMainPivotLocalDzM)
-                - std::sin(total) * static_cast<double>(kSeatstayFromChainstayDxM)
-                + std::cos(total) * static_cast<double>(kSeatstayFromChainstayDzM);
-
-            const GpuVec2 a = gpu_horst_pivot_anchor_fallback(kComX, kComZ, pitch, main_pivot);
-            require_near(static_cast<double>(a.x), ref_x, 1e-6,
-                         "horst fallback anchor x matches the double-precision chain");
-            require_near(static_cast<double>(a.y), ref_z, 1e-6,
-                         "horst fallback anchor z matches the double-precision chain");
-
-            const GpuVec2 w = gpu_horst_pivot_anchor_world(
-                idx.seatstay_body, nullptr, kComX, kComZ, pitch, main_pivot);
-            require_near(w.x, a.x, 1e-7f, "horst world anchor x matches the fallback");
-            require_near(w.y, a.y, 1e-7f, "horst world anchor z matches the fallback");
-
-            std::array<float, kMaxNv> qfrc{};
-            project_rear_wheel_force_to_qfrc(
-                idx, nullptr, kComX, kComZ, kPx, kPz, kFx, kFz, qfrc.data(), pitch, main_pivot);
-            const float expected_horst = (kPz - a.y) * kFx - (kPx - a.x) * kFz;
-            require_near(qfrc[to_index(idx.horst_pivot_dof)], expected_horst,
-                         1e-4f * std::max(1.0f, std::abs(expected_horst)),
-                         "horst qfrc torque matches the moment about the fallback anchor");
-        }
-    }
-
-    const GpuVec2 a_pre_fix = gpu_rear_pivot_anchor_world(
-        -1, nullptr, kComX, kComZ, kHorstPivotLocalDxM, kHorstPivotLocalDzM, 0.0f);
-    const GpuVec2 a_new = gpu_horst_pivot_anchor_fallback(kComX, kComZ, 0.0f, 0.05f);
-    require(std::hypot(a_new.x - a_pre_fix.x, a_new.y - a_pre_fix.y) > 1e-2f,
-            "the corrected anchor is more than 10 mm from the pre-fix anchor");
-}
-
-constexpr std::array<TestCase, 6> cases{{
-    {.name = "station_density_and_response",
-     .run = test_station_density_and_response},
-    {.name = "heightfield_1d", .run = test_heightfield_1d},
-    {.name = "evaluate_wheel_contact_and_qfrc",
-     .run = test_evaluate_wheel_contact_and_qfrc},
-    {.name = "gpu_write_both_wheels_suspension_coupling",
-     .run = test_gpu_write_both_wheels_suspension_coupling},
-    {.name = "fork_axis_world_top_out_and_pitch",
-     .run = test_fork_axis_world_top_out_and_pitch},
-    {.name = "horst_pivot_fallback_main_pivot",
-     .run = test_horst_pivot_fallback_main_pivot},
+constexpr std::array<TickPose, 6> kParityTicks{{
+    {.label = "loaded_rolling", .root_x_offset = 2.0, .ground_drop_m = -0.015, .root_vx = 5.0, .root_vz = -0.05, .front_spin_delta = 0.0, .rear_spin_delta = 0.0, .expect_contact = true},
+    {.label = "loaded_slip", .root_x_offset = 2.008, .ground_drop_m = -0.018, .root_vx = 5.0, .root_vz = -0.10, .front_spin_delta = +4.0, .rear_spin_delta = -3.5, .expect_contact = true},
+    {.label = "heavy_compression", .root_x_offset = 2.016, .ground_drop_m = -0.024, .root_vx = 6.2, .root_vz = -0.25, .front_spin_delta = +6.0, .rear_spin_delta = -4.5, .expect_contact = true},
+    {.label = "branch_break_jump", .root_x_offset = 2.35, .ground_drop_m = -0.014, .root_vx = 6.5, .root_vz = -0.08, .front_spin_delta = +2.0, .rear_spin_delta = -2.0, .expect_contact = true},
+    {.label = "airborne", .root_x_offset = 2.40, .ground_drop_m = +0.45, .root_vx = 6.5, .root_vz = +0.30, .front_spin_delta = 0.0, .rear_spin_delta = 0.0, .expect_contact = false},
+    {.label = "re_touchdown", .root_x_offset = 2.45, .ground_drop_m = -0.016, .root_vx = 5.8, .root_vz = -0.20, .front_spin_delta = +3.0, .rear_spin_delta = -2.5, .expect_contact = true},
 }};
 
-int run_case(const TestCase &test_case) {
+void apply_tick_pose(WeldedFixture &fx, const TickPose &pose, bool rough_uphill) {
+    const int nq = static_cast<int>(fx.m->nq);
+    const int nv = static_cast<int>(fx.m->nv);
+    const std::span<mjtNum> qpos = model_access::mutable_buffer(fx.d->qpos, nq, "qpos");
+    const std::span<mjtNum> qvel = model_access::mutable_buffer(fx.d->qvel, nv, "qvel");
+
+    std::ranges::fill(qpos, 0.0);
+    std::ranges::fill(qvel, 0.0);
+
+    const double gz = ground_profile_z(pose.root_x_offset, rough_uphill);
+    qpos[to_index(fx.root_x_qpos)] = pose.root_x_offset;
+    qpos[to_index(fx.root_z_qpos)] = gz + pose.ground_drop_m;
+    qpos[to_index(fx.root_pitch_qpos)] = rough_uphill ? -0.10 : 0.0;
+    qpos[to_index(fx.fork_qpos)] = 0.025;
+    mj_forward(fx.m.get(), fx.d.get());
+
+    // Shift root_z once so the lower wheel clears or penetrates the ground cleanly by ground_drop_m.
+    const std::span<const int> geom_bodyid =
+        model_access::readonly_buffer(fx.m->geom_bodyid, fx.m->ngeom, "geom_bodyid");
+    const std::span<const mjtNum> geom_size =
+        model_access::readonly_buffer(fx.m->geom_size, 3 * fx.m->ngeom, "geom_size");
+    const std::span<const mjtNum> xpos =
+        model_access::readonly_buffer(fx.d->xpos, 3 * fx.m->nbody, "xpos");
+    const int f_body = geom_bodyid[to_index(fx.front_contact_geom)];
+    const int r_body = geom_bodyid[to_index(fx.rear_contact_geom)];
+    const double f_r = geom_size[3 * to_index(fx.front_contact_geom)];
+    const double r_r = geom_size[3 * to_index(fx.rear_contact_geom)];
+    const double f_gz = ground_profile_z(xpos[3 * to_index(f_body) + 0], rough_uphill);
+    const double r_gz = ground_profile_z(xpos[3 * to_index(r_body) + 0], rough_uphill);
+    const double f_clear = (xpos[3 * to_index(f_body) + 2] - f_r) - f_gz;
+    const double r_clear = (xpos[3 * to_index(r_body) + 2] - r_r) - r_gz;
+    const double min_clear = std::min(f_clear, r_clear);
+    qpos[to_index(fx.root_z_qpos)] += (pose.ground_drop_m - min_clear);
+
+    qvel[to_index(fx.root_vx_dof)] = pose.root_vx;
+    qvel[to_index(fx.root_vz_dof)] = pose.root_vz;
+    qvel[to_index(fx.front_spin_dof)] = pose.root_vx / f_r + pose.front_spin_delta;
+    qvel[to_index(fx.rear_spin_dof)] = pose.root_vx / r_r + pose.rear_spin_delta;
+    mj_forward(fx.m.get(), fx.d.get());
+}
+
+NATIVE_DIAG_PUSH
+NATIVE_DIAG_IGNORE("-Wframe-larger-than")
+[[gnu::noinline]] std::unique_ptr<HostTyreUploadBundle> build_tyre_bundle_heap(
+    const mjModel *m,
+    const mjData *d,
+    const nativecfg::TireConfig &cfg,
+    int front_geom,
+    int rear_geom
+) {
+    return std::make_unique<HostTyreUploadBundle>(
+        build_gpu_tyre_model(m, d, cfg, front_geom, rear_geom));
+}
+NATIVE_DIAG_POP
+
+void run_parity_suite(
+    const fs::path &xml_path,
+    bool rough_uphill,
+    const nativecfg::TireConfig &cfg
+) {
+    WeldedFixture fx = load_welded_fixture(xml_path, rough_uphill);
+    const int nv = static_cast<int>(fx.m->nv);
+    const int nbody = static_cast<int>(fx.m->nbody);
+    const int njnt = static_cast<int>(fx.m->njnt);
+
+    const auto bundle_ptr = build_tyre_bundle_heap(
+        fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom);
+    const HostTyreUploadBundle &bundle = *bundle_ptr;
+    const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+
+    const bool is_dist = (cfg.backend == "distributed_2d_reference");
+    std::unique_ptr<TireWriter> compliant_writer;
+    std::unique_ptr<DistributedTireWriter> dist_writer;
+    if (is_dist) {
+        dist_writer = std::make_unique<DistributedTireWriter>(fx.m.get(), fx.d.get(), cfg);
+    } else {
+        compliant_writer = std::make_unique<TireWriter>(fx.m.get(), fx.d.get(), cfg);
+    }
+
+    std::vector<GpuCompliantWheelState> comp_state(2);
+    std::vector<GpuStationState> dist_state(2ULL * to_index(kMaxGpuTyreStations));
+    const float dt_f = 0.001f;
+    const double dt_d = static_cast<double>(dt_f);
+
+    for (std::size_t tick = 0; tick < kParityTicks.size(); ++tick) {
+        const TickPose &pose = kParityTicks[tick];
+        apply_tick_pose(fx, pose, rough_uphill);
+        fx.d->time = static_cast<double>(tick + 1) * dt_d;
+
+        std::vector<double> ref_qfrc(to_index(nv), 0.0);
+        std::array<std::optional<TireDiagnostics>, 2> ref_diags{};
+        std::array<std::optional<TireSnapshot>, 2> ref_snaps{};
+        if (is_dist) {
+            dist_writer->compute_into(fx.d.get(), dt_d, ref_qfrc);
+            ref_diags = dist_writer->diagnostics();
+            ref_snaps = dist_writer->snapshots();
+        } else {
+            compliant_writer->compute_into(fx.d.get(), dt_d, ref_qfrc);
+            ref_diags = compliant_writer->diagnostics();
+            ref_snaps = compliant_writer->snapshots();
+        }
+
+        std::vector<float> xpos_f(3U * to_index(nbody), 0.0f);
+        std::vector<float> xmat_f(9U * to_index(nbody), 0.0f);
+        std::vector<float> xanchor_f(3U * to_index(njnt), 0.0f);
+        std::vector<float> xaxis_f(3U * to_index(njnt), 0.0f);
+        std::vector<float> qvel_f(to_index(nv), 0.0f);
+        std::vector<float> gpu_qfrc(to_index(nv), 0.0f);
+
+        const std::span<const mjtNum> d_xpos =
+            model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody), "xpos");
+        const std::span<const mjtNum> d_xmat =
+            model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody), "xmat");
+        const std::span<const mjtNum> d_xanchor =
+            model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt), "xanchor");
+        const std::span<const mjtNum> d_xaxis =
+            model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt), "xaxis");
+        const std::span<const mjtNum> d_qvel =
+            model_access::readonly_buffer(fx.d->qvel, nv, "qvel");
+        for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(d_xpos[i]);
+        for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(d_xmat[i]);
+        for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+            xanchor_f[i] = static_cast<float>(d_xanchor[i]);
+            xaxis_f[i] = static_cast<float>(d_xaxis[i]);
+        }
+        for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
+
+        GpuTyreStepOutput out_sum{};
+        ErrCode err = ErrCode::none;
+        const Status st = gpu_step_both_wheels_tyre(
+            &bundle.gpu_model,
+            terrain.desc,
+            terrain.f32.empty() ? nullptr : terrain.f32.data(),
+            terrain.i32.empty() ? nullptr : terrain.i32.data(),
+            1.0f,
+            dt_f,
+            xpos_f.data(),
+            xmat_f.data(),
+            xanchor_f.data(),
+            xaxis_f.data(),
+            qvel_f.data(),
+            comp_state.data(),
+            dist_state.data(),
+            gpu_qfrc.data(),
+            out_sum,
+            err,
+            true);
+        require(st == Status::ok && err == ErrCode::none,
+                std::format("gpu_step_both_wheels_tyre failed on tick '{}' ({})",
+                            pose.label, rough_uphill ? "rough" : "flat"));
+
+        double max_ref_qfrc = 0.0;
+        for (const double v : ref_qfrc) {
+            max_ref_qfrc = std::max(max_ref_qfrc, std::abs(v));
+        }
+        if (pose.expect_contact) {
+            require(max_ref_qfrc > 20.0,
+                    std::format("expected non-trivial contact qfrc on tick '{}'", pose.label));
+        } else {
+            require(max_ref_qfrc == 0.0, "airborne tick must yield zero qfrc");
+        }
+
+        const double qfrc_tol = 5e-5 * std::max(1.0, max_ref_qfrc);
+        for (int i = 0; i < nv; ++i) {
+            const double diff = std::abs(static_cast<double>(gpu_qfrc[to_index(i)]) - ref_qfrc[to_index(i)]);
+            require(diff <= qfrc_tol,
+                    std::format("qfrc parity mismatch tick='{}' dof={} diff={:.6g} tol={:.6g}",
+                                pose.label, i, diff, qfrc_tol));
+        }
+
+        const std::span sum_wheels(out_sum.wheels);
+        const std::span model_wheels(bundle.gpu_model.wheels);
+        const std::span active_cnts(out_sum.active_station_counts);
+        for (std::size_t side = 0; side < 2; ++side) {
+            const std::optional<TireDiagnostics> &diag_opt = ref_diags[side];
+            const std::optional<TireSnapshot> &snap_opt = ref_snaps[side];
+            if (!diag_opt.has_value() || !snap_opt.has_value()) {
+                throw std::runtime_error("reference diagnostics/snapshot present");
+            }
+            const double ref_n = diag_opt->normal_load_n;
+            const double gpu_n = static_cast<double>(sum_wheels[side].normal_load_n);
+            const double n_tol = 5e-5 * std::max(1.0, std::abs(ref_n));
+            require(std::abs(gpu_n - ref_n) <= n_tol,
+                    std::format("normal load mismatch tick='{}' side={} gpu={:.6g} ref={:.6g}",
+                                pose.label, side, gpu_n, ref_n));
+
+            const float nom_r = model_wheels[side].radius_m;
+            const float eff_r = sum_wheels[side].effective_radius_m;
+            const double ref_eff_r = snap_opt->effective_radius_m;
+            const bool wheel_airborne = snap_opt->patches.empty();
+            require(std::isfinite(eff_r), "effective_radius_m must be finite");
+            if (!pose.expect_contact) {
+                require(wheel_airborne, "airborne tick must have no contact patches");
+            }
+            if (wheel_airborne) {
+                require(ref_eff_r == 0.0 && eff_r == 0.0f,
+                        std::format("airborne effective_radius_m must be exact 0.0f tick='{}' side={} gpu={} ref={}",
+                                    pose.label, side, eff_r, ref_eff_r));
+            } else {
+                require(eff_r > 0.05f && eff_r <= nom_r + 1e-4f,
+                        "effective_radius_m lies inside physical wheel bounds");
+                const double r_tol = 5e-5 * std::max(1.0, std::abs(ref_eff_r));
+                require(std::abs(static_cast<double>(eff_r) - ref_eff_r) <= r_tol,
+                        std::format("effective_radius_m parity mismatch tick='{}' side={} gpu={:.6g} ref={:.6g}",
+                                    pose.label, side, static_cast<double>(eff_r), ref_eff_r));
+            }
+
+            if (is_dist) {
+                require(active_cnts[side] == diag_opt->active_station_count,
+                        std::format("active_station_count mismatch tick='{}' side={} gpu={} ref={}",
+                                    pose.label, side, active_cnts[side],
+                                    diag_opt->active_station_count));
+            }
+        }
+    }
+}
+
+void test_compliant_flat_parity(const fs::path &xml) {
+    run_parity_suite(xml, false, bike::gpu::make_default_compliant_tire_config());
+}
+
+void test_compliant_rough_uphill_parity(const fs::path &xml) {
+    run_parity_suite(xml, true, bike::gpu::make_default_compliant_tire_config());
+}
+
+void test_distributed_flat_and_rough_parity(const fs::path &xml) {
+    const nativecfg::TireConfig dcfg = bike::gpu::make_default_distributed_tire_config(64);
+    run_parity_suite(xml, false, dcfg);
+    run_parity_suite(xml, true, dcfg);
+}
+
+void test_airborne_effective_radius_zero(const fs::path &xml) {
+    WeldedFixture fx = load_welded_fixture(xml, false);
+    const TickPose airborne_pose{
+        .label = "airborne_explicit",
+        .root_x_offset = 2.2,
+        .ground_drop_m = +0.50,
+        .root_vx = 5.0,
+        .root_vz = +0.20,
+        .front_spin_delta = 1.0,
+        .rear_spin_delta = -1.0,
+        .expect_contact = false,
+    };
+    apply_tick_pose(fx, airborne_pose, false);
+    const int nv = static_cast<int>(fx.m->nv);
+    const int nbody = static_cast<int>(fx.m->nbody);
+    const int njnt = static_cast<int>(fx.m->njnt);
+
+    std::vector<float> xpos_f(3U * to_index(nbody), 0.0f);
+    std::vector<float> xmat_f(9U * to_index(nbody), 0.0f);
+    std::vector<float> xanchor_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> xaxis_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> qvel_f(to_index(nv), 0.0f);
+    const std::span<const mjtNum> d_xpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xanchor = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_xaxis = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_qvel = model_access::readonly_buffer(fx.d->qvel, nv);
+    for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(d_xpos[i]);
+    for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(d_xmat[i]);
+    for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+        xanchor_f[i] = static_cast<float>(d_xanchor[i]);
+        xaxis_f[i] = static_cast<float>(d_xaxis[i]);
+    }
+    for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
+
+    std::vector<nativecfg::TireConfig> configs;
+    configs.push_back(bike::gpu::make_default_compliant_tire_config());
+    configs.push_back(bike::gpu::make_default_distributed_tire_config(64));
+    for (const nativecfg::TireConfig &cfg : configs) {
+        const auto bundle_ptr = build_tyre_bundle_heap(
+            fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom);
+        const HostTyreUploadBundle &bundle = *bundle_ptr;
+        const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+
+        std::vector<GpuCompliantWheelState> cs(2);
+        std::vector<GpuStationState> ds(2ULL * to_index(kMaxGpuTyreStations));
+        std::vector<float> qfrc(to_index(nv), 0.0f);
+        GpuTyreStepOutput sum{};
+        ErrCode err = ErrCode::none;
+        require(gpu_step_both_wheels_tyre(
+                    &bundle.gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                    1.0f, 0.001f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                    qvel_f.data(), cs.data(), ds.data(), qfrc.data(), sum, err, true) == Status::ok,
+                "airborne gpu_step_both_wheels_tyre succeeds");
+        const std::span sum_wheels(sum.wheels);
+        const std::span active_cnts(sum.active_station_counts);
+        for (std::size_t side = 0; side < 2; ++side) {
+            require(sum_wheels[side].normal_load_n == 0.0f, "airborne normal_load_n == 0");
+            require(sum_wheels[side].effective_radius_m == 0.0f,
+                    "airborne effective_radius_m == 0.0f");
+            require(active_cnts[side] == 0, "airborne active_station_counts == 0");
+        }
+    }
+}
+
+void test_stiffness_scale_and_validation(const fs::path &xml) {
+    WeldedFixture fx = load_welded_fixture(xml, false);
+    const TickPose deep_pose{
+        .label = "stiffness_test",
+        .root_x_offset = 2.0,
+        .ground_drop_m = -0.035,
+        .root_vx = 5.0,
+        .root_vz = -0.05,
+        .front_spin_delta = 0.25,
+        .rear_spin_delta = -0.25,
+        .expect_contact = true,
+    };
+    apply_tick_pose(fx, deep_pose, false);
+    const int nv = static_cast<int>(fx.m->nv);
+    const int nbody = static_cast<int>(fx.m->nbody);
+    const int njnt = static_cast<int>(fx.m->njnt);
+
+    std::vector<float> xpos_f(3U * to_index(nbody), 0.0f);
+    std::vector<float> xmat_f(9U * to_index(nbody), 0.0f);
+    std::vector<float> xanchor_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> xaxis_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> qvel_f(to_index(nv), 0.0f);
+    const std::span<const mjtNum> d_xpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+    const std::span<const mjtNum> d_xanchor = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_xaxis = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+    const std::span<const mjtNum> d_qvel = model_access::readonly_buffer(fx.d->qvel, nv);
+    for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(d_xpos[i]);
+    for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(d_xmat[i]);
+    for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+        xanchor_f[i] = static_cast<float>(d_xanchor[i]);
+        xaxis_f[i] = static_cast<float>(d_xaxis[i]);
+    }
+    for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(d_qvel[i]);
+
+    std::vector<nativecfg::TireConfig> configs;
+    configs.push_back(bike::gpu::make_default_compliant_tire_config());
+    configs.push_back(bike::gpu::make_default_distributed_tire_config(64));
+    for (const nativecfg::TireConfig &cfg : configs) {
+        const auto bundle_ptr = build_tyre_bundle_heap(
+            fx.m.get(), fx.d.get(), cfg, fx.front_contact_geom, fx.rear_contact_geom);
+        const HostTyreUploadBundle &bundle = *bundle_ptr;
+        const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+
+        std::vector<GpuCompliantWheelState> c1(2);
+        std::vector<GpuCompliantWheelState> c2(2);
+        std::vector<GpuStationState> d1(2ULL * to_index(kMaxGpuTyreStations));
+        std::vector<GpuStationState> d2(2ULL * to_index(kMaxGpuTyreStations));
+        std::vector<float> q1(to_index(nv), 0.0f);
+        std::vector<float> q2(to_index(nv), 0.0f);
+        GpuTyreStepOutput s1{};
+        GpuTyreStepOutput s2{};
+        ErrCode err = ErrCode::none;
+
+        require(gpu_step_both_wheels_tyre(
+                    &bundle.gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                    1.0f, 0.001f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                    qvel_f.data(), c1.data(), d1.data(), q1.data(), s1, err) == Status::ok,
+                "baseline scale=1.0 succeeds");
+        require(gpu_step_both_wheels_tyre(
+                    &bundle.gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                    1.20f, 0.001f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                    qvel_f.data(), c2.data(), d2.data(), q2.data(), s2, err) == Status::ok,
+                "scaled scale=1.20 succeeds");
+        const std::span s1_wheels(s1.wheels);
+        const std::span s2_wheels(s2.wheels);
+        for (std::size_t side = 0; side < 2; ++side) {
+            const float expected_load = 1.20f * s1_wheels[side].normal_load_n;
+            require(s1_wheels[side].normal_load_n > 50.0f &&
+                        std::abs(s2_wheels[side].normal_load_n - expected_load) <=
+                            1e-4f * expected_load,
+                    "tire_stiff_scale=1.20 scales normal_load_n proportionally");
+        }
+        for (const int spin_dof : {fx.front_spin_dof, fx.rear_spin_dof}) {
+            const float tau1 = q1[to_index(spin_dof)];
+            const float tau2 = q2[to_index(spin_dof)];
+            const float expected_tau = 1.20f * tau1;
+            require(std::abs(tau1) > 0.5f &&
+                        std::abs(tau2 - expected_tau) <= 1e-4f * std::abs(expected_tau),
+                    "tire_stiff_scale=1.20 scales tangential wheel spin qfrc proportionally");
+        }
+    }
+
+    // Bounds rejection checks
+    const auto bundle_ptr = build_tyre_bundle_heap(
+        fx.m.get(), fx.d.get(), bike::gpu::make_default_compliant_tire_config(),
+        fx.front_contact_geom, fx.rear_contact_geom);
+    const HostTyreUploadBundle &bundle = *bundle_ptr;
+    const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+    ErrCode err = ErrCode::none;
+
+    {
+        const auto bad_model = std::make_unique<GpuTyreModel>(bundle.gpu_model);
+        const std::span bad_wheels(bad_model->wheels);
+        const std::span bad_joints(bad_wheels[0].chain.joints);
+        bad_joints[0].joint_id = bad_model->njnt;
+        require(validate_gpu_tyre_model_device(bad_model.get(), 0, 0, 0, err) != Status::ok,
+                "reject joint_id >= njnt");
+    }
+    {
+        const auto bad_model = std::make_unique<GpuTyreModel>(bundle.gpu_model);
+        bad_model->backend = TyreBackendKind::distributed_2d_reference;
+        bad_model->station_count = static_cast<i32>(kMaxGpuTyreStations) + 1;
+        require(validate_gpu_tyre_model_device(bad_model.get(), 0, 0, 0, err) != Status::ok,
+                "reject station_count > 128");
+    }
+    {
+        auto bad_f32 = terrain.f32;
+        bad_f32[to_index(terrain.desc.px_offset + 5)] =
+            bad_f32[to_index(terrain.desc.px_offset + 4)];
+        require(validate_terrain_table_desc(
+                    terrain.desc, bad_f32.data(), terrain.i32.data(), true, false, true, err) !=
+                    Status::ok,
+                "reject non-monotonic px");
+    }
+}
+
+[[gnu::noinline]] void verify_metal_writers_parity(
+    WeldedFixture &fx,
+    const HostTyreUploadBundle &bundle,
+    const bike::gpu::HostPackedTerrain &terrain,
+    float dt_f,
+    std::string_view label
+) {
+#if defined(__APPLE__)
+    const auto idx = bike::gpu::assets::resolve_gpu_model_indices(fx.m.get());
+    const int nq = idx.nq;
+    const int nv = idx.nv;
+    const int nu = idx.nu;
+    const int nbody = idx.nbody;
+    const int njnt = static_cast<int>(fx.m->njnt);
+
+    fs::path gpu_dir;
+#ifdef BIKE_REPO_ROOT
+    gpu_dir = fs::path(BIKE_REPO_ROOT) / "native" / "src" / "gpu";
+#else
+    gpu_dir = fs::path("native") / "src" / "gpu";
+#endif
+    require(bike_metal_init(gpu_dir.string().c_str()) == 0, "bike_metal_init failed");
+
+    auto cfg = std::make_unique<bike::gpu::GpuWorldConfig>();
+    cfg->suspension = bike::gpu::gpu_make_backend_default_suspension_params(bundle.gpu_model.backend);
+    cfg->resistance = bike::gpu::gpu_make_default_resistance_params();
+    cfg->resistance.crr = 0.0f;
+    cfg->resistance.cda_m2 = 0.0f;
+    cfg->rider = bike::gpu::gpu_make_default_rider_params();
+    cfg->rider.rider_enabled = 0;
+    cfg->pedal_demand = 0.0f;
+    cfg->front_brake_demand = 0.0f;
+    cfg->rear_brake_demand = 0.0f;
+
+    auto ws_host = std::make_unique<bike::gpu::GpuWorldState>();
+    const auto ws_mtl = std::make_unique<bike::gpu::GpuWorldState>();
+    const auto pneum_scratch = std::make_unique<GpuPneumaticStepScratch<float>>();
+
+    std::vector<float> qpos_f(to_index(nq), 0.0f);
+    std::vector<float> qvel_f(to_index(nv), 0.0f);
+    std::vector<float> xpos_f(3U * to_index(nbody), 0.0f);
+    std::vector<float> xmat_f(9U * to_index(nbody), 0.0f);
+    std::vector<float> xanchor_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> xaxis_f(3U * to_index(njnt), 0.0f);
+    std::vector<float> qfrc_host(to_index(nv), 0.0f);
+    std::vector<float> qfrc_mtl(to_index(nv), 0.0f);
+    std::vector<float> ctrl_host(to_index(nu), 0.0f);
+    std::vector<float> ctrl_mtl(to_index(nu), 0.0f);
+    std::vector<float> tr_host(static_cast<std::size_t>(2 * fx.m->ntendon), 0.0f);
+    std::vector<float> tr_mtl(static_cast<std::size_t>(2 * fx.m->ntendon), 0.0f);
+    const int tr_stride = 2 * static_cast<int>(fx.m->ntendon);
+
+    apply_tick_pose(fx, kParityTicks[0], false);
+    const auto copy_state = [&]() {
+        const auto dqpos = model_access::readonly_buffer(fx.d->qpos, nq, "qpos");
+        const auto dqvel = model_access::readonly_buffer(fx.d->qvel, nv, "qvel");
+        const auto dxpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+        const auto dxmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+        const auto dxanc = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+        const auto dxax = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+        for (int i = 0; i < nq; ++i) qpos_f[to_index(i)] = static_cast<float>(dqpos[to_index(i)]);
+        for (int i = 0; i < nv; ++i) qvel_f[to_index(i)] = static_cast<float>(dqvel[to_index(i)]);
+        for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(dxpos[i]);
+        for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(dxmat[i]);
+        for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+            xanchor_f[i] = static_cast<float>(dxanc[i]);
+            xaxis_f[i] = static_cast<float>(dxax[i]);
+        }
+    };
+    copy_state();
+
+    const float crank_q0 = (idx.crank_spin_qpos >= 0) ? qpos_f[to_index(idx.crank_spin_qpos)] : 0.0f;
+    const float rear_q0 = (idx.rear_wheel_spin_qpos >= 0) ? qpos_f[to_index(idx.rear_wheel_spin_qpos)] : 0.0f;
+    const bool has_ds = (idx.drive_shaft_spin_qpos >= 0 && idx.drive_shaft_spin_qpos < idx.nq);
+    const float ds_q0 = has_ds ? qpos_f[to_index(idx.drive_shaft_spin_qpos)] : 0.0f;
+    require(bike::gpu::gpu_init_world_state(
+                *ws_host, cfg->drivetrain, crank_q0, rear_q0, ds_q0, has_ds) == Status::ok,
+            "host init world state failed");
+    require(bike_metal_launch_init_states(1, &idx, cfg.get(), 1, ws_mtl.get(), qpos_f.data()) == 0,
+            "metal init states failed");
+
+    const float *tf32 = terrain.f32.empty() ? nullptr : terrain.f32.data();
+    const i32 *ti32 = terrain.i32.empty() ? nullptr : terrain.i32.data();
+    for (int step = 0; step < 3; ++step) {
+        const auto &pose = kParityTicks[to_index(step)];
+        apply_tick_pose(fx, pose, false);
+        copy_state();
+
+        require(bike::gpu::gpu_step_world_writers(
+                    0, dt_f, idx, &bundle.gpu_model, terrain.desc, tf32, ti32,
+                    cfg.get(), 1, ws_host.get(),
+                    qpos_f.data(), qvel_f.data(), xpos_f.data(), xmat_f.data(),
+                    xanchor_f.data(), xaxis_f.data(),
+                    qfrc_host.data(), ctrl_host.data(), tr_host.data(), tr_stride,
+                    false, pneum_scratch.get()) == Status::ok,
+                "host gpu_step_world_writers failed");
+        require(bike_metal_launch_writers(
+                    1, dt_f, &idx, &bundle.gpu_model, &terrain.desc, tf32, ti32,
+                    cfg.get(), 1, ws_mtl.get(),
+                    qpos_f.data(), qvel_f.data(), xpos_f.data(), xmat_f.data(),
+                    xanchor_f.data(), xaxis_f.data(),
+                    qfrc_mtl.data(), ctrl_mtl.data(), tr_mtl.data(), tr_stride) == 0,
+                "bike_metal_launch_writers failed");
+
+        for (int i = 0; i < nv; ++i) {
+            const float h = qfrc_host[to_index(i)];
+            const float m = qfrc_mtl[to_index(i)];
+            const float tol = 2e-5f * std::max(1.0f, std::abs(h));
+            const auto h_bits = std::bit_cast<std::int32_t>(h);
+            const auto m_bits = std::bit_cast<std::int32_t>(m);
+            const bool same_sign = ((h_bits < 0) == (m_bits < 0));
+            const std::uint32_t ulp = same_sign
+                ? static_cast<std::uint32_t>(std::abs(h_bits - m_bits))
+                : std::numeric_limits<std::uint32_t>::max();
+            require(ulp <= 4U || std::abs(h - m) <= tol,
+                    std::format("Host vs Metal qfrc mismatch ({} step={} dof={}): host={} mtl={}",
+                                label, step, i, h, m));
+        }
+    }
+#else
+    (void)fx;
+    (void)bundle;
+    (void)terrain;
+    (void)dt_f;
+    (void)label;
+#endif
+}
+
+[[gnu::noinline]] void test_tabulated_compliant_parity(const fs::path &xml) {
+    nativecfg::TireConfig tab_cfg = bike::gpu::make_default_compliant_tire_config();
+    if (!tab_cfg.front.material.has_value() || !tab_cfg.rear.material.has_value()) {
+        throw std::runtime_error("compliant cfg must have material");
+    }
+    const nativecfg::TireTable tbl{
+        .deflection_m = {0.0, 0.015, 0.030, 0.060},
+        .force_n = {0.0, 1200.0, 3000.0, 7200.0},
+    };
+    nativecfg::TireMaterial &fmat = *tab_cfg.front.material;
+    nativecfg::TireMaterial &rmat = *tab_cfg.rear.material;
+    fmat.table = tbl;
+    rmat.table = tbl;
+    fmat.valid_load_range_n = {0.0, 6000.0};
+    rmat.valid_load_range_n = {0.0, 6000.0};
+
+    run_parity_suite(xml, false, tab_cfg);
+
+    WeldedFixture fx = load_welded_fixture(xml, false);
+    apply_tick_pose(fx, kParityTicks[2], false);
+    const auto bundle_ptr = build_tyre_bundle_heap(
+        fx.m.get(), fx.d.get(), tab_cfg, fx.front_contact_geom, fx.rear_contact_geom);
+    const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(*bundle_ptr);
+    const std::span<const TyreWheelSpec<float>, 2> wheels(bundle_ptr->gpu_model.wheels);
+    require(wheels[0].compliant.use_tabulated == 1 && wheels[1].compliant.use_tabulated == 1,
+            "TabulatedRadial use_tabulated == 1");
+    verify_metal_writers_parity(fx, *bundle_ptr, terrain, 0.001f, "tabulated_compliant");
+}
+
+[[gnu::noinline]] void test_distributed_stage_a_transitions_parity(const fs::path &xml) {
+    nativecfg::TireConfig dcfg = bike::gpu::make_default_distributed_tire_config(64);
+    dcfg.surface_mode = "track";
+    dcfg.surface_map = nativecfg::SurfaceMap{
+        .surface = bike::gpu::make_surface_spec_from_label(0), // asphalt
+        .sections = {
+            nativecfg::SurfaceSection{
+                .start_m = 2.65,
+                .end_m = 3.40,
+                .surface = bike::gpu::make_surface_spec_from_label(4), // scree: crr_delta=0.008, load_sens=0.15
+                .blend_m = 0.30,
+            },
+        },
+    };
+    run_parity_suite(xml, false, dcfg);
+
+    WeldedFixture fx = load_welded_fixture(xml, false);
+    apply_tick_pose(fx, kParityTicks[2], false); // root_x = 2.016 inside transition blend
+    const auto bundle_ptr = build_tyre_bundle_heap(
+        fx.m.get(), fx.d.get(), dcfg, fx.front_contact_geom, fx.rear_contact_geom);
+    const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(*bundle_ptr);
+    const auto nv = static_cast<std::size_t>(fx.m->nv);
+    const auto nbody = static_cast<std::size_t>(fx.m->nbody);
+    const auto njnt = static_cast<std::size_t>(fx.m->njnt);
+    std::vector<float> xpos_f(3U * nbody), xmat_f(9U * nbody), xanchor_f(3U * njnt), xaxis_f(3U * njnt), qvel_f(nv), qfrc_f(nv);
+    const auto dxpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+    const auto dxmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+    const auto dxanc = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+    const auto dxax = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+    const auto dqvel = model_access::readonly_buffer(fx.d->qvel, static_cast<int>(nv));
+    for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(dxpos[i]);
+    for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(dxmat[i]);
+    for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+        xanchor_f[i] = static_cast<float>(dxanc[i]);
+        xaxis_f[i] = static_cast<float>(dxax[i]);
+    }
+    for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(dqvel[i]);
+
+    std::vector<GpuCompliantWheelState> cs(2);
+    std::vector<GpuStationState> ds(2ULL * to_index(kMaxGpuTyreStations));
+    GpuTyreStepOutput sum{};
+    ErrCode err = ErrCode::none;
+    require(gpu_step_both_wheels_tyre(
+                &bundle_ptr->gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                1.0f, 0.001f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                qvel_f.data(), cs.data(), ds.data(), qfrc_f.data(), sum, err, true) == Status::ok,
+            "distributed Stage A step succeeds");
+    require(std::abs(sum.rolling_moment_nm) > 1e-4f,
+            "distributed Stage A rolling_moment_nm must be non-zero");
+    require(sum.brush_and_rolling_loss_j > 0.0f,
+            "distributed Stage A brush_and_rolling_loss_j must be > 0");
+    verify_metal_writers_parity(fx, *bundle_ptr, terrain, 0.001f, "distributed_stage_a");
+}
+
+[[gnu::noinline]] void test_pneumatic_fast_and_detailed_parity(const fs::path &xml) {
+    for (const bool detailed : {false, true}) {
+        WeldedFixture fx = load_welded_fixture(xml, false);
+        const std::span<mjtNum> gsize =
+            model_access::mutable_buffer(fx.m->geom_size, 3LL * static_cast<mjtSize>(fx.m->ngeom), "geom_size");
+        gsize[3U * to_index(fx.front_contact_geom) + 0U] = 0.379;
+        gsize[3U * to_index(fx.rear_contact_geom) + 0U] = 0.360;
+        const std::span<int> gct =
+            model_access::mutable_buffer(fx.m->geom_contype, fx.m->ngeom, "geom_contype");
+        const std::span<int> gca =
+            model_access::mutable_buffer(fx.m->geom_conaffinity, fx.m->ngeom, "geom_conaffinity");
+        const std::span<const int> gbody =
+            model_access::readonly_buffer(fx.m->geom_bodyid, fx.m->ngeom, "geom_bodyid");
+        const int f_body = gbody[to_index(fx.front_contact_geom)];
+        const int r_body = gbody[to_index(fx.rear_contact_geom)];
+        for (int g = 0; g < fx.m->ngeom; ++g) {
+            if (gbody[to_index(g)] == f_body || gbody[to_index(g)] == r_body) {
+                gct[to_index(g)] = 0;
+                gca[to_index(g)] = 0;
+            }
+        }
+        mj_forward(fx.m.get(), fx.d.get());
+
+        auto pcfg_ptr = std::make_unique<nativecfg::TireConfig>(
+            bike::gpu::make_default_pneumatic_tire_config(detailed));
+        nativecfg::TireConfig &pcfg = *pcfg_ptr;
+        if (!pcfg.pneumatic.has_value()) {
+            throw std::runtime_error("pneumatic config must be populated");
+        }
+        nativecfg::PneumaticConfig &pneu_cfg = *pcfg.pneumatic;
+        pcfg.surface_mode = "track";
+        pneu_cfg.surface.reset();
+        pcfg.surface_map = nativecfg::SurfaceMap{
+            .surface = bike::gpu::make_surface_spec_from_label(1), // hardpack
+            .sections = {
+                nativecfg::SurfaceSection{
+                    .start_m = 2.02,
+                    .end_m = 2.60,
+                    .surface = bike::gpu::make_surface_spec_from_label(4), // scree
+                    .blend_m = 0.25,
+                },
+            },
+        };
+
+        apply_tick_pose(fx, kParityTicks[0], false);
+        const auto bundle_ptr = build_tyre_bundle_heap(
+            fx.m.get(), fx.d.get(), pcfg, fx.front_contact_geom, fx.rear_contact_geom);
+        const HostTyreUploadBundle &bundle = *bundle_ptr;
+        const bike::gpu::HostPackedTerrain terrain = bike::gpu::pack_upload_bundle_terrain(bundle);
+
+        pneu_cfg.profile.x0_m = static_cast<double>(bundle.pl_px.front());
+        pneu_cfg.profile.dx_m = static_cast<double>(bundle.gpu_model.road_dx_m);
+        pneu_cfg.profile.z_m.resize(bundle.pl_pz.size());
+        for (std::size_t i = 0; i < bundle.pl_pz.size(); ++i) {
+            pneu_cfg.profile.z_m[i] = static_cast<double>(bundle.pl_pz[i]);
+        }
+
+        const auto pneu_writer = std::make_unique<PneumaticTireWriter>(
+            fx.m.get(), fx.d.get(), std::move(pcfg));
+
+        const int nv = static_cast<int>(fx.m->nv);
+        const int nbody = static_cast<int>(fx.m->nbody);
+        const int njnt = static_cast<int>(fx.m->njnt);
+        std::vector<GpuCompliantWheelState> comp_state(2);
+        std::vector<GpuStationState> dist_state(2ULL * to_index(kMaxGpuTyreStations));
+        auto pneu_states = std::make_unique<std::array<GpuPneumaticWheelState<float>, 2>>();
+        const auto pneu_scratch = std::make_unique<GpuPneumaticStepScratch<float>>();
+
+        const float dt_f = detailed ? 0.00025f : 0.0005f;
+        const double dt_d = static_cast<double>(dt_f);
+        float max_radial_e = 0.0f;
+        float max_maxwell_e = 0.0f;
+        float max_shear_e = 0.0f;
+        float sum_radial_loss = 0.0f;
+        float sum_brush_loss = 0.0f;
+
+        for (int step = 0; step < 6; ++step) {
+            TickPose pose = kParityTicks[to_index(step % 3)];
+            pose.root_x_offset = 2.0 + 0.015 * static_cast<double>(step);
+            pose.front_spin_delta = 3.0;
+            pose.rear_spin_delta = -3.0;
+            apply_tick_pose(fx, pose, false);
+            fx.d->time = static_cast<double>(step + 1) * dt_d;
+
+            std::vector<double> ref_qfrc(to_index(nv), 0.0);
+            pneu_writer->compute_into(fx.d.get(), dt_d, ref_qfrc);
+
+            std::vector<float> xpos_f(3U * to_index(nbody));
+            std::vector<float> xmat_f(9U * to_index(nbody));
+            std::vector<float> xanchor_f(3U * to_index(njnt));
+            std::vector<float> xaxis_f(3U * to_index(njnt));
+            std::vector<float> qvel_f(to_index(nv));
+            std::vector<float> gpu_qfrc(to_index(nv), 0.0f);
+            const auto dxpos = model_access::readonly_buffer(fx.d->xpos, 3LL * static_cast<mjtSize>(nbody));
+            const auto dxmat = model_access::readonly_buffer(fx.d->xmat, 9LL * static_cast<mjtSize>(nbody));
+            const auto dxanc = model_access::readonly_buffer(fx.d->xanchor, 3LL * static_cast<mjtSize>(njnt));
+            const auto dxax = model_access::readonly_buffer(fx.d->xaxis, 3LL * static_cast<mjtSize>(njnt));
+            const auto dqvel = model_access::readonly_buffer(fx.d->qvel, nv);
+            for (std::size_t i = 0; i < xpos_f.size(); ++i) xpos_f[i] = static_cast<float>(dxpos[i]);
+            for (std::size_t i = 0; i < xmat_f.size(); ++i) xmat_f[i] = static_cast<float>(dxmat[i]);
+            for (std::size_t i = 0; i < xanchor_f.size(); ++i) {
+                xanchor_f[i] = static_cast<float>(dxanc[i]);
+                xaxis_f[i] = static_cast<float>(dxax[i]);
+            }
+            for (std::size_t i = 0; i < qvel_f.size(); ++i) qvel_f[i] = static_cast<float>(dqvel[i]);
+
+            GpuTyreStepOutput sum{};
+            ErrCode err = ErrCode::none;
+            const Status st = gpu_step_both_wheels_tyre(
+                &bundle.gpu_model, terrain.desc, terrain.f32.data(), terrain.i32.data(),
+                1.0f, dt_f, xpos_f.data(), xmat_f.data(), xanchor_f.data(), xaxis_f.data(),
+                qvel_f.data(), comp_state.data(), dist_state.data(), gpu_qfrc.data(),
+                sum, err, true, pneu_states->data(), pneu_scratch.get());
+            require(st == Status::ok && err == ErrCode::none,
+                    std::format("pneumatic gpu_step_both_wheels_tyre failed detailed={} step={}",
+                                detailed, step));
+
+            double max_ref = 0.0;
+            for (const double v : ref_qfrc) {
+                max_ref = std::max(max_ref, std::abs(v));
+            }
+            require(max_ref > 20.0, "pneumatic contact tick must yield non-trivial qfrc");
+            const double qfrc_tol = 2e-4 * std::max(1.0, max_ref);
+            for (int i = 0; i < nv; ++i) {
+                const double diff = std::abs(static_cast<double>(gpu_qfrc[to_index(i)]) - ref_qfrc[to_index(i)]);
+                require(diff <= qfrc_tol,
+                        std::format("pneumatic qfrc parity mismatch detailed={} step={} dof={} diff={:.6g} tol={:.6g}",
+                                    detailed, step, i, diff, qfrc_tol));
+            }
+
+            max_radial_e = std::max(max_radial_e, sum.radial_energy_j);
+            max_maxwell_e = std::max(max_maxwell_e, sum.maxwell_energy_j);
+            max_shear_e = std::max(max_shear_e, sum.shear_energy_j);
+            sum_radial_loss += sum.radial_loss_j;
+            sum_brush_loss += sum.brush_and_rolling_loss_j;
+
+            const std::span<const GpuPneumaticWheelState<float>, 2> psw(*pneu_states);
+            if (detailed && kParityTicks[to_index(step % 3)].expect_contact) {
+                require(psw[0].patch_count > 0 || psw[1].patch_count > 0,
+                        "detailed pneumatic rollout populates contact patches");
+            }
+        }
+        {
+            const std::span<const GpuPneumaticWheelState<float>, 2> psw_final(*pneu_states);
+            require(psw_final[0].carcass.initialized == 1 && psw_final[1].carcass.initialized == 1,
+                    "pneumatic_wheels carcass state initialized");
+        }
+        require(max_radial_e > 0.0f && max_maxwell_e > 0.0f,
+                "pneumatic rollout produces positive radial_energy_j and maxwell_energy_j");
+        require(sum_radial_loss >= 0.0f && sum_brush_loss > 0.0f,
+                "pneumatic rollout produces non-negative radial_loss_j and positive brush_and_rolling_loss_j");
+        if (detailed) {
+            require(max_shear_e > 0.0f,
+                    "detailed pneumatic rollout produces positive shear_energy_j");
+        }
+
+        verify_metal_writers_parity(
+            fx, bundle, terrain, dt_f, detailed ? "pneumatic_detailed" : "pneumatic_fast");
+    }
+}
+
+constexpr std::array<TestCase, 8> cases{{
+    {.name = "compliant_flat_parity", .run = test_compliant_flat_parity},
+    {.name = "compliant_rough_uphill_parity", .run = test_compliant_rough_uphill_parity},
+    {.name = "distributed_flat_and_rough_parity", .run = test_distributed_flat_and_rough_parity},
+    {.name = "airborne_effective_radius_zero", .run = test_airborne_effective_radius_zero},
+    {.name = "stiffness_scale_and_validation", .run = test_stiffness_scale_and_validation},
+    {.name = "tabulated_compliant_parity", .run = test_tabulated_compliant_parity},
+    {.name = "distributed_stage_a_transitions_parity", .run = test_distributed_stage_a_transitions_parity},
+    {.name = "pneumatic_fast_and_detailed_parity", .run = test_pneumatic_fast_and_detailed_parity},
+}};
+
+int run_case(const TestCase &test_case, const fs::path &xml_path) {
     try {
-        test_case.run();
+        test_case.run(xml_path);
         std::cout << "PASS " << test_case.name << '\n';
         return 0;
     } catch (const std::exception &error) {
@@ -713,32 +1068,35 @@ int run_case(const TestCase &test_case) {
         return 1;
     }
 }
+
 } // namespace
 
 int main(int argc, char **argv) {
     try {
-        const std::span<char *> arguments =
-            bike::platform::main_arguments(argc, argv);
-        if (arguments.size() == 2 &&
-            std::string_view(arguments[1]) == "--list") {
-            for (const TestCase &test_case: cases)
-                std::cout << test_case.name << '\n';
+        const std::span<char *> arguments = bike::platform::main_arguments(argc, argv);
+        if (arguments.size() == 2 && std::string_view(arguments[1]) == "--list") {
+            for (const TestCase &tc : cases) {
+                std::cout << tc.name << '\n';
+            }
             return 0;
         }
         if (arguments.size() > 2) {
             std::cerr << "usage: bike_test_gpu_tire [case-name|--list]\n";
             return 2;
         }
+        const fs::path xml_path = resolve_welded_xml("");
+        require(!xml_path.empty(), "could not locate tests/fixtures/model/welded.xml");
 
         const std::string_view requested =
             arguments.size() == 1 ? "all" : std::string_view(arguments[1]);
         bool found = requested == "all";
         int status = 0;
-        for (const TestCase &test_case: cases) {
-            if (requested == "all" || requested == test_case.name) {
+        for (const TestCase &tc : cases) {
+            if (requested == "all" || requested == tc.name) {
                 found = true;
-                if (run_case(test_case) != 0)
+                if (run_case(tc, xml_path) != 0) {
                     status = 1;
+                }
             }
         }
         if (!found) {
@@ -747,7 +1105,6 @@ int main(int argc, char **argv) {
         }
         return status;
     } catch (const std::exception &error) {
-        // A throwing argument envelope is a harness failure, not a usage error.
         std::cerr << "FAIL argument handling: " << error.what() << '\n';
         return 1;
     }

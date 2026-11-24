@@ -5,6 +5,8 @@
 #pragma once
 
 #include "batch_step.hpp"
+#include "sp3_autonomous_step.hpp"
+#include "sp4_closed_loop_step.hpp"
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional float signatures mirror the CUDA/MSL kernels and the ctypes ABI. Register: docs/TESTING.md GPU kernel row.
 extern "C" {
@@ -12,18 +14,21 @@ extern "C" {
 int bike_gpu_sizeof_world_config();
 int bike_gpu_sizeof_world_state();
 int bike_gpu_sizeof_model_indices();
-void bike_gpu_init_default_config(bike::gpu::GpuWorldConfig *cfg);
-void bike_gpu_build_sweep_configs(
+int bike_gpu_sizeof_tyre_model();
+int bike_gpu_sizeof_terrain_desc();
+
+int bike_gpu_init_default_config(bike::gpu::GpuWorldConfig *cfg);
+
+int bike_gpu_build_sweep_configs(
     bike::gpu::GpuWorldConfig *configs,
     int nworld,
     const float *fork_psi_scale,
     const float *rebound_scale,
     const float *shock_rate_scale,
-    const float *tire_stiff_scale,
-    int num_stations,
-    int num_lateral_ribs
+    const float *tire_stiff_scale
 );
-void bike_gpu_launch_init_states(
+
+int bike_gpu_launch_init_states(
     const void *cuda_stream,
     int nworld,
     const bike::gpu::GpuModelIndices *d_idx,
@@ -32,45 +37,461 @@ void bike_gpu_launch_init_states(
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos
 );
-void bike_gpu_launch_writers(
+
+int bike_gpu_launch_writers(
     const void *cuda_stream,
     int nworld,
     float dt_s,
     const bike::gpu::GpuModelIndices *d_idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos,
     const float *d_qvel,
     const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
     float *d_qfrc_applied,
     float *d_ctrl,
     float *d_tendon_range,
     int tendon_range_world_stride
 );
-void bike_gpu_launch_step_writers(
+
+int bike_gpu_launch_step_writers(
     const void *cuda_stream,
     int nworld,
     float dt_s,
     const bike::gpu::GpuModelIndices *idx,
-    const float *d_hf_heights,
-    int hf_num_samples,
-    float hf_x_min,
-    float hf_dx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
     const bike::gpu::GpuWorldConfig *d_configs,
     int per_world_config,
     bike::gpu::GpuWorldState *d_states,
     const float *d_qpos,
     const float *d_qvel,
     const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
     float *d_qfrc_applied,
     float *d_ctrl,
     float *d_tendon_range,
     int tendon_range_world_stride
+);
+
+int bike_gpu_sizeof_sp3_config();
+int bike_gpu_sizeof_sp3_world_state();
+
+int bike_gpu_init_default_sp3_config(bike::gpu::GpuSp3Config *cfg);
+
+int bike_gpu_build_sp3_sweep_configs(
+    bike::gpu::GpuSp3Config *configs,
+    int nworld,
+    const float *fork_psi_scale,
+    const float *rebound_scale,
+    const float *shock_rate_scale,
+    const float *tire_stiff_scale
+);
+
+int bike_gpu_launch_sp3_init(
+    const void *cuda_stream,
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+);
+
+int bike_gpu_launch_sp3_pre_solve(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride
+);
+
+int bike_gpu_launch_sp3_post_solve(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xmat,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+);
+
+int bike_gpu_sizeof_sp4_world_state();
+int bike_gpu_sizeof_spindle_params();
+
+int bike_gpu_launch_sp4_init(
+    const void *cuda_stream,
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+);
+
+int bike_gpu_launch_sp4_pre_solve_and_pass0(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    const float *d_site_xpos,
+    const float *d_subtree_com,
+    const float *d_body_subtreemass,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride,
+    float *d_qacc_warmstart = nullptr
+);
+
+int bike_gpu_launch_sp4_pass1(
+    const void *cuda_stream,
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart = nullptr
+);
+
+int bike_gpu_launch_sp4_pass2(
+    const void *cuda_stream,
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart = nullptr
+);
+
+int bike_gpu_launch_sp4_pass3(
+    const void *cuda_stream,
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart = nullptr
+);
+
+int bike_gpu_launch_sp4_post_solve(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+);
+
+int bike_gpu_sp3_state_has_failure(const bike::gpu::GpuSp3WorldState *st);
+int bike_gpu_sp3_state_failure_flags(const bike::gpu::GpuSp3WorldState *st);
+
+int bike_gpu_sizeof_pneumatic_scratch();
+int bike_gpu_sizeof_spindle_m0_scratch();
+
+int bike_gpu_launch_sp4_m0_init(
+    const void *cuda_stream,
+    int nworld,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    float init_grade,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride
+);
+
+int bike_gpu_launch_sp4_m0_pre_solve_and_begin(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::physics_core::i32 *d_terrain_i32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    bike::gpu::GpuWorldState *d_world_states,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    const float *d_xaxis,
+    const float *d_site_xpos,
+    const float *d_subtree_com,
+    const float *d_body_subtreemass,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_qfrc_applied,
+    float *d_ctrl,
+    int ntendon,
+    float *d_tendon_range,
+    int tendon_range_world_stride,
+    float *d_dof_frictionloss,
+    int dof_frictionloss_world_stride,
+    float *d_qacc_warmstart,
+    int *out_any_needs_solve
+);
+
+int bike_gpu_launch_sp4_m0_step(
+    const void *cuda_stream,
+    int nworld,
+    int nq,
+    int nv,
+    int nu,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::gpu::GpuSp3WorldState *d_sp3_states,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_qfrc_bias,
+    const float *d_qacc,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    float *d_ctrl,
+    float *d_qacc_warmstart,
+    int *out_any_needs_solve
+);
+
+int bike_gpu_launch_sp4_m0_post_solve(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const bike::physics_core::SpindleM0Scratch<float> *d_m0_scratch,
+    float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_xmat,
+    const float *d_xanchor,
+    int nsensordata,
+    const float *d_sensordata,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const int *d_efc_id,
+    const float *d_efc_J,
+    const float *d_efc_force,
+    const int *d_nacon,
+    int nconmax,
+    int contact_efc_stride,
+    const int *d_contact_worldid,
+    const int *d_contact_geom,
+    const int *d_contact_efc_address,
+    const int *d_contact_dim
+);
+
+int bike_gpu_launch_sp4_energy_post_step(
+    const void *cuda_stream,
+    int nworld,
+    float dt_s,
+    const bike::gpu::GpuModelIndices *d_idx,
+    const bike::physics_core::GpuTyreModel *d_tyre_model,
+    const bike::physics_core::GpuTerrainTableDesc *d_terrain_desc,
+    const float *d_terrain_f32,
+    const bike::gpu::GpuSp3Config *d_sp3_configs,
+    int per_world_config,
+    const bike::physics_core::SpindleM2K2Params<float> *d_spindle_params,
+    bike::gpu::GpuSp3WorldState *d_sp3_states,
+    bike::gpu::GpuSp4WorldState *d_sp4_states,
+    const bike::gpu::GpuWorldState *d_world_states,
+    int qM_row_stride,
+    int M_world_stride,
+    const int *d_M_rowadr,
+    const int *d_M_rownnz,
+    const int *d_M_colind,
+    const float *d_M_or_qM,
+    const float *d_qpos,
+    const float *d_qvel,
+    const float *d_xpos,
+    const float *d_ctrl,
+    const float *d_body_mass,
+    const float *d_xipos,
+    const float *d_gravity,
+    const int *d_nefc,
+    int njmax,
+    int efc_J_row_stride,
+    const int *d_efc_type,
+    const float *d_efc_J,
+    const float *d_efc_force
 );
 
 } // extern "C"

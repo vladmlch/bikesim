@@ -1,13 +1,15 @@
-// writers/tire_common.cpp — shared tyre-writer helpers extracted from
-// writers/tire.cpp: surface_mu/surface_at moved character-for-character
-// (the diff that deletes them from tire.cpp is the parity proof), and
-// effective_friction assembled from tire.cpp's inlined tire_forces.py:
-// 56-61 block under the plan's signature.
+// writers/tire_common.cpp — shared tyre-writer helpers + Stage A C1 surface evaluator.
 #include "tire_common.hpp"
+
+#include "../contact/laws.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_contact.hpp"
+#include "../physics_core/tyre_types.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
+#include <span>
 #include <stdexcept>
 
 namespace {
@@ -42,8 +44,6 @@ namespace {
         const nativecfg::SurfaceSpec *right = nullptr;
     };
 
-    // Visits active (blend_m > 0) transition boundaries in ascending x_b order
-    // with zero heap allocations. `fn(boundary)` returns true to stop early.
     template <class Fn>
     void for_each_transition(const nativecfg::SurfaceMap &map, const Fn &fn) {
         const std::size_t n = map.sections.size();
@@ -159,11 +159,73 @@ namespace {
 } // namespace
 
 namespace tirecommon {
+    // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
+    BrushResult brush_step(double xi, double u, double v_roll, double fn,
+                           double k, double mu, double length, double dt) {
+        // NOLINTEND(bugprone-easily-swappable-parameters)
+        const auto [new_xi, force, loss] =
+                contactlaw::brush_step(xi, u, v_roll, fn, k, mu, length, dt);
+        return {.xi = new_xi, .force = force, .loss = loss};
+    }
+
+    bike::physics_core::SurfaceSpecPod<double>
+    to_surface_spec_pod(const nativecfg::SurfaceSpec &s) noexcept {
+        return {
+            .mu_peak = s.mu_peak,
+            .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .crr_delta = s.crr_delta,
+            .load_sensitivity = s.load_sensitivity,
+            .surface_id = 0,
+        };
+    }
+
+    bool fill_surface_map_view(
+        const nativecfg::SurfaceMap *map,
+        bike::physics_core::SurfaceMapView<double> &out
+    ) noexcept {
+        out = {};
+        if (map == nullptr ||
+            map->sections.size() >
+                static_cast<std::size_t>(bike::physics_core::kMaxSurfaceSections)) {
+            return false;
+        }
+        out.default_surface = to_surface_spec_pod(map->surface);
+        out.default_surface.surface_id = 0;
+        out.section_count = static_cast<bike::physics_core::i32>(
+            map->sections.size());
+        out.has_surface_map = 1;
+        const std::span<bike::physics_core::SurfaceSectionView<double>,
+                        bike::physics_core::kMaxSurfaceSections>
+            dst_sections(out.sections);
+        for (std::size_t i = 0; i < map->sections.size(); ++i) {
+            const auto &sec = map->sections[i];
+            bike::physics_core::i32 sid = static_cast<bike::physics_core::i32>(i + 1);
+            if (sec.surface.name == map->surface.name) {
+                sid = 0;
+            } else {
+                for (std::size_t k = 0; k < i; ++k) {
+                    if (sec.surface.name == map->sections[k].surface.name) {
+                        sid = dst_sections[k].surface.surface_id;
+                        break;
+                    }
+                }
+            }
+            dst_sections[i].start_m = sec.start_m;
+            dst_sections[i].end_m = sec.end_m;
+            dst_sections[i].surface = to_surface_spec_pod(sec.surface);
+            dst_sections[i].surface.surface_id = sid;
+            dst_sections[i].blend_m = sec.blend_m;
+        }
+        return true;
+    }
+
     // surface.py:72-88 — SurfaceSpec.mu: mu_slide + (peak-slide)*exp(-|v|/str).
     double surface_mu(const nativecfg::SurfaceSpec &s, double slip) {
-        const double decay =
-                std::exp(-std::abs(slip) / s.stribeck_speed_mps);
-        return s.mu_slide + (s.mu_peak - s.mu_slide) * decay;
+        return bike::physics_core::surface_mu<
+            double, bike::physics_core::CpuExactToolkit>(
+                to_surface_spec_pod(s), slip);
     }
 
     // surface.py:194-206 — SurfaceMap.at: finite query, first matching
@@ -178,7 +240,6 @@ namespace tirecommon {
         return map.surface;
     }
 
-    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters) positional params mirror the call site's Python order
     // NOLINTBEGIN(bugprone-easily-swappable-parameters) positional params mirror the Python API
     std::pair<double, std::string_view>
     effective_friction(double tire_mu, const nativecfg::SurfaceMap *map,
@@ -186,6 +247,22 @@ namespace tirecommon {
         // NOLINTEND(bugprone-easily-swappable-parameters)
         if (map == nullptr)
             return {tire_mu, "configured"};
+        bike::physics_core::SurfaceMapView<double> view{};
+        if (fill_surface_map_view(map, view)) {
+            double mu = 0.0;
+            bike::physics_core::i32 section_idx = -1;
+            auto err = bike::physics_core::ErrCode::none;
+            const auto status = bike::physics_core::effective_friction<
+                double, bike::physics_core::CpuExactToolkit>(
+                    tire_mu, &view, contact_x, slip, mu, section_idx, err);
+            if (status != bike::physics_core::Status::ok)
+                throw std::invalid_argument("material query must be finite");
+            if (section_idx >= 0)
+                return {mu,
+                        map->sections[static_cast<std::size_t>(section_idx)]
+                            .surface.name};
+            return {mu, map->surface.name};
+        }
         const nativecfg::SurfaceSpec &surf = surface_at(*map, contact_x);
         return {std::min(tire_mu, surface_mu(surf, slip)), surf.name};
     }
@@ -205,21 +282,47 @@ namespace tirecommon {
     SurfaceSample eval_surface(const nativecfg::SurfaceMap &map, double x_m) {
         if (!std::isfinite(x_m))
             throw std::invalid_argument("material query must be finite");
-        SurfaceSample blended{};
-        bool matched = false;
-        for_each_transition(
-                map, [&](const TransitionBoundary &tr) noexcept {
-                    const double half = 0.5 * tr.width_m;
-                    if (tr.x_b - half < x_m && x_m < tr.x_b + half) {
-                        blended = blend_specs(tr, x_m);
-                        matched = true;
-                        return true;
-                    }
-                    return false;
-                });
-        const SurfaceSample base =
-                matched ? blended
-                        : sample_from_spec(pure_surface_at(map, x_m));
+        SurfaceSample base{};
+        bike::physics_core::SurfaceMapView<double> view{};
+        if (fill_surface_map_view(&map, view)) {
+            bike::physics_core::SurfaceSamplePod<double> pod{};
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::eval_surface<
+                double, bike::physics_core::CpuExactToolkit>(
+                    &view, x_m, pod, err);
+            if (st != bike::physics_core::Status::ok)
+                throw std::invalid_argument("material query must be finite");
+            const std::string_view name =
+                (pod.section_idx >= 0)
+                    ? std::string_view(
+                          map.sections[static_cast<std::size_t>(pod.section_idx)]
+                              .surface.name)
+                    : std::string_view(map.surface.name);
+            base = {
+                .name = name,
+                .mu_peak = pod.mu_peak,
+                .mu_slide = pod.mu_slide,
+                .slip_stiffness_per_load = pod.slip_stiffness_per_load,
+                .stribeck_speed_mps = pod.stribeck_speed_mps,
+                .crr_delta = pod.crr_delta,
+                .load_sensitivity = pod.load_sensitivity,
+            };
+        } else {
+            SurfaceSample blended{};
+            bool matched = false;
+            for_each_transition(
+                    map, [&](const TransitionBoundary &tr) noexcept {
+                        const double half = 0.5 * tr.width_m;
+                        if (tr.x_b - half < x_m && x_m < tr.x_b + half) {
+                            blended = blend_specs(tr, x_m);
+                            matched = true;
+                            return true;
+                        }
+                        return false;
+                    });
+            base = matched ? blended
+                           : sample_from_spec(pure_surface_at(map, x_m));
+        }
         // Stage C obstacle-local overlay (Spec §3.3). micro_spans are
         // start_m-sorted with non-overlapping expanded intervals
         // [start-blend/2, end+blend/2]. Writers sort spans after validation;
@@ -304,6 +407,25 @@ namespace tirecommon {
             }
         }
 
+        bike::physics_core::SurfaceMapView<double> view{};
+        if (fill_surface_map_view(&map, view)) {
+            bool is_uniform = false;
+            bike::physics_core::i32 section_idx = -1;
+            auto err = bike::physics_core::ErrCode::none;
+            const auto st = bike::physics_core::uniform_surface_for_span<
+                double, bike::physics_core::CpuExactToolkit>(
+                    &view, x_min_m, x_max_m, is_uniform, section_idx, err);
+            if (st != bike::physics_core::Status::ok) {
+                throw std::invalid_argument(
+                        "uniform_surface_for_span requires finite x_min_m <= x_max_m");
+            }
+            if (!is_uniform)
+                return nullptr;
+            if (section_idx >= 0)
+                return &map.sections[static_cast<std::size_t>(section_idx)]
+                            .surface;
+            return &map.surface;
+        }
         const std::size_t n = map.sections.size();
         if (n == 0)
             return &map.surface;
@@ -353,14 +475,9 @@ namespace tirecommon {
     double load_sensitivity_factor(double wheel_normal_load_n,
                                    double k_z) noexcept {
         // NOLINTEND(bugprone-easily-swappable-parameters)
-        if (wheel_normal_load_n <= kSurfaceReferenceLoadN || k_z <= 0.0)
-            return 1.0;
-        const double u = wheel_normal_load_n / kSurfaceReferenceLoadN - 1.0;
-        if (u <= 0.0)
-            return 1.0;
-        // u*u overflows binary64 above ~1.34e154; g(u) -> u long before that.
-        const double g = (u > 1e150) ? u : ((u * u) / (u + kSurfaceLoadSmoothDelta));
-        return 1.0 / (1.0 + k_z * g);
+        return bike::physics_core::load_sensitivity_factor<
+            double, bike::physics_core::CpuExactToolkit>(
+                wheel_normal_load_n, k_z);
     }
 
     // NOLINTBEGIN(bugprone-easily-swappable-parameters)
@@ -373,19 +490,27 @@ namespace tirecommon {
         if (!std::isfinite(wheel_normal_load_n) || wheel_normal_load_n < 0.0)
             throw std::invalid_argument(
                     "SurfaceSample.wheel_normal_load_n must be finite and nonnegative");
-        const double decay =
-                std::exp(-std::abs(sliding_speed_mps) / s.stribeck_speed_mps);
-        const double mu_str = s.mu_slide + (s.mu_peak - s.mu_slide) * decay;
-        const double value =
-                (wheel_normal_load_n <= kSurfaceReferenceLoadN ||
-                 s.load_sensitivity <= 0.0)
-                        ? mu_str
-                        : load_sensitivity_factor(wheel_normal_load_n,
-                                                  s.load_sensitivity) *
-                                  mu_str;
-        if (!std::isfinite(value))
+        const bike::physics_core::SurfaceSamplePod<double> pod{
+            .mu_peak = s.mu_peak,
+            .mu_slide = s.mu_slide,
+            .slip_stiffness_per_load = s.slip_stiffness_per_load,
+            .stribeck_speed_mps = s.stribeck_speed_mps,
+            .crr_delta = s.crr_delta,
+            .load_sensitivity = s.load_sensitivity,
+            .surface_id = 0,
+            .section_idx = -1,
+        };
+        double value = 0.0;
+        auto err = bike::physics_core::ErrCode::none;
+        const auto st = bike::physics_core::sample_mu<
+            double, bike::physics_core::CpuExactToolkit>(
+                pod, sliding_speed_mps, wheel_normal_load_n, value, err);
+        if (st == bike::physics_core::Status::overflow)
             throw std::overflow_error(
                     "SurfaceSample.mu: non-finite derived value");
+        if (st != bike::physics_core::Status::ok)
+            throw std::invalid_argument(
+                    "SurfaceSample.mu: invalid input");
         return value;
     }
 } // namespace tirecommon

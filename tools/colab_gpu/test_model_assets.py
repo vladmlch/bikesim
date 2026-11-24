@@ -26,9 +26,12 @@ if str(_HERE) not in sys.path:
 
 import mujoco  # noqa: E402
 
+import build_cuda_writers as bcw  # noqa: E402
 import model_assets as ma  # noqa: E402
 
-REPO_ROOT = _HERE.parents[1]
+REPOS_WELDED_XML = _HERE.parents[1] / "tests" / "fixtures" / "model" / "welded.xml"
+REPOS_ROOT = _HERE.parents[1]
+REPO_ROOT = REPOS_ROOT
 ASSET_ROOT = REPO_ROOT / "tools" / "fp32_probe" / "artifacts" / "common"
 REAL_XML = ASSET_ROOT / "model.xml"
 REAL_BIN = ASSET_ROOT / "hfield_data.bin"
@@ -36,8 +39,10 @@ REAL_JSON = ASSET_ROOT / "captured_bootstrap.json"
 OLD_SWEEP_PY = _HERE / "mjwarp_batch_sweep.py"
 SCRATCH_ROOT = pathlib.Path("/tmp/bike_orch/E")
 
-NQ = 26
-NV = 26
+
+def _real_dims() -> tuple[int, int]:
+    m = _real_model()
+    return int(m.nq), int(m.nv)
 
 
 @contextmanager
@@ -134,15 +139,37 @@ def test_load_hfield_bin_noop_without_hfield() -> None:
 
 
 def test_load_captured_initial_state_matches_json() -> None:
-    qpos, qvel = ma.load_captured_initial_state(REAL_XML, NQ, NV)
+    nq, nv = _real_dims()
+    qpos, qvel = ma.load_captured_initial_state(REAL_XML, nq, nv)
     with REAL_JSON.open("r", encoding="utf-8") as fh:
         il = json.load(fh)["state"]["integration_state"]
-    exp_qpos = np.asarray(il[1 : 1 + NQ], dtype=np.float64)
-    exp_qvel = np.asarray(il[1 + NQ : 1 + NQ + NV], dtype=np.float64)
-    assert qpos.dtype == np.float64 and qpos.shape == (NQ,)
-    assert qvel.dtype == np.float64 and qvel.shape == (NV,)
+    exp_qpos = np.asarray(il[1 : 1 + nq], dtype=np.float64)
+    exp_qvel = np.asarray(il[1 + nq : 1 + nq + nv], dtype=np.float64)
+    assert qpos.dtype == np.float64 and qpos.shape == (nq,)
+    assert qvel.dtype == np.float64 and qvel.shape == (nv,)
     assert np.array_equal(_f64_bits(qpos), _f64_bits(exp_qpos))
     assert np.array_equal(_f64_bits(qvel), _f64_bits(exp_qvel))
+
+
+def test_resolve_gpu_model_indices_dynamic() -> None:
+    import ctypes
+
+    assert ctypes.sizeof(bcw.GpuModelIndicesStruct) == 240
+    m26 = _real_model()
+    idx26 = bcw.GpuModelIndicesStruct.from_buffer_copy(bcw.resolve_gpu_model_indices(m26))
+    assert int(idx26.nq) == 26 and int(idx26.nv) == 26 and int(idx26.nbody) == 28
+    assert int(idx26.drive_shaft_spin_qpos) == -1
+    assert int(idx26.drive_shaft_spin_dof) == -1
+    assert int(idx26.crank_clutch_tendon) == -1
+    assert list(idx26.rider_qpos) == [22, 23, 24, 25, 17, 18, 19, 20, 21]
+
+    m27 = mujoco.MjModel.from_xml_path(str(REPOS_WELDED_XML))
+    idx27 = bcw.GpuModelIndicesStruct.from_buffer_copy(bcw.resolve_gpu_model_indices(m27))
+    assert int(idx27.nq) == 27 and int(idx27.nv) == 27 and int(idx27.nbody) == 29
+    assert int(idx27.drive_shaft_spin_qpos) == 14
+    assert int(idx27.drive_shaft_spin_dof) == 14
+    assert int(idx27.crank_clutch_tendon) == 1
+    assert list(idx27.rider_qpos) == [23, 24, 25, 26, 18, 19, 20, 21, 22]
 
 
 def test_load_model_with_assets_missing_xml() -> None:
@@ -216,17 +243,19 @@ def test_load_hfield_bin_oversized_bin_raises() -> None:
 
 
 def test_load_captured_initial_state_missing_json() -> None:
+    nq, nv = _real_dims()
     with _scratch_dir() as tmp:
         shutil.copy(REAL_XML, tmp / "model.xml")
         try:
-            ma.load_captured_initial_state(tmp / "model.xml", NQ, NV)
+            ma.load_captured_initial_state(tmp / "model.xml", nq, nv)
         except FileNotFoundError:
             return
     raise AssertionError("expected FileNotFoundError for missing captured_bootstrap.json")
 
 
 def test_load_captured_initial_state_wrong_nq_or_nv() -> None:
-    for nq, nv in ((NQ - 1, NV), (NQ, NV + 1)):
+    base_nq, base_nv = _real_dims()
+    for nq, nv in ((base_nq - 1, base_nv), (base_nq, base_nv + 1)):
         try:
             ma.load_captured_initial_state(REAL_XML, nq, nv)
         except ValueError:
@@ -235,17 +264,18 @@ def test_load_captured_initial_state_wrong_nq_or_nv() -> None:
 
 
 def test_load_captured_initial_state_short_integration_state() -> None:
+    nq, nv = _real_dims()
     doc = {
         "state": {
-            "model_dims": {"nq": NQ, "nv": NV},
-            "integration_state": [0.0] * (1 + NQ + NV - 1),
+            "model_dims": {"nq": nq, "nv": nv},
+            "integration_state": [0.0] * (1 + nq + nv - 1),
         }
     }
     with _scratch_dir() as tmp:
         (tmp / "model.xml").write_text("<mujoco/>", encoding="utf-8")
         (tmp / "captured_bootstrap.json").write_text(json.dumps(doc), encoding="utf-8")
         try:
-            ma.load_captured_initial_state(tmp / "model.xml", NQ, NV)
+            ma.load_captured_initial_state(tmp / "model.xml", nq, nv)
         except ValueError:
             return
     raise AssertionError("expected ValueError for short integration_state")
@@ -273,7 +303,8 @@ def test_report_old_settled_constants_vs_captured() -> None:
     if old is None:
         print("  legacy _SETTLED_* constants not present in mjwarp_batch_sweep.py (already removed)")
         return
-    qpos, qvel = ma.load_captured_initial_state(REAL_XML, NQ, NV)
+    nq, nv = _real_dims()
+    qpos, qvel = ma.load_captured_initial_state(REAL_XML, nq, nv)
     for name, captured in (("_SETTLED_QPOS0", qpos), ("_SETTLED_QVEL0", qvel)):
         if name not in old:
             print(f"  {name}: absent")
@@ -290,6 +321,21 @@ def test_report_old_settled_constants_vs_captured() -> None:
         print(f"    indices with any difference (count={len(differing)}): {differing}")
         for i in differing:
             print(f"      [{i:2d}] old={old_arr[i]!r} captured={captured[i]!r} |d|={diff[i]:.3e}")
+
+
+def test_synthesize_welded_assets_for_unaccompanied_xml() -> None:
+    with _scratch_dir() as tmp:
+        out_xml = ma.materialize_welded_assets_dir(REPOS_WELDED_XML, tmp / "welded_synth")
+        assert out_xml.is_file()
+        assert (out_xml.parent / ma.HFIELD_BIN_NAME).is_file()
+        assert (out_xml.parent / ma.CAPTURED_BOOTSTRAP_NAME).is_file()
+        m = ma.load_model_with_assets(out_xml)
+        assert int(m.nq) == 27 and int(m.nv) == 27
+        qpos0, qvel0 = ma.load_captured_initial_state(out_xml, int(m.nq), int(m.nv))
+        assert qpos0.shape == (27,)
+        assert qvel0.shape == (27,)
+        assert np.all(np.isfinite(qpos0))
+        assert np.all(np.isfinite(qvel0))
 
 
 # --------------------------------------------------------------------------- runner

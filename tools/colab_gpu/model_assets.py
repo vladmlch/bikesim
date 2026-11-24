@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import shutil
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -187,3 +188,131 @@ def load_captured_initial_state(
     qpos = np.array(integration_state[1 : 1 + nq], dtype=np.float64)
     qvel = np.array(integration_state[1 + nq : needed], dtype=np.float64)
     return qpos, qvel
+
+
+def _resolve_wheel_geom(model: "mujoco.MjModel", body_name: str, *geom_names: str) -> tuple[int, int]:
+    import mujoco
+
+    body_id = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, body_name))
+    if body_id < 0:
+        raise ValueError(f"model has no body {body_name!r}")
+    for gname in geom_names:
+        gid = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, gname))
+        if gid >= 0:
+            return body_id, gid
+    for g in range(int(model.ngeom)):
+        if (
+            int(model.geom_bodyid[g]) == body_id
+            and int(model.geom_type[g]) == int(mujoco.mjtGeom.mjGEOM_SPHERE)
+        ):
+            return body_id, g
+    raise ValueError(f"model has no contact sphere geom on body {body_name!r}")
+
+
+def synthesize_welded_assets(
+    model: "mujoco.MjModel",
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Synthesize a flat-road ``hfield_data`` array and settled ``(qpos0, qvel0)``.
+
+    Matches ``test_gpu_batch_runners.cpp::{seed_flat_welded_road,build_welded_initial_state}``
+    for ``tests/fixtures/model/welded.xml`` (``nq=27``) when sidecar assets are absent.
+    """
+    import mujoco
+
+    hfield_data = np.asarray(model.hfield_data, dtype=np.float64).copy()
+    hf_id = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_HFIELD, "road"))
+    terrain_geom = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "terrain"))
+    if hf_id >= 0 and terrain_geom >= 0 and int(model.nhfielddata) > 0:
+        nrow = int(model.hfield_nrow[hf_id])
+        ncol = int(model.hfield_ncol[hf_id])
+        adr = int(model.hfield_adr[hf_id])
+        sz = float(model.hfield_size[hf_id, 2])
+        pos_z = float(model.geom_pos[terrain_geom, 2])
+        flat_norm = (0.0 - pos_z) / sz
+        hfield_data[adr : adr + nrow * ncol] = flat_norm
+        model.hfield_data[:] = hfield_data
+
+    data = mujoco.MjData(model)
+    mujoco.mj_resetData(model, data)
+
+    root_x = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_x"))
+    root_z = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "root_z"))
+    rider_rx = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "rider_root_x"))
+    rider_rz = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "rider_root_z"))
+    fw_jnt = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "front_wheel_spin"))
+    rw_jnt = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "rear_wheel_spin"))
+    crank_jnt = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "crank_spin"))
+    ds_jnt = int(mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, "drive_shaft_spin"))
+    for jname, jid in [
+        ("root_x", root_x),
+        ("root_z", root_z),
+        ("rider_root_x", rider_rx),
+        ("rider_root_z", rider_rz),
+        ("front_wheel_spin", fw_jnt),
+        ("rear_wheel_spin", rw_jnt),
+        ("crank_spin", crank_jnt),
+    ]:
+        if jid < 0:
+            raise ValueError(f"welded model missing required joint {jname!r}")
+
+    data.qpos[int(model.jnt_qposadr[root_x])] = 2.0
+    data.qpos[int(model.jnt_qposadr[rider_rx])] = 2.0
+    mujoco.mj_forward(model, data)
+
+    f_body, f_geom = _resolve_wheel_geom(model, "front_wheel", "front_contact", "geom_front_contact")
+    r_body, r_geom = _resolve_wheel_geom(model, "rear_wheel", "rear_contact", "geom_rear_contact")
+    f_r = float(model.geom_size[f_geom, 0])
+    r_r = float(model.geom_size[r_geom, 0])
+    min_clear = min(
+        float(data.xpos[f_body, 2]) - f_r,
+        float(data.xpos[r_body, 2]) - r_r,
+    )
+    dz = -0.015 - min_clear
+    data.qpos[int(model.jnt_qposadr[root_z])] += dz
+    data.qpos[int(model.jnt_qposadr[rider_rz])] += dz
+    data.qvel[int(model.jnt_dofadr[root_x])] = 5.0
+    data.qvel[int(model.jnt_dofadr[rider_rx])] = 5.0
+    data.qvel[int(model.jnt_dofadr[fw_jnt])] = 5.0 / f_r
+    data.qvel[int(model.jnt_dofadr[rw_jnt])] = 5.0 / r_r
+    data.qvel[int(model.jnt_dofadr[crank_jnt])] = 6.0
+    if ds_jnt >= 0:
+        data.qvel[int(model.jnt_dofadr[ds_jnt])] = 6.0
+    mujoco.mj_forward(model, data)
+
+    return (
+        np.ascontiguousarray(hfield_data, dtype=_FLOAT64_LE),
+        np.ascontiguousarray(data.qpos, dtype=np.float64),
+        np.ascontiguousarray(data.qvel, dtype=np.float64),
+    )
+
+
+def materialize_welded_assets_dir(
+    xml_path: str | os.PathLike,
+    out_dir: str | os.PathLike,
+) -> pathlib.Path:
+    """Return an asset-complete XML path, synthesizing sidecar files into ``out_dir`` if absent."""
+    import mujoco
+
+    src_xml = pathlib.Path(os.fspath(xml_path)).resolve()
+    src_dir = src_xml.parent
+    if (src_dir / HFIELD_BIN_NAME).is_file() and (src_dir / CAPTURED_BOOTSTRAP_NAME).is_file():
+        return src_xml
+
+    out_path = pathlib.Path(os.fspath(out_dir))
+    out_path.mkdir(parents=True, exist_ok=True)
+    dst_xml = out_path / src_xml.name
+    shutil.copyfile(src_xml, dst_xml)
+
+    model = mujoco.MjModel.from_xml_path(str(dst_xml))
+    hfield_data, qpos0, qvel0 = synthesize_welded_assets(model)
+    (out_path / HFIELD_BIN_NAME).write_bytes(hfield_data.astype(_FLOAT64_LE).tobytes())
+    bootstrap_doc = {
+        "state": {
+            "model_dims": {"nq": int(model.nq), "nv": int(model.nv)},
+            "integration_state": [0.0, *qpos0.tolist(), *qvel0.tolist()],
+        }
+    }
+    (out_path / CAPTURED_BOOTSTRAP_NAME).write_text(
+        json.dumps(bootstrap_doc, indent=2) + "\n", encoding="utf-8"
+    )
+    return dst_xml

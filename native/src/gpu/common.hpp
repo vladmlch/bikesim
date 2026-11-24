@@ -9,36 +9,81 @@
 
 #if defined(__METAL_VERSION__)
 #include <metal_stdlib>
+#ifndef noexcept
 #define noexcept
+#endif
+#ifndef BIKE_HD
 #define BIKE_HD inline
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE inline
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD thread
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE device
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT constant
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL kernel
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR constant constexpr
+#endif
 #elif defined(__CUDACC__)
 #include <cmath>
 #include <cstdint>
+#ifndef BIKE_HD
 #define BIKE_HD __host__ __device__ __forceinline__
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE __forceinline__
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL __global__
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR inline constexpr
+#endif
 #else
 #include <cmath>
 #include <cstdint>
+#ifndef BIKE_HD
 #define BIKE_HD inline
+#endif
+#ifndef BIKE_INLINE
 #define BIKE_INLINE inline
+#endif
+#ifndef BIKE_THREAD
 #define BIKE_THREAD
+#endif
+#ifndef BIKE_DEVICE
 #define BIKE_DEVICE
+#endif
+#ifndef BIKE_CONSTANT
 #define BIKE_CONSTANT
+#endif
+#ifndef BIKE_GLOBAL
 #define BIKE_GLOBAL
+#endif
+#ifndef BIKE_CONSTEXPR
 #define BIKE_CONSTEXPR inline constexpr
 #endif
+#endif
 
+#ifndef BIKE_GPU_SHARED_CODE_BEGIN
 #if defined(__clang__) && !defined(__METAL_VERSION__) && !defined(__CUDA_ARCH__)
 #define BIKE_GPU_SHARED_CODE_BEGIN \
     _Pragma("clang diagnostic push") \
@@ -47,6 +92,7 @@
 #else
 #define BIKE_GPU_SHARED_CODE_BEGIN
 #define BIKE_GPU_SHARED_CODE_END
+#endif
 #endif
 
 // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic,cppcoreguidelines-pro-bounds-array-to-pointer-decay,cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays,bugprone-easily-swappable-parameters) shared host/CUDA/MSL kernel: MSL has no std::span/std::array and address-space-qualified raw pointers are the device ABI; positional float signatures mirror the CUDA/MSL kernels. Register: docs/TESTING.md GPU kernel row.
@@ -58,7 +104,6 @@ BIKE_CONSTEXPR int kMaxNq = 32;
 BIKE_CONSTEXPR int kMaxNv = 32;
 BIKE_CONSTEXPR int kMaxNu = 16;
 BIKE_CONSTEXPR int kMaxNbody = 32;
-BIKE_CONSTEXPR int kMaxTreadStations = 64;
 BIKE_CONSTEXPR int kMaxHingeKnots = 8;
 
 struct GpuVec2 {
@@ -80,27 +125,27 @@ struct GpuMat33 {
     };
 };
 
-// Number of controlled rider joints in model.xml:
-//   [0]: rider_hip_front      (qpos 22, dof 22, ctrl 8)
-//   [1]: rider_knee_front     (qpos 23, dof 23, ctrl 9)
-//   [2]: rider_hip_rear       (qpos 24, dof 24, ctrl 10)
-//   [3]: rider_knee_rear      (qpos 25, dof 25, ctrl 11)
-//   [4]: rider_torso_hinge    (qpos 17, dof 17, ctrl 3)
-//   [5]: rider_shoulder_left  (qpos 18, dof 18, ctrl 4)
-//   [6]: rider_elbow_left     (qpos 19, dof 19, ctrl 5)
-//   [7]: rider_shoulder_right (qpos 20, dof 20, ctrl 6)
-//   [8]: rider_elbow_right    (qpos 21, dof 21, ctrl 7)
+// Number of controlled rider joints in tests/fixtures/model/welded.xml (nq = 27):
+//   [0]: rider_hip_front      (qpos 23, dof 23, ctrl 8)
+//   [1]: rider_knee_front     (qpos 24, dof 24, ctrl 9)
+//   [2]: rider_hip_rear       (qpos 25, dof 25, ctrl 10)
+//   [3]: rider_knee_rear      (qpos 26, dof 26, ctrl 11)
+//   [4]: rider_torso_hinge    (qpos 18, dof 18, ctrl 3)
+//   [5]: rider_shoulder_left  (qpos 19, dof 19, ctrl 4)
+//   [6]: rider_elbow_left     (qpos 20, dof 20, ctrl 5)
+//   [7]: rider_shoulder_right (qpos 21, dof 21, ctrl 6)
+//   [8]: rider_elbow_right    (qpos 22, dof 22, ctrl 7)
 BIKE_CONSTEXPR int kNumRiderJoints = 9;
 
 // Fixed model address table resolved once on the host from mjModel.
-// Total non-static int fields = 57 (sizeof(GpuModelIndices) == 228 bytes).
+// Total non-static int fields = 60 (sizeof(GpuModelIndices) == 240 bytes).
 struct GpuModelIndices {
-    int nq = 26;
-    int nv = 26;
+    int nq = 27;
+    int nv = 27;
     int nu = 12;
-    int nbody = 28;
+    int nbody = 29;
 
-    // Body indices matching tools/fp32_probe/artifacts/common/model.xml
+    // Body indices matching tests/fixtures/model/welded.xml
     int frame_body = 1;
     int steer_body = 5;
     int fork_lower_body = 6;
@@ -118,7 +163,8 @@ struct GpuModelIndices {
     int front_wheel_spin_qpos = 7;
     int rear_wheel_spin_qpos = 10;
     int shock_stroke_qpos = 13;
-    int rider_qpos[kNumRiderJoints] = {22, 23, 24, 25, 17, 18, 19, 20, 21};
+    int drive_shaft_spin_qpos = 14;
+    int rider_qpos[kNumRiderJoints] = {23, 24, 25, 26, 18, 19, 20, 21, 22};
 
     // Joint dof addresses
     int root_x_dof = 0;
@@ -129,20 +175,93 @@ struct GpuModelIndices {
     int front_wheel_spin_dof = 7;
     int rear_wheel_spin_dof = 10;
     int shock_stroke_dof = 13;
-    int rider_dof[kNumRiderJoints] = {22, 23, 24, 25, 17, 18, 19, 20, 21};
+    int drive_shaft_spin_dof = 14;
+    int rider_dof[kNumRiderJoints] = {23, 24, 25, 26, 18, 19, 20, 21, 22};
 
     // Actuator ctrl addresses
     int rider_ctrl[kNumRiderJoints] = {8, 9, 10, 11, 3, 4, 5, 6, 7};
 
-    // Suspension pivot DOFs in model.xml (main_pivot=8, horst_pivot=9)
+    // Suspension pivot DOFs in welded.xml (main_pivot=8, horst_pivot=9)
     int main_pivot_dof = 8;
     int horst_pivot_dof = 9;
 
-    // Tendon index in model.xml (ideal_mid_drive_freehub=0)
+    // Tendon indices in welded.xml (ideal_mid_drive_freehub=0, crank_clutch=1)
     int freehub_tendon = 0;
+    int crank_clutch_tendon = 1;
 };
 
-static_assert(sizeof(GpuModelIndices) == 228, "GpuModelIndices must be 228 bytes");
+static_assert(sizeof(GpuModelIndices) == 240, "GpuModelIndices must be 240 bytes");
+
+BIKE_HD bool gpu_index_in_range(int idx_val, int upper_exclusive) noexcept {
+    return idx_val >= -1 && idx_val < upper_exclusive;
+}
+
+BIKE_HD bool gpu_validate_model_indices(
+    const BIKE_THREAD GpuModelIndices &idx,
+    int tendon_count = -1
+) noexcept {
+    if (idx.nq <= 0 || idx.nq > kMaxNq ||
+        idx.nv <= 0 || idx.nv > kMaxNv ||
+        idx.nu < 0 || idx.nu > kMaxNu ||
+        idx.nbody <= 0 || idx.nbody > kMaxNbody) {
+        return false;
+    }
+    if (!gpu_index_in_range(idx.frame_body, idx.nbody) ||
+        !gpu_index_in_range(idx.steer_body, idx.nbody) ||
+        !gpu_index_in_range(idx.fork_lower_body, idx.nbody) ||
+        !gpu_index_in_range(idx.front_wheel_body, idx.nbody) ||
+        !gpu_index_in_range(idx.chainstay_body, idx.nbody) ||
+        !gpu_index_in_range(idx.seatstay_body, idx.nbody) ||
+        !gpu_index_in_range(idx.rear_wheel_body, idx.nbody)) {
+        return false;
+    }
+    if (!gpu_index_in_range(idx.root_x_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.root_z_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.root_pitch_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.crank_spin_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.fork_travel_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.front_wheel_spin_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.rear_wheel_spin_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.shock_stroke_qpos, idx.nq) ||
+        !gpu_index_in_range(idx.drive_shaft_spin_qpos, idx.nq)) {
+        return false;
+    }
+    if (!gpu_index_in_range(idx.root_x_dof, idx.nv) ||
+        !gpu_index_in_range(idx.root_z_dof, idx.nv) ||
+        !gpu_index_in_range(idx.root_pitch_dof, idx.nv) ||
+        !gpu_index_in_range(idx.crank_spin_dof, idx.nv) ||
+        !gpu_index_in_range(idx.fork_travel_dof, idx.nv) ||
+        !gpu_index_in_range(idx.front_wheel_spin_dof, idx.nv) ||
+        !gpu_index_in_range(idx.rear_wheel_spin_dof, idx.nv) ||
+        !gpu_index_in_range(idx.shock_stroke_dof, idx.nv) ||
+        !gpu_index_in_range(idx.drive_shaft_spin_dof, idx.nv) ||
+        !gpu_index_in_range(idx.main_pivot_dof, idx.nv) ||
+        !gpu_index_in_range(idx.horst_pivot_dof, idx.nv)) {
+        return false;
+    }
+    for (int j = 0; j < kNumRiderJoints; ++j) {
+        if (!gpu_index_in_range(idx.rider_qpos[j], idx.nq) ||
+            !gpu_index_in_range(idx.rider_dof[j], idx.nv) ||
+            !gpu_index_in_range(idx.rider_ctrl[j], idx.nu)) {
+            return false;
+        }
+    }
+    if (idx.freehub_tendon < -1 || idx.crank_clutch_tendon < -1) {
+        return false;
+    }
+    if (tendon_count >= 0 &&
+        (idx.freehub_tendon >= tendon_count || idx.crank_clutch_tendon >= tendon_count)) {
+        return false;
+    }
+    return true;
+}
+
+BIKE_HD int gpu_max_active_tendon_idx(
+    const BIKE_THREAD GpuModelIndices &idx
+) noexcept {
+    const int cc_tid = (idx.drive_shaft_spin_qpos >= 0) ? idx.crank_clutch_tendon : -1;
+    return (idx.freehub_tendon >= cc_tid) ? idx.freehub_tendon : cc_tid;
+}
 
 #if defined(__METAL_VERSION__)
 BIKE_HD float gpu_min(float a, float b) noexcept {
@@ -315,10 +434,9 @@ BIKE_CONSTEXPR float kMainPivotLocalDzM = 0.0463930f;
 BIKE_CONSTEXPR float kSeatstayFromChainstayDxM = -0.3342160f;
 BIKE_CONSTEXPR float kSeatstayFromChainstayDzM = -0.0548350f;
 // Seatstay origin in the frame at main_pivot = 0, i.e. kMainPivotLocal + kSeatstayFromChainstay.
-// NOT the horst fallback for main_pivot != 0 (use gpu_horst_pivot_anchor_fallback). No production caller
-// passes it to gpu_rear_pivot_anchor_world: tire_kernel.hpp and metal_batch_runner.mm use
-// gpu_horst_pivot_anchor_world for the seatstay. It remains for the benchmark seatstay seed in
-// metal_batch_runner.mm and the pre-fix anchor comparison in test_gpu_tire.cpp.
+// NOT the horst fallback for main_pivot != 0 (use gpu_horst_pivot_anchor_fallback). Production
+// callers use physics_core/kinematics.hpp (`chain_point_jacobian`) for wheel Jacobians; it remains
+// for rear suspension anchor helpers in test_gpu_model_geometry.cpp.
 BIKE_CONSTEXPR float kHorstPivotLocalDxM = -0.3791180f;
 BIKE_CONSTEXPR float kHorstPivotLocalDzM = -0.0084420f;
 

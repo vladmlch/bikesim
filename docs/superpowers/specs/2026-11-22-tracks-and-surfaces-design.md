@@ -13,7 +13,7 @@
    - Бэкенд `distributed_2d_reference` не перекалибровывается в рамках этой работы; целевым рабочим бэкендом для неровных и деформируемых трасс закрепляется `pneumatic` (решение пользователя 2026-11-23).
 2. **Нулевые аллокации на горячем пути (`BIKE_NONBLOCKING`):**
    - Вызовы `try_compute_into` / `probe_compute_into` в `PneumaticTireWriter` и `DistributedTireWriter` не совершают динамических аллокаций (проверяется `allocation_counter` / RTSan).
-3. **Запреты №36, №38, №39 и строгий баланс энергии (`|residual_j| <= 0.05 Дж`):**
+3. **Запреты №36, №38, №39 и строгий баланс энергии (`residual_ratio <= 0.05`):**
    - Запрещён любой линейный вязкий член `c·ż` или `c·δ̇` в грунте и шинах; вся диссипация деформируемого грунта рождается только из упругопластической петли разгрузки $k_u$ и пластического сдвига.
    - Пробные вызовы с `advance == false` (`PhysicalStep::probe_step_inputs`, внутренний Ньютон `SpindleController`) никогда не мутируют состояние колеи `RutMemory`.
 4. **Информационная граница (`test_native_rider_information_boundary`):**
@@ -80,7 +80,7 @@
    - `PneumaticTireWriter::stored_energy(d)` и `PneumaticTireWriter::elastic_energy_j()` возвращают **только собственную упругую энергию шины** (каркас, обод, ветвь Максвелла, щётки `detailed`), сохраняя побайтовое равенство `stored_energy(d) == elastic_energy_j()`; упругая энергия слоя $U_{\text{soil},e} = \sum_g \frac{1}{2} K_{u,g} z_{e,g}^2 \ge 0$ возвращается отдельно через `PneumaticTireWriter::soil_elastic_energy_j()`.
    - В `PhysicalStep` (`native/src/runtime/step.cpp`) карта `elastic_energy_j` (`map<double>`) содержит `"tires"` (чисто шина), а при `tire_writer().has_deformable_layer() == true` дополнительно публикует ключ **`"soil"`** со значением `soil_elastic_energy_j()` (входящим в полную механическую+упругую сумму `total`). При `has_deformable_layer() == false` ключ `"soil"` не эмитится.
    - `PneumaticTireWriter::brush_loss_step_j()` возвращает **только собственные потери щёток/скольжения шины** (пластическая работа грунта не подмешивается в `brush_loss_step_j` и `tires.*.brush_loss_j`); пластическая работа уплотнения колеи $\Delta D_{\text{soil},p} \ge 0$ (16-точечная квадратура Гаусса–Лежандра с разбиением в изломе $z_{\max}$) возвращается через `PneumaticTireWriter::ground_plastic_loss_step_j()` (`0.0` на твёрдых трассах).
-   - Строго по образцу `rider_end_stop_loss_step_j` (`native/src/runtime/accounting.cpp`, `native/src/recording/catalog_data.inc`): `RawStep` передаёт `ground_plastic_loss_step_j`, `step.cpp` включает её в `loss_step`, а `account_energy` публикует в канале `energy` обязательное поле **`ground_plastic_loss_step_j`** (`optional: false`, `0.0` на твёрдых трассах; входит в `loss_step_j` и кумулятивный `loss_j`), удерживая невязку `|residual_j| <= 0.05 Дж`.
+   - Строго по образцу `rider_end_stop_loss_step_j` (`native/src/runtime/accounting.cpp`, `native/src/recording/catalog_data.inc`): `RawStep` передаёт `ground_plastic_loss_step_j`, `step.cpp` включает её в `loss_step`, а `account_energy` публикует в канале `energy` обязательное поле **`ground_plastic_loss_step_j`** (`optional: false`, `0.0` на твёрдых трассах; входит в `loss_step_j` и кумулятивный `loss_j`), удерживая невязку `residual_ratio <= 0.05`.
    - `RutMemory` сериализуется разрежённым списком изменённых узлов (`rut.count` + `rut.node.*` по размеру профиля) с атомарной двухфазной валидацией.
 
 ---
@@ -113,6 +113,6 @@
    - `outcome == "end_of_track"`, `crashed == false`, `balance_lost == false`;
    - `model_valid == true` (нулевое число нарушений ограничений модели за всю поездку);
    - реакции опоры седла и обеих стоп `min_n >= -6.0 Н`, тяга каждой руки на руле `<= 300.0 Н`;
-   - строгий баланс энергии `|residual_j| <= 0.05 Дж` и `energy_quality(energy, 0.05).acceptable == true` на всех измеренных интервалах;
+   - строгий баланс энергии `residual_ratio <= 0.05` и `energy_quality(energy, 0.05).acceptable == true` на всех измеренных интервалах;
    - на `alpine_scree_deformable.toml` подтверждается положительная работа пластического уплотнения `ground_plastic_loss_step_j` и эффект многопроходной колеи `RutMemory`.
 3. Трасса `examples/research/rough_uphill_savage.toml` остаётся побайтово неизменной; в отчёт включается контрольный диагностический замер её прохождения (`welded` и `pneumatic`) до и после исправлений восприятия Этапа Г.

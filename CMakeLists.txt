@@ -184,8 +184,11 @@ target_include_directories(bike_core SYSTEM PRIVATE
 # Track-B build identity for runtime/provenance.cpp — the
 # research_build_identity.hpp generated for bike_core so the product
 # carries the native_source_sha256 fingerprint. The manifest algorithm:
-# every first-party native/{src,cmake} file hashed as sorted
-# "relative_path=sha256" lines relative to native/.
+# every first-party native/{src,cmake} file except the check tooling under
+# native/src/tools/, hashed as sorted "relative_path=sha256" lines relative
+# to native/. The tooling is excluded because it never runs inside the
+# simulation (it is linked only into the check/validation executables), and
+# its edits must not invalidate pinned equilibrium poses that bind this digest.
 file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   RELATIVE "${_bike_native_dir}"
   "${_bike_native_dir}/src/*.cpp"
@@ -195,6 +198,9 @@ file(GLOB_RECURSE _runtime_identity_inputs CONFIGURE_DEPENDS
   "${_bike_native_dir}/cmake/*.cmake"
   "${_bike_native_dir}/cmake/*.in")
 list(REMOVE_DUPLICATES _runtime_identity_inputs)
+list(FILTER _runtime_identity_inputs EXCLUDE REGEX "^src/tools/")
+# Checks.cmake only registers check/test targets (no libraries, no flags).
+list(FILTER _runtime_identity_inputs EXCLUDE REGEX "^cmake/Checks\\.cmake$")
 list(SORT _runtime_identity_inputs)
 set(_runtime_identity_manifest "")
 foreach(_relative IN LISTS _runtime_identity_inputs)
@@ -551,6 +557,22 @@ bike_add_realtime_measurement("${_bike_native_dir}")
 include("${_bike_native_dir}/cmake/NativeValidation.cmake")
 bike_add_native_validation("${_bike_native_dir}")
 
+add_library(bike_gpu_export_cli STATIC
+  "${_bike_native_dir}/src/golden/step_closure_bundle.cpp"
+  "${_bike_native_dir}/src/cli/gpu_export.cpp")
+bike_startup_target_policy(bike_gpu_export_cli "${_bike_native_dir}")
+target_link_libraries(bike_gpu_export_cli PUBLIC bike_validation)
+
+add_executable(bike-gpu-export
+  "${_bike_native_dir}/src/cli/gpu_export_main.cpp")
+bike_startup_target_policy(bike-gpu-export "${_bike_native_dir}")
+target_link_libraries(bike-gpu-export PRIVATE bike_gpu_export_cli)
+bike_rewrite_mujoco_load_name(bike-gpu-export "${BIKE_DEP_mujoco_LIBRARY}")
+set_target_properties(bike-gpu-export PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+install(TARGETS bike-gpu-export RUNTIME DESTINATION bin OPTIONAL)
+bike_install_relocate_mujoco(bike-gpu-export)
+
 if(BUILD_TESTING)
   # tyre/distance.cpp SignedProfile + tyre/station.cpp scalar station law:
   # the produced-command contract's focused executable pair.
@@ -629,6 +651,11 @@ if(BUILD_TESTING AND TARGET bike_installed_provider)
   add_test(NAME native_installed_provider_tests COMMAND native_installed_provider_tests)
 endif()
 
+if(BUILD_TESTING)
+  add_subdirectory(native/tests/physics_core)
+  add_subdirectory(native/tests/golden)
+endif()
+
 # GPU unit tests (native/tests/gpu/): the same executables and CTest names the
 # legacy graph registers in native/CMakeLists.txt ("Standalone GPU unit test
 # executables"), so the root gate builds and runs them. The root-only
@@ -680,16 +707,15 @@ if(BUILD_TESTING)
 
   bike_add_gpu_unit_test(bike_test_gpu_suspension
     "${_bike_native_tests_dir}/gpu/test_gpu_suspension.cpp")
-  bike_add_gpu_unit_test(bike_test_gpu_tire
-    "${_bike_native_tests_dir}/gpu/test_gpu_tire.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_drivetrain_resistance
     "${_bike_native_tests_dir}/gpu/test_gpu_drivetrain_resistance.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_rider
     "${_bike_native_tests_dir}/gpu/test_gpu_rider.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_batch_step
     "${_bike_native_tests_dir}/gpu/test_gpu_batch_step.cpp")
-  bike_link_gpu_reference_core(bike_test_gpu_tire)
+  bike_link_gpu_reference_core(bike_test_gpu_suspension)
   bike_link_gpu_reference_core(bike_test_gpu_drivetrain_resistance)
+  target_link_libraries(bike_test_gpu_drivetrain_resistance PRIVATE bike_tyre_upload)
   target_link_libraries(bike_test_gpu_rider PRIVATE bike_rider_math)
   target_link_libraries(bike_test_gpu_batch_step PRIVATE bike_gpu_kernels)
 
@@ -700,6 +726,21 @@ if(BUILD_TESTING)
     "${_bike_native_tests_dir}/gpu/test_gpu_model_geometry.cpp")
   bike_add_gpu_unit_test(bike_test_gpu_model_assets
     "${_bike_native_tests_dir}/gpu/test_gpu_model_assets.cpp")
+  add_library(bike_tyre_upload STATIC
+    "${_bike_native_dir}/src/physics_core/tyre_upload.cpp")
+  set_target_properties(bike_tyre_upload PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  bike_apply_native_policy(bike_tyre_upload)
+  target_include_directories(bike_tyre_upload SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(bike_tyre_upload PUBLIC bike::mujoco)
+  add_library(bike_spindle_upload STATIC
+    "${_bike_native_dir}/src/physics_core/spindle_m2k2_upload.cpp")
+  set_target_properties(bike_spindle_upload PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  bike_apply_native_policy(bike_spindle_upload)
+  target_include_directories(bike_spindle_upload SYSTEM PRIVATE
+    "${_bike_native_dir}/src" "${BIKE_DEP_mujoco_ROOT}/include")
+  target_link_libraries(bike_spindle_upload PUBLIC bike::mujoco)
+  target_link_libraries(bike_test_gpu_model_geometry PRIVATE bike_tyre_upload)
   foreach(_gpu_mujoco_test IN ITEMS bike_test_gpu_model_geometry bike_test_gpu_model_assets)
     target_link_libraries(${_gpu_mujoco_test} PRIVATE bike::mujoco)
     bike_rewrite_mujoco_load_name(${_gpu_mujoco_test} "${BIKE_DEP_mujoco_LIBRARY}")
@@ -735,12 +776,82 @@ if(BUILD_TESTING)
   endif()
   bike_add_gpu_unit_test(bike_test_gpu_batch_runners ${_bike_gpu_runner_sources})
   target_link_libraries(bike_test_gpu_batch_runners PRIVATE
-    bike_gpu_kernels Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
   bike_rewrite_mujoco_load_name(bike_test_gpu_batch_runners "${BIKE_DEP_mujoco_LIBRARY}")
   if(APPLE)
     target_link_libraries(bike_test_gpu_batch_runners PRIVATE
       "-framework Metal" "-framework Foundation")
   endif()
+
+  set(_bike_gpu_tire_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_tire.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_tire_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_tire ${_bike_gpu_tire_sources})
+  bike_link_gpu_reference_core(bike_test_gpu_tire)
+  target_link_libraries(bike_test_gpu_tire PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload Threads::Threads ${CMAKE_DL_LIBS})
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_tire PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
+  set(_bike_gpu_sp3_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_sp3_autonomous.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_sp3_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_sp3_autonomous ${_bike_gpu_sp3_sources})
+  target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(bike_test_gpu_sp3_autonomous "${BIKE_DEP_mujoco_LIBRARY}")
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_sp3_autonomous PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
+  set(_bike_gpu_sp4_sources
+    "${_bike_native_tests_dir}/gpu/test_gpu_sp4_closed_loop.cpp")
+  if(APPLE)
+    list(APPEND _bike_gpu_sp4_sources $<TARGET_OBJECTS:bike_gpu_metal_runner_obj>)
+  endif()
+  bike_add_gpu_unit_test(bike_test_gpu_sp4_closed_loop ${_bike_gpu_sp4_sources})
+  target_link_libraries(bike_test_gpu_sp4_closed_loop PRIVATE
+    bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_engine bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(bike_test_gpu_sp4_closed_loop "${BIKE_DEP_mujoco_LIBRARY}")
+  if(APPLE)
+    target_link_libraries(bike_test_gpu_sp4_closed_loop PRIVATE
+      "-framework Metal" "-framework Foundation")
+  endif()
+
+  bike_add_gpu_unit_test(sp4_s1s4_cpu_acceptance
+    "${_bike_native_tests_dir}/gpu/test_sp4_s1s4_cpu_acceptance.cpp")
+  set_tests_properties(sp4_s1s4_cpu_acceptance PROPERTIES LABELS "gpu;slow")
+  target_link_libraries(sp4_s1s4_cpu_acceptance PRIVATE
+    bike_validation bike_gpu_kernels bike_tyre_upload bike_spindle_upload bike_gpu_export_cli Threads::Threads bike::mujoco ${CMAKE_DL_LIBS})
+  bike_rewrite_mujoco_load_name(sp4_s1s4_cpu_acceptance "${BIKE_DEP_mujoco_LIBRARY}")
+
+  # Subproject 1 Stage 1 gate: 4 × 30 s golden episode digests. Registered at
+  # root scope (outside native/tests/recording/) so the test binary links only
+  # bike_test_fixtures + bike_recording_digest_cli + bike_platform without any
+  # libmujoco edge and drives bike-ride via subprocess.
+  add_executable(golden_episode_digest
+    "${_bike_native_tests_dir}/recording/test_golden_episode_digest.cpp")
+  bike_apply_native_policy(golden_episode_digest)
+  target_include_directories(golden_episode_digest SYSTEM PRIVATE
+    "${_bike_native_dir}/src")
+  # bike_platform reaches the link line transitively through
+  # bike_recording_digest_cli -> bike_recording_reader; listing it again
+  # only draws a duplicate-library warning from ld.
+  target_link_libraries(golden_episode_digest PRIVATE
+    bike_test_fixtures bike_recording_digest_cli)
+  add_dependencies(golden_episode_digest bike-ride)
+  add_test(NAME golden_episode_digest
+    COMMAND golden_episode_digest "$<TARGET_FILE:bike-ride>" "${CMAKE_SOURCE_DIR}")
+  set_tests_properties(golden_episode_digest PROPERTIES
+    LABELS "recording;golden;slow"
+    TIMEOUT 1200)
 endif()
 
 # ---------------------------------------------------------------------------

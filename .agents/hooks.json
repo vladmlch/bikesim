@@ -1,0 +1,16 @@
+{
+  "guard": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ../tools/agy/pretool-guard.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

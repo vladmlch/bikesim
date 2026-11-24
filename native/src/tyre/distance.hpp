@@ -63,21 +63,6 @@ namespace biketyre {
         [[nodiscard]] PointDistance query(std::array<double, 2> p) const;
 
     private:
-        // One row of the oracle's offsets/fractions/projections/vectors/
-        // squared temporaries (profile_distance.py:55-59) for candidate
-        // segment i — a pure function of the segment id, so query()
-        // recomputes rows on each scan instead of materializing the
-        // oracle's (k,) arrays.
-        struct Candidate {
-            double fraction;
-            std::array<double, 2> projection;
-            std::array<double, 2> vector;
-            double squared;
-        };
-
-        [[nodiscard]] Candidate candidate(int i,
-                                          std::array<double, 2> p) const;
-
         std::vector<double> x_, z_; // vertices[:, 0] / vertices[:, 1]
         std::vector<double> edge_x_, edge_z_; // np.diff columns
         std::vector<double> length2_; // np.sum(edges**2, axis=1)

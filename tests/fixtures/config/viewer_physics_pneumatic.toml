@@ -16,9 +16,8 @@ equilibrium_refine_period_s = 3.0
 equilibrium_crank_hold_kp_nm_rad = 20000.0
 equilibrium_crank_hold_kd_nms_rad = 88.0
 equilibrium_cache_enabled = true
-# Settled pose for rough_uphill_savage (written by bike-settle); relative to
-# this TOML. Pinned to the scenario fingerprint — remove for other tracks.
-equilibrium_state_file = "poses/savage_pneumatic.npz"
+# No pinned equilibrium_state_file: the auto-cache settles the pose on the
+# first launch and serves it afterwards (a pin goes stale on every source edit).
 
 [tires]
 backend = "pneumatic"

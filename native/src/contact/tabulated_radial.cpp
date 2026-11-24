@@ -2,9 +2,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 
 #include "../config_validation.hpp"
+#include "../physics_core/cpu_exact_toolkit.hpp"
+#include "../physics_core/tyre_tabulated.hpp"
 #include "../validation.hpp"
 
 namespace contactlaw {
@@ -24,14 +27,21 @@ TabulatedRadial::TabulatedRadial(const nativecfg::TireTable &table) : deflection
 }
 std::pair<double, double> TabulatedRadial::elastic_response(double penetration_m) const {
     validation::finite(penetration_m, "tire deflection");
-    if (penetration_m <= 0.) return {0., 0.};
-    if (penetration_m > deflection_m_.back())
+    double force = 0.;
+    double energy = 0.;
+    auto err = bike::physics_core::ErrCode::none;
+    const auto status = bike::physics_core::tabulated_radial_elastic_arrays<
+        double, bike::physics_core::CpuExactToolkit>(
+            static_cast<bike::physics_core::i32>(deflection_m_.size()),
+            deflection_m_.data(), force_n_.data(),
+            slopes_.data(), integral_.data(),
+            penetration_m, force, energy, err);
+    if (status == bike::physics_core::Status::out_of_bounds)
         throw MaterialRangeError("tire deflection exceeds supplied curve limit");
-    const auto right = std::ranges::upper_bound(deflection_m_, penetration_m);
-    const auto i = std::min(static_cast<std::size_t>(right - deflection_m_.begin() - 1), slopes_.size() - 1);
-    const double dx = penetration_m - deflection_m_[i];
-    const double force = force_n_[i] + slopes_[i] * dx;
-    const double energy = integral_[i] + force_n_[i] * dx + .5 * slopes_[i] * dx * dx;
+    if (status != bike::physics_core::Status::ok)
+        (void)validation::derived(
+            std::numeric_limits<double>::quiet_NaN(),
+            "TabulatedTireSpec.elastic_response");
     return {validation::derived(force, "TabulatedTireSpec.elastic_response"),
             validation::derived(energy, "TabulatedTireSpec.elastic_response")};
 }
@@ -43,12 +53,25 @@ std::pair<double, double> TabulatedRadial::normal_contact(
     validation::nonnegative(loss_factor, "radial loss factor");
     validation::positive(hysteresis_rate_eps_mps,
                          "hysteresis rate scale");
-    const auto [spring, energy] = elastic_response(penetration_m);
+    validation::finite(penetration_m, "tire deflection");
+    double total = 0.;
+    double energy = 0.;
+    auto err = bike::physics_core::ErrCode::none;
+    const auto status = bike::physics_core::tabulated_radial_contact_arrays<
+        double, bike::physics_core::CpuExactToolkit>(
+            static_cast<bike::physics_core::i32>(deflection_m_.size()),
+            deflection_m_.data(), force_n_.data(),
+            slopes_.data(), integral_.data(),
+            penetration_m, rate_mps, loss_factor, hysteresis_rate_eps_mps,
+            total, energy, err);
+    if (status == bike::physics_core::Status::out_of_bounds)
+        throw MaterialRangeError("tire deflection exceeds supplied curve limit");
+    if (status != bike::physics_core::Status::ok)
+        (void)validation::derived(
+            std::numeric_limits<double>::quiet_NaN(),
+            "tabulated normal force");
     if (penetration_m <= 0.) return {0., 0.};
-    const double total = validation::derived(
-        spring + loss_factor * spring *
-                std::tanh(rate_mps / hysteresis_rate_eps_mps),
-        "tabulated normal force");
-    return {std::max(0., total), energy};
+    return {validation::derived(total, "tabulated normal force"),
+            validation::derived(energy, "TabulatedTireSpec.elastic_response")};
 }
 } // namespace contactlaw

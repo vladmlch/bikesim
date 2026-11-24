@@ -18,6 +18,7 @@
 #include <mujoco/mujoco.h>
 
 #include <array>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <optional>
@@ -211,6 +212,11 @@ struct SoleGoalDiagnostics {
     double crank_m, double tdc_phase_rad, double max_rad = .8,
     double tolerance = 1e-3);
 
+enum class SpindleSolverMode : std::uint8_t {
+    m0 = 0,
+    m2k2 = 1,
+};
+
 class SpindleController {
 public:
     struct JointEntry {
@@ -357,6 +363,11 @@ public:
     [[nodiscard]] std::vector<std::pair<std::string, double>>
     upper_targets(const mjData *data, const RiderPosture *posture);
 
+    void set_solver_mode(SpindleSolverMode mode);
+    [[nodiscard]] SpindleSolverMode solver_mode() const noexcept {
+        return solver_mode_;
+    }
+
     [[nodiscard]] bool spindle() const { return !legacy_; }
     [[nodiscard]] bool welded() const {
         return config_.legacy && config_.legacy->pedal_attachment == "weld";
@@ -410,6 +421,12 @@ private:
     // finalize_effort — bounds re-check plus diagnostics.
     [[nodiscard]] std::vector<double>
     finalize_effort(mjData *data, std::span<const double> torques);
+
+    struct M2K2SolverContext;
+    void ensure_m2k2_context();
+    [[nodiscard]] NamedEntries<double> compute_m2k2(
+        mjData *data, const RiderCommand &command, bool advance,
+        bool steady_state, std::optional<double> weld_crank_torque_nm);
 
     const mjModel *model_;
     SpindlePose pose_;
@@ -489,6 +506,8 @@ private:
     double target_difference_s_ = 1e-4;
     bike::rider::AllocationMemory allocation_memory_;
     std::unique_ptr<bike::rider::LegacyController> legacy_;
+    SpindleSolverMode solver_mode_ = SpindleSolverMode::m0;
+    std::unique_ptr<M2K2SolverContext> m2k2_;
 
     std::unique_ptr<mjData, decltype(&mj_deleteData)> target_data_;
     std::unique_ptr<mjData, decltype(&mj_deleteData)> previous_target_data_;

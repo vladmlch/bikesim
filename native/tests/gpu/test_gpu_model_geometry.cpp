@@ -1324,7 +1324,7 @@ void test_tyre_upload_distributed(const Fixture &f) {
             "reject pneumatic without pneumatic config");
     }
     {
-        nativecfg::SurfaceSpec hardpack{
+        const nativecfg::SurfaceSpec hardpack{
             .name = "hardpack",
             .mu_peak = 0.80,
             .mu_slide = 0.60,
@@ -1333,7 +1333,7 @@ void test_tyre_upload_distributed(const Fixture &f) {
             .crr_delta = 0.0025,
             .load_sensitivity = 0.08,
         };
-        nativecfg::SurfaceSpec wet_wood{
+        const nativecfg::SurfaceSpec wet_wood{
             .name = "wet_wood",
             .mu_peak = 0.25,
             .mu_slide = 0.18,
